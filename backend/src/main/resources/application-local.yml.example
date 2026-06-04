@@ -1,0 +1,22 @@
+# Example only — copy to application-local.yml (gitignored). Do NOT commit application-local.yml.
+spring:
+  config:
+    activate:
+      on-profile: local
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/herfree_db?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: herfree_user
+    password: herfree_pass
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+jwt:
+  secret: YOUR_JWT_SECRET
+  access-expiration-seconds: 3600

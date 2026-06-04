@@ -1,0 +1,21 @@
+# Production profile template — use environment variables on EC2/RDS.
+# Do NOT commit application-prod.yml or real secrets to git.
+# Set SPRING_DATASOURCE_* and JWT_SECRET via EC2 env, Secrets Manager, or CI secrets.
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+
+jwt:
+  secret: ${JWT_SECRET}
+  access-expiration-seconds: ${JWT_ACCESS_EXPIRATION:3600}

@@ -1,0 +1,25 @@
+# Local MySQL 8 for Herfree development (see docs/deployment.md)
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: herfree-mysql
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: herfree_db
+      MYSQL_USER: herfree_user
+      MYSQL_PASSWORD: herfree_pass
+      MYSQL_ROOT_PASSWORD: root_pass
+      TZ: Asia/Seoul
+    volumes:
+      - herfree_mysql_data:/var/lib/mysql
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  herfree_mysql_data:

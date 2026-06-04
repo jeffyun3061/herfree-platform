@@ -1,0 +1,40 @@
+# Java / Spring Boot
+backend/build/
+backend/.gradle/
+backend/out/
+*.class
+
+# Node / Next.js
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/dist/
+frontend/.turbo/
+
+# Environment
+.env
+.env.*
+backend/.env
+backend/src/main/resources/application-local.yml
+backend/src/main/resources/application-secret.yml
+backend/src/main/resources/application-prod.yml
+frontend/.env.local
+frontend/.env.production
+
+# Logs
+*.log
+logs/
+
+# IDE / editor (local only — do not commit)
+.idea/
+.vscode/
+.cursor/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Uploads / local files
+uploads/
+files/
