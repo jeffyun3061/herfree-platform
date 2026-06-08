@@ -18,5 +18,12 @@ spring:
         format_sql: true
 
 jwt:
-  secret: YOUR_JWT_SECRET
+  # 로컬 전용 시크릿 — 32자 이상 임의 문자열로 변경하세요. 운영 서버에는 절대 이 값을 쓰지 마세요.
+  secret: local-dev-secret-change-this-to-random-32chars-minimum
   access-expiration-seconds: 3600
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true

@@ -3,6 +3,8 @@ package com.herfree.global.exception;
 import com.herfree.global.response.ErrorResponse;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -19,6 +21,16 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(errorCode.getHttpStatus())
                 .body(ErrorResponse.of(ex.getMessage()));
+    }
+
+    // 닉네임·이메일 unique 제약 위반 시 DB에서 던지는 예외 — race condition 방어.
+    // 애플리케이션 레벨 중복 체크를 통과하더라도 동시 요청 시 DB 제약 위반이 발생할 수 있다.
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+        log.warn("Data integrity violation: {}", ex.getMostSpecificCause().getMessage());
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(ErrorResponse.of("이미 사용 중인 값입니다."));
     }
 
     @ExceptionHandler({MethodArgumentNotValidException.class, BindException.class})

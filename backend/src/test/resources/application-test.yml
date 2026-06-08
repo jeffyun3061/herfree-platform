@@ -2,20 +2,33 @@ spring:
   config:
     activate:
       on-profile: test
+
+  # 테스트에서 H2 인메모리 DB를 쓰는 이유:
+  # MySQL Docker가 없어도 CI 환경에서 빠르게 컨텍스트 로드 테스트를 돌릴 수 있다.
+  # MySQL 방언(dialect)과 H2 방언의 차이로 인해 SQL 호환성에 주의해야 한다.
   datasource:
-    url: jdbc:h2:mem:herfree_test;MODE=MySQL;DB_CLOSE_DELAY=-1
-    driver-class-name: org.h2.Driver
+    url: jdbc:h2:mem:herfree_test;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
     username: sa
     password:
+    driver-class-name: org.h2.Driver
+
   jpa:
     hibernate:
+      # 테스트 실행 시 테이블을 생성하고 종료 시 삭제한다 — Flyway 없이 스키마 관리
       ddl-auto: create-drop
     properties:
       hibernate:
+        # H2 테스트에서는 MySQL 방언이 아닌 H2 방언을 명시적으로 지정한다
         dialect: org.hibernate.dialect.H2Dialect
+        format_sql: false
+    show-sql: false
+
+  # Flyway는 MySQL 전용 SQL(NOW(6) 등)을 H2에서 실행하면 오류가 난다.
+  # 테스트에서는 ddl-auto로 스키마를 관리하므로 Flyway를 비활성화한다.
   flyway:
     enabled: false
 
+# 테스트용 JWT 시크릿 — 최소 32자 이상이어야 HMAC-SHA 키로 유효하다
 jwt:
-  secret: test-jwt-secret-key-must-be-at-least-256-bits-long-for-hs256
+  secret: test-secret-key-for-unit-tests-only-do-not-use-in-production
   access-expiration-seconds: 3600

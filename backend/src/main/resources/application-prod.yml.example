@@ -19,3 +19,11 @@ spring:
 jwt:
   secret: ${JWT_SECRET}
   access-expiration-seconds: ${JWT_ACCESS_EXPIRATION:3600}
+
+# 운영 환경에서는 API 문서를 외부에 노출하지 않는다.
+# Swagger UI와 OpenAPI spec endpoint가 열려 있으면 공격자에게 API 구조를 그대로 노출한다.
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false

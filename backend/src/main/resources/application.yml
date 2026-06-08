@@ -20,14 +20,16 @@ server:
   port: 8080
 
 jwt:
-  secret: ${JWT_SECRET:this-value-must-be-overridden-in-application-local-yml-or-env}
+  secret: ${JWT_SECRET}
   access-expiration-seconds: ${JWT_ACCESS_EXPIRATION:3600}
 
 springdoc:
   api-docs:
     path: /v3/api-docs
+    enabled: true
   swagger-ui:
     path: /swagger-ui.html
+    enabled: true
 
 management:
   endpoints:
