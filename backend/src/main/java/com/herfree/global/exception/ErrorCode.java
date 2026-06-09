@@ -33,7 +33,35 @@ public enum ErrorCode {
     // 사용자(User) — 회원 조회·권한 관련 오류
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다."),
     // 403은 인증은 됐지만 해당 리소스에 대한 권한이 없을 때 사용
-    UNAUTHORIZED_ACCESS(HttpStatus.FORBIDDEN, "접근 권한이 없습니다.");
+    UNAUTHORIZED_ACCESS(HttpStatus.FORBIDDEN, "접근 권한이 없습니다."),
+
+    // 게시판(Board)
+    BOARD_NOT_FOUND(HttpStatus.NOT_FOUND, "게시판을 찾을 수 없습니다."),
+
+    // 게시글(Post)
+    POST_NOT_FOUND(HttpStatus.NOT_FOUND, "게시글을 찾을 수 없습니다."),
+    // 본인 글이 아닌 게시글을 수정·삭제하려 할 때 403을 반환해 클라이언트가 구분할 수 있게 한다
+    POST_ACCESS_DENIED(HttpStatus.FORBIDDEN, "게시글에 대한 권한이 없습니다."),
+
+    // 댓글(Comment)
+    COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "댓글을 찾을 수 없습니다."),
+    COMMENT_ACCESS_DENIED(HttpStatus.FORBIDDEN, "댓글에 대한 권한이 없습니다."),
+
+    // 반응(Reaction) — 동일 대상에 동일 반응을 중복으로 등록하려 할 때 409 반환
+    DUPLICATE_REACTION(HttpStatus.CONFLICT, "이미 등록한 반응입니다."),
+
+    // 신고(Report)
+    DUPLICATE_REPORT(HttpStatus.CONFLICT, "이미 신고한 대상입니다."),
+    REPORT_NOT_FOUND(HttpStatus.NOT_FOUND, "신고 내역을 찾을 수 없습니다."),
+
+    // 콘텐츠(Content)
+    CONTENT_NOT_FOUND(HttpStatus.NOT_FOUND, "콘텐츠를 찾을 수 없습니다."),
+
+    // 영상(Video)
+    VIDEO_NOT_FOUND(HttpStatus.NOT_FOUND, "영상을 찾을 수 없습니다."),
+
+    // 제품(Product)
+    PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "제품을 찾을 수 없습니다.");
 
     private final HttpStatus httpStatus;
     private final String message;

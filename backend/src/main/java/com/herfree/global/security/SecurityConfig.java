@@ -3,6 +3,7 @@ package com.herfree.global.security;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -52,6 +53,23 @@ public class SecurityConfig {
                                 "/swagger-ui/**",
                                 "/swagger-ui.html"
                         ).permitAll()
+                        // 게시판·게시글·콘텐츠·영상·제품의 조회 엔드포인트는 비로그인 접근 허용
+                        // GET 메서드만 열어두고 나머지(POST, PATCH, DELETE)는 인증 필요
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/boards",
+                                "/api/posts",
+                                "/api/posts/*",
+                                "/api/posts/*/comments",
+                                "/api/contents",
+                                "/api/contents/*",
+                                "/api/videos",
+                                "/api/videos/*",
+                                "/api/products",
+                                "/api/products/*"
+                        ).permitAll()
+                        // 관리자 전용 경로 — ROLE_ADMIN 권한이 없으면 403 반환
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         // 나머지 모든 요청은 인증 필요 — /api/auth/logout 포함
                         .anyRequest().authenticated())
                 // UsernamePasswordAuthenticationFilter 앞에 JWT 필터를 추가한다.

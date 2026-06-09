@@ -1,11 +1,15 @@
 package com.herfree.domain.user.controller;
 
+import com.herfree.domain.post.dto.response.PostResponse;
 import com.herfree.domain.user.dto.request.UpdateProfileRequest;
 import com.herfree.domain.user.dto.response.UserResponse;
 import com.herfree.domain.user.service.UserService;
 import com.herfree.global.response.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -54,5 +58,14 @@ public class UserController {
     ) {
         UserResponse response = userService.updateProfile(userId, request);
         return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    // 내가 작성한 게시글 목록 — 본인 조회이므로 익명 글도 실제 닉네임으로 표시한다
+    @GetMapping("/me/posts")
+    public ResponseEntity<ApiResponse<Page<PostResponse>>> getMyPosts(
+            @AuthenticationPrincipal Long userId,
+            @PageableDefault(size = 20) Pageable pageable
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(userService.getMyPosts(userId, pageable)));
     }
 }
