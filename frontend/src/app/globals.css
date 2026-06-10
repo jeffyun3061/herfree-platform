@@ -1,0 +1,22 @@
+/* Pretendard 웹폰트 — tailwind.config의 fontFamily.sans와 짝을 이룬다 */
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  /* 모바일 프레임 바깥 영역 — 크림보다 살짝 어둡게 해 프레임이 도드라지게 한다 */
+  background-color: #e7e1d6;
+  color: #1a1a1a;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 가로 스크롤 영역에서 스크롤바를 숨겨 모바일 앱 느낌을 유지한다 */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

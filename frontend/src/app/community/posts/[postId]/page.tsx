@@ -1,0 +1,174 @@
+'use client';
+
+import { useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { usePostDetail, usePostMutation } from '@/hooks/usePosts';
+import { useComments } from '@/hooks/useComments';
+import { useAuth } from '@/hooks/useAuth';
+import { TopBar } from '@/components/layout/TopBar';
+import { ReactionBar } from '@/components/community/ReactionBar';
+import { CommentItem } from '@/components/community/CommentItem';
+import { ReportModal } from '@/components/community/ReportModal';
+import { Pagination } from '@/components/common/Pagination';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { ErrorMessage } from '@/components/ui/ErrorMessage';
+import { Button } from '@/components/ui/Button';
+import { Textarea } from '@/components/ui/Textarea';
+import { validateCommentInput } from '@/domain/comment/types';
+import { getErrorMessage } from '@/lib/api/client';
+
+export default function PostDetailPage() {
+  const params = useParams();
+  const router = useRouter();
+  const postId = Number(params.postId);
+  const { user } = useAuth();
+  const { post, isLoading, error } = usePostDetail(postId);
+  const { deletePost } = usePostMutation();
+  const {
+    commentPage,
+    page,
+    setPage,
+    isLoading: commentsLoading,
+    mutationError,
+    isSubmitting,
+    addComment,
+    removeComment,
+  } = useComments(postId);
+
+  const [commentText, setCommentText] = useState('');
+  const [isAnonymous, setIsAnonymous] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [commentError, setCommentError] = useState<string | null>(null);
+
+  const handleComment = async () => {
+    const validation = validateCommentInput(commentText);
+    if (validation) {
+      setCommentError(validation);
+      return;
+    }
+    setCommentError(null);
+    const ok = await addComment({ content: commentText, isAnonymous });
+    if (ok) setCommentText('');
+  };
+
+  const handleDelete = async () => {
+    if (!confirm('이 글을 삭제할까요?')) return;
+    const ok = await deletePost(postId);
+    if (ok) router.replace(`/community/${post?.boardId}`);
+  };
+
+  if (isLoading) return <LoadingSpinner />;
+  if (error || !post) {
+    return (
+      <div className="px-4 py-6">
+        <ErrorMessage message={error ? getErrorMessage(error) : '글을 찾을 수 없습니다.'} />
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <TopBar
+        title={post.boardName}
+        showBack
+        rightSlot={
+          <div className="flex gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setReportOpen(true)}>
+              신고
+            </Button>
+            {post.isMyPost && (
+              <>
+                <Link href={`/community/write?postId=${post.id}`}>
+                  <Button variant="secondary" size="sm">
+                    수정
+                  </Button>
+                </Link>
+                <Button variant="danger" size="sm" onClick={() => void handleDelete()}>
+                  삭제
+                </Button>
+              </>
+            )}
+          </div>
+        }
+      />
+      <article className="px-4 py-5">
+        <h1 className="text-lg font-semibold text-cream-foreground">{post.title}</h1>
+        <div className="mt-2 flex gap-2 text-xs text-muted">
+          <span>{post.authorNickname}</span>
+          <span>· 조회 {post.viewCount}</span>
+        </div>
+        <p className="mt-5 whitespace-pre-wrap text-sm leading-relaxed text-cream-foreground">
+          {post.content}
+        </p>
+
+        <div className="mt-6 border-t border-border pt-5">
+          <ReactionBar targetType="POST" targetId={post.id} />
+        </div>
+
+        <section className="mt-8">
+          <h2 className="mb-4 font-medium text-cream-foreground">
+            댓글 {commentPage.totalElements}
+          </h2>
+          {commentsLoading ? (
+            <LoadingSpinner label="댓글 불러오는 중…" />
+          ) : (
+            <>
+              {commentPage.content.map((comment) => {
+                const canDelete =
+                  !comment.isAnonymous &&
+                  user?.nickname === comment.authorNickname;
+                return (
+                  <div key={comment.id} className="group relative">
+                    <CommentItem
+                      comment={comment}
+                      canDelete={canDelete}
+                      onDelete={
+                        canDelete
+                          ? () => {
+                              if (confirm('이 댓글을 삭제할까요?')) {
+                                void removeComment(comment.id);
+                              }
+                            }
+                          : undefined
+                      }
+                    />
+                  </div>
+                );
+              })}
+              <Pagination page={page} totalPages={commentPage.totalPages} onPageChange={setPage} />
+            </>
+          )}
+
+          <div className="mt-6 space-y-3 rounded-2xl border border-border bg-card p-4">
+            <Textarea
+              placeholder="댓글을 남겨 주세요."
+              value={commentText}
+              onChange={(e) => setCommentText(e.target.value)}
+            />
+            <label className="flex items-center gap-2 text-sm text-muted">
+              <input
+                type="checkbox"
+                checked={isAnonymous}
+                onChange={(e) => setIsAnonymous(e.target.checked)}
+              />
+              익명으로 작성
+            </label>
+            {commentError && <ErrorMessage message={commentError} />}
+            {mutationError && <ErrorMessage message={mutationError} />}
+            <Button disabled={isSubmitting} onClick={() => void handleComment()}>
+              {isSubmitting ? '등록 중…' : '댓글 등록'}
+            </Button>
+          </div>
+        </section>
+      </article>
+
+      <ReportModal
+        open={reportOpen}
+        onClose={() => setReportOpen(false)}
+        targetType="POST"
+        targetId={post.id}
+      />
+    </>
+  );
+}
