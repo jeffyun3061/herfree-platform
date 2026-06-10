@@ -25,12 +25,12 @@ public class ProductService {
                 .map(ProductResponse::from);
     }
 
-    // 제품 단건 조회 — 조회 시 clickCount를 증가시킨다.
-    // 목록 조회에서는 카운트하지 않고 상세 조회에서만 카운트해 정확도를 높인다.
+    // 상세 조회 시 clickCount를 증가시켜 관심도 지표를 수집한다
     @Transactional
     public ProductResponse getProduct(Long productId) {
         Product product = productRepository.findByIdAndIsVisibleTrue(productId)
                 .orElseThrow(ProductNotFoundException::new);
+
         product.incrementClickCount();
         return ProductResponse.from(product);
     }
@@ -45,23 +45,27 @@ public class ProductService {
                 .price(request.price())
                 .externalUrl(request.externalUrl())
                 .build();
-        productRepository.save(product);
-        return ProductResponse.from(product);
+
+        return ProductResponse.from(productRepository.save(product));
     }
 
     @Transactional
     public ProductResponse updateProduct(Long productId, ProductUpdateRequest request) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(ProductNotFoundException::new);
-        product.update(request.name(), request.category(), request.description(),
-                request.price(), request.externalUrl());
+
+        product.update(request.name(), request.category(), request.imageUrl(),
+                request.description(), request.price(), request.externalUrl());
+
         return ProductResponse.from(product);
     }
 
     @Transactional
-    public void updateVisibility(Long productId, ProductVisibilityRequest request) {
+    public ProductResponse updateVisibility(Long productId, ProductVisibilityRequest request) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(ProductNotFoundException::new);
-        product.toggleVisibility(request.isVisible());
+
+        product.updateVisibility(request.isVisible());
+        return ProductResponse.from(product);
     }
 }

@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-// 반응 토글 API — 로그인한 사용자만 반응을 등록·취소할 수 있다.
+// 반응은 toggle 방식이므로 POST 단일 엔드포인트로 등록·취소를 모두 처리한다
 @RestController
 @RequestMapping("/api/reactions")
 @RequiredArgsConstructor

@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -25,33 +26,32 @@ public class CommentController {
 
     private final CommentService commentService;
 
-    // 댓글 목록 — GET /api/posts/{postId}/comments (비로그인 허용)
+    // 댓글 목록 조회 — posts/{postId}/comments 경로는 게시글-댓글 계층 관계를 URL로 표현한다
     @GetMapping("/api/posts/{postId}/comments")
     public ResponseEntity<ApiResponse<Page<CommentResponse>>> getComments(
             @PathVariable Long postId,
-            @AuthenticationPrincipal Long userId,
-            @PageableDefault(size = 20) Pageable pageable
+            @PageableDefault(size = 20, sort = "createdAt") Pageable pageable
     ) {
-        return ResponseEntity.ok(ApiResponse.success(commentService.getComments(postId, userId, pageable)));
+        return ResponseEntity.ok(ApiResponse.success(commentService.getComments(postId, pageable)));
     }
 
-    // 댓글 작성 — POST /api/posts/{postId}/comments (로그인 필수)
     @PostMapping("/api/posts/{postId}/comments")
     public ResponseEntity<ApiResponse<CommentResponse>> createComment(
-            @AuthenticationPrincipal Long userId,
             @PathVariable Long postId,
+            @AuthenticationPrincipal Long userId,
             @Valid @RequestBody CommentCreateRequest request
     ) {
-        return ResponseEntity.ok(ApiResponse.success(commentService.createComment(userId, postId, request)));
+        CommentResponse response = commentService.createComment(postId, userId, request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
     }
 
-    // 댓글 삭제 — DELETE /api/comments/{commentId} (본인만 삭제 가능)
+    // 댓글 삭제는 /api/comments/{commentId} 경로 — 게시글 ID 없이 댓글 ID만으로 식별 가능하다
     @DeleteMapping("/api/comments/{commentId}")
-    public ResponseEntity<ApiResponse<Void>> deleteComment(
-            @AuthenticationPrincipal Long userId,
-            @PathVariable Long commentId
+    public ResponseEntity<Void> deleteComment(
+            @PathVariable Long commentId,
+            @AuthenticationPrincipal Long userId
     ) {
-        commentService.deleteComment(userId, commentId);
-        return ResponseEntity.ok(ApiResponse.success("댓글이 삭제되었습니다.", null));
+        commentService.deleteComment(commentId, userId);
+        return ResponseEntity.noContent().build();
     }
 }

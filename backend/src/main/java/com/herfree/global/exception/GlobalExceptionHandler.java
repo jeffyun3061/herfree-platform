@@ -3,9 +3,8 @@ package com.herfree.global.exception;
 import com.herfree.global.response.ErrorResponse;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.BindException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -23,28 +22,17 @@ public class GlobalExceptionHandler {
                 .body(ErrorResponse.of(ex.getMessage()));
     }
 
-    // 닉네임·이메일 unique 제약 위반 시 DB에서 던지는 예외 — race condition 방어.
-    // 애플리케이션 레벨 중복 체크를 통과하더라도 동시 요청 시 DB 제약 위반이 발생할 수 있다.
-    @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
-        log.warn("Data integrity violation: {}", ex.getMostSpecificCause().getMessage());
-        return ResponseEntity
-                .status(HttpStatus.CONFLICT)
-                .body(ErrorResponse.of("이미 사용 중인 값입니다."));
-    }
-
+    // MethodArgumentNotValidException이 BindException을 상속하므로
+    // 파라미터 타입을 BindException으로 통일하면 instanceof 분기 없이 같은 방식으로 처리할 수 있다.
     @ExceptionHandler({MethodArgumentNotValidException.class, BindException.class})
-    public ResponseEntity<ErrorResponse> handleValidationException(Exception ex) {
-        String message = ErrorCode.INVALID_INPUT.getMessage();
+    public ResponseEntity<ErrorResponse> handleValidationException(BindException ex) {
+        String message = ex.getBindingResult().getFieldErrors().stream()
+                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                .collect(Collectors.joining(", "));
 
-        if (ex instanceof MethodArgumentNotValidException validationEx) {
-            message = validationEx.getBindingResult().getFieldErrors().stream()
-                    .map(error -> error.getField() + ": " + error.getDefaultMessage())
-                    .collect(Collectors.joining(", "));
-        } else if (ex instanceof BindException bindEx) {
-            message = bindEx.getBindingResult().getFieldErrors().stream()
-                    .map(error -> error.getField() + ": " + error.getDefaultMessage())
-                    .collect(Collectors.joining(", "));
+        // 필드 에러가 없는 경우(글로벌 에러만 있는 경우)에도 기본 메시지를 보장한다
+        if (!StringUtils.hasText(message)) {
+            message = ErrorCode.INVALID_INPUT.getMessage();
         }
 
         return ResponseEntity

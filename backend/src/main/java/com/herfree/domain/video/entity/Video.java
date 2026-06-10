@@ -16,7 +16,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-// 유튜브 영상 엔티티 — 직접 업로드 없이 URL과 videoId만 저장해 관리 비용을 낮춘다.
+// 유튜브 영상 엔티티 — 직접 업로드가 아닌 URL 기반 관리로 스토리지 비용을 절감한다
 @Getter
 @Entity
 @Table(name = "videos")
@@ -27,30 +27,28 @@ public class Video extends BaseTimeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 255)
+    @Column(nullable = false)
     private String title;
 
-    // 원본 URL — 클라이언트가 외부 링크로 사용한다
     @Column(nullable = false, length = 500)
     private String youtubeUrl;
 
-    // videoId만 저장해두면 썸네일·임베드 URL을 서버에서 직접 생성할 수 있다
+    // videoId를 별도 저장하는 이유: 썸네일(https://img.youtube.com/vi/{videoId}/...) 및
+    // 임베드 URL 생성 시 URL에서 매번 파싱하지 않아도 된다
     @Column(nullable = false, length = 20)
     private String youtubeVideoId;
 
-    // 썸네일 URL — null이면 클라이언트에서 videoId로 직접 생성한다
     @Column(length = 500)
     private String thumbnailUrl;
 
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    // 관련 게시판 연결 — 선택적이므로 null 허용
+    // 관련 게시판과 연결해 게시판 페이지에서 관련 영상을 노출할 수 있다
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "related_board_id")
     private Board relatedBoard;
 
-    // 노출 여부 — false로 변경하면 API 응답에서 제외된다
     @Column(nullable = false)
     private boolean isVisible;
 
@@ -68,13 +66,17 @@ public class Video extends BaseTimeEntity {
 
     // --- 도메인 메서드 ---
 
-    public void update(String title, String description) {
+    public void update(String title, String youtubeUrl, String youtubeVideoId,
+                       String thumbnailUrl, String description) {
         this.title = title;
+        this.youtubeUrl = youtubeUrl;
+        this.youtubeVideoId = youtubeVideoId;
+        this.thumbnailUrl = thumbnailUrl;
         this.description = description;
     }
 
-    // 노출 여부 전환 — 관리자가 토글 방식으로 제어한다
-    public void toggleVisibility(boolean isVisible) {
+    // 노출 여부를 토글 — 관리자가 임시로 숨기거나 다시 공개할 때 사용한다
+    public void updateVisibility(boolean isVisible) {
         this.isVisible = isVisible;
     }
 }

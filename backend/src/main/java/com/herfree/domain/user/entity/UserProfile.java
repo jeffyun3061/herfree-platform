@@ -79,4 +79,13 @@ public class UserProfile extends BaseTimeEntity {
     public void togglePublic(boolean isPublic) {
         this.isPublic = isPublic;
     }
+
+    // 탈퇴 시 닉네임 unique 제약을 풀고 개인정보를 비운다.
+    // userId 기반 접두사를 쓰면 재가입 시 이전 닉네임을 다른 회원이 사용할 수 있다.
+    public void maskOnWithdraw(Long userId) {
+        this.nickname = "withdrawn_" + userId;
+        this.profileImageUrl = null;
+        this.bio = null;
+        this.isPublic = false;
+    }
 }

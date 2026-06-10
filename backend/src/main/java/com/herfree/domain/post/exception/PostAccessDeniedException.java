@@ -3,8 +3,8 @@ package com.herfree.domain.post.exception;
 import com.herfree.global.exception.BusinessException;
 import com.herfree.global.exception.ErrorCode;
 
-// 본인 게시글이 아닌데 수정·삭제를 시도할 때 403을 반환한다.
-// 401(미인증)과 403(인증됐지만 권한 없음)을 구분해야 클라이언트가 정확한 UI를 표시할 수 있다.
+// 인증은 됐지만 해당 게시글을 수정/삭제할 권한이 없을 때 던진다
+// 403을 반환해 클라이언트가 "내 글이 아닙니다" UI를 표시할 수 있도록 한다
 public class PostAccessDeniedException extends BusinessException {
 
     public PostAccessDeniedException() {

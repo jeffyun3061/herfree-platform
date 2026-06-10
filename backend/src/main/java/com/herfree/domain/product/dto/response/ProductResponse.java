@@ -12,6 +12,7 @@ public record ProductResponse(
         Integer price,
         String externalUrl,
         int clickCount,
+        boolean isVisible,
         LocalDateTime createdAt
 ) {
     public static ProductResponse from(Product product) {
@@ -24,6 +25,7 @@ public record ProductResponse(
                 product.getPrice(),
                 product.getExternalUrl(),
                 product.getClickCount(),
+                product.isVisible(),
                 product.getCreatedAt()
         );
     }

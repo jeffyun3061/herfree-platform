@@ -1,5 +1,9 @@
 package com.herfree.domain.video.dto.request;
 
-// 영상 노출 여부 토글 요청 DTO
-public record VideoVisibilityRequest(boolean isVisible) {
+import jakarta.validation.constraints.NotNull;
+
+public record VideoVisibilityRequest(
+        @NotNull(message = "노출 여부는 필수입니다.")
+        Boolean isVisible
+) {
 }

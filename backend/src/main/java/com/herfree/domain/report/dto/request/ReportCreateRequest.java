@@ -1,20 +1,22 @@
 package com.herfree.domain.report.dto.request;
 
+import com.herfree.domain.report.entity.ReportTargetType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
-// 신고 접수 요청 DTO
 public record ReportCreateRequest(
+        @NotNull(message = "신고 대상 타입은 필수입니다.")
+        ReportTargetType targetType,
 
-        // "POST", "COMMENT", "USER" 중 하나
-        @NotNull String targetType,
+        @NotNull(message = "신고 대상 ID는 필수입니다.")
+        Long targetId,
 
-        @NotNull Long targetId,
+        @NotBlank(message = "신고 사유는 필수입니다.")
+        @Size(max = 100, message = "신고 사유는 100자를 초과할 수 없습니다.")
+        String reason,
 
-        // 신고 사유 — 프론트엔드에서 선택지로 제공하고 서버에서 검증 없이 저장한다
-        @NotBlank String reason,
-
-        // 상세 내용 — 선택 입력
+        // 상세 내용은 선택 사항이다
         String detail
 ) {
 }

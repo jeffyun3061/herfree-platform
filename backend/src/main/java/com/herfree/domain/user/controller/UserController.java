@@ -38,17 +38,6 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
-    // 회원 탈퇴 — 물리 삭제 대신 status를 DELETED로 전환하는 soft delete 방식을 사용한다.
-    // 작성 게시글·댓글 등 연관 데이터를 즉시 삭제하면 참조 무결성 오류가 생기고,
-    // 운영 이슈 발생 시 복구가 불가능하다. 연관 데이터 익명화는 별도 배치로 처리한다.
-    @DeleteMapping("/me")
-    public ResponseEntity<ApiResponse<Void>> withdraw(
-            @AuthenticationPrincipal Long userId
-    ) {
-        userService.withdraw(userId);
-        return ResponseEntity.ok(ApiResponse.success("회원 탈퇴가 완료되었습니다.", null));
-    }
-
     // 프로필 수정 — PATCH는 일부 필드만 변경할 때 사용하는 HTTP 메서드다.
     // PUT은 전체 리소스 교체를 의미하므로 프로필 수정에는 PATCH가 더 적합하다.
     @PatchMapping("/me/profile")
@@ -58,6 +47,14 @@ public class UserController {
     ) {
         UserResponse response = userService.updateProfile(userId, request);
         return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    // 회원 탈퇴 — api-spec.md §8.2, 204 No Content 반환
+    // 클라이언트는 성공 후 localStorage 토큰을 반드시 폐기해야 한다.
+    @DeleteMapping("/me")
+    public ResponseEntity<Void> withdraw(@AuthenticationPrincipal Long userId) {
+        userService.withdraw(userId);
+        return ResponseEntity.noContent().build();
     }
 
     // 내가 작성한 게시글 목록 — 본인 조회이므로 익명 글도 실제 닉네임으로 표시한다

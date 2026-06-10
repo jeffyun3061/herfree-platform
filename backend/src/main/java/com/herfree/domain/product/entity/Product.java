@@ -12,8 +12,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-// 제품 큐레이션 엔티티 — 외부 구매 링크 기반으로 관리한다.
-// clickCount로 인기 제품을 파악하고 추후 큐레이션 로직에 활용할 수 있다.
+// 제품 큐레이션 엔티티 — 1차에서는 외부 구매 링크 기반으로 관리한다
 @Getter
 @Entity
 @Table(name = "products")
@@ -24,10 +23,9 @@ public class Product extends BaseTimeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 255)
+    @Column(nullable = false)
     private String name;
 
-    // 제품 카테고리 — 필터링 및 정렬에 사용된다
     @Column(nullable = false, length = 50)
     private String category;
 
@@ -37,15 +35,13 @@ public class Product extends BaseTimeEntity {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    // 가격은 원(KRW) 단위로 저장한다
     @Column
     private Integer price;
 
-    // 외부 구매 링크 — 클릭 시 해당 URL로 이동한다
     @Column(length = 500)
     private String externalUrl;
 
-    // 제품 링크 클릭 횟수 — 인기도 측정과 추후 랭킹에 활용 예정
+    // 상세 조회 시마다 +1하여 어떤 제품에 관심이 많은지 운영 지표로 활용한다
     @Column(nullable = false)
     private int clickCount;
 
@@ -67,21 +63,23 @@ public class Product extends BaseTimeEntity {
 
     // --- 도메인 메서드 ---
 
-    public void update(String name, String category, String description, Integer price, String externalUrl) {
+    public void update(String name, String category, String imageUrl, String description,
+                       Integer price, String externalUrl) {
         this.name = name;
         this.category = category;
+        this.imageUrl = imageUrl;
         this.description = description;
         this.price = price;
         this.externalUrl = externalUrl;
     }
 
-    // 제품 단건 조회 시 클릭 수를 증가시킨다.
-    // 외부 링크 이탈 추적이 아닌 상세 페이지 진입을 기준으로 카운트한다.
+    // 상세 조회 시 클릭 수를 집계한다 — 운영팀이 인기 제품을 파악하는 데 활용된다
     public void incrementClickCount() {
         this.clickCount++;
     }
 
-    public void toggleVisibility(boolean isVisible) {
+    // 노출 여부 변경 — 품절이나 계약 종료된 제품을 임시로 숨길 때 사용한다
+    public void updateVisibility(boolean isVisible) {
         this.isVisible = isVisible;
     }
 }

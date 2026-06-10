@@ -1,27 +1,25 @@
 package com.herfree.domain.post.dto.request;
 
+import com.herfree.domain.post.entity.PostVisibility;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-// 게시글 작성 요청 DTO — boardId 검증은 Service 계층에서 Board 존재 여부 확인으로 처리한다
 public record PostCreateRequest(
-
-        // boardId는 URL 파라미터가 아닌 바디에 포함해 단일 엔드포인트로 여러 게시판을 지원한다
-        @NotNull
+        @NotNull(message = "게시판 ID는 필수입니다.")
         Long boardId,
 
-        @NotBlank
-        @Size(max = 200)
+        @NotBlank(message = "제목은 필수입니다.")
+        @Size(max = 200, message = "제목은 200자를 초과할 수 없습니다.")
         String title,
 
-        @NotBlank
+        @NotBlank(message = "내용은 필수입니다.")
         String content,
 
-        // false가 기본값 — 클라이언트가 명시하지 않으면 실명 게시글로 처리된다
+        // 미입력 시 false(실명) 처리 — 클라이언트가 명시적으로 true를 보내야 익명이 된다
         boolean isAnonymous,
 
-        // null이면 Service에서 PUBLIC으로 기본 처리한다
-        String visibility
+        // 미입력 시 PUBLIC으로 처리
+        PostVisibility visibility
 ) {
 }

@@ -1,8 +1,12 @@
 package com.herfree.domain.user.service;
 
+import com.herfree.domain.comment.entity.CommentStatus;
+import com.herfree.domain.comment.repository.CommentRepository;
 import com.herfree.domain.post.dto.response.PostResponse;
+import com.herfree.domain.post.entity.Post;
 import com.herfree.domain.post.entity.PostStatus;
 import com.herfree.domain.post.repository.PostRepository;
+import com.herfree.domain.comment.entity.Comment;
 import com.herfree.domain.user.dto.request.UpdateProfileRequest;
 import com.herfree.domain.user.dto.response.UserResponse;
 import com.herfree.domain.user.entity.User;
@@ -25,6 +29,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final UserProfileRepository userProfileRepository;
     private final PostRepository postRepository;
+    private final CommentRepository commentRepository;
 
     // 내 정보 조회 — DELETED 상태 계정은 조회 불가
     // 탈퇴한 회원의 JWT가 만료 전에 재사용될 경우를 방어하기 위해
@@ -38,15 +43,6 @@ public class UserService {
                 .orElseThrow(UserNotFoundException::new);
 
         return UserResponse.of(user, profile);
-    }
-
-    // 회원 탈퇴 — User 도메인 메서드에 상태 전환 책임을 위임한다.
-    // Service는 "누가 탈퇴하는가"를 검증하고, 상태를 어떻게 바꾸는지는 엔티티가 알고 있다.
-    @Transactional
-    public void withdraw(Long userId) {
-        User user = userRepository.findByIdAndStatus(userId, UserStatus.ACTIVE)
-                .orElseThrow(UserNotFoundException::new);
-        user.withdraw();
     }
 
     // 프로필 수정 — 닉네임 변경 시 중복 체크를 먼저 수행한다
@@ -73,27 +69,37 @@ public class UserService {
         return UserResponse.of(user, profile);
     }
 
+    // 회원 탈퇴 — 물리 삭제 대신 DELETED 상태로 전환하고 작성 콘텐츠를 익명 처리한다.
+    // requirements.md §6: 계정 상태 DELETED 처리 + 커뮤니티 맥락 보존
+    @Transactional
+    public void withdraw(Long userId) {
+        User user = userRepository.findByIdAndStatus(userId, UserStatus.ACTIVE)
+                .orElseThrow(UserNotFoundException::new);
+
+        UserProfile profile = userProfileRepository.findByUserId(userId)
+                .orElseThrow(UserNotFoundException::new);
+
+        for (Post post : postRepository.findByUserIdAndStatusNot(userId, PostStatus.DELETED)) {
+            post.anonymize();
+        }
+
+        for (Comment comment : commentRepository.findByUserIdAndStatusNot(userId, CommentStatus.DELETED)) {
+            comment.anonymize();
+        }
+
+        profile.maskOnWithdraw(userId);
+        user.withdraw();
+    }
+
     // 내가 작성한 게시글 목록 — 삭제된 글은 제외하고 ACTIVE 상태만 반환한다.
-    // 익명으로 작성한 글도 본인 조회이므로 isAnonymous 마스킹 없이 실제 닉네임을 표시한다.
-    // PostResponse.of()는 isAnonymous=true이면 "익명"으로 마스킹하므로,
-    // 내 게시글 조회는 직접 생성자를 호출해 항상 실제 닉네임을 반환한다.
+    // 익명으로 작성한 글도 본인 조회이므로 실제 닉네임을 표시한다.
     @Transactional(readOnly = true)
     public Page<PostResponse> getMyPosts(Long userId, Pageable pageable) {
         UserProfile profile = userProfileRepository.findByUserId(userId)
                 .orElseThrow(UserNotFoundException::new);
 
-        String nickname = profile.getNickname();
-
         return postRepository
                 .findByUserIdAndStatusOrderByCreatedAtDesc(userId, PostStatus.ACTIVE, pageable)
-                .map(post -> new PostResponse(
-                        post.getId(),
-                        post.getBoard().getId(),
-                        post.getBoard().getName(),
-                        post.getTitle(),
-                        nickname,
-                        post.getViewCount(),
-                        post.getCreatedAt()
-                ));
+                .map(post -> PostResponse.of(post, profile.getNickname()));
     }
 }

@@ -11,9 +11,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-// 콘텐츠 조회 API — 비로그인 접근 허용
 @RestController
 @RequestMapping("/api/contents")
 @RequiredArgsConstructor
@@ -23,9 +23,10 @@ public class ContentController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<Page<ContentResponse>>> getContents(
-            @PageableDefault(size = 10) Pageable pageable
+            @RequestParam(required = false) String category,
+            @PageableDefault(size = 20) Pageable pageable
     ) {
-        return ResponseEntity.ok(ApiResponse.success(contentService.getContents(pageable)));
+        return ResponseEntity.ok(ApiResponse.success(contentService.getContents(category, pageable)));
     }
 
     @GetMapping("/{contentId}")

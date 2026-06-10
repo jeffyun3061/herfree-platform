@@ -15,11 +15,11 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-// 댓글 엔티티 — 상태 변경은 도메인 메서드로만 허용해 비즈니스 의도를 명확히 한다.
-// parent_id가 NULL이면 최상위 댓글, 아니면 대댓글이다.
+// 댓글 엔티티 — 게시글과 동일하게 상태 변경은 도메인 메서드로만 허용한다
 @Getter
 @Entity
 @Table(name = "comments")
@@ -30,17 +30,17 @@ public class Comment extends BaseTimeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // 어느 게시글의 댓글인지 식별한다 — 지연 로딩으로 목록 조회 시 불필요한 posts SELECT를 방지
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id", nullable = false)
     private Post post;
 
-    // 실제 작성자 — 익명 댓글에서도 DB에는 user_id를 보존해 신고·운영 처리에 활용한다
+    // 익명 댓글도 user_id를 보존하는 이유:
+    // 본인 삭제, 신고 처리, 관리자 감사에 user_id가 반드시 필요하다
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    // NULL이면 최상위 댓글, NULL이 아니면 parent 댓글에 달린 대댓글이다
+    // 대댓글 확장을 위한 자기 참조 — 1차 MVP에서는 null만 허용하고 기능은 구현하지 않는다
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")
     private Comment parent;
@@ -48,39 +48,37 @@ public class Comment extends BaseTimeEntity {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
-    // 문자열로 저장하면 enum 항목 추가 시 DB 마이그레이션이 불필요하다
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private CommentStatus status;
 
-    // true이면 API 응답에서 작성자 닉네임을 "익명"으로 마스킹한다
     @Column(nullable = false)
     private boolean isAnonymous;
 
-    // --- 정적 팩토리 ---
-
-    // 새 댓글 생성 — 초기 상태는 항상 ACTIVE로 고정한다
-    public static Comment create(Post post, User user, String content,
-                                 boolean isAnonymous, Comment parent) {
-        Comment comment = new Comment();
-        comment.post = post;
-        comment.user = user;
-        comment.content = content;
-        comment.isAnonymous = isAnonymous;
-        comment.parent = parent;
-        comment.status = CommentStatus.ACTIVE;
-        return comment;
+    @Builder
+    private Comment(Post post, User user, Comment parent, String content, boolean isAnonymous) {
+        this.post = post;
+        this.user = user;
+        this.parent = parent;
+        this.content = content;
+        this.status = CommentStatus.ACTIVE;
+        this.isAnonymous = isAnonymous;
     }
 
     // --- 도메인 메서드 ---
 
-    // 관리자 숨김 처리 — 신고 수락 시 또는 직접 운영 조치 시 호출한다
+    // 작성자 또는 탈퇴 시 soft delete — 댓글을 물리 삭제하면 게시글 댓글 수가 갑자기 줄어드는 UX 문제가 생긴다
+    public void delete() {
+        this.status = CommentStatus.DELETED;
+    }
+
+    // 관리자에 의한 숨김 — 신고 처리 결과로 호출될 수도 있다
     public void hide() {
         this.status = CommentStatus.HIDDEN;
     }
 
-    // soft delete — 물리 삭제 대신 DELETED 상태로 전환해 신고 이력을 보존한다
-    public void delete() {
-        this.status = CommentStatus.DELETED;
+    // 탈퇴 회원의 댓글은 삭제하지 않고 익명으로 전환한다
+    public void anonymize() {
+        this.isAnonymous = true;
     }
 }

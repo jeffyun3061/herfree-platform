@@ -11,6 +11,7 @@ public record VideoResponse(
         String thumbnailUrl,
         String description,
         Long relatedBoardId,
+        boolean isVisible,
         LocalDateTime createdAt
 ) {
     public static VideoResponse from(Video video) {
@@ -22,6 +23,7 @@ public record VideoResponse(
                 video.getThumbnailUrl(),
                 video.getDescription(),
                 video.getRelatedBoard() != null ? video.getRelatedBoard().getId() : null,
+                video.isVisible(),
                 video.getCreatedAt()
         );
     }

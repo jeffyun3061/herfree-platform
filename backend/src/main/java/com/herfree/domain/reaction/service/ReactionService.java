@@ -3,8 +3,6 @@ package com.herfree.domain.reaction.service;
 import com.herfree.domain.reaction.dto.request.ReactionRequest;
 import com.herfree.domain.reaction.dto.response.ReactionResponse;
 import com.herfree.domain.reaction.entity.Reaction;
-import com.herfree.domain.reaction.entity.ReactionTargetType;
-import com.herfree.domain.reaction.entity.ReactionType;
 import com.herfree.domain.reaction.repository.ReactionRepository;
 import com.herfree.domain.user.entity.User;
 import com.herfree.domain.user.exception.UserNotFoundException;
@@ -20,34 +18,48 @@ public class ReactionService {
     private final ReactionRepository reactionRepository;
     private final UserRepository userRepository;
 
-    // 반응 토글 — 이미 등록된 반응이면 취소하고, 없으면 새로 등록한다.
-    // 사용자 입장에서 "누르면 켜지고 다시 누르면 꺼진다"는 UX를 서버에서 처리한다.
+    // toggle 방식: 이미 반응이 있으면 취소하고, 없으면 등록한다.
+    // 별도의 "반응 취소" API를 만들지 않아도 되어 클라이언트-서버 상호작용이 단순해진다.
     @Transactional
     public ReactionResponse toggleReaction(Long userId, ReactionRequest request) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(UserNotFoundException::new);
+        boolean alreadyReacted = reactionRepository.existsByUserIdAndTargetTypeAndTargetIdAndReactionType(
+                userId, request.targetType(), request.targetId(), request.reactionType());
 
-        ReactionTargetType targetType = ReactionTargetType.valueOf(request.targetType().toUpperCase());
-        ReactionType reactionType = ReactionType.valueOf(request.reactionType().toUpperCase());
+        boolean reacted;
 
-        boolean exists = reactionRepository.existsByUserIdAndTargetTypeAndTargetIdAndReactionType(
-                userId, targetType, request.targetId(), reactionType);
-
-        if (exists) {
-            // 이미 등록된 반응 — 취소 처리(삭제)
+        if (alreadyReacted) {
+            // 기존 반응 취소 — deleteBy... 메서드는 내부적으로 먼저 SELECT 후 DELETE를 실행한다.
+            // 삭제 경로에서는 User 엔티티를 조회할 필요가 없으므로, 존재 확인 후 바로 삭제한다.
             reactionRepository.deleteByUserIdAndTargetTypeAndTargetIdAndReactionType(
-                    userId, targetType, request.targetId(), reactionType);
-            return new ReactionResponse(false, request.reactionType(), request.targetId(), request.targetType());
+                    userId, request.targetType(), request.targetId(), request.reactionType());
+            reacted = false;
         } else {
-            // 미등록 반응 — 새로 추가
+            // 신규 등록 경로에서만 User 엔티티를 조회한다.
+            // 삭제 시에도 User를 미리 로드하면 불필요한 DB 왕복이 발생하기 때문에 여기로 이동했다.
+            User user = userRepository.findById(userId)
+                    .orElseThrow(UserNotFoundException::new);
             Reaction reaction = Reaction.builder()
                     .user(user)
-                    .targetType(targetType)
+                    .targetType(request.targetType())
                     .targetId(request.targetId())
-                    .reactionType(reactionType)
+                    .reactionType(request.reactionType())
                     .build();
             reactionRepository.save(reaction);
-            return new ReactionResponse(true, request.reactionType(), request.targetId(), request.targetType());
+            reacted = true;
         }
+
+        // 토글 후 해당 타입의 집계 수를 바로 반환해 클라이언트가 재조회 없이 UI를 갱신할 수 있도록 한다.
+        // reactionType을 반드시 포함해 집계해야 한다.
+        // EMPATHY·COMFORT·HELPFUL 등 서로 다른 타입을 합산하면 "공감해요 N개"가 틀린 값이 된다.
+        long totalCount = reactionRepository.countByTargetTypeAndTargetIdAndReactionType(
+                request.targetType(), request.targetId(), request.reactionType());
+
+        return new ReactionResponse(
+                request.targetType(),
+                request.targetId(),
+                request.reactionType(),
+                totalCount,
+                reacted
+        );
     }
 }

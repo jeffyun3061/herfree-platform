@@ -31,51 +31,56 @@ public class CommentService {
     private final UserRepository userRepository;
     private final UserProfileRepository userProfileRepository;
 
-    // 댓글 작성 — 게시글이 ACTIVE 상태여야 댓글을 달 수 있다.
-    // 삭제·숨김된 게시글에 댓글이 달리면 운영 일관성이 깨진다.
     @Transactional
-    public CommentResponse createComment(Long userId, Long postId, CommentCreateRequest request) {
+    public CommentResponse createComment(Long postId, Long userId, CommentCreateRequest request) {
         Post post = postRepository.findByIdAndStatus(postId, PostStatus.ACTIVE)
                 .orElseThrow(PostNotFoundException::new);
 
         User user = userRepository.findById(userId)
                 .orElseThrow(UserNotFoundException::new);
 
-        UserProfile profile = userProfileRepository.findByUserId(userId)
-                .orElseThrow(UserNotFoundException::new);
-
-        // 대댓글인 경우 부모 댓글을 조회한다 — parentId가 null이면 최상위 댓글
+        // parentId가 있으면 대댓글 — 부모 댓글이 ACTIVE 상태인지 확인한다
         Comment parent = null;
         if (request.parentId() != null) {
             parent = commentRepository.findById(request.parentId())
+                    .filter(c -> c.getStatus() == CommentStatus.ACTIVE)
                     .orElseThrow(CommentNotFoundException::new);
         }
 
-        // 정적 팩토리 메서드로 생성 — builder 대신 도메인 의도가 명확한 create() 사용
-        Comment comment = Comment.create(post, user, request.content(), request.isAnonymous(), parent);
+        Comment comment = Comment.builder()
+                .post(post)
+                .user(user)
+                .parent(parent)
+                .content(request.content())
+                .isAnonymous(request.isAnonymous())
+                .build();
 
         commentRepository.save(comment);
 
-        return CommentResponse.of(comment, profile.getNickname(), true);
+        UserProfile profile = userProfileRepository.findByUserId(userId)
+                .orElseThrow(UserNotFoundException::new);
+
+        return CommentResponse.of(comment, profile.getNickname());
     }
 
-    // 댓글 목록 조회 — ACTIVE 댓글만 등록 순으로 반환한다.
+    // 댓글 목록은 등록순으로 반환한다 — 대화의 흐름을 시간 순서대로 읽는 것이 자연스럽다
     @Transactional(readOnly = true)
-    public Page<CommentResponse> getComments(Long postId, Long userId, Pageable pageable) {
-        return commentRepository.findByPostIdAndStatusOrderByCreatedAtAsc(postId, CommentStatus.ACTIVE, pageable)
+    public Page<CommentResponse> getComments(Long postId, Pageable pageable) {
+        return commentRepository
+                .findByPostIdAndStatusOrderByCreatedAtAsc(postId, CommentStatus.ACTIVE, pageable)
                 .map(comment -> {
-                    UserProfile profile = userProfileRepository.findByUserId(comment.getUser().getId())
-                            .orElse(null);
-                    String nickname = (profile != null) ? profile.getNickname() : "알 수 없음";
-                    boolean isMyComment = userId != null && comment.getUser().getId().equals(userId);
-                    return CommentResponse.of(comment, nickname, isMyComment);
+                    String nickname = userProfileRepository.findByUserId(comment.getUser().getId())
+                            .map(UserProfile::getNickname)
+                            .orElse("(알 수 없음)");
+                    return CommentResponse.of(comment, nickname);
                 });
     }
 
-    // 댓글 삭제 — 본인 댓글만 삭제 가능하다.
+    // soft delete — 물리 삭제 대신 DELETED 상태로 전환한다
     @Transactional
-    public void deleteComment(Long userId, Long commentId) {
+    public void deleteComment(Long commentId, Long userId) {
         Comment comment = commentRepository.findById(commentId)
+                .filter(c -> c.getStatus() == CommentStatus.ACTIVE)
                 .orElseThrow(CommentNotFoundException::new);
 
         if (!comment.getUser().getId().equals(userId)) {
@@ -85,11 +90,13 @@ public class CommentService {
         comment.delete();
     }
 
-    // 관리자 숨김 처리 — AdminCommentController에서 호출한다.
+    // 관리자 전용 숨김 처리 — AdminCommentController에서 호출한다
     @Transactional
     public void hideComment(Long commentId) {
         Comment comment = commentRepository.findById(commentId)
+                .filter(c -> c.getStatus() == CommentStatus.ACTIVE)
                 .orElseThrow(CommentNotFoundException::new);
+
         comment.hide();
     }
 }

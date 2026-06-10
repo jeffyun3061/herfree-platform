@@ -8,6 +8,7 @@ import com.herfree.domain.video.service.VideoService;
 import com.herfree.global.response.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -16,7 +17,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-// 영상 관리자 API — ROLE_ADMIN 권한 전용
 @RestController
 @RequestMapping("/api/admin/videos")
 @RequiredArgsConstructor
@@ -28,7 +28,8 @@ public class AdminVideoController {
     public ResponseEntity<ApiResponse<VideoResponse>> createVideo(
             @Valid @RequestBody VideoCreateRequest request
     ) {
-        return ResponseEntity.ok(ApiResponse.success(videoService.createVideo(request)));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(videoService.createVideo(request)));
     }
 
     @PatchMapping("/{videoId}")
@@ -40,11 +41,10 @@ public class AdminVideoController {
     }
 
     @PatchMapping("/{videoId}/visibility")
-    public ResponseEntity<ApiResponse<Void>> updateVisibility(
+    public ResponseEntity<ApiResponse<VideoResponse>> updateVisibility(
             @PathVariable Long videoId,
-            @RequestBody VideoVisibilityRequest request
+            @Valid @RequestBody VideoVisibilityRequest request
     ) {
-        videoService.updateVisibility(videoId, request);
-        return ResponseEntity.ok(ApiResponse.success(null));
+        return ResponseEntity.ok(ApiResponse.success(videoService.updateVisibility(videoId, request)));
     }
 }

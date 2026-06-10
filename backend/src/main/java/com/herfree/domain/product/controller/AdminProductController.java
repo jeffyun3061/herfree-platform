@@ -8,6 +8,7 @@ import com.herfree.domain.product.service.ProductService;
 import com.herfree.global.response.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -16,7 +17,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-// 제품 관리자 API — ROLE_ADMIN 권한 전용
 @RestController
 @RequestMapping("/api/admin/products")
 @RequiredArgsConstructor
@@ -28,7 +28,8 @@ public class AdminProductController {
     public ResponseEntity<ApiResponse<ProductResponse>> createProduct(
             @Valid @RequestBody ProductCreateRequest request
     ) {
-        return ResponseEntity.ok(ApiResponse.success(productService.createProduct(request)));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(productService.createProduct(request)));
     }
 
     @PatchMapping("/{productId}")
@@ -40,11 +41,10 @@ public class AdminProductController {
     }
 
     @PatchMapping("/{productId}/visibility")
-    public ResponseEntity<ApiResponse<Void>> updateVisibility(
+    public ResponseEntity<ApiResponse<ProductResponse>> updateVisibility(
             @PathVariable Long productId,
-            @RequestBody ProductVisibilityRequest request
+            @Valid @RequestBody ProductVisibilityRequest request
     ) {
-        productService.updateVisibility(productId, request);
-        return ResponseEntity.ok(ApiResponse.success(null));
+        return ResponseEntity.ok(ApiResponse.success(productService.updateVisibility(productId, request)));
     }
 }

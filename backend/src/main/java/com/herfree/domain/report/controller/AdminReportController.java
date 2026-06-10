@@ -2,6 +2,7 @@ package com.herfree.domain.report.controller;
 
 import com.herfree.domain.report.dto.request.ReportProcessRequest;
 import com.herfree.domain.report.dto.response.ReportResponse;
+import com.herfree.domain.report.entity.ReportStatus;
 import com.herfree.domain.report.service.ReportService;
 import com.herfree.global.response.ApiResponse;
 import jakarta.validation.Valid;
@@ -19,7 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-// 신고 관리자 API — ROLE_ADMIN 권한 전용
+// 관리자 전용 신고 관리 API — 신고 목록 조회와 처리를 담당한다
 @RestController
 @RequestMapping("/api/admin/reports")
 @RequiredArgsConstructor
@@ -27,22 +28,22 @@ public class AdminReportController {
 
     private final ReportService reportService;
 
-    // 신고 목록 조회 — status 쿼리 파라미터로 필터링 가능
+    // status 파라미터가 없으면 PENDING(처리 대기) 신고만 조회한다
     @GetMapping
     public ResponseEntity<ApiResponse<Page<ReportResponse>>> getReports(
-            @RequestParam(required = false) String status,
+            @RequestParam(defaultValue = "PENDING") ReportStatus status,
             @PageableDefault(size = 20) Pageable pageable
     ) {
         return ResponseEntity.ok(ApiResponse.success(reportService.getReports(status, pageable)));
     }
 
-    // 신고 처리 — ACCEPTED 또는 REJECTED
     @PatchMapping("/{reportId}/process")
     public ResponseEntity<ApiResponse<ReportResponse>> processReport(
             @AuthenticationPrincipal Long adminId,
             @PathVariable Long reportId,
             @Valid @RequestBody ReportProcessRequest request
     ) {
-        return ResponseEntity.ok(ApiResponse.success(reportService.processReport(adminId, reportId, request)));
+        return ResponseEntity.ok(ApiResponse.success(
+                reportService.processReport(adminId, reportId, request)));
     }
 }

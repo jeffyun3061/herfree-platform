@@ -3,15 +3,14 @@ package com.herfree.domain.video.dto.request;
 import jakarta.validation.constraints.NotBlank;
 
 public record VideoCreateRequest(
+        @NotBlank(message = "제목은 필수입니다.")
+        String title,
 
-        @NotBlank String title,
+        @NotBlank(message = "유튜브 URL은 필수입니다.")
+        String youtubeUrl,
 
-        // 다양한 유튜브 URL 포맷을 Service에서 파싱해 videoId를 추출한다
-        @NotBlank String youtubeUrl,
-
+        String thumbnailUrl,
         String description,
-
-        // 관련 게시판 ID — null이면 특정 게시판에 연결하지 않는다
         Long relatedBoardId
 ) {
 }

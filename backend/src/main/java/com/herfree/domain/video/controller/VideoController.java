@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-// 영상 조회 API — 비로그인 접근 허용
 @RestController
 @RequestMapping("/api/videos")
 @RequiredArgsConstructor
@@ -23,7 +22,7 @@ public class VideoController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<Page<VideoResponse>>> getVideos(
-            @PageableDefault(size = 10) Pageable pageable
+            @PageableDefault(size = 20) Pageable pageable
     ) {
         return ResponseEntity.ok(ApiResponse.success(videoService.getVideos(pageable)));
     }

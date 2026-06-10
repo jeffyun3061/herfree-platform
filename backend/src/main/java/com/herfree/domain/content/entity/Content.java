@@ -18,7 +18,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-// 정보 콘텐츠 엔티티 — 크리에이터·전문가·운영자가 작성하는 정보성 글을 관리한다.
+// 정보 콘텐츠 엔티티 — 운영자·전문가가 작성하는 큐레이션된 정보글
 @Getter
 @Entity
 @Table(name = "contents")
@@ -33,26 +33,26 @@ public class Content extends BaseTimeEntity {
     @JoinColumn(name = "author_id", nullable = false)
     private User author;
 
-    @Column(nullable = false, length = 255)
+    @Column(nullable = false)
     private String title;
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
-    // 카테고리 예시: BASIC, TEST, RECURRENCE, PREVENTION, RELATIONSHIP, FAQ
+    // 카테고리로 콘텐츠를 분류해 사용자가 원하는 정보를 빠르게 찾을 수 있도록 한다
     @Column(nullable = false, length = 50)
     private String category;
 
-    @Enumerated(EnumType.STRING)
+    // CREATOR, DOCTOR, ADMIN — 작성자 타입에 따라 UI에서 배지(badge)를 다르게 표시할 수 있다
     @Column(nullable = false, length = 20)
-    private ContentType contentType;
+    private String contentType;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private ContentStatus status;
 
     @Builder
-    private Content(User author, String title, String content, String category, ContentType contentType) {
+    private Content(User author, String title, String content, String category, String contentType) {
         this.author = author;
         this.title = title;
         this.content = content;
@@ -69,10 +69,12 @@ public class Content extends BaseTimeEntity {
         this.category = category;
     }
 
+    // 관리자에 의한 숨김 처리
     public void hide() {
         this.status = ContentStatus.HIDDEN;
     }
 
+    // soft delete
     public void delete() {
         this.status = ContentStatus.DELETED;
     }

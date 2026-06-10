@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -30,25 +31,26 @@ public class PostController {
 
     private final PostService postService;
 
-    // 게시판별 게시글 목록 조회 — 비로그인 접근 허용
+    // boardId를 쿼리 파라미터로 받는 이유:
+    // 특정 게시판 필터링은 리소스 계층 구조가 아닌 조회 조건이므로 쿼리스트링이 적합하다
     @GetMapping
     public ResponseEntity<ApiResponse<Page<PostResponse>>> getPosts(
             @RequestParam Long boardId,
-            @PageableDefault(size = 10) Pageable pageable
+            @PageableDefault(size = 20, sort = "createdAt") Pageable pageable
     ) {
         return ResponseEntity.ok(ApiResponse.success(postService.getPosts(boardId, pageable)));
     }
 
-    // 게시글 작성 — 로그인 필수(@AuthenticationPrincipal이 null이면 Security에서 401 반환)
     @PostMapping
-    public ResponseEntity<ApiResponse<PostResponse>> createPost(
+    public ResponseEntity<ApiResponse<PostDetailResponse>> createPost(
             @AuthenticationPrincipal Long userId,
             @Valid @RequestBody PostCreateRequest request
     ) {
-        return ResponseEntity.ok(ApiResponse.success(postService.createPost(userId, request)));
+        PostDetailResponse response = postService.createPost(userId, request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
     }
 
-    // 게시글 단건 조회 — 비로그인 허용. userId는 null일 수 있다.
+    // 비로그인 사용자도 공개 게시글을 조회할 수 있으므로 @AuthenticationPrincipal이 null일 수 있다
     @GetMapping("/{postId}")
     public ResponseEntity<ApiResponse<PostDetailResponse>> getPost(
             @PathVariable Long postId,
@@ -57,24 +59,22 @@ public class PostController {
         return ResponseEntity.ok(ApiResponse.success(postService.getPost(postId, userId)));
     }
 
-    // 게시글 수정 — 본인 글만 수정 가능
     @PatchMapping("/{postId}")
-    public ResponseEntity<ApiResponse<Void>> updatePost(
+    public ResponseEntity<ApiResponse<PostDetailResponse>> updatePost(
             @AuthenticationPrincipal Long userId,
             @PathVariable Long postId,
             @Valid @RequestBody PostUpdateRequest request
     ) {
-        postService.updatePost(userId, postId, request);
-        return ResponseEntity.ok(ApiResponse.success(null));
+        return ResponseEntity.ok(ApiResponse.success(postService.updatePost(userId, postId, request)));
     }
 
-    // 게시글 삭제 — 본인 글만 삭제 가능(soft delete)
+    // 204 No Content — soft delete이므로 응답 바디가 없다
     @DeleteMapping("/{postId}")
-    public ResponseEntity<ApiResponse<Void>> deletePost(
+    public ResponseEntity<Void> deletePost(
             @AuthenticationPrincipal Long userId,
             @PathVariable Long postId
     ) {
         postService.deletePost(userId, postId);
-        return ResponseEntity.ok(ApiResponse.success("게시글이 삭제되었습니다.", null));
+        return ResponseEntity.noContent().build();
     }
 }

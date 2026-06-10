@@ -7,6 +7,7 @@ import com.herfree.domain.content.service.ContentService;
 import com.herfree.global.response.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -16,7 +17,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-// 콘텐츠 관리자 API — ROLE_ADMIN 권한 전용
 @RestController
 @RequestMapping("/api/admin/contents")
 @RequiredArgsConstructor
@@ -26,10 +26,11 @@ public class AdminContentController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<ContentResponse>> createContent(
-            @AuthenticationPrincipal Long authorId,
+            @AuthenticationPrincipal Long adminId,
             @Valid @RequestBody ContentCreateRequest request
     ) {
-        return ResponseEntity.ok(ApiResponse.success(contentService.createContent(authorId, request)));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(contentService.createContent(adminId, request)));
     }
 
     @PatchMapping("/{contentId}")
@@ -43,6 +44,6 @@ public class AdminContentController {
     @PatchMapping("/{contentId}/hide")
     public ResponseEntity<ApiResponse<Void>> hideContent(@PathVariable Long contentId) {
         contentService.hideContent(contentId);
-        return ResponseEntity.ok(ApiResponse.success("콘텐츠가 숨김 처리되었습니다.", null));
+        return ResponseEntity.ok(ApiResponse.success(null));
     }
 }
