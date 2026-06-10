@@ -6,6 +6,7 @@ import { useBoards } from '@/hooks/useBoards';
 import { usePostList } from '@/hooks/usePosts';
 import { useAuth } from '@/hooks/useAuth';
 import { TopBar } from '@/components/layout/TopBar';
+import { BoardBanner } from '@/components/community/BoardListItem';
 import { PostCard } from '@/components/community/PostCard';
 import { Pagination } from '@/components/common/Pagination';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -39,10 +40,8 @@ export default function BoardPostsPage() {
           ) : undefined
         }
       />
-      <div className="px-4 py-4">
-        {board?.description && (
-          <p className="mb-4 text-sm text-muted">{board.description}</p>
-        )}
+      <div className="page-container">
+        {board && <BoardBanner board={board} />}
         {isLoading && <LoadingSpinner />}
         {error && <ErrorMessage message={getErrorMessage(error)} />}
         {!isLoading && !error && postPage.content.length === 0 && (

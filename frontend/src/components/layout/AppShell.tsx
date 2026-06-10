@@ -15,7 +15,7 @@ export function AppShell({ children }: AppShellProps) {
 
   return (
     <div className="mx-auto min-h-screen w-full max-w-app bg-surface">
-      <main className={cn('min-h-screen', showNav && 'pb-20')}>{children}</main>
+      <main className={cn('min-h-screen', showNav && 'pb-[5.5rem]')}>{children}</main>
       {showNav && <BottomNav />}
     </div>
   );

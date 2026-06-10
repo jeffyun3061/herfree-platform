@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
-import { TopBar } from '@/components/layout/TopBar';
+import { BrandMark } from '@/components/brand/BrandMark';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
@@ -41,9 +41,18 @@ export default function LoginPage() {
   };
 
   return (
-    <>
-      <TopBar title="로그인" showBack />
-      <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4 px-4 py-6">
+    <div className="min-h-screen bg-surface">
+      <div className="hero-panel mx-4 mt-6 rounded-[1.75rem] px-6 py-10 text-center">
+        <div className="relative z-10 flex justify-center">
+          <BrandMark variant="onPrimary" />
+        </div>
+        <h1 className="relative z-10 mt-2 text-2xl font-semibold">다시 만나서 반가워요</h1>
+        <p className="relative z-10 mt-2 text-sm text-primary-foreground/80">
+          이메일로 로그인해 주세요.
+        </p>
+      </div>
+
+      <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4 px-4 py-8">
         <Input
           label="이메일"
           type="email"
@@ -65,12 +74,12 @@ export default function LoginPage() {
           {isSubmitting ? '로그인 중…' : '로그인'}
         </Button>
         <p className="text-center text-sm text-muted">
-          아직 계정이 없으신가요?{' '}
+          계정이 없으신가요?{' '}
           <Link href="/signup" className="font-medium text-primary">
             회원가입
           </Link>
         </p>
       </form>
-    </>
+    </div>
   );
 }

@@ -15,6 +15,16 @@ import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { isAdmin, USER_ROLE_LABELS } from '@/domain/user/types';
 import { getErrorMessage } from '@/lib/api/client';
 
+function ProfileAvatar({ nickname }: { nickname: string }) {
+  const initial = nickname.trim().charAt(0) || '?';
+
+  return (
+    <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-xl font-semibold text-primary-foreground">
+      {initial}
+    </span>
+  );
+}
+
 export default function MyPage() {
   const router = useRouter();
   const { isReady, isLoggedIn, user, logout, withdraw, updateNickname } = useAuth();
@@ -69,20 +79,25 @@ export default function MyPage() {
   return (
     <>
       <TopBar title="마이" />
-      <div className="px-4 py-5">
-        <section className="rounded-2xl border border-border bg-card p-4">
-          <p className="text-lg font-semibold text-cream-foreground">{user?.nickname}</p>
-          <p className="mt-1 text-sm text-muted">
-            {user?.role ? USER_ROLE_LABELS[user.role] : '회원'}
-          </p>
-          {isAdmin(user?.role) && (
-            <Link href="/admin" className="mt-3 inline-block text-sm font-medium text-primary">
-              관리자 페이지 →
-            </Link>
-          )}
+      <div className="page-container">
+        <section className="hero-panel mb-6 py-5">
+          <div className="relative z-10 flex items-center gap-4">
+            <ProfileAvatar nickname={user?.nickname ?? ''} />
+            <div>
+              <p className="text-lg font-semibold">{user?.nickname}</p>
+              <p className="mt-0.5 text-sm text-primary-foreground/80">
+                {user?.role ? USER_ROLE_LABELS[user.role] : '회원'}
+              </p>
+              {isAdmin(user?.role) && (
+                <Link href="/admin" className="mt-2 inline-block text-sm font-medium underline">
+                  관리자 페이지
+                </Link>
+              )}
+            </div>
+          </div>
         </section>
 
-        <section className="mt-6 space-y-3">
+        <section className="space-y-3 rounded-2xl border border-border/80 bg-card p-4">
           <h3 className="font-medium text-cream-foreground">닉네임 변경</h3>
           <Input
             placeholder="새 닉네임"
@@ -97,7 +112,7 @@ export default function MyPage() {
         </section>
 
         <section className="mt-8">
-          <h3 className="mb-3 font-medium text-cream-foreground">내가 쓴 글</h3>
+          <h3 className="mb-3 text-base font-semibold text-cream-foreground">내가 쓴 글</h3>
           {isLoading ? (
             <LoadingSpinner label="글 불러오는 중…" />
           ) : (

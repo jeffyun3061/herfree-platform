@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
-import { TopBar } from '@/components/layout/TopBar';
+import { BrandMark } from '@/components/brand/BrandMark';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
@@ -43,9 +43,18 @@ export default function SignupPage() {
   };
 
   return (
-    <>
-      <TopBar title="회원가입" showBack />
-      <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4 px-4 py-6">
+    <div className="min-h-screen bg-surface">
+      <div className="hero-panel mx-4 mt-6 rounded-[1.75rem] px-6 py-10 text-center">
+        <div className="relative z-10 flex justify-center">
+          <BrandMark variant="onPrimary" />
+        </div>
+        <h1 className="relative z-10 mt-2 text-2xl font-semibold">함께 시작해요</h1>
+        <p className="relative z-10 mt-2 text-sm text-primary-foreground/80">
+          이메일로 간단히 가입할 수 있어요.
+        </p>
+      </div>
+
+      <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4 px-4 py-8">
         <Input
           label="이메일"
           type="email"
@@ -88,6 +97,6 @@ export default function SignupPage() {
           </Link>
         </p>
       </form>
-    </>
+    </div>
   );
 }

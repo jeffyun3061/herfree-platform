@@ -18,21 +18,59 @@ export type Board = {
   boardType: string;
 };
 
-// 게시판별 아이콘 — 이름 문자열 대신 boardType 코드로 매칭해 이름 변경에 안전하다
-export const BOARD_ICONS: Record<string, string> = {
-  NOTICE: '📢',
-  PHOBIA: '🌫️',
-  SYMPTOM: '📋',
-  EXPERIENCE: '🤝',
-  RELATIONSHIP: '💌',
-  SUPPORT: '🌿',
-  EXPERT: '🩺',
-  PRODUCT_REVIEW: '🧴',
-  FREE: '💬',
+export type BoardIconKey =
+  | 'notice'
+  | 'phobia'
+  | 'symptom'
+  | 'experience'
+  | 'relationship'
+  | 'support'
+  | 'expert'
+  | 'product'
+  | 'free';
+
+const BOARD_ICON_KEYS: Record<string, BoardIconKey> = {
+  NOTICE: 'notice',
+  PHOBIA: 'phobia',
+  SYMPTOM: 'symptom',
+  EXPERIENCE: 'experience',
+  RELATIONSHIP: 'relationship',
+  SUPPORT: 'support',
+  EXPERT: 'expert',
+  PRODUCT_REVIEW: 'product',
+  FREE: 'free',
 };
 
-export function getBoardIcon(boardType: string): string {
-  return BOARD_ICONS[boardType] ?? '💬';
+const BOARD_ACCENT_CLASSES: Record<string, string> = {
+  NOTICE: 'bg-gold/15 text-gold',
+  PHOBIA: 'bg-cream-dark text-muted',
+  SYMPTOM: 'bg-primary/10 text-primary',
+  EXPERIENCE: 'bg-gold/10 text-primary',
+  RELATIONSHIP: 'bg-gold/15 text-gold',
+  SUPPORT: 'bg-primary/10 text-primary-light',
+  EXPERT: 'bg-primary/15 text-primary',
+  PRODUCT_REVIEW: 'bg-gold/10 text-gold',
+  FREE: 'bg-cream-dark text-primary',
+};
+
+export function getBoardIconKey(boardType: string): BoardIconKey {
+  return BOARD_ICON_KEYS[boardType] ?? 'free';
+}
+
+export function getBoardAccentClass(boardType: string): string {
+  return BOARD_ACCENT_CLASSES[boardType] ?? 'bg-cream-dark text-primary';
+}
+
+const BOARD_BANNER_CLASSES: Record<string, string> = {
+  NOTICE: 'bg-gold text-gold-foreground',
+  SYMPTOM: 'bg-primary text-primary-foreground',
+  SUPPORT: 'bg-primary-light text-primary-foreground',
+  EXPERT: 'bg-primary text-primary-foreground',
+  FREE: 'bg-primary/90 text-primary-foreground',
+};
+
+export function getBoardBannerClass(boardType: string): string {
+  return BOARD_BANNER_CLASSES[boardType] ?? 'bg-cream text-cream-foreground ring-1 ring-border/80';
 }
 
 export function findBoardByType(boards: Board[], boardType: BoardType): Board | undefined {

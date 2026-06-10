@@ -21,7 +21,7 @@ function WritePostForm() {
   const initialBoardId = Number(searchParams.get('boardId')) || 0;
   const isEditMode = editPostId !== null;
 
-  const { boards } = useBoards();
+  const { boards, isLoading: boardsLoading, error: boardsError } = useBoards();
   const writableBoards = getWritableBoards(boards);
   const { post: existingPost, isLoading: postLoading } = usePostDetail(editPostId ?? 0);
   const { createPost, updatePost, isSubmitting, error } = usePostMutation();
@@ -79,6 +79,26 @@ function WritePostForm() {
     return <LoadingSpinner label="글 불러오는 중…" />;
   }
 
+  if (boardsLoading) {
+    return <LoadingSpinner label="게시판 불러오는 중…" />;
+  }
+
+  if (boardsError) {
+    return (
+      <div className="px-4 py-6">
+        <ErrorMessage message={boardsError} />
+      </div>
+    );
+  }
+
+  if (writableBoards.length === 0) {
+    return (
+      <div className="px-4 py-6">
+        <ErrorMessage message="글을 쓸 수 있는 게시판을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요." />
+      </div>
+    );
+  }
+
   return (
     <>
       <TopBar title={isEditMode ? '글 수정' : '글쓰기'} showBack />
@@ -118,7 +138,7 @@ function WritePostForm() {
         </label>
         {validationError && <ErrorMessage message={validationError} />}
         {error && <ErrorMessage message={error} />}
-        <Button type="submit" fullWidth disabled={isSubmitting}>
+        <Button type="submit" fullWidth disabled={isSubmitting || boardId <= 0}>
           {isSubmitting ? '저장 중…' : isEditMode ? '수정하기' : '등록하기'}
         </Button>
       </form>
