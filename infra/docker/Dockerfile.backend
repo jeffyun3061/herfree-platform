@@ -1,0 +1,21 @@
+# Herfree API — multi-stage build (Gradle bootJar → JRE 17 runtime)
+FROM eclipse-temurin:17-jdk AS builder
+WORKDIR /workspace
+
+COPY backend/gradlew backend/gradle backend/build.gradle.kts backend/settings.gradle.kts ./
+COPY backend/gradle/wrapper ./gradle/wrapper
+RUN chmod +x gradlew
+
+COPY backend/src ./src
+RUN ./gradlew bootJar --no-daemon -x test
+
+FROM eclipse-temurin:17-jre
+WORKDIR /app
+
+RUN useradd -r -u 10001 appuser
+USER appuser
+
+COPY --from=builder /workspace/build/libs/*.jar app.jar
+
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]

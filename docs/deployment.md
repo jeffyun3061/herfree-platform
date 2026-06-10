@@ -1,10 +1,37 @@
 # Herfree Platform — 배포·운영
 
-프로덕션 목표: **Vercel(프론트) + EC2 Docker(백엔드) + RDS MySQL + GitHub Actions(CI/CD)**.
+## 0. 단계별 전략 (권장)
+
+| 단계 | 구성 | 월 비용 | 용도 |
+|------|------|---------|------|
+| **1단계 (시작)** | Vercel + **VPS Docker**(API+MySQL) | **약 1~3만 원** | 외주 납품·초기 실운영 (DAU 수백·동시 50~80명) |
+| **2단계 (확장)** | Vercel + EC2 + RDS | 약 5~10만 원 | DAU 1,000+·DB 분리·백업 자동화 |
+
+**1단계가 기본값이다.** `docker-compose.prod.yml` + `infra/` 참고.
+
+관리자 계정: [admin-setup.md](admin-setup.md) — 가입 후 `promote-admin.ps1`로 ADMIN 승격.
+
+### 1단계 빠른 시작
+
+```bash
+# VPS (Ubuntu 22.04+, RAM 2GB 권장)
+cp .env.prod.example .env.prod   # 값 채우기
+./infra/scripts/deploy-vps.sh
+
+# Vercel: frontend/ 루트, NEXT_PUBLIC_API_URL=https://api.도메인
+```
+
+| 파일 | 역할 |
+|------|------|
+| `docker-compose.prod.yml` | MySQL + Spring Boot API |
+| `.env.prod.example` | 운영 환경변수 템플릿 |
+| `infra/nginx/herfree.conf` | HTTPS 리버스 프록시 (호스트 Nginx) |
+| `infra/scripts/backup-db.sh` | 일일 DB 백업 (cron) |
+| `.github/workflows/ci.yml` | PR/push 시 test·build |
 
 ---
 
-## 1. 아키텍처
+## 1. 아키텍처 (2단계 — 확장 시)
 
 ```
 [Browser]

@@ -1,0 +1,54 @@
+# VPS 저비용 운영 — API + MySQL 단일 서버 (프론트는 Vercel)
+# 사용: .env.prod 를 채운 뒤 docker compose -f docker-compose.prod.yml up -d --build
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: herfree-mysql-prod
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-herfree_db}
+      MYSQL_USER: ${MYSQL_USER:-herfree_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      TZ: Asia/Seoul
+    volumes:
+      - herfree_mysql_prod_data:/var/lib/mysql
+      - ./infra/scripts/backup:/backup
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u${MYSQL_USER:-herfree_user}", "-p${MYSQL_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 8
+    networks:
+      - herfree-internal
+
+  api:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.backend
+    container_name: herfree-api-prod
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-herfree_db}?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER:-herfree_user}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_ACCESS_EXPIRATION: ${JWT_ACCESS_EXPIRATION:-3600}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
+    ports:
+      # Nginx(호스트 또는 별도 컨테이너)가 127.0.0.1:8080 으로 프록시한다
+      - "127.0.0.1:8080:8080"
+    networks:
+      - herfree-internal
+
+volumes:
+  herfree_mysql_prod_data:
+
+networks:
+  herfree-internal:
+    driver: bridge
