@@ -1,153 +1,74 @@
 'use client';
 
-import Link from 'next/link';
-import { useAuth } from '@/hooks/useAuth';
+import { useMemo } from 'react';
 import { useBoards } from '@/hooks/useBoards';
 import { usePostList } from '@/hooks/usePosts';
 import { useContentList } from '@/hooks/useContents';
-import { useVideos } from '@/hooks/useVideos';
-import { PostCard } from '@/components/community/PostCard';
-import { BoardListItem } from '@/components/community/BoardListItem';
-import { BrandMark } from '@/components/brand/BrandMark';
-import { SectionHeader } from '@/components/layout/SectionHeader';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { useProducts } from '@/hooks/useProducts';
+import { HomeHero } from '@/components/home/HomeHero';
+import { CuratedEssentialsSection } from '@/components/home/CuratedEssentialsSection';
+import { PrivateCommunitySection } from '@/components/home/PrivateCommunitySection';
+import { QuickAccessSection } from '@/components/home/QuickAccessSection';
+import { InfoCategoriesSection } from '@/components/home/InfoCategoriesSection';
+import { ExpertContentSection } from '@/components/home/ExpertContentSection';
+import { AboutSection } from '@/components/home/AboutSection';
 import { MedicalDisclaimer } from '@/components/layout/MedicalDisclaimer';
 import { findBoardByType } from '@/domain/board/types';
-import { getContentPreview } from '@/domain/content/types';
-import { getVideoThumbnail } from '@/domain/video/types';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
-
-function getGreeting(): string {
-  const hour = new Date().getHours();
-  if (hour < 12) return '좋은 아침이에요';
-  if (hour < 18) return '좋은 오후예요';
-  return '편안한 저녁 되세요';
-}
 
 export default function HomePage() {
-  const { isLoggedIn, user } = useAuth();
-  const { boards, isLoading: boardsLoading } = useBoards();
-  const freeBoard = findBoardByType(boards, 'FREE');
-  const { postPage, isLoading: postsLoading } = usePostList(freeBoard?.id ?? null, 5);
-  const { contentPage, isLoading: contentsLoading } = useContentList(undefined, 3);
-  const { videoPage, isLoading: videosLoading } = useVideos(3);
+  const { boards } = useBoards();
+  const expertBoard = findBoardByType(boards, 'EXPERT');
+  const { postPage: recentPosts, isLoading: recentLoading } = usePostList(undefined, 6);
+  const { postPage: expertPosts, isLoading: expertPostsLoading } = usePostList(
+    expertBoard?.id ?? null,
+    4,
+  );
+  const { contentPage, isLoading: contentsLoading } = useContentList(undefined, 8);
+  const { productPage, isLoading: productsLoading } = useProducts(8);
+
+  const expertContents = useMemo(
+    () =>
+      contentPage.content.filter(
+        (item) => item.contentType === 'DOCTOR' || item.contentType === 'ADMIN',
+      ),
+    [contentPage.content],
+  );
 
   return (
-    <>
-      <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-border/70 bg-surface/95 px-4 backdrop-blur-md">
-        <BrandMark size="sm" />
-        {isLoggedIn ? (
-          <span className="text-sm text-muted">{user?.nickname}님</span>
-        ) : (
-          <Link href="/login" className="text-sm font-medium text-primary">
-            로그인
-          </Link>
-        )}
-      </header>
+    <div className="bg-canvas pb-8 lg:bg-[#eceae5] lg:pb-14">
+      <div className="page-container space-y-10 lg:space-y-14">
+        <HomeHero />
 
-      <section className="page-container">
-        <div className="hero-panel mb-6">
-          <p className="relative z-10 text-sm text-primary-foreground/85">{getGreeting()}</p>
-          <h2 className="relative z-10 mt-1 text-xl font-semibold leading-snug">
-            {isLoggedIn ? `${user?.nickname}님, 오늘 하루는 어떠세요?` : '함께 나누는 건강 커뮤니티'}
-          </h2>
-          <p className="relative z-10 mt-2 max-w-[18rem] text-sm leading-relaxed text-primary-foreground/80">
-            경험을 나누고, 검증된 정보로 일상을 돌보는 공간입니다.
-          </p>
-          {!isLoggedIn && (
-            <Link href="/signup" className="relative z-10 mt-5 inline-block">
-              <Button variant="secondary" size="sm">
-                시작하기
-              </Button>
-            </Link>
-          )}
+        <CuratedEssentialsSection
+          products={productPage.content}
+          isLoading={productsLoading}
+        />
+
+        <div className="lg:grid lg:grid-cols-12 lg:items-start lg:gap-8">
+          <div className="lg:col-span-8">
+            <PrivateCommunitySection
+              posts={recentPosts.content}
+              isLoading={recentLoading}
+            />
+          </div>
+          <div className="mt-10 lg:col-span-4 lg:mt-0 lg:sticky lg:top-24">
+            <QuickAccessSection layout="panel" />
+          </div>
+        </div>
+
+        <div className="hidden space-y-14 lg:block">
+          <InfoCategoriesSection />
+          <ExpertContentSection
+            expertBoard={expertBoard}
+            expertPosts={expertPosts.content}
+            expertContents={expertContents}
+            isLoading={expertPostsLoading || contentsLoading}
+          />
+          <AboutSection />
         </div>
 
         <MedicalDisclaimer />
-
-        <div className="mt-6">
-          <SectionHeader title="커뮤니티" href="/community" linkLabel="전체" />
-          {boardsLoading ? (
-            <LoadingSpinner label="게시판 불러오는 중…" />
-          ) : (
-            <div className="grid grid-cols-2 gap-2.5">
-              {boards.slice(0, 6).map((board) => (
-                <BoardListItem key={board.id} board={board} variant="tile" />
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="mt-8">
-          <SectionHeader
-            title="최신 이야기"
-            href={freeBoard ? `/community/${freeBoard.id}` : undefined}
-          />
-          {postsLoading ? (
-            <LoadingSpinner label="글 불러오는 중…" />
-          ) : postPage.content.length === 0 ? (
-            <p className="text-sm text-muted">아직 글이 없습니다.</p>
-          ) : (
-            postPage.content.map((post) => <PostCard key={post.id} post={post} />)
-          )}
-        </div>
-
-        <div className="mt-8">
-          <SectionHeader title="정보글" href="/contents" />
-          {contentsLoading ? (
-            <LoadingSpinner label="정보글 불러오는 중…" />
-          ) : contentPage.content.length === 0 ? (
-            <p className="text-sm text-muted">등록된 정보글이 없습니다.</p>
-          ) : (
-            <div className="space-y-2.5">
-              {contentPage.content.map((item) => (
-                <Link
-                  key={item.id}
-                  href={`/contents/${item.id}`}
-                  className="block rounded-2xl border border-border/80 bg-card p-4 transition-shadow hover:shadow-sm"
-                >
-                  <Badge variant="gold">{item.category}</Badge>
-                  <p className="mt-2 font-medium text-cream-foreground">{item.title}</p>
-                  <p className="mt-1 text-sm text-muted">{getContentPreview(item.content)}</p>
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="mt-8">
-          <SectionHeader title="영상" href="/lounge" />
-          {videosLoading ? (
-            <LoadingSpinner label="영상 불러오는 중…" />
-          ) : videoPage.content.length === 0 ? (
-            <p className="text-sm text-muted">등록된 영상이 없습니다.</p>
-          ) : (
-            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-              {videoPage.content.map((video) => (
-                <a
-                  key={video.id}
-                  href={video.youtubeUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-36 shrink-0"
-                >
-                  <div className="overflow-hidden rounded-2xl border border-border/80 bg-card">
-                    <img
-                      src={getVideoThumbnail(video)}
-                      alt={video.title}
-                      className="aspect-video w-full object-cover"
-                    />
-                    <p className="line-clamp-2 p-2.5 text-xs font-medium text-cream-foreground">
-                      {video.title}
-                    </p>
-                  </div>
-                </a>
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
-    </>
+      </div>
+    </div>
   );
 }

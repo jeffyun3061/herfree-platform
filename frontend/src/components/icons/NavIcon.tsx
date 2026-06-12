@@ -1,4 +1,4 @@
-type NavIconName = 'home' | 'community' | 'lounge' | 'routine' | 'mypage';
+type NavIconName = 'home' | 'community' | 'info' | 'video' | 'mypage' | 'lounge' | 'routine';
 
 type NavIconProps = {
   name: NavIconName;
@@ -30,10 +30,19 @@ export function NavIcon({ name, className = 'h-5 w-5' }: NavIconProps) {
           <path d="M5 5h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H9l-4 2v-4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z" />
         </svg>
       );
+    case 'info':
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden {...common}>
+          <path d="M6 4h9l3 3v13H6V4Z" />
+          <path d="M15 4v3h3M9 12h6M9 16h4" />
+        </svg>
+      );
+    case 'video':
     case 'lounge':
       return (
         <svg viewBox="0 0 24 24" aria-hidden {...common}>
-          <path d="M12 3c3 4 6 6 6 9a6 6 0 1 1-12 0c0-3 3-5 6-9Z" />
+          <circle cx="12" cy="12" r="9" />
+          <path d="m10 9 6 3-6 3V9Z" fill="currentColor" stroke="none" />
         </svg>
       );
     case 'routine':

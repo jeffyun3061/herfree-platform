@@ -10,6 +10,28 @@ const config: Config = {
           light: '#3D6444',
           foreground: '#FFFFFF',
         },
+        navy: {
+          DEFAULT: '#1A1C1E',
+          light: '#2A2D31',
+          foreground: '#F8FAFC',
+        },
+        canvas: {
+          DEFAULT: '#F8F7F4',
+          dark: '#F2EFE9',
+        },
+        hero: {
+          DEFAULT: '#F2EFE9',
+          foreground: '#1A1C1E',
+        },
+        sage: {
+          DEFAULT: '#4A6B52',
+          light: '#5F7660',
+          muted: '#8FA894',
+        },
+        pedestal: {
+          DEFAULT: '#E8DFD0',
+          dark: '#D4C4A8',
+        },
         cream: {
           DEFAULT: '#F5F0E8',
           dark: '#EDE8DF',
@@ -29,16 +51,30 @@ const config: Config = {
           foreground: '#1A1A1A',
         },
         muted: {
-          DEFAULT: '#6B7280',
-          foreground: '#6B7280',
+          DEFAULT: '#64748B',
+          foreground: '#64748B',
         },
-        border: '#E5E5E0',
+        border: '#E8E6E1',
+        ink: {
+          DEFAULT: '#1A1C1E',
+          soft: '#5C5F66',
+        },
       },
       fontFamily: {
         sans: ['Pretendard', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+        serif: ['"Noto Serif KR"', 'Georgia', 'serif'],
       },
       maxWidth: {
         app: '430px',
+        content: '80rem',
+        prose: '42rem',
+      },
+      borderRadius: {
+        shell: '32px',
+      },
+      boxShadow: {
+        card: '0 2px 12px rgba(30, 41, 59, 0.06)',
+        product: '0 4px 20px rgba(30, 41, 59, 0.08)',
       },
     },
   },

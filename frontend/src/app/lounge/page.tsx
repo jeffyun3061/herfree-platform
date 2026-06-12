@@ -5,9 +5,10 @@ import { useBoards } from '@/hooks/useBoards';
 import { usePostList } from '@/hooks/usePosts';
 import { useVideos } from '@/hooks/useVideos';
 import { TopBar } from '@/components/layout/TopBar';
-import { PostCard } from '@/components/community/PostCard';
+import { PostListHeader, PostListRow } from '@/components/community/PostListRow';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { Button } from '@/components/ui/Button';
 import { findBoardByType } from '@/domain/board/types';
 import { getVideoThumbnail } from '@/domain/video/types';
 
@@ -19,33 +20,53 @@ export default function LoungePage() {
 
   return (
     <>
-      <TopBar title="평온라운지" />
-      <div className="page-container">
-        <section className="hero-panel mb-6 py-6">
-          <h2 className="relative z-10 text-lg font-semibold">오늘의 위로</h2>
-          <p className="relative z-10 mt-2 text-sm leading-relaxed text-primary-foreground/85">
-            서로의 이야기에 공감하고, 잠시 숨을 고를 수 있는 공간입니다. 부담 없이 마음을 나눠 보세요.
-          </p>
-        </section>
+      <TopBar title="평온라운지" className="lg:hidden" />
+      <div className="page-container pb-8">
+        <p className="mb-6 text-sm leading-relaxed text-muted">
+          잠시 숨을 고르고, 위로와 응원을 나누는 공간입니다.
+        </p>
 
         <section>
           <div className="mb-3 flex items-end justify-between">
             <h3 className="text-base font-semibold text-cream-foreground">위로·응원 이야기</h3>
             {supportBoard && (
               <Link href={`/community/${supportBoard.id}`} className="text-xs font-medium text-primary">
-                더 보기
+                전체 보기
               </Link>
             )}
           </div>
-          {boardsLoading || postsLoading ? (
-            <LoadingSpinner />
-          ) : !supportBoard ? (
-            <EmptyState title="위로 게시판을 찾을 수 없습니다" />
-          ) : postPage.content.length === 0 ? (
-            <EmptyState title="아직 글이 없습니다" description="첫 위로의 말을 남겨 보세요." />
-          ) : (
-            postPage.content.map((post) => <PostCard key={post.id} post={post} />)
-          )}
+          <div className="overflow-hidden rounded-2xl border border-border/80 bg-card">
+            <PostListHeader />
+            {boardsLoading || postsLoading ? (
+              <div className="py-6">
+                <LoadingSpinner />
+              </div>
+            ) : !supportBoard ? (
+              <div className="p-4">
+                <EmptyState title="위로 게시판을 찾을 수 없습니다" />
+              </div>
+            ) : postPage.content.length === 0 ? (
+              <div className="p-4">
+                <EmptyState
+                  title="아직 글이 없습니다"
+                  description="첫 위로의 말을 남겨 보세요."
+                  action={
+                    <Link href={`/community/write?boardId=${supportBoard.id}`}>
+                      <Button size="sm">글쓰기</Button>
+                    </Link>
+                  }
+                />
+              </div>
+            ) : (
+              postPage.content.map((post, index) => (
+                <PostListRow
+                  key={post.id}
+                  post={post}
+                  rowNumber={postPage.content.length - index}
+                />
+              ))
+            )}
+          </div>
         </section>
 
         <section className="mt-8">

@@ -2,8 +2,14 @@ package com.herfree.domain.reaction.service;
 
 import com.herfree.domain.reaction.dto.request.ReactionRequest;
 import com.herfree.domain.reaction.dto.response.ReactionResponse;
+import com.herfree.domain.reaction.dto.response.ReactionSummaryResponse;
+import com.herfree.domain.reaction.dto.response.ReactionSummaryResponse.ReactionCountItem;
 import com.herfree.domain.reaction.entity.Reaction;
+import com.herfree.domain.reaction.entity.ReactionTargetType;
+import com.herfree.domain.reaction.entity.ReactionType;
 import com.herfree.domain.reaction.repository.ReactionRepository;
+import java.util.Arrays;
+import java.util.List;
 import com.herfree.domain.user.entity.User;
 import com.herfree.domain.user.exception.UserNotFoundException;
 import com.herfree.domain.user.repository.UserRepository;
@@ -61,5 +67,26 @@ public class ReactionService {
                 totalCount,
                 reacted
         );
+    }
+
+    // 대상별 반응 집계 — 초기 UI 표시용. userId가 null이면 reacted는 항상 false다.
+    @Transactional(readOnly = true)
+    public ReactionSummaryResponse getSummary(
+            ReactionTargetType targetType,
+            Long targetId,
+            Long userId
+    ) {
+        List<ReactionCountItem> counts = Arrays.stream(ReactionType.values())
+                .map(type -> {
+                    long totalCount = reactionRepository.countByTargetTypeAndTargetIdAndReactionType(
+                            targetType, targetId, type);
+                    boolean reacted = userId != null
+                            && reactionRepository.existsByUserIdAndTargetTypeAndTargetIdAndReactionType(
+                                    userId, targetType, targetId, type);
+                    return new ReactionCountItem(type, totalCount, reacted);
+                })
+                .toList();
+
+        return new ReactionSummaryResponse(targetType, targetId, counts);
     }
 }

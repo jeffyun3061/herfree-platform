@@ -8,11 +8,11 @@ import * as contentsApi from '@/lib/api/contents';
 
 export function useContentList(category?: string, size = 10) {
   const [page, setPage] = useState(0);
-  const { data, isLoading, error } = useApiQuery(
+  const { data, isLoading, error, refetch } = useApiQuery(
     () => contentsApi.fetchContents({ category, page, size }),
     [category, page, size],
   );
-  return { contentPage: data ?? emptyPage<Content>(), page, setPage, isLoading, error };
+  return { contentPage: data ?? emptyPage<Content>(), page, setPage, isLoading, error, refetch };
 }
 
 export function useContentDetail(contentId: number) {

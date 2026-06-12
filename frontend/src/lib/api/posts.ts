@@ -3,9 +3,19 @@ import type { Post, PostCreateInput, PostDetail, PostUpdateInput } from '@/domai
 import { request } from '@/lib/api/client';
 
 // 백엔드 @PageableDefault 정렬이 오름차순이므로 항상 최신순 정렬을 명시한다
-export function fetchPosts(boardId: number, page: number, size = 10): Promise<PageData<Post>> {
+export function fetchPosts(
+  boardId: number | undefined,
+  page: number,
+  size = 15,
+  keyword = '',
+): Promise<PageData<Post>> {
   return request<PageData<Post>>('/api/posts', {
-    query: { boardId, page, size, sort: 'createdAt,desc' },
+    query: {
+      boardId,
+      page,
+      size,
+      keyword: keyword.trim() || undefined,
+    },
   });
 }
 

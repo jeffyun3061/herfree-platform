@@ -4,6 +4,8 @@ import com.herfree.domain.reaction.entity.Reaction;
 import com.herfree.domain.reaction.entity.ReactionTargetType;
 import com.herfree.domain.reaction.entity.ReactionType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface ReactionRepository extends JpaRepository<Reaction, Long> {
 
@@ -21,4 +23,15 @@ public interface ReactionRepository extends JpaRepository<Reaction, Long> {
     // 반드시 reaction_type까지 함께 필터링해야 타입별 정확한 집계가 된다.
     long countByTargetTypeAndTargetIdAndReactionType(
             ReactionTargetType targetType, Long targetId, ReactionType reactionType);
+
+    // 내 게시글에 달린 반응 수 — 마이페이지 활동 통계에 사용
+    @Query("""
+            SELECT COUNT(r) FROM Reaction r
+            WHERE r.targetType = com.herfree.domain.reaction.entity.ReactionTargetType.POST
+            AND r.targetId IN (
+                SELECT p.id FROM Post p
+                WHERE p.user.id = :userId AND p.status = com.herfree.domain.post.entity.PostStatus.ACTIVE
+            )
+            """)
+    long countReactionsOnUserPosts(@Param("userId") Long userId);
 }

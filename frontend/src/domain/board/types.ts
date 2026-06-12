@@ -77,7 +77,9 @@ export function findBoardByType(boards: Board[], boardType: BoardType): Board | 
   return boards.find((board) => board.boardType === boardType);
 }
 
-// 공지사항은 운영자만 작성하므로 일반 회원 글쓰기 대상에서 제외한다
+// 공지·전문가 게시판은 운영자 전용이므로 일반 회원 글쓰기 대상에서 제외한다
 export function getWritableBoards(boards: Board[]): Board[] {
-  return boards.filter((board) => board.boardType !== 'NOTICE');
+  return boards.filter(
+    (board) => board.boardType !== 'NOTICE' && board.boardType !== 'EXPERT',
+  );
 }

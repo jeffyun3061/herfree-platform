@@ -48,7 +48,7 @@ logging:
 # CORS — 로컬은 localhost:3000, 운영은 Vercel URL을 환경변수로 주입한다
 app:
   cors:
-    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://127.0.0.1:3000}
 
 ---
 spring:

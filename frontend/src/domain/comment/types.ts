@@ -6,6 +6,7 @@ export type Comment = {
   content: string;
   isAnonymous: boolean;
   parentId: number | null;
+  isMyComment: boolean;
   createdAt: string;
 };
 

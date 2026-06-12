@@ -10,7 +10,7 @@ type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 const VARIANT_STYLES: Record<ButtonVariant, string> = {
-  primary: 'bg-primary text-primary-foreground hover:bg-primary-light',
+  primary: 'bg-navy text-white hover:bg-navy-light',
   secondary: 'bg-cream-dark text-cream-foreground hover:bg-border',
   ghost: 'bg-transparent text-primary hover:bg-cream-dark',
   danger: 'bg-red-600 text-white hover:bg-red-700',
@@ -34,7 +34,7 @@ export function Button({
   return (
     <button
       className={cn(
-        'inline-flex items-center justify-center rounded-2xl font-medium transition-colors',
+        'inline-flex items-center justify-center rounded-lg font-medium transition-colors',
         'disabled:cursor-not-allowed disabled:opacity-50',
         VARIANT_STYLES[variant],
         SIZE_STYLES[size],

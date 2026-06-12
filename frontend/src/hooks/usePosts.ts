@@ -9,12 +9,16 @@ import { getErrorMessage } from '@/lib/api/client';
 import * as postsApi from '@/lib/api/posts';
 
 // 게시판별 게시글 목록 — 페이지 상태까지 훅이 관리한다
-export function usePostList(boardId: number | null, size = 10) {
+export function usePostList(
+  boardId: number | null | undefined,
+  size = 15,
+  keyword = '',
+) {
   const [page, setPage] = useState(0);
+  const normalizedBoardId = boardId ?? undefined;
   const { data, isLoading, error, refetch } = useApiQuery(
-    () => postsApi.fetchPosts(boardId as number, page, size),
-    [boardId, page, size],
-    { enabled: boardId !== null },
+    () => postsApi.fetchPosts(normalizedBoardId, page, size, keyword),
+    [normalizedBoardId, page, size, keyword],
   );
   return { postPage: data ?? emptyPage<Post>(), page, setPage, isLoading, error, refetch };
 }

@@ -1,47 +1,151 @@
-/* Pretendard 웹폰트 — tailwind.config의 fontFamily.sans와 짝을 이룬다 */
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 body {
-  background-color: #e7e1d6;
-  color: #1a1a1a;
+  background-color: #f8f7f4;
+  color: #1a1c1e;
   -webkit-font-smoothing: antialiased;
   letter-spacing: -0.01em;
 }
 
 ::selection {
-  background-color: rgba(45, 74, 50, 0.18);
+  background-color: rgba(26, 28, 30, 0.1);
 }
 
 @layer components {
   .page-container {
-    @apply px-4 py-5;
+    @apply px-4 py-5 lg:mx-auto lg:max-w-content lg:px-10 lg:py-10;
   }
 
-  .hero-panel {
-    @apply relative overflow-hidden rounded-[1.75rem] bg-primary px-5 py-7 text-primary-foreground;
+  .section-heading {
+    @apply font-serif text-[1.35rem] font-semibold tracking-tight text-ink lg:text-2xl;
   }
 
-  .hero-panel::after {
-    content: '';
-    position: absolute;
-    right: -2rem;
-    top: -2rem;
-    height: 8rem;
-    width: 8rem;
-    border-radius: 9999px;
-    background: rgba(201, 168, 76, 0.18);
+  .section-heading-light {
+    @apply font-serif text-[1.35rem] font-semibold tracking-tight text-navy-foreground lg:text-2xl;
   }
 
-  .board-tile {
-    @apply flex h-full flex-col justify-between rounded-2xl border border-border/80 bg-card p-4 transition-shadow hover:shadow-md;
+  .section-link {
+    @apply text-[11px] font-medium text-muted transition-colors hover:text-ink;
+  }
+
+  .section-link-light {
+    @apply text-[11px] font-medium text-slate-400 transition-colors hover:text-white;
+  }
+
+  .surface-card {
+    @apply rounded-shell border border-border/50 bg-card shadow-card;
+  }
+
+  /* Hero — 베이지 카드, 텍스트 좌 / 이미지 우 */
+  .hero-card {
+    @apply overflow-hidden rounded-shell bg-canvas-dark shadow-card;
+  }
+
+  .hero-card__body {
+    @apply flex min-h-[11.5rem] items-stretch gap-2 px-5 pb-2 pt-6 lg:min-h-[26rem] lg:gap-10 lg:px-12 lg:pb-4 lg:pt-10;
+  }
+
+  .hero-card__text {
+    @apply z-10 flex w-[52%] shrink-0 flex-col justify-center lg:w-[42%] lg:max-w-xl;
+  }
+
+  .hero-card__visual {
+    @apply relative min-h-[9rem] flex-1 overflow-hidden rounded-2xl lg:min-h-[20rem] lg:flex-[1.15] lg:rounded-[2rem];
+  }
+
+  .hero-trust-bar {
+    @apply flex items-stretch justify-between gap-1 border-t border-black/[0.04] px-4 py-4 lg:gap-4 lg:px-8 lg:py-5;
+  }
+
+  .hero-trust-item {
+    @apply flex flex-1 flex-col items-center text-center;
+  }
+
+  .hero-trust-icon {
+    @apply flex h-9 w-9 items-center justify-center rounded-full bg-white/55 text-primary lg:h-12 lg:w-12;
+  }
+
+  .quick-access-panel {
+    @apply rounded-shell border border-border/50 bg-white p-6 shadow-card lg:p-7;
+  }
+
+  .quick-access-panel__grid {
+    @apply grid grid-cols-2 gap-5;
+  }
+
+  .community-dark-panel {
+    @apply rounded-shell bg-navy px-5 py-6 shadow-card lg:px-8 lg:py-8;
+  }
+
+  .community-post-row {
+    @apply flex items-center gap-3 py-3.5;
+  }
+
+  .community-post-divider {
+    @apply border-t border-white/[0.08];
+  }
+
+  .hex-badge {
+    @apply flex h-8 w-8 shrink-0 items-center justify-center text-[11px] font-semibold text-white/90;
+    clip-path: polygon(25% 6.7%, 75% 6.7%, 100% 50%, 75% 93.3%, 25% 93.3%, 0% 50%);
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .quick-access-circle {
+    @apply flex h-[3.75rem] w-[3.75rem] items-center justify-center rounded-full bg-canvas-dark text-primary lg:h-16 lg:w-16;
+  }
+
+  .quick-access-circle--video {
+    @apply bg-primary text-white shadow-sm;
+  }
+
+  .product-card {
+    @apply w-[10.5rem] shrink-0 overflow-hidden rounded-[1.75rem] bg-white shadow-product lg:w-auto;
+  }
+
+  .product-pedestal {
+    @apply flex aspect-[4/5] items-end justify-center bg-[#FAF8F5] px-4 pb-0 pt-5;
+  }
+
+  .product-pedestal-ring {
+    @apply flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-full shadow-sm;
+    background: linear-gradient(to bottom, #e8dfd0, #d4c4a8);
+  }
+
+  .nav-link {
+    @apply text-sm text-ink-soft transition-colors hover:text-navy;
+  }
+
+  .nav-link-active {
+    @apply font-medium text-navy;
+  }
+
+  .journal-form-card {
+    @apply rounded-shell border border-border/60 bg-white p-5 shadow-card lg:p-7;
+  }
+
+  .journal-select {
+    @apply w-full rounded-xl border border-border bg-white px-3 py-2.5 text-sm text-ink outline-none transition-colors focus:border-primary/40;
+  }
+
+  .journal-textarea {
+    @apply w-full rounded-xl border border-border bg-white px-3 py-3 text-sm text-ink outline-none transition-colors focus:border-primary/40;
+  }
+
+  .journal-bento-summary {
+    @apply rounded-shell bg-primary shadow-card;
+  }
+
+  .journal-bento-card {
+    @apply rounded-shell border border-border/50 bg-white shadow-card;
   }
 }
 
-/* 가로 스크롤 영역에서 스크롤바를 숨겨 모바일 앱 느낌을 유지한다 */
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;

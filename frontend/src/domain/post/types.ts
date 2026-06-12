@@ -5,7 +5,9 @@ export type Post = {
   id: number;
   boardId: number;
   boardName: string;
+  boardType: string;
   title: string;
+  contentPreview: string;
   authorNickname: string;
   viewCount: number;
   createdAt: string;

@@ -8,7 +8,9 @@ public record PostResponse(
         Long id,
         Long boardId,
         String boardName,
+        String boardType,
         String title,
+        String contentPreview,
         // 익명 여부에 따라 실제 닉네임 또는 "익명"을 반환한다
         String authorNickname,
         int viewCount,
@@ -22,10 +24,20 @@ public record PostResponse(
                 post.getId(),
                 post.getBoard().getId(),
                 post.getBoard().getName(),
+                post.getBoard().getBoardType(),
                 post.getTitle(),
+                toPreview(post.getContent()),
                 displayNickname,
                 post.getViewCount(),
                 post.getCreatedAt()
         );
+    }
+
+    private static String toPreview(String content) {
+        if (content == null || content.isBlank()) {
+            return "";
+        }
+        String plain = content.replaceAll("\\s+", " ").trim();
+        return plain.length() > 80 ? plain.substring(0, 80) + "…" : plain;
     }
 }

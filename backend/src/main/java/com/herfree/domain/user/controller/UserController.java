@@ -2,6 +2,7 @@ package com.herfree.domain.user.controller;
 
 import com.herfree.domain.post.dto.response.PostResponse;
 import com.herfree.domain.user.dto.request.UpdateProfileRequest;
+import com.herfree.domain.user.dto.response.UserActivityResponse;
 import com.herfree.domain.user.dto.response.UserResponse;
 import com.herfree.domain.user.service.UserService;
 import com.herfree.global.response.ApiResponse;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 // 내 정보 관련 API — 인증된 사용자 전용 엔드포인트
@@ -57,12 +59,21 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
-    // 내가 작성한 게시글 목록 — 본인 조회이므로 익명 글도 실제 닉네임으로 표시한다
+    // 마이페이지 활동 요약 — 작성 글·증상 기록·받은 공감 집계
+    @GetMapping("/me/activity")
+    public ResponseEntity<ApiResponse<UserActivityResponse>> getMyActivity(
+            @AuthenticationPrincipal Long userId
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(userService.getMyActivity(userId)));
+    }
+
+    // 내가 작성한 게시글 목록 — boardId로 게시판별 필터 가능
     @GetMapping("/me/posts")
     public ResponseEntity<ApiResponse<Page<PostResponse>>> getMyPosts(
             @AuthenticationPrincipal Long userId,
+            @RequestParam(required = false) Long boardId,
             @PageableDefault(size = 20) Pageable pageable
     ) {
-        return ResponseEntity.ok(ApiResponse.success(userService.getMyPosts(userId, pageable)));
+        return ResponseEntity.ok(ApiResponse.success(userService.getMyPosts(userId, boardId, pageable)));
     }
 }

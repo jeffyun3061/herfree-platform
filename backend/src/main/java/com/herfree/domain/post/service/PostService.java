@@ -63,9 +63,10 @@ public class PostService {
     // 닉네임 조회를 위해 user_id로 UserProfile을 조회하는 N+1 문제가 발생할 수 있다.
     // 현재는 단순 구조를 유지하고, 성능 이슈 발생 시 JPQL fetch join 또는 Projections으로 최적화한다.
     @Transactional(readOnly = true)
-    public Page<PostResponse> getPosts(Long boardId, Pageable pageable) {
+    public Page<PostResponse> getPosts(Long boardId, String keyword, Pageable pageable) {
+        String normalizedKeyword = keyword != null ? keyword.trim() : null;
         return postRepository
-                .findByBoardIdAndStatusOrderByCreatedAtDesc(boardId, PostStatus.ACTIVE, pageable)
+                .searchActivePosts(PostStatus.ACTIVE, boardId, normalizedKeyword, pageable)
                 .map(post -> {
                     String nickname = userProfileRepository.findByUserId(post.getUser().getId())
                             .map(UserProfile::getNickname)

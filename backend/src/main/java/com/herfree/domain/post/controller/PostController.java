@@ -35,10 +35,11 @@ public class PostController {
     // 특정 게시판 필터링은 리소스 계층 구조가 아닌 조회 조건이므로 쿼리스트링이 적합하다
     @GetMapping
     public ResponseEntity<ApiResponse<Page<PostResponse>>> getPosts(
-            @RequestParam Long boardId,
-            @PageableDefault(size = 20, sort = "createdAt") Pageable pageable
+            @RequestParam(required = false) Long boardId,
+            @RequestParam(required = false) String keyword,
+            @PageableDefault(size = 20) Pageable pageable
     ) {
-        return ResponseEntity.ok(ApiResponse.success(postService.getPosts(boardId, pageable)));
+        return ResponseEntity.ok(ApiResponse.success(postService.getPosts(boardId, keyword, pageable)));
     }
 
     @PostMapping

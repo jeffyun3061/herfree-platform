@@ -66,7 +66,9 @@ public class SecurityConfig {
                                 "/api/videos",
                                 "/api/videos/*",
                                 "/api/products",
-                                "/api/products/*"
+                                "/api/products/*",
+                                "/api/reactions/summary",
+                                "/api/journal/insights"
                         ).permitAll()
                         // 관리자 전용 경로 — ROLE_ADMIN 권한이 없으면 403 반환
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")

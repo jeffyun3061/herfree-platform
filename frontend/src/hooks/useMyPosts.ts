@@ -6,11 +6,11 @@ import type { Post } from '@/domain/post/types';
 import { useApiQuery } from '@/hooks/useApiQuery';
 import * as usersApi from '@/lib/api/users';
 
-export function useMyPosts(enabled: boolean, size = 10) {
+export function useMyPosts(enabled: boolean, size = 10, boardId?: number) {
   const [page, setPage] = useState(0);
   const { data, isLoading, error } = useApiQuery(
-    () => usersApi.fetchMyPosts(page, size),
-    [page, size],
+    () => usersApi.fetchMyPosts(page, size, boardId),
+    [page, size, boardId],
     { enabled },
   );
   return { postPage: data ?? emptyPage<Post>(), page, setPage, isLoading, error };

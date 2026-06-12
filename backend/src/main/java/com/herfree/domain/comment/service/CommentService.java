@@ -60,19 +60,19 @@ public class CommentService {
         UserProfile profile = userProfileRepository.findByUserId(userId)
                 .orElseThrow(UserNotFoundException::new);
 
-        return CommentResponse.of(comment, profile.getNickname());
+        return CommentResponse.of(comment, profile.getNickname(), userId);
     }
 
     // 댓글 목록은 등록순으로 반환한다 — 대화의 흐름을 시간 순서대로 읽는 것이 자연스럽다
     @Transactional(readOnly = true)
-    public Page<CommentResponse> getComments(Long postId, Pageable pageable) {
+    public Page<CommentResponse> getComments(Long postId, Long currentUserId, Pageable pageable) {
         return commentRepository
                 .findByPostIdAndStatusOrderByCreatedAtAsc(postId, CommentStatus.ACTIVE, pageable)
                 .map(comment -> {
                     String nickname = userProfileRepository.findByUserId(comment.getUser().getId())
                             .map(UserProfile::getNickname)
                             .orElse("(알 수 없음)");
-                    return CommentResponse.of(comment, nickname);
+                    return CommentResponse.of(comment, nickname, currentUserId);
                 });
     }
 

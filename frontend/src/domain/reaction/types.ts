@@ -8,6 +8,18 @@ export type ReactionRequest = {
   reactionType: ReactionType;
 };
 
+export type ReactionCountItem = {
+  reactionType: ReactionType;
+  totalCount: number;
+  reacted: boolean;
+};
+
+export type ReactionSummary = {
+  targetType: ReactionTargetType;
+  targetId: number;
+  counts: ReactionCountItem[];
+};
+
 // 토글 결과 (ReactionResponse) — totalCount로 클라이언트가 즉시 UI를 갱신한다
 export type ReactionResult = {
   targetType: ReactionTargetType;

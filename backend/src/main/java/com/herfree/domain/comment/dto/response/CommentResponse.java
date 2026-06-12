@@ -12,11 +12,15 @@ public record CommentResponse(
         String content,
         boolean isAnonymous,
         Long parentId,
+        // 현재 로그인 사용자가 작성자인지 — 삭제 버튼 표시에 사용한다
+        boolean isMyComment,
         LocalDateTime createdAt
 ) {
-    public static CommentResponse of(Comment comment, String authorNickname) {
+    public static CommentResponse of(Comment comment, String authorNickname, Long currentUserId) {
         // 익명 댓글이면 작성자 닉네임을 마스킹한다
         String displayNickname = comment.isAnonymous() ? "익명" : authorNickname;
+        boolean isMyComment = currentUserId != null
+                && comment.getUser().getId().equals(currentUserId);
         return new CommentResponse(
                 comment.getId(),
                 comment.getPost().getId(),
@@ -24,6 +28,7 @@ public record CommentResponse(
                 comment.getContent(),
                 comment.isAnonymous(),
                 comment.getParent() != null ? comment.getParent().getId() : null,
+                isMyComment,
                 comment.getCreatedAt()
         );
     }

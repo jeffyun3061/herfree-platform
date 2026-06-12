@@ -6,6 +6,9 @@ import { useApiQuery } from '@/hooks/useApiQuery';
 import * as productsApi from '@/lib/api/products';
 
 export function useProducts(size = 12) {
-  const { data, isLoading, error } = useApiQuery(() => productsApi.fetchProducts({ size }), [size]);
-  return { productPage: data ?? emptyPage<Product>(), isLoading, error };
+  const { data, isLoading, error, refetch } = useApiQuery(
+    () => productsApi.fetchProducts({ size }),
+    [size],
+  );
+  return { productPage: data ?? emptyPage<Product>(), isLoading, error, refetch };
 }

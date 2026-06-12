@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useContentList } from '@/hooks/useContents';
 import { TopBar } from '@/components/layout/TopBar';
 import { Card } from '@/components/ui/Card';
@@ -12,14 +13,20 @@ import { MedicalDisclaimer } from '@/components/layout/MedicalDisclaimer';
 import { CONTENT_CATEGORIES, getContentPreview, getContentTypeLabel } from '@/domain/content/types';
 import { cn } from '@/lib/cn';
 
-export default function ContentsPage() {
+function ContentsPageContent() {
+  const searchParams = useSearchParams();
   const [category, setCategory] = useState<string | undefined>(undefined);
   const { contentPage, page, setPage, isLoading } = useContentList(category);
+
+  useEffect(() => {
+    const fromQuery = searchParams.get('category');
+    if (fromQuery) setCategory(fromQuery);
+  }, [searchParams]);
 
   return (
     <>
       <TopBar title="정보글" showBack />
-      <div className="px-4 py-4">
+      <div className="page-container mx-auto max-w-content">
         <MedicalDisclaimer />
 
         <div className="mt-4 flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
@@ -27,7 +34,7 @@ export default function ContentsPage() {
             type="button"
             onClick={() => setCategory(undefined)}
             className={cn(
-              'shrink-0 rounded-full px-4 py-1.5 text-sm',
+              'shrink-0 rounded-lg px-4 py-1.5 text-sm',
               category === undefined
                 ? 'bg-primary text-primary-foreground'
                 : 'bg-cream-dark text-muted',
@@ -41,7 +48,7 @@ export default function ContentsPage() {
               type="button"
               onClick={() => setCategory(cat)}
               className={cn(
-                'shrink-0 rounded-full px-4 py-1.5 text-sm',
+                'shrink-0 rounded-lg px-4 py-1.5 text-sm',
                 category === cat
                   ? 'bg-primary text-primary-foreground'
                   : 'bg-cream-dark text-muted',
@@ -73,5 +80,13 @@ export default function ContentsPage() {
         <Pagination page={page} totalPages={contentPage.totalPages} onPageChange={setPage} />
       </div>
     </>
+  );
+}
+
+export default function ContentsPage() {
+  return (
+    <Suspense fallback={<LoadingSpinner label="정보글 불러오는 중…" />}>
+      <ContentsPageContent />
+    </Suspense>
   );
 }

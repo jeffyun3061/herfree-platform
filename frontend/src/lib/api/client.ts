@@ -1,7 +1,12 @@
 import type { ApiEnvelope } from '@/domain/common/types';
 import { clearAuth, getAccessToken } from '@/lib/auth-storage';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
+function resolveApiBaseUrl(): string {
+  const configured = process.env.NEXT_PUBLIC_API_URL?.trim();
+  if (configured) return configured;
+  if (typeof window !== 'undefined') return window.location.origin;
+  return 'http://localhost:8080';
+}
 
 // Error 하위 클래스 대신 status 필드를 덧붙인 객체를 사용한다 (함수형 컨벤션 준수)
 export type ApiError = Error & { status: number };
@@ -18,6 +23,18 @@ export function isApiError(error: unknown): error is ApiError {
 }
 
 export function getErrorMessage(error: unknown): string {
+  if (typeof error === 'string' && error) return error;
+  if (isApiError(error)) {
+    if (error.status === 0) return error.message;
+    if (error.status === 401) return '로그인이 필요합니다.';
+    if (error.status === 403) return '권한이 없습니다.';
+    if (error.status === 404) return '요청한 내용을 찾을 수 없습니다.';
+    if (error.status === 409) return error.message || '이미 처리된 요청입니다.';
+    if (error.status >= 500) {
+      return '잠시 서버에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.';
+    }
+    return error.message || '요청을 처리하지 못했습니다.';
+  }
   if (error instanceof Error && error.message) return error.message;
   return '요청 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.';
 }
@@ -31,7 +48,7 @@ type RequestOptions = {
 };
 
 function buildUrl(path: string, query?: Record<string, QueryValue>): string {
-  const url = new URL(path, API_BASE_URL);
+  const url = new URL(path, resolveApiBaseUrl());
   if (query) {
     Object.entries(query).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== '') {
@@ -92,7 +109,7 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
   }
 
   if (!response.ok || !envelope || !envelope.success) {
-    const message = envelope?.message ?? '요청 처리 중 오류가 발생했습니다.';
+    const message = envelope?.message ?? getErrorMessage(createApiError(response.status, ''));
     throw createApiError(response.status, message);
   }
 

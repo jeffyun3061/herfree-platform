@@ -16,8 +16,23 @@ export function withdraw(): Promise<void> {
   return request<void>('/api/users/me', { method: 'DELETE' });
 }
 
-export function fetchMyPosts(page: number, size = 10): Promise<PageData<Post>> {
+export type UserActivity = {
+  totalPosts: number;
+  symptomPosts: number;
+  receivedReactions: number;
+  lastPostAt: string | null;
+};
+
+export function fetchMyActivity(): Promise<UserActivity> {
+  return request<UserActivity>('/api/users/me/activity');
+}
+
+export function fetchMyPosts(
+  page: number,
+  size = 10,
+  boardId?: number,
+): Promise<PageData<Post>> {
   return request<PageData<Post>>('/api/users/me/posts', {
-    query: { page, size, sort: 'createdAt,desc' },
+    query: { page, size, sort: 'createdAt,desc', boardId },
   });
 }

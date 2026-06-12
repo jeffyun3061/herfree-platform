@@ -22,7 +22,7 @@ export default function PostDetailPage() {
   const params = useParams();
   const router = useRouter();
   const postId = Number(params.postId);
-  const { user } = useAuth();
+  const { isLoggedIn } = useAuth();
   const { post, isLoading, error } = usePostDetail(postId);
   const { deletePost } = usePostMutation();
   const {
@@ -74,9 +74,11 @@ export default function PostDetailPage() {
         showBack
         rightSlot={
           <div className="flex gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setReportOpen(true)}>
-              신고
-            </Button>
+            {isLoggedIn && (
+              <Button variant="ghost" size="sm" onClick={() => setReportOpen(true)}>
+                신고
+              </Button>
+            )}
             {post.isMyPost && (
               <>
                 <Link href={`/community/write?postId=${post.id}`}>
@@ -115,9 +117,7 @@ export default function PostDetailPage() {
           ) : (
             <>
               {commentPage.content.map((comment) => {
-                const canDelete =
-                  !comment.isAnonymous &&
-                  user?.nickname === comment.authorNickname;
+                const canDelete = comment.isMyComment;
                 return (
                   <div key={comment.id} className="group relative">
                     <CommentItem
@@ -140,26 +140,35 @@ export default function PostDetailPage() {
             </>
           )}
 
-          <div className="mt-6 space-y-3 rounded-2xl border border-border bg-card p-4">
-            <Textarea
-              placeholder="댓글을 남겨 주세요."
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-            />
-            <label className="flex items-center gap-2 text-sm text-muted">
-              <input
-                type="checkbox"
-                checked={isAnonymous}
-                onChange={(e) => setIsAnonymous(e.target.checked)}
+          {isLoggedIn ? (
+            <div className="mt-6 space-y-3 rounded-2xl border border-border bg-card p-4">
+              <Textarea
+                placeholder="댓글을 남겨 주세요."
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
               />
-              익명으로 작성
-            </label>
-            {commentError && <ErrorMessage message={commentError} />}
-            {mutationError && <ErrorMessage message={mutationError} />}
-            <Button disabled={isSubmitting} onClick={() => void handleComment()}>
-              {isSubmitting ? '등록 중…' : '댓글 등록'}
-            </Button>
-          </div>
+              <label className="flex items-center gap-2 text-sm text-muted">
+                <input
+                  type="checkbox"
+                  checked={isAnonymous}
+                  onChange={(e) => setIsAnonymous(e.target.checked)}
+                />
+                익명으로 작성
+              </label>
+              {commentError && <ErrorMessage message={commentError} />}
+              {mutationError && <ErrorMessage message={mutationError} />}
+              <Button disabled={isSubmitting} onClick={() => void handleComment()}>
+                {isSubmitting ? '등록 중…' : '댓글 등록'}
+              </Button>
+            </div>
+          ) : (
+            <div className="mt-6 rounded-2xl border border-dashed border-border bg-card p-5 text-center">
+              <p className="text-sm text-muted">댓글을 남기려면 로그인이 필요합니다.</p>
+              <Link href="/login" className="mt-3 inline-block">
+                <Button size="sm">로그인하기</Button>
+              </Link>
+            </div>
+          )}
         </section>
       </article>
 

@@ -18,6 +18,9 @@ export function PostCard({ post, boardName }: PostCardProps) {
           <span className="text-xs text-muted">· {formatRelativeTime(post.createdAt)}</span>
         </div>
         <h3 className="line-clamp-2 font-medium leading-snug text-cream-foreground">{post.title}</h3>
+        {post.contentPreview && (
+          <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-muted">{post.contentPreview}</p>
+        )}
         <p className="mt-2 text-xs text-muted">조회 {post.viewCount}</p>
       </article>
     </Link>

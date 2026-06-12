@@ -13,7 +13,7 @@ type ReactionBarProps = {
 
 export function ReactionBar({ targetType, targetId }: ReactionBarProps) {
   const { isLoggedIn } = useAuth();
-  const { states, pendingType, error, toggle } = useReaction(targetType, targetId);
+  const { states, pendingType, error, isLoading, toggle } = useReaction(targetType, targetId);
 
   return (
     <div className="space-y-2">
@@ -21,13 +21,13 @@ export function ReactionBar({ targetType, targetId }: ReactionBarProps) {
         {REACTION_TYPES.map((type) => {
           const state = states[type];
           const active = state?.reacted ?? false;
-          const count = state?.totalCount;
+          const count = state?.totalCount ?? 0;
 
           return (
             <button
               key={type}
               type="button"
-              disabled={!isLoggedIn || pendingType !== null}
+              disabled={!isLoggedIn || pendingType !== null || isLoading}
               onClick={() => void toggle(type)}
               className={cn(
                 'inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs transition-colors',
@@ -39,7 +39,7 @@ export function ReactionBar({ targetType, targetId }: ReactionBarProps) {
             >
               <span aria-hidden>{REACTION_ICONS[type]}</span>
               <span>{REACTION_LABELS[type]}</span>
-              {count !== undefined && <span className="font-medium">{count}</span>}
+              {!isLoading && <span className="font-medium">{count}</span>}
             </button>
           );
         })}

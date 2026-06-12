@@ -9,6 +9,13 @@ export function formatDate(isoString: string): string {
 }
 
 // 커뮤니티 목록에서는 절대 시각보다 상대 시각이 읽기 편하다
+export function formatTimeClock(isoString: string): string {
+  const date = new Date(isoString);
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  return `${hours}:${minutes}`;
+}
+
 export function formatRelativeTime(isoString: string): string {
   const diffMs = Date.now() - new Date(isoString).getTime();
   const diffMinutes = Math.floor(diffMs / (1000 * 60));

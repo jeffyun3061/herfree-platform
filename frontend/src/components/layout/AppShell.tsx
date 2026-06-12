@@ -2,7 +2,9 @@
 
 import { usePathname } from 'next/navigation';
 import { BottomNav } from '@/components/layout/BottomNav';
-import { shouldShowBottomNav } from '@/lib/navigation';
+import { DesktopHeader } from '@/components/layout/DesktopHeader';
+import { MobileHeader } from '@/components/layout/MobileHeader';
+import { shouldShowBottomNav, shouldShowShellHeader } from '@/lib/navigation';
 import { cn } from '@/lib/cn';
 
 type AppShellProps = {
@@ -12,10 +14,15 @@ type AppShellProps = {
 export function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
   const showNav = shouldShowBottomNav(pathname);
+  const showHeader = shouldShowShellHeader(pathname);
 
   return (
-    <div className="mx-auto min-h-screen w-full max-w-app bg-surface">
-      <main className={cn('min-h-screen', showNav && 'pb-[5.5rem]')}>{children}</main>
+    <div className="min-h-screen w-full bg-canvas lg:bg-[#eceae5]">
+      {showHeader && <DesktopHeader />}
+      <div className={cn('mx-auto w-full', 'max-w-app lg:max-w-none')}>
+        {showHeader && <MobileHeader />}
+        <main className={cn('min-h-screen', showNav && 'pb-[4.75rem] lg:pb-0')}>{children}</main>
+      </div>
       {showNav && <BottomNav />}
     </div>
   );

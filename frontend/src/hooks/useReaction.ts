@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ReactionTargetType, ReactionType } from '@/domain/reaction/types';
+import { REACTION_TYPES } from '@/domain/reaction/types';
 import { getErrorMessage } from '@/lib/api/client';
 import * as reactionsApi from '@/lib/api/reactions';
 
@@ -10,12 +11,42 @@ type ReactionState = {
   reacted: boolean;
 };
 
-// 백엔드에 반응 집계 조회 API가 없어 초기 카운트는 알 수 없다.
-// 토글 응답의 totalCount·reacted를 받아 화면을 갱신하는 방식으로 동작한다.
 export function useReaction(targetType: ReactionTargetType, targetId: number) {
   const [states, setStates] = useState<Partial<Record<ReactionType, ReactionState>>>({});
   const [pendingType, setPendingType] = useState<ReactionType | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    setIsLoading(true);
+    setError(null);
+
+    void reactionsApi
+      .fetchReactionSummary(targetType, targetId)
+      .then((summary) => {
+        if (cancelled) return;
+        const next: Partial<Record<ReactionType, ReactionState>> = {};
+        for (const type of REACTION_TYPES) {
+          const item = summary.counts.find((count) => count.reactionType === type);
+          next[type] = {
+            totalCount: item?.totalCount ?? 0,
+            reacted: item?.reacted ?? false,
+          };
+        }
+        setStates(next);
+      })
+      .catch((err) => {
+        if (!cancelled) setError(getErrorMessage(err));
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [targetType, targetId]);
 
   const toggle = async (reactionType: ReactionType): Promise<void> => {
     if (pendingType) return;
@@ -34,5 +65,5 @@ export function useReaction(targetType: ReactionTargetType, targetId: number) {
     }
   };
 
-  return { states, pendingType, error, toggle };
+  return { states, pendingType, error, isLoading, toggle };
 }

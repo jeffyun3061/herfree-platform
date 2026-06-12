@@ -30,9 +30,10 @@ public class CommentController {
     @GetMapping("/api/posts/{postId}/comments")
     public ResponseEntity<ApiResponse<Page<CommentResponse>>> getComments(
             @PathVariable Long postId,
+            @AuthenticationPrincipal Long userId,
             @PageableDefault(size = 20, sort = "createdAt") Pageable pageable
     ) {
-        return ResponseEntity.ok(ApiResponse.success(commentService.getComments(postId, pageable)));
+        return ResponseEntity.ok(ApiResponse.success(commentService.getComments(postId, userId, pageable)));
     }
 
     @PostMapping("/api/posts/{postId}/comments")
