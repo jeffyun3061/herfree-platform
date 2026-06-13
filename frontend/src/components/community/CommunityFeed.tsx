@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useBoards } from '@/hooks/useBoards';
 import { usePostList } from '@/hooks/usePosts';
 import { BoardTabBar } from '@/components/community/BoardTabBar';
+import { PostCard } from '@/components/community/PostCard';
 import { PostListHeader, PostListRow } from '@/components/community/PostListRow';
 import { Pagination } from '@/components/common/Pagination';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -21,6 +23,8 @@ type CommunityFeedProps = {
 };
 
 export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
+  const router = useRouter();
+  const pathname = usePathname();
   const { isLoggedIn } = useAuth();
   const { boards, isLoading: boardsLoading, error: boardsError } = useBoards();
   const [selectedBoardId, setSelectedBoardId] = useState<number | null>(initialBoardId);
@@ -41,6 +45,7 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
   const handleBoardSelect = (boardId: number | null) => {
     setSelectedBoardId(boardId);
     setPage(0);
+    router.push(boardId === null ? '/community' : `/community/${boardId}`);
   };
 
   const handleSearch = () => {
@@ -58,6 +63,8 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
     selectedBoardId !== null
       ? `/community/write?boardId=${selectedBoardId}`
       : '/community/write';
+
+  const loginHref = `/login?from=${encodeURIComponent(writeHref)}`;
 
   const isLoadingAll = boardsLoading || isLoading;
   const listError = boardsError ?? error;
@@ -103,7 +110,7 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
             <Button size="sm">글쓰기</Button>
           </Link>
         ) : (
-          <Link href="/login">
+          <Link href={loginHref}>
             <Button size="sm" variant="secondary">
               로그인 후 글쓰기
             </Button>
@@ -111,43 +118,52 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
         )}
       </div>
 
-      <div className="mt-3 overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm">
-        <PostListHeader />
-        {isLoadingAll && (
-          <div className="py-8">
-            <LoadingSpinner label="글 목록 불러오는 중…" />
+      {isLoadingAll && (
+        <div className="mt-3 py-8">
+          <LoadingSpinner label="글 목록 불러오는 중…" />
+        </div>
+      )}
+      {listError && (
+        <div className="mt-3 p-4">
+          <ErrorMessage message={getErrorMessage(listError)} />
+        </div>
+      )}
+      {!isLoadingAll && !listError && postPage.content.length === 0 && (
+        <div className="mt-3 p-6">
+          <EmptyState
+            title="글이 없습니다"
+            description="첫 이야기를 남겨 보세요."
+            action={
+              canWrite ? (
+                <Link href={writeHref}>
+                  <Button size="sm">글쓰기</Button>
+                </Link>
+              ) : undefined
+            }
+          />
+        </div>
+      )}
+
+      {!isLoadingAll && !listError && postPage.content.length > 0 && (
+        <>
+          <div className="mt-3 space-y-0 lg:hidden">
+            {postPage.content.map((post) => (
+              <PostCard key={post.id} post={post} boardName={post.boardName} />
+            ))}
           </div>
-        )}
-        {listError && (
-          <div className="p-4">
-            <ErrorMessage message={getErrorMessage(listError)} />
+
+          <div className="mt-3 hidden overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm lg:block">
+            <PostListHeader />
+            {postPage.content.map((post, index) => (
+              <PostListRow
+                key={post.id}
+                post={post}
+                rowNumber={postPage.totalElements - page * postPage.size - index}
+              />
+            ))}
           </div>
-        )}
-        {!isLoadingAll && !listError && postPage.content.length === 0 && (
-          <div className="p-6">
-            <EmptyState
-              title="글이 없습니다"
-              description="첫 이야기를 남겨 보세요."
-              action={
-                canWrite ? (
-                  <Link href={writeHref}>
-                    <Button size="sm">글쓰기</Button>
-                  </Link>
-                ) : undefined
-              }
-            />
-          </div>
-        )}
-        {!isLoadingAll &&
-          !listError &&
-          postPage.content.map((post, index) => (
-            <PostListRow
-              key={post.id}
-              post={post}
-              rowNumber={postPage.totalElements - page * postPage.size - index}
-            />
-          ))}
-      </div>
+        </>
+      )}
 
       {!isLoadingAll && !listError && postPage.totalPages > 1 && (
         <div className="mt-4">

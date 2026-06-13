@@ -35,7 +35,7 @@ function buildTodayBase(dashboard: JournalDashboard | null): JournalRecordInput 
     triggers: today?.triggers ?? [],
     memo: today?.memo ?? null,
     mood: today?.mood ?? null,
-    sleepHours: today?.sleepHours ?? 7.5,
+    sleepHours: today?.sleepHours ?? null,
     supplementTaken: today?.supplementTaken ?? false,
     exerciseDone: today?.exerciseDone ?? false,
   };
@@ -120,7 +120,7 @@ export function JournalBentoDashboard({
           </div>
           {insights?.sufficientData && insights.insightLines[0] && (
             <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-              <p className="text-xs font-semibold text-gold-light">Data Insight</p>
+              <p className="text-xs font-semibold text-gold-light">데이터 인사이트</p>
               <p className="mt-2 text-sm leading-relaxed text-white/80">{insights.insightMessage}</p>
               <ul className="mt-3 space-y-1">
                 {insights.insightLines.slice(0, 3).map((line) => (
@@ -150,8 +150,14 @@ export function JournalBentoDashboard({
       <div className="journal-bento-card p-5 lg:col-span-1">
         <p className="text-sm font-semibold text-ink">어제 수면 시간</p>
         <p className="mt-2 font-serif text-3xl font-semibold text-ink">
-          {dashboard?.todayRecord?.sleepHours ?? 7.5}
-          <span className="ml-1 text-base font-medium text-muted">h</span>
+          {dashboard?.todayRecord?.sleepHours != null ? (
+            <>
+              {dashboard.todayRecord.sleepHours}
+              <span className="ml-1 text-base font-medium text-muted">h</span>
+            </>
+          ) : (
+            <span className="text-lg text-muted">기록 없음</span>
+          )}
         </p>
         <p className="mt-2 text-xs text-muted">바이러스 억제에 7시간 이상 수면을 권장합니다.</p>
       </div>

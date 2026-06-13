@@ -29,6 +29,10 @@ export function useJournalRecordByDate(date: string, enabled = true) {
   );
 }
 
+export function useJournalRecords(page: number, size = 20, enabled = true) {
+  return useApiQuery(() => journalApi.fetchJournalRecords(page, size), [page, size], { enabled });
+}
+
 export function useJournalMutation() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);

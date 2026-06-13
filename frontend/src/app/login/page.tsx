@@ -1,18 +1,26 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { BrandMark } from '@/components/brand/BrandMark';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { validateLogin } from '@/domain/auth/validate';
 import { getErrorMessage } from '@/lib/api/client';
 
-export default function LoginPage() {
+function resolveReturnUrl(from: string | null): string {
+  if (!from || !from.startsWith('/') || from.startsWith('//')) return '/';
+  if (from.startsWith('/login') || from.startsWith('/signup')) return '/';
+  return from;
+}
+
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -32,7 +40,7 @@ export default function LoginPage() {
     setIsSubmitting(true);
     try {
       await login({ email, password });
-      router.replace('/');
+      router.replace(resolveReturnUrl(searchParams.get('from')));
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -69,6 +77,11 @@ export default function LoginPage() {
           onChange={(e) => setPassword(e.target.value)}
           error={fieldErrors.password}
         />
+        <div className="text-right">
+          <Link href="/forgot-password" className="text-xs font-medium text-primary">
+            비밀번호를 잊으셨나요?
+          </Link>
+        </div>
         {error && <ErrorMessage message={error} />}
         <Button type="submit" fullWidth disabled={isSubmitting}>
           {isSubmitting ? '로그인 중…' : '로그인'}
@@ -79,7 +92,26 @@ export default function LoginPage() {
             회원가입
           </Link>
         </p>
+        <p className="text-center text-[11px] leading-relaxed text-muted">
+          로그인 시{' '}
+          <Link href="/terms" className="underline underline-offset-2">
+            이용약관
+          </Link>
+          {' 및 '}
+          <Link href="/privacy" className="underline underline-offset-2">
+            개인정보처리방침
+          </Link>
+          에 동의하게 됩니다.
+        </p>
       </form>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoadingSpinner label="불러오는 중…" />}>
+      <LoginForm />
+    </Suspense>
   );
 }

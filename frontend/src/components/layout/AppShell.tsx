@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { DesktopHeader } from '@/components/layout/DesktopHeader';
 import { MobileHeader } from '@/components/layout/MobileHeader';
+import { SiteFooter } from '@/components/layout/SiteFooter';
 import { shouldShowBottomNav, shouldShowShellHeader } from '@/lib/navigation';
 import { cn } from '@/lib/cn';
 
@@ -22,6 +23,7 @@ export function AppShell({ children }: AppShellProps) {
       <div className={cn('mx-auto w-full', 'max-w-app lg:max-w-none')}>
         {showHeader && <MobileHeader />}
         <main className={cn('min-h-screen', showNav && 'pb-[4.75rem] lg:pb-0')}>{children}</main>
+        {showHeader && <SiteFooter />}
       </div>
       {showNav && <BottomNav />}
     </div>

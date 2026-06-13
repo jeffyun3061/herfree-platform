@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useMemo } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
@@ -14,12 +14,21 @@ type RequireAuthProps = {
 export function RequireAuth({ children, redirectTo = '/login' }: RequireAuthProps) {
   const { isReady, isLoggedIn } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const loginHref = useMemo(() => {
+    const currentPath =
+      pathname +
+      (searchParams.toString() ? `?${searchParams.toString()}` : '');
+    return `${redirectTo}?from=${encodeURIComponent(currentPath)}`;
+  }, [pathname, redirectTo, searchParams]);
 
   useEffect(() => {
     if (isReady && !isLoggedIn) {
-      router.replace(redirectTo);
+      router.replace(loginHref);
     }
-  }, [isReady, isLoggedIn, router, redirectTo]);
+  }, [isReady, isLoggedIn, router, loginHref]);
 
   if (!isReady) return <LoadingSpinner />;
   if (!isLoggedIn) return null;

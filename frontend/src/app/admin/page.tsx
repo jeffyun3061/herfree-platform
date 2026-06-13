@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { TopBar } from '@/components/layout/TopBar';
@@ -27,10 +27,18 @@ const TABS: { id: AdminTab; label: string }[] = [
 
 export default function AdminPage() {
   const router = useRouter();
-  const { isReady, user } = useAuth();
+  const { isReady, isLoggedIn, user } = useAuth();
   const [tab, setTab] = useState<AdminTab>('reports');
 
+  useEffect(() => {
+    if (isReady && !isLoggedIn) {
+      router.replace('/login?from=%2Fadmin');
+    }
+  }, [isReady, isLoggedIn, router]);
+
   if (!isReady) return <LoadingSpinner />;
+
+  if (!isLoggedIn) return null;
 
   if (!isAdmin(user?.role)) {
     return (

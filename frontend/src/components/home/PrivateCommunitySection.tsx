@@ -43,7 +43,7 @@ export function PrivateCommunitySection({ posts, isLoading }: PrivateCommunitySe
     <section>
       <div className="community-dark-panel">
         <div className="mb-1 flex items-end justify-between">
-          <h2 className="section-heading-light">Private Community</h2>
+          <h2 className="section-heading-light">익명 커뮤니티</h2>
           <Link href="/community" className="section-link-light">
             더보기 &gt;
           </Link>

@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/Textarea';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { CONTENT_CATEGORIES } from '@/domain/content/types';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { getErrorMessage } from '@/lib/api/client';
 import * as adminApi from '@/lib/api/admin';
 
@@ -26,6 +27,7 @@ export function AdminContentsSection() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hideTargetId, setHideTargetId] = useState<number | null>(null);
 
   const resetForm = () => {
     setForm(EMPTY_FORM);
@@ -55,11 +57,11 @@ export function AdminContentsSection() {
   };
 
   const handleHide = async (contentId: number) => {
-    if (!confirm('이 정보글을 숨기시겠습니까?')) return;
     setIsSubmitting(true);
     setActionError(null);
     try {
       await adminApi.hideContent(contentId);
+      setHideTargetId(null);
       await refetch();
     } catch (err) {
       setActionError(getErrorMessage(err));
@@ -139,7 +141,7 @@ export function AdminContentsSection() {
                 size="sm"
                 variant="danger"
                 disabled={isSubmitting}
-                onClick={() => void handleHide(item.id)}
+                onClick={() => setHideTargetId(item.id)}
               >
                 숨김
               </Button>
@@ -147,6 +149,17 @@ export function AdminContentsSection() {
           </Card>
         ))}
       </div>
+
+      <ConfirmModal
+        open={hideTargetId !== null}
+        title="정보글 숨김"
+        message="이 정보글을 숨기시겠습니까? 사용자에게 더 이상 노출되지 않습니다."
+        confirmLabel="숨기기"
+        variant="danger"
+        isLoading={isSubmitting}
+        onConfirm={() => hideTargetId !== null && void handleHide(hideTargetId)}
+        onClose={() => setHideTargetId(null)}
+      />
     </div>
   );
 }

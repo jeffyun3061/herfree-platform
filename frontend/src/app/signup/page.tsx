@@ -13,7 +13,7 @@ import { getErrorMessage } from '@/lib/api/client';
 
 export default function SignupPage() {
   const router = useRouter();
-  const { signup } = useAuth();
+  const { signup, login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
@@ -34,7 +34,8 @@ export default function SignupPage() {
     setIsSubmitting(true);
     try {
       await signup({ email, password, nickname });
-      router.replace('/login');
+      await login({ email, password });
+      router.replace('/journal');
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -90,6 +91,17 @@ export default function SignupPage() {
         <Button type="submit" fullWidth disabled={isSubmitting}>
           {isSubmitting ? '가입 중…' : '가입하기'}
         </Button>
+        <p className="text-center text-[11px] leading-relaxed text-muted">
+          가입 시{' '}
+          <Link href="/terms" className="font-medium text-primary underline underline-offset-2">
+            이용약관
+          </Link>
+          {' 및 '}
+          <Link href="/privacy" className="font-medium text-primary underline underline-offset-2">
+            개인정보처리방침
+          </Link>
+          에 동의하게 됩니다.
+        </p>
         <p className="text-center text-sm text-muted">
           이미 계정이 있으신가요?{' '}
           <Link href="/login" className="font-medium text-primary">

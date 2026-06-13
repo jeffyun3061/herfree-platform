@@ -44,16 +44,16 @@ export function MobileHeader() {
           <BrandMark size="sm" />
         </Link>
         <div className="flex items-center gap-1">
+          <HeaderIconButton href="/community" label="커뮤니티 검색">
+            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
+              <circle cx="11" cy="11" r="7" />
+              <path d="M20 20l-3-3" strokeLinecap="round" />
+            </svg>
+          </HeaderIconButton>
           <HeaderIconButton href="/mypage" label="마이페이지">
             <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
               <circle cx="12" cy="8" r="3.5" />
               <path d="M5 20a7 7 0 0 1 14 0" strokeLinecap="round" />
-            </svg>
-          </HeaderIconButton>
-          <HeaderIconButton href="/#store" label="스토어">
-            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
-              <path d="M6 7h15l-1.5 9H7.5L6 7Z" strokeLinejoin="round" />
-              <path d="M6 7 5 3H2M9 20a1 1 0 1 0 0-2 1 1 0 0 0 0 2ZM18 20a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" />
             </svg>
           </HeaderIconButton>
           <HeaderIconButton label="메뉴" onClick={() => setMenuOpen(true)}>

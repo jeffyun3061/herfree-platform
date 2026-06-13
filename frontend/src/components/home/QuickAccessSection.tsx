@@ -3,7 +3,7 @@ import { cn } from '@/lib/cn';
 
 const QUICK_ITEMS = [
   {
-    title: '1:1 비밀 상담',
+    title: '익명 커뮤니티',
     href: '/community',
     variant: 'default' as const,
     icon: (
@@ -14,7 +14,7 @@ const QUICK_ITEMS = [
     ),
   },
   {
-    title: '체크리스트',
+    title: '개인 일지',
     href: '/journal',
     variant: 'default' as const,
     icon: (
@@ -56,7 +56,7 @@ export function QuickAccessSection({ layout = 'row' }: QuickAccessSectionProps) 
 
   return (
     <section className={cn(isPanel && 'quick-access-panel')}>
-      <h2 className={cn('section-heading', isPanel ? 'mb-6' : 'mb-6')}>Quick Access</h2>
+      <h2 className={cn('section-heading', isPanel ? 'mb-6' : 'mb-6')}>바로가기</h2>
       <div
         className={cn(
           isPanel ? 'quick-access-panel__grid' : 'grid grid-cols-4 gap-2 lg:gap-5',

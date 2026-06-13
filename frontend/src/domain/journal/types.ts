@@ -133,3 +133,17 @@ export function formatJournalDateLabel(isoDate: string): string {
     weekday: 'short',
   });
 }
+
+export function getTriggerLabel(value: string): string {
+  return TRIGGER_OPTIONS.find((option) => option.value === value)?.label ?? value;
+}
+
+export function formatTriggerLabels(triggers: string[]): string {
+  if (triggers.length === 0) return '없음';
+  return triggers.map(getTriggerLabel).join(', ');
+}
+
+export function formatStressLabel(level: StressLevel | null | undefined): string {
+  if (!level) return '—';
+  return STRESS_OPTIONS.find((option) => option.value === level)?.label ?? level;
+}

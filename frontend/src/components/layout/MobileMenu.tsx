@@ -1,7 +1,9 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { NAV_ITEMS } from '@/lib/navigation';
+import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/cn';
 
 type MobileMenuProps = {
@@ -11,12 +13,20 @@ type MobileMenuProps = {
 
 const EXTRA_LINKS = [
   { href: '/journal', label: '개인 일지' },
-  { href: '/login', label: '로그인' },
-  { href: '/signup', label: '회원가입' },
+  { href: '/contents', label: '건강 정보' },
 ];
 
 export function MobileMenu({ open, onClose }: MobileMenuProps) {
+  const router = useRouter();
+  const { isLoggedIn, user, logout } = useAuth();
+
   if (!open) return null;
+
+  const handleLogout = async () => {
+    await logout();
+    onClose();
+    router.replace('/');
+  };
 
   return (
     <div className="fixed inset-0 z-50 lg:hidden">
@@ -60,6 +70,42 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
               {item.label}
             </Link>
           ))}
+          <div className="my-2 h-px bg-border" />
+          {isLoggedIn ? (
+            <>
+              <Link
+                href="/mypage"
+                onClick={onClose}
+                className="rounded-xl px-3 py-3 text-sm font-medium text-ink hover:bg-canvas-dark"
+              >
+                {user?.nickname ?? '마이'}님 · 마이페이지
+              </Link>
+              <button
+                type="button"
+                onClick={() => void handleLogout()}
+                className="rounded-xl px-3 py-3 text-left text-sm text-red-600 hover:bg-canvas-dark"
+              >
+                로그아웃
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                onClick={onClose}
+                className="rounded-xl px-3 py-3 text-sm font-medium text-primary hover:bg-canvas-dark"
+              >
+                로그인
+              </Link>
+              <Link
+                href="/signup"
+                onClick={onClose}
+                className="rounded-xl px-3 py-3 text-sm text-muted hover:bg-canvas-dark"
+              >
+                회원가입
+              </Link>
+            </>
+          )}
         </nav>
       </div>
     </div>

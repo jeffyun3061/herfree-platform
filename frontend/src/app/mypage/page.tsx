@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
@@ -10,6 +10,7 @@ import { useBoards } from '@/hooks/useBoards';
 import { TopBar } from '@/components/layout/TopBar';
 import { PostCard } from '@/components/community/PostCard';
 import { Pagination } from '@/components/common/Pagination';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -52,24 +53,27 @@ export default function MyPage() {
   const { isReady, isLoggedIn, user, logout, withdraw, updateNickname } = useAuth();
   const { boards } = useBoards();
   const { activity, isLoading: activityLoading } = useMyActivity(isLoggedIn);
-  const { postPage, page, setPage, isLoading: postsLoading } = useMyPosts(isLoggedIn, 10);
+  const [postFilter, setPostFilter] = useState<PostFilter>('all');
   const [nickname, setNickname] = useState('');
   const [profileError, setProfileError] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [postFilter, setPostFilter] = useState<PostFilter>('all');
+  const [withdrawOpen, setWithdrawOpen] = useState(false);
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
 
   const symptomBoard = findBoardByType(boards, 'SYMPTOM');
   const freeBoard = findBoardByType(boards, 'FREE');
+  const boardIdForFilter =
+    postFilter === 'symptom' ? symptomBoard?.id : postFilter === 'free' ? freeBoard?.id : undefined;
 
-  const filteredPosts = useMemo(() => {
-    if (postFilter === 'symptom' && symptomBoard) {
-      return postPage.content.filter((post) => post.boardId === symptomBoard.id);
-    }
-    if (postFilter === 'free' && freeBoard) {
-      return postPage.content.filter((post) => post.boardId === freeBoard.id);
-    }
-    return postPage.content;
-  }, [postFilter, postPage.content, symptomBoard, freeBoard]);
+  const { postPage, page, setPage, isLoading: postsLoading } = useMyPosts(
+    isLoggedIn,
+    10,
+    boardIdForFilter,
+  );
+
+  useEffect(() => {
+    setPage(0);
+  }, [postFilter, setPage]);
 
   if (!isReady) return <LoadingSpinner />;
 
@@ -79,7 +83,7 @@ export default function MyPage() {
         <TopBar title="마이" className="lg:hidden" />
         <div className="flex flex-col items-center gap-4 px-4 py-16 text-center">
           <p className="text-sm text-muted">로그인 후 내 정보와 작성 글을 확인할 수 있습니다.</p>
-          <Link href="/login">
+          <Link href="/login?from=%2Fmypage">
             <Button>로그인</Button>
           </Link>
         </div>
@@ -105,15 +109,15 @@ export default function MyPage() {
   };
 
   const handleWithdraw = async () => {
-    const confirmed = confirm(
-      '정말 탈퇴하시겠습니까?\n작성한 글은 익명 처리되며, 계정은 복구할 수 없습니다.',
-    );
-    if (!confirmed) return;
+    setIsWithdrawing(true);
     try {
       await withdraw();
       router.replace('/');
     } catch (err) {
       setProfileError(getErrorMessage(err));
+    } finally {
+      setIsWithdrawing(false);
+      setWithdrawOpen(false);
     }
   };
 
@@ -166,6 +170,20 @@ export default function MyPage() {
           )}
         </section>
 
+        <section className="mb-6 rounded-2xl border border-border/80 bg-card p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h3 className="font-medium text-cream-foreground">개인 일지</h3>
+              <p className="mt-1 text-xs text-muted">재발 기록과 루틴을 비공개로 관리하세요.</p>
+            </div>
+            <Link href="/journal">
+              <Button size="sm" variant="secondary">
+                기록 대시보드
+              </Button>
+            </Link>
+          </div>
+        </section>
+
         <section className="space-y-3 rounded-2xl border border-border/80 bg-card p-4">
           <h3 className="font-medium text-cream-foreground">닉네임 변경</h3>
           <Input
@@ -183,9 +201,6 @@ export default function MyPage() {
         <section className="mt-8">
           <div className="mb-3 flex items-center justify-between">
             <h3 className="text-base font-semibold text-cream-foreground">내가 쓴 글</h3>
-            <Link href="/routine" className="text-xs font-medium text-primary">
-              기록 대시보드
-            </Link>
           </div>
           <div className="mb-4 flex gap-2">
             {(Object.keys(FILTER_LABELS) as PostFilter[]).map((filter) => (
@@ -206,13 +221,15 @@ export default function MyPage() {
           </div>
           {postsLoading ? (
             <LoadingSpinner label="글 불러오는 중…" />
-          ) : filteredPosts.length === 0 ? (
+          ) : postPage.content.length === 0 ? (
             <EmptyState
               title="표시할 글이 없습니다"
               description={
                 postFilter === 'symptom'
                   ? '증상 기록방에 첫 글을 남겨 보세요.'
-                  : '커뮤니티에서 이야기를 나눠 보세요.'
+                  : postFilter === 'free'
+                    ? '자유글 게시판에 첫 글을 남겨 보세요.'
+                    : '커뮤니티에서 이야기를 나눠 보세요.'
               }
               action={
                 symptomBoard ? (
@@ -224,25 +241,44 @@ export default function MyPage() {
             />
           ) : (
             <>
-              {filteredPosts.map((post) => (
+              {postPage.content.map((post) => (
                 <PostCard key={post.id} post={post} />
               ))}
-              {postFilter === 'all' && (
-                <Pagination page={page} totalPages={postPage.totalPages} onPageChange={setPage} />
-              )}
+              <Pagination page={page} totalPages={postPage.totalPages} onPageChange={setPage} />
             </>
           )}
         </section>
 
         <section className="mt-8 flex flex-col gap-3">
+          <div className="flex flex-wrap gap-3 text-xs text-muted">
+            <Link href="/terms" className="hover:text-primary">
+              이용약관
+            </Link>
+            <Link href="/privacy" className="hover:text-primary">
+              개인정보처리방침
+            </Link>
+          </div>
           <Button variant="secondary" onClick={() => void logout()}>
             로그아웃
           </Button>
-          <Button variant="ghost" className="text-red-600" onClick={() => void handleWithdraw()}>
+          <Button variant="ghost" className="text-red-600" onClick={() => setWithdrawOpen(true)}>
             회원 탈퇴
           </Button>
         </section>
       </div>
+
+      <ConfirmModal
+        open={withdrawOpen}
+        title="회원 탈퇴"
+        message={
+          '정말 탈퇴하시겠습니까?\n작성한 글은 익명 처리되며, 계정은 복구할 수 없습니다.'
+        }
+        confirmLabel="탈퇴하기"
+        variant="danger"
+        isLoading={isWithdrawing}
+        onConfirm={() => void handleWithdraw()}
+        onClose={() => setWithdrawOpen(false)}
+      />
     </>
   );
 }

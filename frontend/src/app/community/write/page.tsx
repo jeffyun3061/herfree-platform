@@ -148,10 +148,10 @@ function WritePostForm() {
 
 export default function WritePostPage() {
   return (
-    <RequireAuth>
-      <Suspense fallback={<LoadingSpinner />}>
+    <Suspense fallback={<LoadingSpinner />}>
+      <RequireAuth>
         <WritePostForm />
-      </Suspense>
-    </RequireAuth>
+      </RequireAuth>
+    </Suspense>
   );
 }

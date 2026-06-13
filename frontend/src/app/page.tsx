@@ -4,9 +4,7 @@ import { useMemo } from 'react';
 import { useBoards } from '@/hooks/useBoards';
 import { usePostList } from '@/hooks/usePosts';
 import { useContentList } from '@/hooks/useContents';
-import { useProducts } from '@/hooks/useProducts';
 import { HomeHero } from '@/components/home/HomeHero';
-import { CuratedEssentialsSection } from '@/components/home/CuratedEssentialsSection';
 import { PrivateCommunitySection } from '@/components/home/PrivateCommunitySection';
 import { QuickAccessSection } from '@/components/home/QuickAccessSection';
 import { InfoCategoriesSection } from '@/components/home/InfoCategoriesSection';
@@ -24,7 +22,6 @@ export default function HomePage() {
     4,
   );
   const { contentPage, isLoading: contentsLoading } = useContentList(undefined, 8);
-  const { productPage, isLoading: productsLoading } = useProducts(8);
 
   const expertContents = useMemo(
     () =>
@@ -39,11 +36,6 @@ export default function HomePage() {
       <div className="page-container space-y-10 lg:space-y-14">
         <HomeHero />
 
-        <CuratedEssentialsSection
-          products={productPage.content}
-          isLoading={productsLoading}
-        />
-
         <div className="lg:grid lg:grid-cols-12 lg:items-start lg:gap-8">
           <div className="lg:col-span-8">
             <PrivateCommunitySection
@@ -56,7 +48,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="hidden space-y-14 lg:block">
+        <div className="space-y-10 lg:space-y-14">
           <InfoCategoriesSection />
           <ExpertContentSection
             expertBoard={expertBoard}

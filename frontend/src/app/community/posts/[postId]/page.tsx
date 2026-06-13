@@ -15,8 +15,13 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { Button } from '@/components/ui/Button';
 import { Textarea } from '@/components/ui/Textarea';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { validateCommentInput } from '@/domain/comment/types';
 import { getErrorMessage } from '@/lib/api/client';
+
+type PendingConfirm =
+  | { type: 'delete-post' }
+  | { type: 'delete-comment'; commentId: number };
 
 export default function PostDetailPage() {
   const params = useParams();
@@ -24,7 +29,7 @@ export default function PostDetailPage() {
   const postId = Number(params.postId);
   const { isLoggedIn } = useAuth();
   const { post, isLoading, error } = usePostDetail(postId);
-  const { deletePost } = usePostMutation();
+  const { deletePost, isSubmitting: isDeletingPost } = usePostMutation();
   const {
     commentPage,
     page,
@@ -39,7 +44,12 @@ export default function PostDetailPage() {
   const [commentText, setCommentText] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
+  const [reportCommentId, setReportCommentId] = useState<number | null>(null);
   const [commentError, setCommentError] = useState<string | null>(null);
+  const [pendingConfirm, setPendingConfirm] = useState<PendingConfirm | null>(null);
+  const [isConfirming, setIsConfirming] = useState(false);
+
+  const loginHref = `/login?from=${encodeURIComponent(`/community/posts/${postId}`)}`;
 
   const handleComment = async () => {
     const validation = validateCommentInput(commentText);
@@ -52,10 +62,20 @@ export default function PostDetailPage() {
     if (ok) setCommentText('');
   };
 
-  const handleDelete = async () => {
-    if (!confirm('이 글을 삭제할까요?')) return;
-    const ok = await deletePost(postId);
-    if (ok) router.replace(`/community/${post?.boardId}`);
+  const handleConfirm = async () => {
+    if (!pendingConfirm) return;
+    setIsConfirming(true);
+    try {
+      if (pendingConfirm.type === 'delete-post') {
+        const ok = await deletePost(postId);
+        if (ok) router.replace(`/community/${post?.boardId}`);
+      } else {
+        await removeComment(pendingConfirm.commentId);
+      }
+      setPendingConfirm(null);
+    } finally {
+      setIsConfirming(false);
+    }
   };
 
   if (isLoading) return <LoadingSpinner />;
@@ -66,6 +86,13 @@ export default function PostDetailPage() {
       </div>
     );
   }
+
+  const confirmTitle =
+    pendingConfirm?.type === 'delete-post' ? '글 삭제' : '댓글 삭제';
+  const confirmMessage =
+    pendingConfirm?.type === 'delete-post'
+      ? '이 글을 삭제할까요? 삭제 후에는 복구할 수 없습니다.'
+      : '이 댓글을 삭제할까요?';
 
   return (
     <>
@@ -86,7 +113,11 @@ export default function PostDetailPage() {
                     수정
                   </Button>
                 </Link>
-                <Button variant="danger" size="sm" onClick={() => void handleDelete()}>
+                <Button
+                  variant="danger"
+                  size="sm"
+                  onClick={() => setPendingConfirm({ type: 'delete-post' })}
+                >
                   삭제
                 </Button>
               </>
@@ -119,21 +150,22 @@ export default function PostDetailPage() {
               {commentPage.content.map((comment) => {
                 const canDelete = comment.isMyComment;
                 return (
-                  <div key={comment.id} className="group relative">
-                    <CommentItem
-                      comment={comment}
-                      canDelete={canDelete}
-                      onDelete={
-                        canDelete
-                          ? () => {
-                              if (confirm('이 댓글을 삭제할까요?')) {
-                                void removeComment(comment.id);
-                              }
-                            }
-                          : undefined
-                      }
-                    />
-                  </div>
+                  <CommentItem
+                    key={comment.id}
+                    comment={comment}
+                    canDelete={canDelete}
+                    canReport={isLoggedIn && !comment.isMyComment}
+                    onDelete={
+                      canDelete
+                        ? () => setPendingConfirm({ type: 'delete-comment', commentId: comment.id })
+                        : undefined
+                    }
+                    onReport={
+                      isLoggedIn && !comment.isMyComment
+                        ? () => setReportCommentId(comment.id)
+                        : undefined
+                    }
+                  />
                 );
               })}
               <Pagination page={page} totalPages={commentPage.totalPages} onPageChange={setPage} />
@@ -164,7 +196,7 @@ export default function PostDetailPage() {
           ) : (
             <div className="mt-6 rounded-2xl border border-dashed border-border bg-card p-5 text-center">
               <p className="text-sm text-muted">댓글을 남기려면 로그인이 필요합니다.</p>
-              <Link href="/login" className="mt-3 inline-block">
+              <Link href={loginHref} className="mt-3 inline-block">
                 <Button size="sm">로그인하기</Button>
               </Link>
             </div>
@@ -177,6 +209,26 @@ export default function PostDetailPage() {
         onClose={() => setReportOpen(false)}
         targetType="POST"
         targetId={post.id}
+      />
+
+      {reportCommentId !== null && (
+        <ReportModal
+          open
+          onClose={() => setReportCommentId(null)}
+          targetType="COMMENT"
+          targetId={reportCommentId}
+        />
+      )}
+
+      <ConfirmModal
+        open={pendingConfirm !== null}
+        title={confirmTitle}
+        message={confirmMessage}
+        confirmLabel="삭제"
+        variant="danger"
+        isLoading={isConfirming || isDeletingPost}
+        onConfirm={() => void handleConfirm()}
+        onClose={() => setPendingConfirm(null)}
       />
     </>
   );

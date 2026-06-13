@@ -44,7 +44,8 @@ export function DesktopHeader() {
           <Link
             href="/community"
             className="flex h-9 w-9 items-center justify-center rounded-full text-ink-soft transition-colors hover:bg-canvas-dark hover:text-navy"
-            aria-label="검색"
+            aria-label="커뮤니티"
+            title="커뮤니티"
           >
             <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="11" cy="11" r="7" />
