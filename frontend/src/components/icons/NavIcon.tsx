@@ -1,4 +1,4 @@
-type NavIconName = 'home' | 'community' | 'info' | 'video' | 'mypage' | 'lounge' | 'routine' | 'journal';
+type NavIconName = 'home' | 'community' | 'info' | 'video' | 'mypage' | 'lounge' | 'journal';
 
 type NavIconProps = {
   name: NavIconName;
@@ -45,7 +45,6 @@ export function NavIcon({ name, className = 'h-5 w-5' }: NavIconProps) {
           <path d="m10 9 6 3-6 3V9Z" fill="currentColor" stroke="none" />
         </svg>
       );
-    case 'routine':
     case 'journal':
       return (
         <svg viewBox="0 0 24 24" aria-hidden {...common}>

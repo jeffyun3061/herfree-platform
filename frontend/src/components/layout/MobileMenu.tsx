@@ -11,10 +11,7 @@ type MobileMenuProps = {
   onClose: () => void;
 };
 
-const EXTRA_LINKS = [
-  { href: '/journal', label: '개인 일지' },
-  { href: '/contents', label: '건강 정보' },
-];
+const EXTRA_LINKS = [{ href: '/lounge', label: '헤르프리 영상' }];
 
 export function MobileMenu({ open, onClose }: MobileMenuProps) {
   const router = useRouter();

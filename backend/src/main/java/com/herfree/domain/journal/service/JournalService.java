@@ -109,9 +109,11 @@ public class JournalService {
                 .map(JournalRecordResponse::from);
     }
 
-    public Page<JournalRecordResponse> getMyRecords(Long userId, Pageable pageable) {
-        return journalRecordRepository.findByUserIdOrderByRecordDateDesc(userId, pageable)
-                .map(JournalRecordResponse::from);
+    public Page<JournalRecordResponse> getMyRecords(Long userId, Boolean hadSymptoms, Pageable pageable) {
+        Page<JournalRecord> page = Boolean.TRUE.equals(hadSymptoms)
+                ? journalRecordRepository.findByUserIdAndHadSymptomsTrueOrderByRecordDateDesc(userId, pageable)
+                : journalRecordRepository.findByUserIdOrderByRecordDateDesc(userId, pageable);
+        return page.map(JournalRecordResponse::from);
     }
 
     public JournalDashboardResponse getDashboard(Long userId) {
@@ -126,6 +128,7 @@ public class JournalService {
 
         List<JournalRecordResponse> recentRelapses = journalRecordRepository
                 .findByUserIdAndHadSymptomsTrueOrderByRecordDateDesc(userId, PageRequest.of(0, 5))
+                .getContent()
                 .stream()
                 .map(JournalRecordResponse::from)
                 .toList();

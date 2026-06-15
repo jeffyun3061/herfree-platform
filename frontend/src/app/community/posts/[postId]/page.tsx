@@ -99,6 +99,7 @@ export default function PostDetailPage() {
       <TopBar
         title={post.boardName}
         showBack
+        backHref={`/community/${post.boardId}`}
         rightSlot={
           <div className="flex gap-2">
             {isLoggedIn && (

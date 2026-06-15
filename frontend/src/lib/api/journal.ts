@@ -22,9 +22,9 @@ export function fetchJournalInsights() {
   return request<JournalInsights>('/api/journal/insights');
 }
 
-export function fetchJournalRecords(page = 0, size = 20) {
+export function fetchJournalRecords(page = 0, size = 20, hadSymptoms?: boolean) {
   return request<PageData<JournalRecord>>('/api/journal/records', {
-    query: { page, size },
+    query: { page, size, hadSymptoms },
   });
 }
 

@@ -64,7 +64,7 @@ export function JournalBentoDashboard({
             재발 기록과 루틴을 남기면 무재발 연속일과 패턴 인사이트를 확인할 수 있습니다.
           </p>
         </div>
-        <Link href="/login">
+        <Link href="/login?from=%2Fjournal">
           <Button variant="secondary" size="sm">
             로그인 후 시작하기
           </Button>

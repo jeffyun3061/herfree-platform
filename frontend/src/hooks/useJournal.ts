@@ -29,8 +29,17 @@ export function useJournalRecordByDate(date: string, enabled = true) {
   );
 }
 
-export function useJournalRecords(page: number, size = 20, enabled = true) {
-  return useApiQuery(() => journalApi.fetchJournalRecords(page, size), [page, size], { enabled });
+export function useJournalRecords(
+  page: number,
+  size = 20,
+  enabled = true,
+  hadSymptoms?: boolean,
+) {
+  return useApiQuery(
+    () => journalApi.fetchJournalRecords(page, size, hadSymptoms),
+    [page, size, hadSymptoms],
+    { enabled },
+  );
 }
 
 export function useJournalMutation() {

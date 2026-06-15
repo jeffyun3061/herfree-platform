@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useBoards } from '@/hooks/useBoards';
 import { usePostList } from '@/hooks/usePosts';
@@ -15,8 +15,9 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { getWritableBoards } from '@/domain/board/types';
+import { getWritableBoards, findBoardByType } from '@/domain/board/types';
 import { getErrorMessage } from '@/lib/api/client';
+import { FlowGuideBanner } from '@/components/ui/FlowGuideBanner';
 
 type CommunityFeedProps = {
   initialBoardId?: number | null;
@@ -24,7 +25,6 @@ type CommunityFeedProps = {
 
 export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
   const router = useRouter();
-  const pathname = usePathname();
   const { isLoggedIn } = useAuth();
   const { boards, isLoading: boardsLoading, error: boardsError } = useBoards();
   const [selectedBoardId, setSelectedBoardId] = useState<number | null>(initialBoardId);
@@ -66,6 +66,9 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
 
   const loginHref = `/login?from=${encodeURIComponent(writeHref)}`;
 
+  const symptomBoard = findBoardByType(boards, 'SYMPTOM');
+  const isSymptomBoard = symptomBoard != null && selectedBoardId === symptomBoard.id;
+
   const isLoadingAll = boardsLoading || isLoading;
   const listError = boardsError ?? error;
 
@@ -80,6 +83,23 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
       <p className="mb-4 text-sm text-muted lg:hidden">
         자유롭게 소통하고 정보를 나누는 공간입니다.
       </p>
+
+      <FlowGuideBanner
+        className="mb-4"
+        title="익명으로 이야기 나누는 공간"
+        description="글과 댓글은 커뮤니티에 공개됩니다. 나만 보는 재발·루틴 기록은 개인 일지를 이용해 주세요."
+        link={{ href: '/journal', label: '개인 일지로 비공개 기록하기' }}
+      />
+
+      {isSymptomBoard && (
+        <FlowGuideBanner
+          className="mb-4"
+          variant="accent"
+          title="증상 기록방 — 공개 게시판"
+          description="다른 회원과 경험을 나누는 공간입니다. 매일의 루틴·재발 패턴을 혼자 관리하려면 개인 일지가 더 적합합니다."
+          link={{ href: '/journal', label: '개인 일지 열기' }}
+        />
+      )}
 
       <div className="mb-4 flex gap-2">
         <Input

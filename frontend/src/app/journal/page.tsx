@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { JournalBentoDashboard } from '@/components/journal/JournalBentoDashboard';
 import { JournalInsightLines } from '@/components/journal/JournalInsightLines';
@@ -9,6 +9,7 @@ import { JournalShareButton } from '@/components/journal/JournalShareButton';
 import { Pagination } from '@/components/common/Pagination';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
+import { FlowGuideBanner } from '@/components/ui/FlowGuideBanner';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { MedicalDisclaimer } from '@/components/layout/MedicalDisclaimer';
 import { formatStressLabel, formatTriggerLabels, toDateInputValue } from '@/domain/journal/types';
@@ -29,6 +30,8 @@ export default function JournalPage() {
   const [historyPage, setHistoryPage] = useState(0);
   const [historyFilter, setHistoryFilter] = useState<'relapse' | 'all'>('relapse');
 
+  const historyHadSymptoms = historyFilter === 'relapse' ? true : undefined;
+
   const {
     data: dashboard,
     isLoading: dashboardLoading,
@@ -38,15 +41,14 @@ export default function JournalPage() {
   const { data: recordByDate, isLoading: recordLoading, refetch: refetchRecord } =
     useJournalRecordByDate(selectedDate, isLoggedIn);
   const { data: historyPageData, isLoading: historyLoading, refetch: refetchHistory } =
-    useJournalRecords(historyPage, 10, isLoggedIn);
+    useJournalRecords(historyPage, 10, isLoggedIn, historyHadSymptoms);
   const { save, isSubmitting, error } = useJournalMutation();
 
-  const relapseHistory =
-    historyPageData?.content.filter((record) => record.hadSymptoms) ?? [];
-  const displayHistory =
-    historyFilter === 'relapse'
-      ? relapseHistory
-      : (historyPageData?.content ?? []);
+  const displayHistory = historyPageData?.content ?? [];
+
+  useEffect(() => {
+    setHistoryPage(0);
+  }, [historyFilter]);
 
   const handleSave = async (input: Parameters<typeof save>[0]) => {
     await save(input);
@@ -54,6 +56,10 @@ export default function JournalPage() {
     setSaveMessage('기록이 저장되었습니다.');
     await Promise.all([refetchDashboard(), refetchRecord(), refetchHistory()]);
     setTimeout(() => setSaveMessage(null), 2500);
+  };
+
+  const handleHistoryFilter = (filter: 'relapse' | 'all') => {
+    setHistoryFilter(filter);
   };
 
   if (!isReady) {
@@ -75,16 +81,23 @@ export default function JournalPage() {
 
         <div className="flex items-center justify-between lg:hidden">
           <div>
-            <h1 className="font-serif text-xl font-semibold text-ink">재발 기록</h1>
+            <h1 className="font-serif text-xl font-semibold text-ink">개인 일지</h1>
             <p className="text-xs text-muted">오늘 {new Date().toLocaleDateString('ko-KR')}</p>
           </div>
           <div className="flex items-center gap-2">
             {isLoggedIn && <JournalShareButton dashboard={dashboard} />}
             <Link href="/journal#history" className="text-xs font-medium text-primary">
-              전체 기록 보기
+              기록 히스토리
             </Link>
           </div>
         </div>
+
+        <FlowGuideBanner
+          variant="accent"
+          title="나만 보는 비공개 기록"
+          description="재발·수면·루틴은 여기에 남기세요. 다른 사람과 나누고 싶다면 커뮤니티 증상 기록방을 이용해 주세요."
+          link={{ href: '/community', label: '커뮤니티에서 익명으로 나누기' }}
+        />
 
         <div className="grid gap-3 rounded-2xl border border-border/70 bg-white p-4 shadow-sm sm:grid-cols-3 lg:hidden">
           <Stat label="무재발 연속일" value={`${dashboard?.relapseFreeDays ?? '—'}`} suffix="일" />
@@ -104,7 +117,11 @@ export default function JournalPage() {
         )}
 
         {insights && insights.insightLines.length > 0 && (
-          <JournalInsightLines lines={insights.insightLines} />
+          <JournalInsightLines
+            lines={insights.insightLines}
+            sufficientData={insights.sufficientData}
+            insightMessage={insights.insightMessage}
+          />
         )}
 
         <div className="lg:grid lg:grid-cols-12 lg:items-start lg:gap-8">
@@ -144,7 +161,7 @@ export default function JournalPage() {
               <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={() => setHistoryFilter('relapse')}
+                  onClick={() => handleHistoryFilter('relapse')}
                   className={cn(
                     'rounded-full border px-3 py-1.5 text-xs transition-colors',
                     historyFilter === 'relapse'
@@ -156,7 +173,7 @@ export default function JournalPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setHistoryFilter('all')}
+                  onClick={() => handleHistoryFilter('all')}
                   className={cn(
                     'rounded-full border px-3 py-1.5 text-xs transition-colors',
                     historyFilter === 'all'

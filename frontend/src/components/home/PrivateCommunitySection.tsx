@@ -32,10 +32,6 @@ function PostAvatar({ nickname, index }: { nickname: string; index: number }) {
   );
 }
 
-function HexBadge({ count }: { count: number }) {
-  return <span className="hex-badge">{count > 99 ? '99+' : count}</span>;
-}
-
 export function PrivateCommunitySection({ posts, isLoading }: PrivateCommunitySectionProps) {
   const previewPosts = posts.slice(0, 4);
 
@@ -74,7 +70,6 @@ export function PrivateCommunitySection({ posts, isLoading }: PrivateCommunitySe
                       </span>
                     </div>
                   </div>
-                  <HexBadge count={post.viewCount} />
                 </Link>
               </li>
             ))}

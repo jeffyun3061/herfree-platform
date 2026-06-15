@@ -41,9 +41,10 @@ public class JournalController {
     @GetMapping("/records")
     public ResponseEntity<ApiResponse<Page<JournalRecordResponse>>> getMyRecords(
             @AuthenticationPrincipal Long userId,
+            @RequestParam(required = false) Boolean hadSymptoms,
             @PageableDefault(size = 20) Pageable pageable
     ) {
-        return ResponseEntity.ok(ApiResponse.success(journalService.getMyRecords(userId, pageable)));
+        return ResponseEntity.ok(ApiResponse.success(journalService.getMyRecords(userId, hadSymptoms, pageable)));
     }
 
     @GetMapping("/records/{recordId}")
