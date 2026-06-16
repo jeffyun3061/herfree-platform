@@ -26,6 +26,7 @@ export function getErrorMessage(error: unknown): string {
   if (typeof error === 'string' && error) return error;
   if (isApiError(error)) {
     if (error.status === 0) return error.message;
+    if (error.message) return error.message;
     if (error.status === 401) return '로그인이 필요합니다.';
     if (error.status === 403) return '권한이 없습니다.';
     if (error.status === 404) return '요청한 내용을 찾을 수 없습니다.';
@@ -61,24 +62,35 @@ function buildUrl(path: string, query?: Record<string, QueryValue>): string {
 
 // 401 처리 — 토큰이 만료·위조된 경우 세션을 비우고 로그인 화면으로 보낸다.
 // 토큰 없이 받은 401(로그인 실패 등)은 화면에서 메시지로 처리해야 하므로 리다이렉트하지 않는다.
-function handleUnauthorized(hadToken: boolean): void {
+function handleUnauthorized(hadToken: boolean, tokenAtRequest: string | null): void {
   if (!hadToken || typeof window === 'undefined') return;
+  // 가입·로그인 직후 새 토큰이 저장됐다면 이전 요청의 401로 세션을 지우지 않는다
+  if (tokenAtRequest && getAccessToken() !== tokenAtRequest) return;
+
+  const path = window.location.pathname;
+  if (path.startsWith('/login') || path.startsWith('/signup')) return;
+
   clearAuth();
-  if (!window.location.pathname.startsWith('/login')) {
+  if (!path.startsWith('/login')) {
     window.location.href = '/login';
   }
 }
 
+function isPublicAuthPath(path: string): boolean {
+  return path.startsWith('/api/auth/signup') || path.startsWith('/api/auth/login');
+}
+
 // 모든 API 호출이 거치는 단일 진입점 — 인증 헤더 첨부와 공통 응답 해석을 책임진다
 export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const token = getAccessToken();
+  const tokenAtRequest = getAccessToken();
   const headers: Record<string, string> = {};
+  const attachAuth = Boolean(tokenAtRequest) && !isPublicAuthPath(path);
 
   if (options.body !== undefined) {
     headers['Content-Type'] = 'application/json';
   }
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
+  if (attachAuth) {
+    headers.Authorization = `Bearer ${tokenAtRequest}`;
   }
 
   let response: Response;
@@ -92,8 +104,8 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
     throw createApiError(0, '서버에 연결할 수 없습니다. 네트워크 상태를 확인해 주세요.');
   }
 
-  if (response.status === 401) {
-    handleUnauthorized(Boolean(token));
+  if (response.status === 401 && !isPublicAuthPath(path)) {
+    handleUnauthorized(Boolean(tokenAtRequest), tokenAtRequest);
   }
 
   // 204 No Content — 삭제 API는 본문이 없으므로 바로 반환한다

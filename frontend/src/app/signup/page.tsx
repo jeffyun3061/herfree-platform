@@ -13,7 +13,7 @@ import { getErrorMessage } from '@/lib/api/client';
 
 export default function SignupPage() {
   const router = useRouter();
-  const { signup, login } = useAuth();
+  const { signup } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
@@ -34,7 +34,6 @@ export default function SignupPage() {
     setIsSubmitting(true);
     try {
       await signup({ email, password, nickname });
-      await login({ email, password });
       router.replace('/journal');
     } catch (err) {
       setError(getErrorMessage(err));

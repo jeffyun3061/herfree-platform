@@ -1,14 +1,24 @@
 'use client';
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import type { ReactNode } from 'react';
 import type { LoginRequest, SignupRequest } from '@/domain/auth/types';
 import type { SessionUser } from '@/domain/user/types';
 import * as authApi from '@/lib/api/auth';
 import * as usersApi from '@/lib/api/users';
 import {
+  bumpAuthEpoch,
   clearAuth,
   getAccessToken,
+  getAuthEpoch,
   getSessionUser,
   setAccessToken,
   setSessionUser,
@@ -28,49 +38,81 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+function toSessionUser(result: {
+  userId: number;
+  nickname: string;
+  role: SessionUser['role'];
+}): SessionUser {
+  return { userId: result.userId, nickname: result.nickname, role: result.role };
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<SessionUser | null>(null);
   const [isReady, setIsReady] = useState(false);
+  const restoreGenRef = useRef(0);
 
   // 첫 렌더 후 저장된 세션을 복원하고, 서버에 토큰 유효성을 확인한다.
-  // 만료 토큰이면 client.ts의 401 처리로 자동 정리된다.
   useEffect(() => {
     const restore = async () => {
+      const gen = ++restoreGenRef.current;
+      const epochAtStart = getAuthEpoch();
       const token = getAccessToken();
+
       if (!token) {
         setIsReady(true);
         return;
       }
+
       setUser(getSessionUser());
       try {
         const me = await usersApi.fetchMe();
+        if (gen !== restoreGenRef.current || epochAtStart !== getAuthEpoch()) return;
         const session: SessionUser = { userId: me.id, nickname: me.nickname, role: me.role };
         setSessionUser(session);
         setUser(session);
       } catch {
+        if (gen !== restoreGenRef.current || epochAtStart !== getAuthEpoch()) return;
         clearAuth();
         setUser(null);
       } finally {
-        setIsReady(true);
+        if (gen === restoreGenRef.current) {
+          setIsReady(true);
+        }
       }
     };
     void restore();
   }, []);
 
   const login = useCallback(async (input: LoginRequest) => {
+    clearAuth();
+    setUser(null);
+    ++restoreGenRef.current;
+    bumpAuthEpoch();
+
     const result = await authApi.login(input);
+    ++restoreGenRef.current;
+
     setAccessToken(result.accessToken);
-    const session: SessionUser = {
-      userId: result.userId,
-      nickname: result.nickname,
-      role: result.role,
-    };
+    const session = toSessionUser(result);
     setSessionUser(session);
     setUser(session);
   }, []);
 
   const signup = useCallback(async (input: SignupRequest) => {
+    clearAuth();
+    setUser(null);
+    ++restoreGenRef.current;
+    bumpAuthEpoch();
+
     await authApi.signup(input);
+
+    const result = await authApi.login({ email: input.email, password: input.password });
+    ++restoreGenRef.current;
+
+    setAccessToken(result.accessToken);
+    const session = toSessionUser(result);
+    setSessionUser(session);
+    setUser(session);
   }, []);
 
   const logout = useCallback(async () => {
@@ -79,12 +121,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch {
       // 서버 호출이 실패해도 클라이언트 토큰은 반드시 폐기한다 (Stateless JWT 구조)
     }
+    ++restoreGenRef.current;
     clearAuth();
     setUser(null);
   }, []);
 
   const withdraw = useCallback(async () => {
     await usersApi.withdraw();
+    ++restoreGenRef.current;
     clearAuth();
     setUser(null);
   }, []);

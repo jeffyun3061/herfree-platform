@@ -4,6 +4,18 @@ import type { SessionUser } from '@/domain/user/types';
 const ACCESS_TOKEN_KEY = 'accessToken';
 const SESSION_USER_KEY = 'sessionUser';
 
+// 로그인·가입 직후 이전 API 응답이 새 세션을 덮어쓰지 않도록 세대를 추적한다
+let authEpoch = 0;
+
+export function getAuthEpoch(): number {
+  return authEpoch;
+}
+
+export function bumpAuthEpoch(): number {
+  authEpoch += 1;
+  return authEpoch;
+}
+
 // SSR 환경에서는 localStorage가 없으므로 항상 브라우저 여부를 먼저 확인한다
 function isBrowser(): boolean {
   return typeof window !== 'undefined';
@@ -16,6 +28,7 @@ export function getAccessToken(): string | null {
 
 export function setAccessToken(token: string): void {
   if (!isBrowser()) return;
+  bumpAuthEpoch();
   window.localStorage.setItem(ACCESS_TOKEN_KEY, token);
 }
 
@@ -37,6 +50,7 @@ export function setSessionUser(user: SessionUser): void {
 
 export function clearAuth(): void {
   if (!isBrowser()) return;
+  bumpAuthEpoch();
   window.localStorage.removeItem(ACCESS_TOKEN_KEY);
   window.localStorage.removeItem(SESSION_USER_KEY);
 }
