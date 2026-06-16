@@ -5,6 +5,8 @@ import { useBoards } from '@/hooks/useBoards';
 import { usePostList } from '@/hooks/usePosts';
 import { useContentList } from '@/hooks/useContents';
 import { HomeHero } from '@/components/home/HomeHero';
+import { HomeMobileEntry } from '@/components/home/HomeMobileEntry';
+import { TrustCards } from '@/components/home/TrustCards';
 import { PrivateCommunitySection } from '@/components/home/PrivateCommunitySection';
 import { QuickAccessSection } from '@/components/home/QuickAccessSection';
 import { InfoCategoriesSection } from '@/components/home/InfoCategoriesSection';
@@ -35,6 +37,11 @@ export default function HomePage() {
     <div className="bg-canvas pb-8 lg:bg-[#eceae5] lg:pb-14">
       <div className="page-container space-y-10 lg:space-y-14">
         <HomeHero />
+        <HomeMobileEntry />
+
+        <div className="hidden lg:block">
+          <TrustCards />
+        </div>
 
         <div className="lg:grid lg:grid-cols-12 lg:items-start lg:gap-8">
           <div className="lg:col-span-8">

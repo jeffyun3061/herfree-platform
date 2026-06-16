@@ -17,6 +17,9 @@ public enum UserRole {
     // 모더레이터 — 신고 처리·콘텐츠 숨김 권한 (2차 확장 예정)
     MODERATOR,
 
-    // 최고 관리자 — 모든 권한 보유
-    ADMIN
+    // 운영 관리자 — 콘텐츠·회원 상태·집계 통계
+    ADMIN,
+
+    // 최고 관리자 — 권한 부여/회수 (bootstrap 또는 SUPER_ADMIN만 승격)
+    SUPER_ADMIN
 }

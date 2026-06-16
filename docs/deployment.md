@@ -9,7 +9,7 @@
 
 **1단계가 기본값이다.** `docker-compose.prod.yml` + `infra/` 참고.
 
-관리자 계정: [admin-setup.md](admin-setup.md) — 가입 후 `promote-admin.ps1`로 ADMIN 승격.
+관리자 계정: [admin-setup.md](admin-setup.md) — bootstrap/SQL로 SUPER_ADMIN 1명, 이후 화면에서 승격.
 
 ### 1단계 빠른 시작
 

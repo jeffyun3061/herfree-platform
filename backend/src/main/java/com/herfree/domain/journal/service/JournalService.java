@@ -1,14 +1,26 @@
 package com.herfree.domain.journal.service;
 
+import com.herfree.domain.comment.entity.CommentStatus;
+import com.herfree.domain.comment.repository.CommentRepository;
 import com.herfree.domain.journal.dto.request.JournalRecordUpsertRequest;
 import com.herfree.domain.journal.dto.response.AdminJournalStatsResponse;
 import com.herfree.domain.journal.dto.response.JournalDashboardResponse;
 import com.herfree.domain.journal.dto.response.JournalInsightItemResponse;
 import com.herfree.domain.journal.dto.response.JournalInsightsResponse;
 import com.herfree.domain.journal.dto.response.JournalRecordResponse;
+import com.herfree.domain.journal.dto.response.JournalTimelineDayResponse;
+import com.herfree.domain.journal.dto.response.JournalTodayStatusLevel;
+import com.herfree.domain.journal.dto.response.JournalTrendDirection;
 import com.herfree.domain.journal.entity.JournalRecord;
+import com.herfree.domain.journal.entity.MedicationStatus;
+import com.herfree.domain.journal.entity.SleepRange;
+import com.herfree.domain.journal.entity.StressLevel;
 import com.herfree.domain.journal.exception.JournalRecordNotFoundException;
 import com.herfree.domain.journal.repository.JournalRecordRepository;
+import com.herfree.domain.post.entity.PostStatus;
+import com.herfree.domain.post.repository.PostRepository;
+import com.herfree.domain.report.entity.ReportStatus;
+import com.herfree.domain.report.repository.ReportRepository;
 import com.herfree.domain.user.entity.User;
 import com.herfree.domain.user.exception.UserNotFoundException;
 import com.herfree.domain.user.repository.UserRepository;
@@ -21,6 +33,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -36,6 +50,7 @@ public class JournalService {
     private static final int INSIGHT_MIN_SAMPLE = 10;
     private static final int INSIGHT_LOOKBACK_MONTHS = 6;
     private static final int ROUTINE_TASK_COUNT = 4;
+    private static final int TIMELINE_DAYS = 14;
 
     private static final Map<String, String> TRIGGER_LABELS = Map.of(
             "STRESS", "스트레스",
@@ -56,8 +71,32 @@ public class JournalService {
             "NONE", "없었음"
     );
 
+    private static final Map<String, String> CONTENT_HINT_TEMPLATES = Map.of(
+            "SLEEP_DEFICIT", "수면 부족 선택이 많아 수면관리 콘텐츠 필요",
+            "STRESS", "스트레스 트리거가 많아 스트레스 관리 콘텐츠 필요",
+            "ALCOHOL", "음주 관련 트리거가 많아 생활습관 콘텐츠 필요",
+            "MENSTRUATION", "생리 전후 트리거가 많아 주기 관리 콘텐츠 필요",
+            "OVERWORK", "과로 트리거가 많아 휴식·번아웃 콘텐츠 필요"
+    );
+
+    private static final Map<SleepRange, String> SLEEP_RANGE_LABELS = Map.of(
+            SleepRange.UNDER_5, "5시간 미만",
+            SleepRange.H5_6, "5~6시간",
+            SleepRange.H6_7, "6~7시간",
+            SleepRange.H7_PLUS, "7시간 이상"
+    );
+
+    private static final Map<StressLevel, String> STRESS_LABELS = Map.of(
+            StressLevel.LOW, "낮음",
+            StressLevel.MEDIUM, "보통",
+            StressLevel.HIGH, "높음"
+    );
+
     private final JournalRecordRepository journalRecordRepository;
     private final UserRepository userRepository;
+    private final ReportRepository reportRepository;
+    private final PostRepository postRepository;
+    private final CommentRepository commentRepository;
 
     @Transactional
     public JournalRecordResponse upsertRecord(Long userId, JournalRecordUpsertRequest request) {
@@ -95,6 +134,16 @@ public class JournalService {
         return JournalRecordResponse.from(journalRecordRepository.save(record));
     }
 
+    @Transactional
+    public void deleteRecord(Long userId, Long recordId) {
+        JournalRecord record = journalRecordRepository.findById(recordId)
+                .orElseThrow(JournalRecordNotFoundException::new);
+        if (!record.getUser().getId().equals(userId)) {
+            throw new JournalRecordNotFoundException();
+        }
+        journalRecordRepository.delete(record);
+    }
+
     public JournalRecordResponse getRecord(Long userId, Long recordId) {
         JournalRecord record = journalRecordRepository.findById(recordId)
                 .orElseThrow(JournalRecordNotFoundException::new);
@@ -120,9 +169,8 @@ public class JournalService {
         LocalDate today = LocalDate.now();
         YearMonth month = YearMonth.from(today);
 
-        Optional<JournalRecordResponse> todayRecord = journalRecordRepository
-                .findByUserIdAndRecordDate(userId, today)
-                .map(JournalRecordResponse::from);
+        Optional<JournalRecord> todayEntity = journalRecordRepository.findByUserIdAndRecordDate(userId, today);
+        Optional<JournalRecordResponse> todayRecord = todayEntity.map(JournalRecordResponse::from);
 
         int routineCompleted = todayRecord.map(this::countRoutineTasks).orElse(0);
 
@@ -146,6 +194,18 @@ public class JournalService {
         int monthRelapses = (int) journalRecordRepository.countByUserIdAndHadSymptomsTrueAndRecordDateBetween(
                 userId, month.atDay(1), month.atEndOfMonth());
 
+        LocalDate timelineStart = today.minusDays(TIMELINE_DAYS - 1L);
+        List<JournalRecord> timelineRecords = journalRecordRepository
+                .findByUserIdAndRecordDateBetweenOrderByRecordDateDesc(userId, timelineStart, today);
+        Map<LocalDate, JournalRecord> recordByDate = timelineRecords.stream()
+                .collect(Collectors.toMap(JournalRecord::getRecordDate, Function.identity(), (a, b) -> a));
+
+        List<JournalTimelineDayResponse> timelineDays = buildTimelineDays(today, recordByDate);
+        String todayStatusSummary = buildTodayStatusSummary(todayEntity);
+        JournalTodayStatusLevel todayStatusLevel = resolveTodayStatusLevel(todayEntity);
+        JournalTrendDirection trendDirection = resolveTrendDirection(timelineRecords, today);
+        String personalPatternLine = buildPersonalPatternLine(recentRelapses);
+
         return new JournalDashboardResponse(
                 Math.max(relapseFreeDays, 0),
                 totalRelapses,
@@ -153,7 +213,12 @@ public class JournalService {
                 routineCompleted,
                 ROUTINE_TASK_COUNT,
                 todayRecord.orElse(null),
-                recentRelapses
+                recentRelapses,
+                todayStatusSummary,
+                todayStatusLevel,
+                trendDirection,
+                personalPatternLine,
+                timelineDays
         );
     }
 
@@ -206,23 +271,231 @@ public class JournalService {
     }
 
     public AdminJournalStatsResponse getAdminStats() {
+        LocalDate today = LocalDate.now();
         JournalInsightsResponse communityInsights = getCommunityInsights();
         long totalRecords = journalRecordRepository.count();
         long totalUsers = journalRecordRepository.countDistinctUsers();
         long symptomRecords = journalRecordRepository.countByHadSymptomsTrue();
 
+        long recordsLast7Days = journalRecordRepository.countByRecordDateBetween(today.minusDays(6), today);
+        long recordsLast30Days = journalRecordRepository.countByRecordDateBetween(today.minusDays(29), today);
+        long symptomRecordsLast7Days = journalRecordRepository.countByHadSymptomsTrueAndRecordDateBetween(
+                today.minusDays(6), today);
+        long symptomRecordsLast30Days = journalRecordRepository.countByHadSymptomsTrueAndRecordDateBetween(
+                today.minusDays(29), today);
+
+        long pendingReports = reportRepository.countByStatus(ReportStatus.PENDING);
+        long acceptedReports = reportRepository.countByStatus(ReportStatus.ACCEPTED);
+        long rejectedReports = reportRepository.countByStatus(ReportStatus.REJECTED);
+        long hiddenPostsCount = postRepository.countByStatus(PostStatus.HIDDEN);
+        long hiddenCommentsCount = commentRepository.countByStatus(CommentStatus.HIDDEN);
+
+        List<String> contentHints = buildContentHints(communityInsights);
         List<String> adminLines = new ArrayList<>();
         adminLines.add(String.format("누적 일지 기록 %d건 · 참여 회원 %d명", totalRecords, totalUsers));
         adminLines.add(String.format("재발(증상) 기록 %d건 (익명 집계 대상)", symptomRecords));
+        adminLines.add(String.format("최근 7일 기록 %d건 · 재발 %d건", recordsLast7Days, symptomRecordsLast7Days));
+        adminLines.add(String.format("대기 신고 %d건 · 숨김 글 %d · 숨김 댓글 %d",
+                pendingReports, hiddenPostsCount, hiddenCommentsCount));
         adminLines.addAll(communityInsights.insightLines());
 
         return new AdminJournalStatsResponse(
                 totalRecords,
                 totalUsers,
                 symptomRecords,
+                recordsLast7Days,
+                recordsLast30Days,
+                symptomRecordsLast7Days,
+                symptomRecordsLast30Days,
+                pendingReports,
+                acceptedReports,
+                rejectedReports,
+                hiddenPostsCount,
+                hiddenCommentsCount,
+                contentHints,
                 adminLines,
                 communityInsights
         );
+    }
+
+    private List<JournalTimelineDayResponse> buildTimelineDays(
+            LocalDate today,
+            Map<LocalDate, JournalRecord> recordByDate
+    ) {
+        List<JournalTimelineDayResponse> days = new ArrayList<>();
+        for (int offset = TIMELINE_DAYS - 1; offset >= 0; offset--) {
+            LocalDate date = today.minusDays(offset);
+            JournalRecord record = recordByDate.get(date);
+            if (record == null) {
+                days.add(new JournalTimelineDayResponse(date, false, false, false, false, false, false));
+            } else {
+                days.add(new JournalTimelineDayResponse(
+                        date,
+                        true,
+                        record.isHadSymptoms(),
+                        hasProdromal(record),
+                        isSleepDeficit(record),
+                        isHighStress(record),
+                        isMedicationMissed(record)
+                ));
+            }
+        }
+        return days;
+    }
+
+    private String buildTodayStatusSummary(Optional<JournalRecord> todayEntity) {
+        if (todayEntity.isEmpty()) {
+            return "오늘 기록 전이에요";
+        }
+        JournalRecord record = todayEntity.get();
+        if (record.isHadSymptoms()) {
+            Integer severity = record.getSeverity();
+            return severity != null
+                    ? String.format("오늘 재발 기록 · 심각도 %d", severity)
+                    : "오늘 재발 기록";
+        }
+
+        StringBuilder summary = new StringBuilder("오늘은 증상 없음");
+        if (record.getSleepHours() != null) {
+            summary.append(String.format(", 수면 %sh", record.getSleepHours().stripTrailingZeros().toPlainString()));
+        } else if (record.getAvgSleep() != null) {
+            summary.append(", 수면 ").append(SLEEP_RANGE_LABELS.getOrDefault(record.getAvgSleep(), "—"));
+        }
+        if (record.getStressLevel() != null) {
+            summary.append(", 스트레스 ").append(STRESS_LABELS.getOrDefault(record.getStressLevel(), "—"));
+        }
+        return summary.toString();
+    }
+
+    private JournalTodayStatusLevel resolveTodayStatusLevel(Optional<JournalRecord> todayEntity) {
+        if (todayEntity.isEmpty()) {
+            return JournalTodayStatusLevel.NOT_RECORDED;
+        }
+        JournalRecord record = todayEntity.get();
+        if (record.isHadSymptoms()) {
+            return JournalTodayStatusLevel.RELAPSE;
+        }
+        if (hasProdromal(record) || isSleepDeficit(record) || isHighStress(record) || isMedicationMissed(record)) {
+            return JournalTodayStatusLevel.ATTENTION;
+        }
+        return JournalTodayStatusLevel.STABLE;
+    }
+
+    private JournalTrendDirection resolveTrendDirection(List<JournalRecord> recentRecords, LocalDate today) {
+        if (recentRecords.size() < 3) {
+            return JournalTrendDirection.UNKNOWN;
+        }
+
+        LocalDate recentStart = today.minusDays(6);
+        LocalDate previousStart = today.minusDays(13);
+        LocalDate previousEnd = today.minusDays(7);
+
+        int recentScore = scorePeriod(recentRecords, recentStart, today);
+        int previousScore = scorePeriod(recentRecords, previousStart, previousEnd);
+
+        if (previousScore == 0 && recentScore == 0) {
+            return JournalTrendDirection.STABLE;
+        }
+        if (recentScore < previousScore) {
+            return JournalTrendDirection.IMPROVING;
+        }
+        if (recentScore > previousScore) {
+            return JournalTrendDirection.WORSENING;
+        }
+        return JournalTrendDirection.STABLE;
+    }
+
+    private int scorePeriod(List<JournalRecord> records, LocalDate from, LocalDate to) {
+        return records.stream()
+                .filter(record -> !record.getRecordDate().isBefore(from) && !record.getRecordDate().isAfter(to))
+                .mapToInt(this::dayConcernScore)
+                .sum();
+    }
+
+    private int dayConcernScore(JournalRecord record) {
+        int score = 0;
+        if (record.isHadSymptoms()) {
+            score += 3;
+        }
+        if (hasProdromal(record)) {
+            score += 2;
+        }
+        if (isSleepDeficit(record)) {
+            score += 1;
+        }
+        if (isHighStress(record)) {
+            score += 1;
+        }
+        if (isMedicationMissed(record)) {
+            score += 1;
+        }
+        return score;
+    }
+
+    private String buildPersonalPatternLine(List<JournalRecordResponse> recentRelapses) {
+        if (recentRelapses.isEmpty()) {
+            return "재발 기록이 쌓이면 나만의 패턴 한 줄을 보여 드릴게요.";
+        }
+
+        Map<String, Integer> triggerCounts = new HashMap<>();
+        for (JournalRecordResponse relapse : recentRelapses) {
+            if (relapse.triggers() != null) {
+                for (String trigger : relapse.triggers()) {
+                    triggerCounts.merge(trigger, 1, Integer::sum);
+                }
+            }
+        }
+
+        if (triggerCounts.isEmpty()) {
+            return String.format("최근 %d회 재발 기록이 있어요. 트리거를 남기면 패턴이 더 선명해져요.", recentRelapses.size());
+        }
+
+        String topTrigger = triggerCounts.entrySet().stream()
+                .max(Map.Entry.comparingByValue())
+                .map(Map.Entry::getKey)
+                .orElse("UNKNOWN");
+        String label = TRIGGER_LABELS.getOrDefault(topTrigger, topTrigger);
+        return String.format("재발 시 '%s'이(가) 자주 함께 기록돼요.", label);
+    }
+
+    private List<String> buildContentHints(JournalInsightsResponse communityInsights) {
+        List<String> hints = new ArrayList<>();
+        for (JournalInsightItemResponse trigger : communityInsights.topTriggers()) {
+            String hint = CONTENT_HINT_TEMPLATES.get(trigger.code());
+            if (hint != null && trigger.percentage() >= 20) {
+                hints.add(hint);
+            }
+        }
+        if (hints.isEmpty() && communityInsights.sufficientData()) {
+            hints.add("익명 재발 데이터를 바탕으로 맞춤 콘텐츠 기획을 검토해 보세요.");
+        }
+        return hints;
+    }
+
+    private boolean hasProdromal(JournalRecord record) {
+        List<String> symptoms = record.getProdromalSymptoms();
+        if (symptoms == null || symptoms.isEmpty()) {
+            return false;
+        }
+        return symptoms.stream().anyMatch(symptom -> !"NONE".equals(symptom));
+    }
+
+    private boolean isSleepDeficit(JournalRecord record) {
+        if (record.getSleepHours() != null
+                && record.getSleepHours().compareTo(BigDecimal.valueOf(6)) < 0) {
+            return true;
+        }
+        SleepRange sleep = record.getAvgSleep();
+        return sleep == SleepRange.UNDER_5 || sleep == SleepRange.H5_6;
+    }
+
+    private boolean isHighStress(JournalRecord record) {
+        return record.getStressLevel() == StressLevel.HIGH;
+    }
+
+    private boolean isMedicationMissed(JournalRecord record) {
+        MedicationStatus status = record.getMedicationStatus();
+        return status == MedicationStatus.IRREGULAR || status == MedicationStatus.NOT_TAKING;
     }
 
     private List<String> buildInsightLines(

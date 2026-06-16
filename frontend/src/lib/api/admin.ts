@@ -1,5 +1,6 @@
 import type { PageData } from '@/domain/common/types';
 import type { AdminJournalStats } from '@/domain/journal/types';
+import type { AdminUser, UserRole, UserStatus } from '@/domain/user/types';
 import type { Content } from '@/domain/content/types';
 import type { Product } from '@/domain/product/types';
 import type { Report, ReportProcessInput, ReportStatus } from '@/domain/report/types';
@@ -114,4 +115,24 @@ export function setProductVisibility(productId: number, isVisible: boolean): Pro
 
 export function fetchAdminJournalStats(): Promise<AdminJournalStats> {
   return request<AdminJournalStats>('/api/admin/journal/stats');
+}
+
+export function fetchAdminUsers(page: number, size = 20): Promise<PageData<AdminUser>> {
+  return request<PageData<AdminUser>>('/api/admin/users', {
+    query: { page, size, sort: 'createdAt,desc' },
+  });
+}
+
+export function updateAdminUserRole(userId: number, role: UserRole): Promise<AdminUser> {
+  return request<AdminUser>(`/api/admin/users/${userId}/role`, {
+    method: 'PATCH',
+    body: { role },
+  });
+}
+
+export function updateAdminUserStatus(userId: number, status: UserStatus): Promise<AdminUser> {
+  return request<AdminUser>(`/api/admin/users/${userId}/status`, {
+    method: 'PATCH',
+    body: { status },
+  });
 }

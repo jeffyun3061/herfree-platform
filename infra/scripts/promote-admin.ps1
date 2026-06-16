@@ -9,9 +9,9 @@ param(
 )
 
 $escaped = $Email.Replace("'", "''")
-$sql = "UPDATE users SET role = 'ADMIN' WHERE email = '$escaped'; SELECT id, email, role, status FROM users WHERE email = '$escaped';"
+$sql = "UPDATE users SET role = 'SUPER_ADMIN' WHERE email = '$escaped'; SELECT id, email, role, status FROM users WHERE email = '$escaped';"
 
-Write-Host "Promoting $Email to ADMIN ..."
+Write-Host "Promoting $Email to SUPER_ADMIN ..."
 
 docker exec $Container mysql -u$User -p$Password $Database -e $sql
 

@@ -36,6 +36,12 @@ public interface JournalRecordRepository extends JpaRepository<JournalRecord, Lo
 
     long countByHadSymptomsTrue();
 
+    long countByRecordDateBetween(LocalDate from, LocalDate to);
+
+    long countByHadSymptomsTrueAndRecordDateBetween(LocalDate from, LocalDate to);
+
+    long countByUserIdAndRecordDateBetween(Long userId, LocalDate from, LocalDate to);
+
     @Query("SELECT COUNT(DISTINCT r.user.id) FROM JournalRecord r")
     long countDistinctUsers();
 }

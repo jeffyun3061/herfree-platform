@@ -82,4 +82,12 @@ public class User extends BaseTimeEntity {
     public void activate() {
         this.status = UserStatus.ACTIVE;
     }
+
+    public void changeRole(UserRole role) {
+        this.role = role;
+    }
+
+    public void changeStatus(UserStatus status) {
+        this.status = status;
+    }
 }

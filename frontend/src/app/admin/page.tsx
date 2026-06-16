@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { TopBar } from '@/components/layout/TopBar';
@@ -12,22 +12,35 @@ import { AdminContentsSection } from '@/components/admin/AdminContentsSection';
 import { AdminVideosSection } from '@/components/admin/AdminVideosSection';
 import { AdminProductsSection } from '@/components/admin/AdminProductsSection';
 import { AdminJournalStatsSection } from '@/components/admin/AdminJournalStatsSection';
-import { isAdmin } from '@/domain/user/types';
+import { AdminUsersSection } from '@/components/admin/AdminUsersSection';
+import { isAdmin, isStaff, isSuperAdmin, USER_ROLE_LABELS, type UserRole } from '@/domain/user/types';
 import { cn } from '@/lib/cn';
 
-type AdminTab = 'reports' | 'contents' | 'videos' | 'products' | 'journal';
+type AdminTab = 'reports' | 'users' | 'contents' | 'videos' | 'products' | 'journal';
 
-const TABS: { id: AdminTab; label: string }[] = [
-  { id: 'reports', label: '신고' },
-  { id: 'journal', label: '일지 통계' },
-  { id: 'contents', label: '정보글' },
-  { id: 'videos', label: '영상' },
-  { id: 'products', label: '제품' },
+const ALL_TABS: { id: AdminTab; label: string; minRole: 'moderator' | 'admin' | 'super' }[] = [
+  { id: 'reports', label: '신고', minRole: 'moderator' },
+  { id: 'journal', label: '일지 통계', minRole: 'admin' },
+  { id: 'contents', label: '정보글', minRole: 'admin' },
+  { id: 'videos', label: '영상', minRole: 'admin' },
+  { id: 'products', label: '제품', minRole: 'admin' },
+  { id: 'users', label: '회원', minRole: 'admin' },
 ];
+
+function canSeeTab(
+  tab: (typeof ALL_TABS)[number],
+  role: UserRole | undefined | null,
+): boolean {
+  if (!isStaff(role)) return false;
+  if (tab.minRole === 'moderator') return isStaff(role);
+  if (tab.minRole === 'admin') return isAdmin(role);
+  return isSuperAdmin(role);
+}
 
 export default function AdminPage() {
   const router = useRouter();
   const { isReady, isLoggedIn, user } = useAuth();
+  const tabs = useMemo(() => ALL_TABS.filter((tab) => canSeeTab(tab, user?.role)), [user?.role]);
   const [tab, setTab] = useState<AdminTab>('reports');
 
   useEffect(() => {
@@ -36,16 +49,22 @@ export default function AdminPage() {
     }
   }, [isReady, isLoggedIn, router]);
 
+  useEffect(() => {
+    if (tabs.length > 0 && !tabs.some((item) => item.id === tab)) {
+      setTab(tabs[0].id);
+    }
+  }, [tabs, tab]);
+
   if (!isReady) return <LoadingSpinner />;
 
   if (!isLoggedIn) return null;
 
-  if (!isAdmin(user?.role)) {
+  if (!isStaff(user?.role)) {
     return (
       <>
-        <TopBar title="관리자" showBack />
+        <TopBar title="운영 관리" showBack />
         <div className="px-4 py-6">
-          <ErrorMessage message="관리자만 접근할 수 있습니다." />
+          <ErrorMessage message="운영 권한이 있는 계정만 접근할 수 있습니다." />
           <Button className="mt-4" onClick={() => router.replace('/')}>
             홈으로
           </Button>
@@ -58,8 +77,13 @@ export default function AdminPage() {
     <>
       <TopBar title="운영 관리" showBack />
       <div className="px-4 py-4">
+        <p className="mb-3 text-xs text-muted">
+          현재 권한: {user?.role ? USER_ROLE_LABELS[user.role] : '—'}
+          {isSuperAdmin(user?.role) && ' · 권한 부여/회수 가능'}
+        </p>
+
         <div className="scrollbar-hide -mx-1 mb-4 flex gap-2 overflow-x-auto px-1">
-          {TABS.map((item) => (
+          {tabs.map((item) => (
             <button
               key={item.id}
               type="button"
@@ -81,6 +105,7 @@ export default function AdminPage() {
         {tab === 'contents' && <AdminContentsSection />}
         {tab === 'videos' && <AdminVideosSection />}
         {tab === 'products' && <AdminProductsSection />}
+        {tab === 'users' && <AdminUsersSection />}
       </div>
     </>
   );

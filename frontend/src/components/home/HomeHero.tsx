@@ -22,7 +22,7 @@ export function HomeHero() {
             <br className="lg:hidden" />
             헤르프리와 함께 만들어가세요.
           </p>
-          <div className="mt-5 flex flex-wrap gap-2 lg:mt-6 lg:gap-3">
+          <div className="mt-5 hidden flex-wrap gap-2 lg:mt-6 lg:flex lg:gap-3">
             <Link
               href="/community"
               className="inline-flex h-10 items-center rounded-full bg-navy px-5 text-xs font-medium text-white transition-colors hover:bg-navy-light lg:h-11 lg:px-6 lg:text-sm"

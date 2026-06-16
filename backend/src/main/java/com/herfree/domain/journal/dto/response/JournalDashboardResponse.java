@@ -1,6 +1,5 @@
 package com.herfree.domain.journal.dto.response;
 
-import java.time.LocalDate;
 import java.util.List;
 
 public record JournalDashboardResponse(
@@ -10,6 +9,11 @@ public record JournalDashboardResponse(
         int routineCompletedToday,
         int routineTotalToday,
         JournalRecordResponse todayRecord,
-        List<JournalRecordResponse> recentRelapses
+        List<JournalRecordResponse> recentRelapses,
+        String todayStatusSummary,
+        JournalTodayStatusLevel todayStatusLevel,
+        JournalTrendDirection trendDirection,
+        String personalPatternLine,
+        List<JournalTimelineDayResponse> timelineDays
 ) {
 }

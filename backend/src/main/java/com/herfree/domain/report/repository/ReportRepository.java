@@ -15,4 +15,6 @@ public interface ReportRepository extends JpaRepository<Report, Long> {
 
     // 관리자가 상태별로 신고 목록을 조회할 때 사용
     Page<Report> findByStatusOrderByCreatedAtDesc(ReportStatus status, Pageable pageable);
+
+    long countByStatus(ReportStatus status);
 }

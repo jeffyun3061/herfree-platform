@@ -2,7 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { JournalBentoDashboard } from '@/components/journal/JournalBentoDashboard';
+import { JournalTodayStatusCard } from '@/components/journal/JournalTodayStatusCard';
+import { JournalQuickCheckin } from '@/components/journal/JournalQuickCheckin';
+import { JournalTimeline14Days } from '@/components/journal/JournalTimeline14Days';
+import { JournalPatternLine } from '@/components/journal/JournalPatternLine';
+import { JournalRecentRelapses } from '@/components/journal/JournalRecentRelapses';
 import { JournalInsightLines } from '@/components/journal/JournalInsightLines';
 import { JournalRecordForm } from '@/components/journal/JournalRecordForm';
 import { JournalShareButton } from '@/components/journal/JournalShareButton';
@@ -10,13 +14,14 @@ import { Pagination } from '@/components/common/Pagination';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { FlowGuideBanner } from '@/components/ui/FlowGuideBanner';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { MedicalDisclaimer } from '@/components/layout/MedicalDisclaimer';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { formatStressLabel, formatTriggerLabels, toDateInputValue } from '@/domain/journal/types';
 import { cn } from '@/lib/cn';
 import { useAuth } from '@/hooks/useAuth';
 import {
   useJournalDashboard,
+  useJournalDelete,
   useJournalInsights,
   useJournalMutation,
   useJournalRecordByDate,
@@ -29,6 +34,8 @@ export default function JournalPage() {
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [historyPage, setHistoryPage] = useState(0);
   const [historyFilter, setHistoryFilter] = useState<'relapse' | 'all'>('relapse');
+  const [checkinOpen, setCheckinOpen] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
 
   const historyHadSymptoms = historyFilter === 'relapse' ? true : undefined;
 
@@ -36,13 +43,14 @@ export default function JournalPage() {
     data: dashboard,
     isLoading: dashboardLoading,
     refetch: refetchDashboard,
-  } = useJournalDashboard(isLoggedIn);
+  } = useJournalDashboard(isLoggedIn && isReady);
   const { data: insights } = useJournalInsights();
   const { data: recordByDate, isLoading: recordLoading, refetch: refetchRecord } =
-    useJournalRecordByDate(selectedDate, isLoggedIn);
+    useJournalRecordByDate(selectedDate, isLoggedIn && isReady);
   const { data: historyPageData, isLoading: historyLoading, refetch: refetchHistory } =
-    useJournalRecords(historyPage, 10, isLoggedIn, historyHadSymptoms);
+    useJournalRecords(historyPage, 10, isLoggedIn && isReady, historyHadSymptoms);
   const { save, isSubmitting, error } = useJournalMutation();
+  const { remove, isDeleting, error: deleteError } = useJournalDelete();
 
   const displayHistory = historyPageData?.content ?? [];
 
@@ -50,21 +58,28 @@ export default function JournalPage() {
     setHistoryPage(0);
   }, [historyFilter]);
 
+  const refreshAll = async () => {
+    await Promise.all([refetchDashboard(), refetchRecord(), refetchHistory()]);
+  };
+
   const handleSave = async (input: Parameters<typeof save>[0]) => {
     await save(input);
     setSelectedDate(input.recordDate);
     setSaveMessage('기록이 저장되었습니다.');
-    await Promise.all([refetchDashboard(), refetchRecord(), refetchHistory()]);
+    await refreshAll();
     setTimeout(() => setSaveMessage(null), 2500);
+  };
+
+  const handleDelete = async () => {
+    if (deleteTargetId == null) return;
+    await remove(deleteTargetId);
+    setDeleteTargetId(null);
+    await refreshAll();
   };
 
   const handleHistoryFilter = (filter: 'relapse' | 'all') => {
     setHistoryFilter(filter);
   };
-
-  if (!isReady) {
-    return <LoadingSpinner label="불러오는 중…" />;
-  }
 
   return (
     <div className="bg-canvas pb-10 lg:bg-[#eceae5] lg:pb-14">
@@ -99,17 +114,54 @@ export default function JournalPage() {
           link={{ href: '/community', label: '커뮤니티에서 익명으로 나누기' }}
         />
 
-        <div className="grid gap-3 rounded-2xl border border-border/70 bg-white p-4 shadow-sm sm:grid-cols-3 lg:hidden">
-          <Stat label="무재발 연속일" value={`${dashboard?.relapseFreeDays ?? '—'}`} suffix="일" />
-          <Stat label="총 재발 기록" value={`${dashboard?.totalRelapses ?? 0}`} suffix="회" />
-          <Stat label="이번 달" value={`${dashboard?.monthRelapses ?? 0}`} suffix="회" />
-        </div>
+        {!isReady ? (
+          <JournalTodayStatusCard
+            dashboard={null}
+            isLoggedIn={false}
+            isLoading
+            onCheckin={() => {}}
+          />
+        ) : (
+          <>
+            <JournalTodayStatusCard
+              dashboard={dashboard}
+              isLoggedIn={isLoggedIn}
+              isLoading={isLoggedIn && dashboardLoading}
+              onCheckin={() => setCheckinOpen(true)}
+            />
 
-        {(dashboardLoading || (isLoggedIn && recordLoading)) && (
-          <LoadingSpinner label="일지 불러오는 중…" />
+            {isLoggedIn && (
+              <JournalQuickCheckin
+                open={checkinOpen}
+                dashboard={dashboard}
+                isSubmitting={isSubmitting}
+                onClose={() => setCheckinOpen(false)}
+                onSave={handleSave}
+              />
+            )}
+
+            <JournalTimeline14Days
+              days={dashboard?.timelineDays ?? []}
+              isLoading={isLoggedIn && dashboardLoading}
+            />
+
+            {isLoggedIn && (
+              <JournalPatternLine
+                line={dashboard?.personalPatternLine}
+                isLoading={dashboardLoading}
+              />
+            )}
+
+            {isLoggedIn && (
+              <JournalRecentRelapses
+                relapses={dashboard?.recentRelapses ?? []}
+                isLoading={dashboardLoading}
+              />
+            )}
+          </>
         )}
 
-        {error && <ErrorMessage message={error} />}
+        {(error || deleteError) && <ErrorMessage message={error ?? deleteError ?? ''} />}
         {saveMessage && (
           <p className="rounded-xl bg-primary/10 px-4 py-3 text-sm font-medium text-primary">
             {saveMessage}
@@ -125,36 +177,42 @@ export default function JournalPage() {
         )}
 
         <div className="lg:grid lg:grid-cols-12 lg:items-start lg:gap-8">
-          <div className="lg:col-span-7">
-            <JournalBentoDashboard
-              dashboard={dashboard}
-              insights={insights}
-              isLoggedIn={isLoggedIn}
-              isSaving={isSubmitting}
-              onQuickSave={handleSave}
-            />
+          <div className="hidden lg:col-span-7 lg:block">
+            <div className="grid gap-3 rounded-2xl border border-border/70 bg-white p-4 shadow-sm sm:grid-cols-3">
+              <Stat label="무재발 연속일" value={`${dashboard?.relapseFreeDays ?? '—'}`} suffix="일" />
+              <Stat label="총 재발 기록" value={`${dashboard?.totalRelapses ?? 0}`} suffix="회" />
+              <Stat label="이번 달" value={`${dashboard?.monthRelapses ?? 0}`} suffix="회" />
+            </div>
           </div>
-          <div className="mt-8 lg:col-span-5 lg:mt-0">
+          <div className="lg:col-span-5">
             {isLoggedIn ? (
-              <JournalRecordForm
-                key={selectedDate}
-                initialRecord={recordByDate}
-                isSubmitting={isSubmitting}
-                onSubmit={handleSave}
-                onDateChange={setSelectedDate}
-              />
-            ) : (
+              recordLoading && !recordByDate ? (
+                <div className="journal-form-card animate-pulse space-y-4">
+                  <div className="h-6 w-32 rounded bg-canvas" />
+                  <div className="h-10 rounded bg-canvas" />
+                  <div className="h-32 rounded bg-canvas" />
+                </div>
+              ) : (
+                <JournalRecordForm
+                  key={selectedDate}
+                  initialRecord={recordByDate}
+                  isSubmitting={isSubmitting}
+                  onSubmit={handleSave}
+                  onDateChange={setSelectedDate}
+                />
+              )
+            ) : isReady ? (
               <div className="journal-form-card text-sm text-muted">
                 <p>로그인 후 재발 기록 폼을 사용할 수 있습니다.</p>
                 <Link href="/login?from=%2Fjournal" className="mt-3 inline-block text-sm font-medium text-primary">
                   로그인하기
                 </Link>
               </div>
-            )}
+            ) : null}
           </div>
         </div>
 
-        {isLoggedIn && (
+        {isLoggedIn && isReady && (
           <section id="history" className="scroll-mt-24">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <h2 className="section-heading">기록 히스토리</h2>
@@ -186,7 +244,11 @@ export default function JournalPage() {
               </div>
             </div>
             {historyLoading ? (
-              <LoadingSpinner label="기록 불러오는 중…" />
+              <div className="animate-pulse space-y-2">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-16 rounded-2xl bg-white" />
+                ))}
+              </div>
             ) : displayHistory.length === 0 ? (
               <EmptyState
                 title={
@@ -226,13 +288,22 @@ export default function JournalPage() {
                             <p className="mt-2 line-clamp-2 text-xs text-muted">{record.memo}</p>
                           )}
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => setSelectedDate(record.recordDate)}
-                          className="shrink-0 text-xs font-medium text-primary"
-                        >
-                          수정
-                        </button>
+                        <div className="flex shrink-0 flex-col items-end gap-1">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedDate(record.recordDate)}
+                            className="text-xs font-medium text-primary"
+                          >
+                            수정
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDeleteTargetId(record.id)}
+                            className="text-xs font-medium text-red-600"
+                          >
+                            삭제
+                          </button>
+                        </div>
                       </div>
                     </li>
                   ))}
@@ -253,6 +324,17 @@ export default function JournalPage() {
 
         <MedicalDisclaimer />
       </div>
+
+      <ConfirmModal
+        open={deleteTargetId !== null}
+        title="기록 삭제"
+        message="이 날짜의 기록을 삭제할까요? 삭제 후에는 복구할 수 없습니다."
+        confirmLabel="삭제"
+        variant="danger"
+        isLoading={isDeleting}
+        onConfirm={() => void handleDelete()}
+        onClose={() => setDeleteTargetId(null)}
+      />
     </div>
   );
 }

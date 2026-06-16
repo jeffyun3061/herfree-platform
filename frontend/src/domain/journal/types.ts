@@ -38,6 +38,19 @@ export type JournalRecordInput = {
   exerciseDone?: boolean;
 };
 
+export type JournalTodayStatusLevel = 'NOT_RECORDED' | 'STABLE' | 'ATTENTION' | 'RELAPSE';
+export type JournalTrendDirection = 'IMPROVING' | 'STABLE' | 'WORSENING' | 'UNKNOWN';
+
+export type JournalTimelineDay = {
+  date: string;
+  recorded: boolean;
+  hadSymptoms: boolean;
+  hasProdromal: boolean;
+  sleepDeficit: boolean;
+  highStress: boolean;
+  medicationMissed: boolean;
+};
+
 export type JournalDashboard = {
   relapseFreeDays: number;
   totalRelapses: number;
@@ -46,6 +59,11 @@ export type JournalDashboard = {
   routineTotalToday: number;
   todayRecord: JournalRecord | null;
   recentRelapses: JournalRecord[];
+  todayStatusSummary: string;
+  todayStatusLevel: JournalTodayStatusLevel;
+  trendDirection: JournalTrendDirection;
+  personalPatternLine: string;
+  timelineDays: JournalTimelineDay[];
 };
 
 export type JournalInsightItem = {
@@ -67,8 +85,32 @@ export type AdminJournalStats = {
   totalRecords: number;
   totalUsers: number;
   symptomRecords: number;
+  recordsLast7Days: number;
+  recordsLast30Days: number;
+  symptomRecordsLast7Days: number;
+  symptomRecordsLast30Days: number;
+  pendingReports: number;
+  acceptedReports: number;
+  rejectedReports: number;
+  hiddenPostsCount: number;
+  hiddenCommentsCount: number;
+  contentHints: string[];
   insightLines: string[];
   communityInsights: JournalInsights;
+};
+
+export const TREND_DIRECTION_LABELS: Record<JournalTrendDirection, string> = {
+  IMPROVING: '나아지는 중',
+  STABLE: '안정적',
+  WORSENING: '주의 필요',
+  UNKNOWN: '데이터 부족',
+};
+
+export const TODAY_STATUS_LABELS: Record<JournalTodayStatusLevel, string> = {
+  NOT_RECORDED: '기록 전',
+  STABLE: '안정',
+  ATTENTION: '주의',
+  RELAPSE: '재발',
 };
 
 export const MEDICATION_OPTIONS: { value: MedicationStatus; label: string }[] = [

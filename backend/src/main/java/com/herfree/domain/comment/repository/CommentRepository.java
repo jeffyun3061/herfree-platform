@@ -15,4 +15,6 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 
     // 탈퇴 처리 시 작성 댓글 익명화 대상 조회
     List<Comment> findByUserIdAndStatusNot(Long userId, CommentStatus status);
+
+    long countByStatus(CommentStatus status);
 }

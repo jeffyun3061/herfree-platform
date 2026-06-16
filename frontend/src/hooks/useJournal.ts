@@ -72,3 +72,24 @@ export function useJournalMutation() {
 
   return { save, quickToggle, isSubmitting, error };
 }
+
+export function useJournalDelete() {
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const remove = async (recordId: number) => {
+    setIsDeleting(true);
+    setError(null);
+    try {
+      await journalApi.deleteJournalRecord(recordId);
+    } catch (err) {
+      const message = getErrorMessage(err);
+      setError(message);
+      throw err;
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  return { remove, isDeleting, error };
+}

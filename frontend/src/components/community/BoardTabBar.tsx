@@ -11,8 +11,19 @@ type BoardTabBarProps = {
 };
 
 export function BoardTabBar({ boards, selectedBoardId, onSelect }: BoardTabBarProps) {
+  const selectedBoard =
+    selectedBoardId != null ? boards.find((board) => board.id === selectedBoardId) : null;
+
   return (
-    <div className="scrollbar-hide -mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
+    <div className="space-y-3">
+      {selectedBoard?.description && (
+        <p className="rounded-xl bg-cream px-3 py-2 text-xs leading-relaxed text-muted">
+          <span className="font-medium text-ink">{selectedBoard.name}</span>
+          {' — '}
+          {selectedBoard.description}
+        </p>
+      )}
+      <div className="scrollbar-hide -mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
       <button
         type="button"
         onClick={() => onSelect(null)}
@@ -56,6 +67,7 @@ export function BoardTabBar({ boards, selectedBoardId, onSelect }: BoardTabBarPr
           </button>
         );
       })}
+      </div>
     </div>
   );
 }

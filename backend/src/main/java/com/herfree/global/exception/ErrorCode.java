@@ -67,7 +67,10 @@ public enum ErrorCode {
     PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "제품을 찾을 수 없습니다."),
 
     // 개인 일지(Journal)
-    JOURNAL_RECORD_NOT_FOUND(HttpStatus.NOT_FOUND, "기록을 찾을 수 없습니다.");
+    JOURNAL_RECORD_NOT_FOUND(HttpStatus.NOT_FOUND, "기록을 찾을 수 없습니다."),
+
+    // 권한·역할
+    ROLE_CHANGE_NOT_ALLOWED(HttpStatus.FORBIDDEN, "권한을 변경할 수 없습니다.");
 
     private final HttpStatus httpStatus;
     private final String message;

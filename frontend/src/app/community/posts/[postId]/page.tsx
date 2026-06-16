@@ -16,7 +16,7 @@ import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { Button } from '@/components/ui/Button';
 import { Textarea } from '@/components/ui/Textarea';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
-import { validateCommentInput } from '@/domain/comment/types';
+import { buildCommentTree, validateCommentInput } from '@/domain/comment/types';
 import { displayAuthorNickname } from '@/domain/post/types';
 import { getErrorMessage } from '@/lib/api/client';
 
@@ -44,6 +44,7 @@ export default function PostDetailPage() {
 
   const [commentText, setCommentText] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(false);
+  const [replyParentId, setReplyParentId] = useState<number | null>(null);
   const [reportOpen, setReportOpen] = useState(false);
   const [reportCommentId, setReportCommentId] = useState<number | null>(null);
   const [commentError, setCommentError] = useState<string | null>(null);
@@ -59,8 +60,15 @@ export default function PostDetailPage() {
       return;
     }
     setCommentError(null);
-    const ok = await addComment({ content: commentText, isAnonymous });
-    if (ok) setCommentText('');
+    const ok = await addComment({
+      content: commentText,
+      isAnonymous,
+      parentId: replyParentId,
+    });
+    if (ok) {
+      setCommentText('');
+      setReplyParentId(null);
+    }
   };
 
   const handleConfirm = async () => {
@@ -94,6 +102,8 @@ export default function PostDetailPage() {
     pendingConfirm?.type === 'delete-post'
       ? '이 글을 삭제할까요? 삭제 후에는 복구할 수 없습니다.'
       : '이 댓글을 삭제할까요?';
+
+  const commentTree = buildCommentTree(commentPage.content);
 
   return (
     <>
@@ -149,33 +159,39 @@ export default function PostDetailPage() {
             <LoadingSpinner label="댓글 불러오는 중…" />
           ) : (
             <>
-              {commentPage.content.map((comment) => {
-                const canDelete = comment.isMyComment;
-                return (
-                  <CommentItem
-                    key={comment.id}
-                    comment={comment}
-                    canDelete={canDelete}
-                    canReport={isLoggedIn && !comment.isMyComment}
-                    onDelete={
-                      canDelete
-                        ? () => setPendingConfirm({ type: 'delete-comment', commentId: comment.id })
-                        : undefined
-                    }
-                    onReport={
-                      isLoggedIn && !comment.isMyComment
-                        ? () => setReportCommentId(comment.id)
-                        : undefined
-                    }
-                  />
-                );
-              })}
+              {commentTree.map((comment) => (
+                <CommentItem
+                  key={comment.id}
+                  comment={comment}
+                  isLoggedIn={isLoggedIn}
+                  onDelete={(commentId) =>
+                    setPendingConfirm({ type: 'delete-comment', commentId })
+                  }
+                  onReport={(commentId) => setReportCommentId(commentId)}
+                  onReply={(commentId) => {
+                    setReplyParentId(commentId);
+                    setCommentText('');
+                  }}
+                />
+              ))}
               <Pagination page={page} totalPages={commentPage.totalPages} onPageChange={setPage} />
             </>
           )}
 
           {isLoggedIn ? (
             <div className="mt-6 space-y-3 rounded-2xl border border-border bg-card p-4">
+              {replyParentId !== null && (
+                <p className="text-xs text-primary">
+                  답글 작성 중 ·{' '}
+                  <button
+                    type="button"
+                    className="underline"
+                    onClick={() => setReplyParentId(null)}
+                  >
+                    취소
+                  </button>
+                </p>
+              )}
               <Textarea
                 placeholder="댓글을 남겨 주세요."
                 value={commentText}
@@ -192,7 +208,7 @@ export default function PostDetailPage() {
               {commentError && <ErrorMessage message={commentError} />}
               {mutationError && <ErrorMessage message={mutationError} />}
               <Button disabled={isSubmitting} onClick={() => void handleComment()}>
-                {isSubmitting ? '등록 중…' : '댓글 등록'}
+                {isSubmitting ? '등록 중…' : replyParentId ? '답글 등록' : '댓글 등록'}
               </Button>
             </div>
           ) : (

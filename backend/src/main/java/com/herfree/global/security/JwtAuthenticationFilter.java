@@ -12,7 +12,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import java.util.List;
+import com.herfree.global.util.StaffRolePolicy;
+import com.herfree.domain.user.entity.UserRole;
 
 // JWT를 검증하고 SecurityContext에 인증 정보를 등록하는 필터
 // OncePerRequestFilter를 상속하는 이유:
@@ -45,21 +46,29 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             // JWT claim에서 role을 꺼내 실제 권한을 SecurityContext에 반영한다.
             // role claim이 없는 구버전 토큰을 방어하기 위해 null 시 USER 기본값을 사용한다.
             String role = jwtTokenProvider.getRole(token);
-            String authority = "ROLE_" + (role != null ? role : "USER");
+            UserRole userRole = parseRole(role);
+            var authorities = StaffRolePolicy.resolveAuthorities(userRole).stream()
+                    .map(SimpleGrantedAuthority::new)
+                    .toList();
 
-            // Principal에 userId를 직접 넣으면 Controller에서
-            // @AuthenticationPrincipal Long userId 형태로 바로 꺼낼 수 있다.
             UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(
-                            userId,
-                            null,
-                            List.of(new SimpleGrantedAuthority(authority))
-                    );
+                    new UsernamePasswordAuthenticationToken(userId, null, authorities);
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private UserRole parseRole(String role) {
+        if (!StringUtils.hasText(role)) {
+            return UserRole.USER;
+        }
+        try {
+            return UserRole.valueOf(role);
+        } catch (IllegalArgumentException ex) {
+            return UserRole.USER;
+        }
     }
 
     // Authorization 헤더에서 "Bearer " 접두사를 제거하고 토큰 문자열만 반환한다.

@@ -6,6 +6,8 @@ import { RequireAuth } from '@/components/auth/RequireAuth';
 import { useBoards } from '@/hooks/useBoards';
 import { usePostDetail, usePostMutation } from '@/hooks/usePosts';
 import { TopBar } from '@/components/layout/TopBar';
+import { CommunityWriteGuidelines } from '@/components/community/CommunityWriteGuidelines';
+import { SymptomBoardRedirectBanner } from '@/components/community/SymptomBoardRedirectBanner';
 import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
 import { Button } from '@/components/ui/Button';
@@ -99,10 +101,15 @@ function WritePostForm() {
     );
   }
 
+  const selectedBoard = writableBoards.find((b) => b.id === boardId);
+  const isSymptomBoard = selectedBoard?.boardType === 'SYMPTOM';
+
   return (
     <>
       <TopBar title={isEditMode ? '글 수정' : '글쓰기'} showBack />
       <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4 px-4 py-5">
+        <CommunityWriteGuidelines />
+        {isSymptomBoard && !isEditMode && <SymptomBoardRedirectBanner />}
         <div>
           <label htmlFor="board" className="mb-1.5 block text-sm font-medium text-cream-foreground">
             게시판

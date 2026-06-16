@@ -33,3 +33,9 @@ export function fetchJournalRecordByDate(date: string) {
     query: { date },
   });
 }
+
+export function deleteJournalRecord(recordId: number) {
+  return request<void>(`/api/journal/records/${recordId}`, {
+    method: 'DELETE',
+  });
+}

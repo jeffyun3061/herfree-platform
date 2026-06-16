@@ -15,4 +15,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     // 특정 상태의 사용자만 조회한다 — 탈퇴 계정을 API 응답에서 걸러낼 때 사용
     Optional<User> findByIdAndStatus(Long id, UserStatus status);
+
+    boolean existsByEmailAndStatusNot(String email, UserStatus status);
+
+    org.springframework.data.domain.Page<User> findByStatusNotOrderByCreatedAtDesc(
+            UserStatus status, org.springframework.data.domain.Pageable pageable);
 }

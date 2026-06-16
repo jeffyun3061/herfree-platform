@@ -29,3 +29,32 @@ export function displayAuthorNickname(
   if (isAnonymous && !isMine) return '익명';
   return authorNickname;
 }
+
+export type CommentTreeNode = Comment & {
+  replies: CommentTreeNode[];
+};
+
+export function buildCommentTree(comments: Comment[]): CommentTreeNode[] {
+  const nodeMap = new Map<number, CommentTreeNode>();
+  const roots: CommentTreeNode[] = [];
+
+  for (const comment of comments) {
+    nodeMap.set(comment.id, { ...comment, replies: [] });
+  }
+
+  for (const comment of comments) {
+    const node = nodeMap.get(comment.id)!;
+    if (comment.parentId != null) {
+      const parent = nodeMap.get(comment.parentId);
+      if (parent) {
+        parent.replies.push(node);
+      } else {
+        roots.push(node);
+      }
+    } else {
+      roots.push(node);
+    }
+  }
+
+  return roots;
+}

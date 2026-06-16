@@ -1,13 +1,15 @@
-import type { Comment } from '@/domain/comment/types';
+import type { CommentTreeNode } from '@/domain/comment/types';
 import { displayAuthorNickname } from '@/domain/comment/types';
 import { Button } from '@/components/ui/Button';
+import { cn } from '@/lib/cn';
 
 type CommentItemProps = {
-  comment: Comment;
-  canDelete?: boolean;
-  canReport?: boolean;
-  onDelete?: () => void;
-  onReport?: () => void;
+  comment: CommentTreeNode;
+  depth?: number;
+  isLoggedIn?: boolean;
+  onDelete?: (commentId: number) => void;
+  onReport?: (commentId: number) => void;
+  onReply?: (commentId: number) => void;
 };
 
 function formatDate(iso: string): string {
@@ -23,13 +25,22 @@ function formatDate(iso: string): string {
 
 export function CommentItem({
   comment,
-  canDelete = false,
-  canReport = false,
+  depth = 0,
+  isLoggedIn = false,
   onDelete,
   onReport,
+  onReply,
 }: CommentItemProps) {
+  const canDelete = comment.isMyComment;
+  const canReport = isLoggedIn && !comment.isMyComment;
+
   return (
-    <article className="border-b border-border py-4 last:border-b-0">
+    <article
+      className={cn(
+        'border-b border-border py-4 last:border-b-0',
+        depth > 0 && 'ml-4 border-l border-border/60 pl-4',
+      )}
+    >
       <div className="mb-1 flex items-center justify-between gap-2 text-xs text-muted">
         <div className="flex items-center gap-2">
           <span className="font-medium text-cream-foreground">
@@ -38,13 +49,18 @@ export function CommentItem({
           <span>· {formatDate(comment.createdAt)}</span>
         </div>
         <div className="flex items-center gap-1">
+          {isLoggedIn && onReply && (
+            <Button variant="ghost" size="sm" onClick={() => onReply(comment.id)}>
+              답글
+            </Button>
+          )}
           {canReport && onReport && (
-            <Button variant="ghost" size="sm" onClick={onReport}>
+            <Button variant="ghost" size="sm" onClick={() => onReport(comment.id)}>
               신고
             </Button>
           )}
           {canDelete && onDelete && (
-            <Button variant="ghost" size="sm" className="text-red-600" onClick={onDelete}>
+            <Button variant="ghost" size="sm" className="text-red-600" onClick={() => onDelete(comment.id)}>
               삭제
             </Button>
           )}
@@ -53,6 +69,21 @@ export function CommentItem({
       <p className="whitespace-pre-wrap text-sm leading-relaxed text-cream-foreground">
         {comment.content}
       </p>
+      {comment.replies.length > 0 && (
+        <div className="mt-2">
+          {comment.replies.map((reply) => (
+            <CommentItem
+              key={reply.id}
+              comment={reply}
+              depth={depth + 1}
+              isLoggedIn={isLoggedIn}
+              onDelete={onDelete}
+              onReport={onReport}
+              onReply={onReply}
+            />
+          ))}
+        </div>
+      )}
     </article>
   );
 }

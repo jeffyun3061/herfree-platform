@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { isAdmin, USER_ROLE_LABELS } from '@/domain/user/types';
+import { isStaff, USER_ROLE_LABELS } from '@/domain/user/types';
 import { findBoardByType } from '@/domain/board/types';
 import { getErrorMessage } from '@/lib/api/client';
 import { cn } from '@/lib/cn';
@@ -133,9 +133,9 @@ export default function MyPage() {
               <p className="mt-0.5 text-sm text-muted">
                 {user?.role ? USER_ROLE_LABELS[user.role] : '회원'}
               </p>
-              {isAdmin(user?.role) && (
+              {isStaff(user?.role) && (
                 <Link href="/admin" className="mt-2 inline-block text-sm font-medium text-primary">
-                  관리자 페이지
+                  운영 관리 페이지
                 </Link>
               )}
             </div>
