@@ -3,6 +3,7 @@ package com.herfree.domain.journal.service;
 import com.herfree.domain.comment.repository.CommentRepository;
 import com.herfree.domain.journal.dto.response.JournalTodayStatusLevel;
 import com.herfree.domain.journal.dto.response.JournalTrendDirection;
+import com.herfree.domain.journal.exception.JournalRecordNotFoundException;
 import com.herfree.domain.journal.entity.JournalRecord;
 import com.herfree.domain.journal.entity.MedicationStatus;
 import com.herfree.domain.journal.entity.StressLevel;
@@ -21,13 +22,17 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willDoNothing;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class JournalServiceTest {
@@ -82,6 +87,7 @@ class JournalServiceTest {
         Long userId = 1L;
         LocalDate today = LocalDate.now();
         User user = User.builder().email("a@b.com").password("pw").build();
+        ReflectionTestUtils.setField(user, "id", userId);
 
         JournalRecord record = JournalRecord.builder()
                 .user(user)
@@ -120,6 +126,7 @@ class JournalServiceTest {
         Long userId = 1L;
         LocalDate today = LocalDate.now();
         User user = User.builder().email("a@b.com").password("pw").build();
+        ReflectionTestUtils.setField(user, "id", userId);
 
         JournalRecord record = JournalRecord.builder()
                 .user(user)
@@ -144,5 +151,47 @@ class JournalServiceTest {
 
         assertThat(dashboard.todayStatusLevel()).isEqualTo(JournalTodayStatusLevel.RELAPSE);
         assertThat(dashboard.todayStatusSummary()).contains("재발");
+    }
+
+    @Test
+    @DisplayName("본인 기록은 deleteRecord로 삭제할 수 있다")
+    void deleteRecord_owner() {
+        Long userId = 1L;
+        User user = User.builder().email("a@b.com").password("pw").build();
+        ReflectionTestUtils.setField(user, "id", userId);
+        JournalRecord record = JournalRecord.builder()
+                .user(user)
+                .recordDate(LocalDate.now())
+                .hadSymptoms(false)
+                .supplementTaken(false)
+                .exerciseDone(false)
+                .build();
+
+        given(journalRecordRepository.findById(10L)).willReturn(Optional.of(record));
+        willDoNothing().given(journalRecordRepository).delete(record);
+
+        journalService.deleteRecord(userId, 10L);
+
+        verify(journalRecordRepository).delete(record);
+    }
+
+    @Test
+    @DisplayName("타인 기록 삭제 시 JournalRecordNotFoundException이 발생한다")
+    void deleteRecord_otherUser() {
+        Long userId = 1L;
+        User otherOwner = User.builder().email("other@b.com").password("pw").build();
+        ReflectionTestUtils.setField(otherOwner, "id", 2L);
+        JournalRecord record = JournalRecord.builder()
+                .user(otherOwner)
+                .recordDate(LocalDate.now())
+                .hadSymptoms(false)
+                .supplementTaken(false)
+                .exerciseDone(false)
+                .build();
+
+        given(journalRecordRepository.findById(10L)).willReturn(Optional.of(record));
+
+        assertThatThrownBy(() -> journalService.deleteRecord(userId, 10L))
+                .isInstanceOf(JournalRecordNotFoundException.class);
     }
 }

@@ -182,7 +182,7 @@ public class JournalService {
                 .toList();
 
         LocalDate lastRelapseDate = recentRelapses.stream()
-                .map(JournalRecordResponse::recordDate)
+                .map(response -> LocalDate.parse(response.recordDate()))
                 .max(Comparator.naturalOrder())
                 .orElse(null);
 
@@ -327,10 +327,10 @@ public class JournalService {
             LocalDate date = today.minusDays(offset);
             JournalRecord record = recordByDate.get(date);
             if (record == null) {
-                days.add(new JournalTimelineDayResponse(date, false, false, false, false, false, false));
+                days.add(new JournalTimelineDayResponse(date.toString(), false, false, false, false, false, false));
             } else {
                 days.add(new JournalTimelineDayResponse(
-                        date,
+                        date.toString(),
                         true,
                         record.isHadSymptoms(),
                         hasProdromal(record),
