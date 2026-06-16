@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { JournalTodayStatusCard } from '@/components/journal/JournalTodayStatusCard';
-import { JournalQuickCheckin } from '@/components/journal/JournalQuickCheckin';
+import { JournalRecordWizard } from '@/components/journal/JournalRecordWizard';
 import { JournalTimeline14Days } from '@/components/journal/JournalTimeline14Days';
 import { JournalPatternLine } from '@/components/journal/JournalPatternLine';
 import { JournalRecentRelapses } from '@/components/journal/JournalRecentRelapses';
@@ -82,7 +82,7 @@ export default function JournalPage() {
   };
 
   return (
-    <div className="bg-canvas pb-10 lg:bg-[#eceae5] lg:pb-14">
+    <div className="bg-canvas pb-10 lg:pb-14">
       <div className="page-container space-y-6 lg:space-y-8">
         <div className="hidden items-start justify-between gap-4 lg:flex">
           <div>
@@ -131,7 +131,7 @@ export default function JournalPage() {
             />
 
             {isLoggedIn && (
-              <JournalQuickCheckin
+              <JournalRecordWizard
                 open={checkinOpen}
                 dashboard={dashboard}
                 isSubmitting={isSubmitting}

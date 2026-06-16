@@ -72,6 +72,19 @@ npm ci
 npm run dev
 ```
 
+### 로컬 고정 관리자 (개발용)
+
+`application-local.yml` bootstrap으로 **서버 기동 시** 아래 계정이 `SUPER_ADMIN`으로 보장됩니다.
+
+| 항목 | 값 |
+|------|-----|
+| 이메일 | `admin@herfree.local` |
+| 비밀번호 | `HerfreeAdmin01` |
+| 운영 화면 | http://localhost:3000/admin |
+
+> `admin@naver.com` 등 예전 계정은 **일반 USER**일 수 있습니다. 로컬 관리자는 위 계정을 쓰세요.  
+> 백엔드 재시작 후 로그인 → `/admin` 접속.
+
 - API 기본 URL: `http://localhost:8080`
 - 프론트 개발 서버: `http://localhost:3000` (Next.js 기본)
 - 시크릿·운영 설정은 git에 포함하지 않습니다. `application-local.yml.example`을 복사해 로컬만 설정합니다. ([convention.md](docs/convention.md))

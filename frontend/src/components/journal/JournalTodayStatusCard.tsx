@@ -16,11 +16,11 @@ type JournalTodayStatusCardProps = {
   onCheckin: () => void;
 };
 
-const STATUS_STYLES: Record<JournalTodayStatusLevel, string> = {
-  NOT_RECORDED: 'bg-cream text-muted ring-1 ring-border/70',
-  STABLE: 'bg-primary/10 text-primary',
-  ATTENTION: 'bg-gold/15 text-gold',
-  RELAPSE: 'bg-red-50 text-red-700',
+const STATUS_BADGE: Record<JournalTodayStatusLevel, string> = {
+  NOT_RECORDED: 'bg-white/20 text-white/90',
+  STABLE: 'bg-white/25 text-white',
+  ATTENTION: 'bg-gold/30 text-white',
+  RELAPSE: 'bg-red-400/30 text-white',
 };
 
 export function JournalTodayStatusCard({
@@ -29,63 +29,93 @@ export function JournalTodayStatusCard({
   isLoading,
   onCheckin,
 }: JournalTodayStatusCardProps) {
+  if (!isLoggedIn) {
+    return (
+      <section className="journal-hero-card">
+        <div className="relative z-10">
+          <p className="text-sm text-white/70">개인 일지</p>
+          <h2 className="mt-2 font-serif text-2xl font-semibold">나만의 패턴을 기록해 보세요</h2>
+          <p className="mt-2 max-w-sm text-sm leading-relaxed text-white/75">
+            재발·수면·스트레스를 비공개로 남기면 패턴을 확인할 수 있어요.
+          </p>
+        </div>
+        <div
+          className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/10"
+          aria-hidden
+        />
+        <div
+          className="pointer-events-none absolute -bottom-6 right-4 h-24 w-24 rounded-full bg-white/5"
+          aria-hidden
+        />
+      </section>
+    );
+  }
+
   const level = dashboard?.todayStatusLevel ?? 'NOT_RECORDED';
   const summary = dashboard?.todayStatusSummary ?? '오늘 기록 전이에요';
   const trend = dashboard?.trendDirection;
+  const relapseFreeDays = dashboard?.relapseFreeDays ?? 0;
 
-  if (!isLoggedIn) {
+  if (isLoading) {
     return (
-      <section className="rounded-3xl bg-navy p-6 text-white shadow-sm">
-        <p className="text-sm text-white/70">개인 일지</p>
-        <h2 className="mt-2 font-serif text-2xl font-semibold">나만의 패턴을 기록해 보세요</h2>
-        <p className="mt-2 text-sm leading-relaxed text-white/75">
-          재발·수면·스트레스를 비공개로 남기면 패턴을 확인할 수 있어요.
-        </p>
+      <section className="journal-hero-card animate-pulse">
+        <div className="space-y-3">
+          <div className="h-4 w-20 rounded bg-white/20" />
+          <div className="h-8 w-48 rounded bg-white/20" />
+          <div className="h-12 w-full rounded-2xl bg-white/20" />
+        </div>
       </section>
     );
   }
 
   return (
-    <section className="rounded-3xl border border-border/70 bg-white p-5 shadow-sm">
-      {isLoading ? (
-        <div className="animate-pulse space-y-3">
-          <div className="h-4 w-24 rounded bg-canvas" />
-          <div className="h-8 w-full rounded bg-canvas" />
-          <div className="h-12 w-full rounded-2xl bg-canvas" />
+    <section className="journal-hero-card">
+      <div className="relative z-10">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm font-medium text-white/80">오늘 상태</span>
+          <span className={cn('rounded-pill px-2.5 py-0.5 text-[11px] font-semibold', STATUS_BADGE[level])}>
+            {TODAY_STATUS_LABELS[level]}
+          </span>
+          {trend && trend !== 'UNKNOWN' && (
+            <span className="text-xs text-white/70">{TREND_DIRECTION_LABELS[trend]}</span>
+          )}
         </div>
-      ) : (
-        <>
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <span
-                  className={cn(
-                    'rounded-full px-2.5 py-1 text-xs font-semibold',
-                    STATUS_STYLES[level],
-                  )}
-                >
-                  {TODAY_STATUS_LABELS[level]}
-                </span>
-                {trend && trend !== 'UNKNOWN' && (
-                  <span className="text-xs text-muted">{TREND_DIRECTION_LABELS[trend]}</span>
-                )}
-              </div>
-              <p className="mt-3 text-lg font-semibold text-ink">{summary}</p>
-              {dashboard && (
-                <p className="mt-1 text-xs text-muted">
-                  무재발 {dashboard.relapseFreeDays}일 · 이번 달 재발 {dashboard.monthRelapses}회
-                </p>
-              )}
-            </div>
-          </div>
-          <Button fullWidth size="lg" className="mt-5" onClick={onCheckin}>
-            오늘 기록하기
-          </Button>
-          <p className="mt-3 text-center text-[11px] leading-relaxed text-muted">
-            이 기록은 진단이 아니라 내 패턴을 보기 위한 참고 자료예요.
-          </p>
-        </>
-      )}
+
+        <p className="mt-3 text-lg font-semibold leading-snug">{summary}</p>
+
+        <p className="mt-4 font-serif text-3xl font-bold tracking-tight">
+          재발 없이{' '}
+          <span className="text-gold-light">{relapseFreeDays}</span>
+          일
+        </p>
+
+        <Button
+          fullWidth
+          size="lg"
+          className="mt-6 bg-white text-primary hover:bg-white/90"
+          onClick={onCheckin}
+        >
+          30초 기록
+        </Button>
+
+        <p className="mt-3 text-center text-[11px] leading-relaxed text-white/60">
+          이 기록은 진단이 아니라 내 패턴을 보기 위한 참고 자료예요.
+        </p>
+      </div>
+
+      <div
+        className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10"
+        aria-hidden
+      />
+      <svg
+        className="pointer-events-none absolute bottom-4 right-4 h-16 w-16 text-white/15"
+        viewBox="0 0 64 64"
+        fill="currentColor"
+        aria-hidden
+      >
+        <circle cx="32" cy="32" r="28" opacity="0.5" />
+        <circle cx="32" cy="32" r="18" opacity="0.3" />
+      </svg>
     </section>
   );
 }

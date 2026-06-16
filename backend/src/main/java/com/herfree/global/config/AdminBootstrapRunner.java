@@ -3,9 +3,11 @@ package com.herfree.global.config;
 import com.herfree.domain.user.entity.User;
 import com.herfree.domain.user.entity.UserProfile;
 import com.herfree.domain.user.entity.UserRole;
+import com.herfree.domain.user.entity.UserStatus;
 import com.herfree.domain.user.repository.UserProfileRepository;
 import com.herfree.domain.user.repository.UserRepository;
 import com.herfree.global.util.ReservedNicknamePolicy;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
@@ -33,25 +35,37 @@ public class AdminBootstrapRunner implements ApplicationRunner {
         }
         if (!StringUtils.hasText(bootstrapProperties.email())
                 || !StringUtils.hasText(bootstrapProperties.password())) {
-            log.warn("Admin bootstrap enabled but ADMIN_EMAIL or ADMIN_PASSWORD is empty — skipped.");
+            log.warn("Admin bootstrap enabled but email/password is empty — skipped.");
             return;
         }
 
-        String email = bootstrapProperties.email().trim();
-        if (userRepository.existsByEmail(email)) {
-            log.info("Admin bootstrap skipped — account already exists for {}", email);
+        String email = bootstrapProperties.email().trim().toLowerCase();
+        Optional<User> existing = userRepository.findByEmail(email);
+
+        if (existing.isPresent()) {
+            if (!bootstrapProperties.syncExisting()) {
+                log.info("Admin bootstrap skipped — account already exists for {}", email);
+                return;
+            }
+            syncExistingAdmin(existing.get());
             return;
         }
 
-        String nickname = StringUtils.hasText(bootstrapProperties.nickname())
-                ? bootstrapProperties.nickname().trim()
-                : "운영자";
-        if (ReservedNicknamePolicy.isReserved(nickname)) {
-            nickname = "HerfreeOps";
+        createAdmin(email);
+    }
+
+    private void syncExistingAdmin(User user) {
+        user.changeRole(UserRole.SUPER_ADMIN);
+        user.changePassword(passwordEncoder.encode(bootstrapProperties.password()));
+        if (user.getStatus() != UserStatus.ACTIVE) {
+            user.activate();
         }
-        while (userProfileRepository.existsByNickname(nickname)) {
-            nickname = nickname + "1";
-        }
+        userRepository.save(user);
+        log.info("Bootstrap synced existing account to SUPER_ADMIN: {}", user.getEmail());
+    }
+
+    private void createAdmin(String email) {
+        String nickname = resolveNickname();
 
         User user = User.builder()
                 .email(email)
@@ -67,6 +81,19 @@ public class AdminBootstrapRunner implements ApplicationRunner {
                 .build();
         userProfileRepository.save(profile);
 
-        log.info("Bootstrap SUPER_ADMIN created for {} (nickname={})", email, nickname);
+        log.info("Bootstrap SUPER_ADMIN created: {} (nickname={})", email, nickname);
+    }
+
+    private String resolveNickname() {
+        String nickname = StringUtils.hasText(bootstrapProperties.nickname())
+                ? bootstrapProperties.nickname().trim()
+                : "HerfreeOps";
+        if (ReservedNicknamePolicy.isReserved(nickname)) {
+            nickname = "HerfreeOps";
+        }
+        while (userProfileRepository.existsByNickname(nickname)) {
+            nickname = nickname + "1";
+        }
+        return nickname;
     }
 }

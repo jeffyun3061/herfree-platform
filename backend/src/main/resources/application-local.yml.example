@@ -22,13 +22,14 @@ jwt:
   secret: local-dev-secret-change-this-to-random-32chars-minimum
   access-expiration-seconds: 3600
 
-# 최초 SUPER_ADMIN 자동 생성 (선택) — 이메일이 없을 때만 1회 생성
-# app:
-#   bootstrap:
-#     enabled: true
-#     email: admin@herfree.kr
-#     password: change-me-strong-password
-#     nickname: 운영자
+# 로컬 고정 관리자 (서버 재시작 시 role·비밀번호 동기화)
+app:
+  bootstrap:
+    enabled: true
+    email: admin@herfree.local
+    password: HerfreeAdmin01
+    nickname: HerfreeOps
+    sync-existing: true
 
 springdoc:
   api-docs:

@@ -6,7 +6,7 @@
 @tailwind utilities;
 
 body {
-  background-color: #f8f7f4;
+  background-color: #f9f9f7;
   color: #1a1c1e;
   -webkit-font-smoothing: antialiased;
   letter-spacing: -0.01em;
@@ -143,6 +143,46 @@ body {
 
   .journal-bento-card {
     @apply rounded-shell border border-border/50 bg-white shadow-card;
+  }
+
+  .community-search {
+    @apply w-full rounded-pill border border-border/60 bg-white px-4 py-3 pl-11 text-sm text-ink shadow-sm outline-none transition-shadow placeholder:text-muted focus:border-primary/30 focus:shadow-card;
+  }
+
+  .community-chip {
+    @apply shrink-0 rounded-pill px-4 py-2 text-sm font-medium transition-colors;
+  }
+
+  .community-chip-active {
+    @apply bg-primary text-primary-foreground shadow-sm;
+  }
+
+  .community-chip-inactive {
+    @apply bg-white text-ink-soft ring-1 ring-border/70 hover:bg-canvas-dark;
+  }
+
+  .post-card {
+    @apply rounded-card border border-border/50 bg-white p-4 shadow-card transition-shadow hover:shadow-card-hover;
+  }
+
+  .journal-hero-card {
+    @apply relative overflow-hidden rounded-[1.25rem] bg-primary p-6 text-primary-foreground shadow-card;
+  }
+
+  .journal-wizard-progress {
+    @apply h-1.5 flex-1 rounded-full bg-border/60;
+  }
+
+  .journal-wizard-progress-fill {
+    @apply h-full rounded-full bg-primary transition-all duration-300;
+  }
+
+  .journal-choice-btn {
+    @apply flex flex-1 flex-col items-center justify-center gap-2 rounded-card border-2 border-border/60 bg-white px-4 py-6 text-center transition-all hover:border-primary/30 hover:bg-primary/5;
+  }
+
+  .journal-choice-btn-active {
+    @apply border-primary bg-primary/10 text-primary;
   }
 }
 

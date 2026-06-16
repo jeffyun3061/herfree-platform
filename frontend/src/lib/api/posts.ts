@@ -8,6 +8,7 @@ export function fetchPosts(
   page: number,
   size = 15,
   keyword = '',
+  sort = 'createdAt,desc',
 ): Promise<PageData<Post>> {
   return request<PageData<Post>>('/api/posts', {
     query: {
@@ -15,6 +16,7 @@ export function fetchPosts(
       page,
       size,
       keyword: keyword.trim() || undefined,
+      sort,
     },
   });
 }

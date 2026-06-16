@@ -6,8 +6,9 @@ const config: Config = {
     extend: {
       colors: {
         primary: {
-          DEFAULT: '#2D4A32',
-          light: '#3D6444',
+          DEFAULT: '#2D4739',
+          light: '#3A5A49',
+          dark: '#1F3328',
           foreground: '#FFFFFF',
         },
         navy: {
@@ -16,8 +17,8 @@ const config: Config = {
           foreground: '#F8FAFC',
         },
         canvas: {
-          DEFAULT: '#F8F7F4',
-          dark: '#F2EFE9',
+          DEFAULT: '#F9F9F7',
+          dark: '#F2F0EB',
         },
         hero: {
           DEFAULT: '#F2EFE9',
@@ -71,10 +72,14 @@ const config: Config = {
       },
       borderRadius: {
         shell: '32px',
+        card: '14px',
+        pill: '20px',
       },
       boxShadow: {
-        card: '0 2px 12px rgba(30, 41, 59, 0.06)',
+        card: '0 2px 12px rgba(45, 71, 57, 0.06)',
+        'card-hover': '0 4px 20px rgba(45, 71, 57, 0.1)',
         product: '0 4px 20px rgba(30, 41, 59, 0.08)',
+        fab: '0 4px 16px rgba(45, 71, 57, 0.28)',
       },
     },
   },

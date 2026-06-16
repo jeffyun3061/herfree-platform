@@ -13,12 +13,13 @@ export function usePostList(
   boardId: number | null | undefined,
   size = 15,
   keyword = '',
+  sort = 'createdAt,desc',
 ) {
   const [page, setPage] = useState(0);
   const normalizedBoardId = boardId ?? undefined;
   const { data, isLoading, error, refetch } = useApiQuery(
-    () => postsApi.fetchPosts(normalizedBoardId, page, size, keyword),
-    [normalizedBoardId, page, size, keyword],
+    () => postsApi.fetchPosts(normalizedBoardId, page, size, keyword, sort),
+    [normalizedBoardId, page, size, keyword, sort],
   );
   return { postPage: data ?? emptyPage<Post>(), page, setPage, isLoading, error, refetch };
 }

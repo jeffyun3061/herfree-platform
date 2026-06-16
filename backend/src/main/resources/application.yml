@@ -53,7 +53,8 @@ app:
     enabled: ${ADMIN_BOOTSTRAP_ENABLED:false}
     email: ${ADMIN_EMAIL:}
     password: ${ADMIN_PASSWORD:}
-    nickname: ${ADMIN_NICKNAME:운영자}
+    nickname: ${ADMIN_NICKNAME:HerfreeOps}
+    sync-existing: ${ADMIN_BOOTSTRAP_SYNC_EXISTING:false}
 
 ---
 spring:

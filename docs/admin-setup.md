@@ -1,5 +1,23 @@
 # Herfree — 관리자·권한 운영 가이드
 
+## 로컬 개발 — 고정 관리자 (바로 로그인)
+
+`backend/src/main/resources/application-local.yml` 에 bootstrap이 켜져 있습니다.
+
+| 항목 | 값 |
+|------|-----|
+| 이메일 | `admin@herfree.local` |
+| 비밀번호 | `HerfreeAdmin01` |
+| role | `SUPER_ADMIN` (서버 기동 시 자동) |
+
+1. Docker MySQL + `.\gradlew bootRun`
+2. http://localhost:3000/login 에서 위 계정 로그인
+3. `/admin` 접속
+
+`sync-existing: true` 이므로 계정이 이미 있어도 **역할·비밀번호가 동기화**됩니다.
+
+---
+
 ## 원칙
 
 | 규칙 | 설명 |
