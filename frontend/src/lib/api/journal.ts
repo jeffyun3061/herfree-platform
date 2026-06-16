@@ -4,10 +4,12 @@ import type {
   JournalInsights,
   JournalRecord,
   JournalRecordInput,
+  JournalReviewSummary,
 } from '@/domain/journal/types';
 import {
   normalizeJournalDashboard,
   normalizeJournalRecord,
+  normalizeReviewSummary,
 } from '@/domain/journal/types';
 import { request } from '@/lib/api/client';
 
@@ -22,6 +24,11 @@ export async function upsertJournalRecord(input: JournalRecordInput) {
 export async function fetchJournalDashboard() {
   const dashboard = await request<JournalDashboard>('/api/journal/dashboard');
   return normalizeJournalDashboard(dashboard);
+}
+
+export async function fetchJournalReviewSummary() {
+  const summary = await request<JournalReviewSummary>('/api/journal/review-summary');
+  return normalizeReviewSummary(summary);
 }
 
 export function fetchJournalInsights() {

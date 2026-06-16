@@ -4,6 +4,7 @@ import com.herfree.domain.journal.dto.request.JournalRecordUpsertRequest;
 import com.herfree.domain.journal.dto.response.JournalDashboardResponse;
 import com.herfree.domain.journal.dto.response.JournalInsightsResponse;
 import com.herfree.domain.journal.dto.response.JournalRecordResponse;
+import com.herfree.domain.journal.dto.response.JournalReviewSummaryResponse;
 import com.herfree.domain.journal.service.JournalService;
 import com.herfree.global.response.ApiResponse;
 import jakarta.validation.Valid;
@@ -80,6 +81,13 @@ public class JournalController {
             @AuthenticationPrincipal Long userId
     ) {
         return ResponseEntity.ok(ApiResponse.success(journalService.getDashboard(userId)));
+    }
+
+    @GetMapping("/review-summary")
+    public ResponseEntity<ApiResponse<JournalReviewSummaryResponse>> getReviewSummary(
+            @AuthenticationPrincipal Long userId
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(journalService.getReviewSummary(userId)));
     }
 
     @GetMapping("/insights")

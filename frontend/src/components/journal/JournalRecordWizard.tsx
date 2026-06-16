@@ -1,54 +1,82 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   MEDICATION_OPTIONS,
   PRODROMAL_OPTIONS,
   SLEEP_OPTIONS,
+  TRIGGER_OPTIONS,
   toDateInputValue,
-  type JournalDashboard,
+  formatJournalDateLabel,
+  type JournalRecord,
   type JournalRecordInput,
   type MedicationStatus,
   type SleepRange,
   type StressLevel,
 } from '@/domain/journal/types';
+import { SeveritySelector } from '@/components/journal/SeveritySelector';
 import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
 import { cn } from '@/lib/cn';
 
 type JournalRecordWizardProps = {
   open: boolean;
-  dashboard: JournalDashboard | null;
+  targetDate: string;
+  initialRecord?: JournalRecord | null;
   isSubmitting: boolean;
   onClose: () => void;
   onSave: (input: JournalRecordInput) => Promise<void>;
 };
 
-const TOTAL_STEPS = 6;
-
-const STRESS_SCALE: { value: number; emoji: string; label: string; level: StressLevel }[] = [
-  { value: 1, emoji: '😌', label: '매우 낮음', level: 'LOW' },
-  { value: 2, emoji: '🙂', label: '낮음', level: 'LOW' },
-  { value: 3, emoji: '😐', label: '보통', level: 'MEDIUM' },
-  { value: 4, emoji: '😟', label: '높음', level: 'HIGH' },
-  { value: 5, emoji: '😰', label: '매우 높음', level: 'HIGH' },
+const STRESS_SCALE: { value: number; emoji: string; level: StressLevel }[] = [
+  { value: 1, emoji: '😌', level: 'LOW' },
+  { value: 2, emoji: '🙂', level: 'LOW' },
+  { value: 3, emoji: '😐', level: 'MEDIUM' },
+  { value: 4, emoji: '😟', level: 'HIGH' },
+  { value: 5, emoji: '😰', level: 'HIGH' },
 ];
 
-function buildBase(dashboard: JournalDashboard | null): JournalRecordInput {
-  const today = dashboard?.todayRecord;
+/** 증상 있음: 심각도·트리거 포함 / 없음: 일상 루틴만 */
+const STEP_SYMPTOM = 1;
+const STEP_SEVERITY = 2;
+const STEP_PRODROMAL = 3;
+const STEP_TRIGGERS = 4;
+const STEP_STRESS = 5;
+const STEP_SLEEP = 6;
+const STEP_MEDICATION = 7;
+const STEP_MEMO = 8;
+
+function buildStepSequence(hadSymptoms: boolean): number[] {
+  if (hadSymptoms) {
+    return [
+      STEP_SYMPTOM,
+      STEP_SEVERITY,
+      STEP_PRODROMAL,
+      STEP_TRIGGERS,
+      STEP_STRESS,
+      STEP_SLEEP,
+      STEP_MEDICATION,
+      STEP_MEMO,
+    ];
+  }
+  return [STEP_SYMPTOM, STEP_PRODROMAL, STEP_STRESS, STEP_SLEEP, STEP_MEDICATION, STEP_MEMO];
+}
+
+function recordToForm(record: JournalRecord | null | undefined, date: string): JournalRecordInput {
   return {
-    recordDate: toDateInputValue(),
-    medicationStatus: today?.medicationStatus ?? 'NORMAL',
-    avgSleep: today?.avgSleep ?? 'H6_7',
-    stressLevel: today?.stressLevel ?? 'MEDIUM',
-    hadSymptoms: today?.hadSymptoms ?? false,
-    prodromalSymptoms: today?.prodromalSymptoms ?? [],
-    severity: today?.severity ?? null,
-    triggers: today?.triggers ?? [],
-    memo: today?.memo ?? null,
-    mood: today?.mood ?? null,
-    sleepHours: today?.sleepHours ?? null,
-    supplementTaken: today?.supplementTaken ?? false,
-    exerciseDone: today?.exerciseDone ?? false,
+    recordDate: date,
+    medicationStatus: record?.medicationStatus ?? 'NORMAL',
+    avgSleep: record?.avgSleep ?? 'H6_7',
+    stressLevel: record?.stressLevel ?? 'MEDIUM',
+    hadSymptoms: record?.hadSymptoms ?? false,
+    prodromalSymptoms: record?.prodromalSymptoms ?? [],
+    severity: record?.severity ?? null,
+    triggers: record?.triggers ?? [],
+    memo: record?.memo ?? null,
+    mood: record?.mood ?? null,
+    sleepHours: record?.sleepHours ?? null,
+    supplementTaken: record?.supplementTaken ?? false,
+    exerciseDone: record?.exerciseDone ?? false,
   };
 }
 
@@ -60,24 +88,33 @@ function stressToScale(level: StressLevel | null | undefined): number {
 
 export function JournalRecordWizard({
   open,
-  dashboard,
+  targetDate,
+  initialRecord,
   isSubmitting,
   onClose,
   onSave,
 }: JournalRecordWizardProps) {
-  const [step, setStep] = useState(1);
-  const [form, setForm] = useState<JournalRecordInput>(() => buildBase(dashboard));
+  const [stepIndex, setStepIndex] = useState(0);
+  const [form, setForm] = useState<JournalRecordInput>(() => recordToForm(initialRecord, targetDate));
   const [stressScale, setStressScale] = useState(3);
 
+  const stepSequence = useMemo(() => buildStepSequence(form.hadSymptoms), [form.hadSymptoms]);
+  const currentStepId = stepSequence[stepIndex] ?? STEP_SYMPTOM;
+  const totalSteps = stepSequence.length;
+
   useEffect(() => {
-    if (open) {
-      const base = buildBase(dashboard);
-      setForm(base);
-      setStressScale(stressToScale(base.stressLevel));
-      setStep(1);
+    if (!open) return;
+    const nextForm = recordToForm(initialRecord, targetDate);
+    setForm(nextForm);
+    setStressScale(stressToScale(nextForm.stressLevel));
+    setStepIndex(0);
+  }, [open, initialRecord, targetDate]);
+
+  useEffect(() => {
+    if (stepIndex >= stepSequence.length) {
+      setStepIndex(Math.max(0, stepSequence.length - 1));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  }, [stepIndex, stepSequence.length]);
 
   useEffect(() => {
     if (!open) return;
@@ -91,21 +128,21 @@ export function JournalRecordWizard({
   if (!open) return null;
 
   const resetAndClose = () => {
-    setStep(1);
-    setForm(buildBase(dashboard));
+    setStepIndex(0);
     onClose();
   };
 
-  const goNext = () => setStep((prev) => Math.min(prev + 1, TOTAL_STEPS));
-  const goBack = () => setStep((prev) => Math.max(prev - 1, 1));
+  const goNext = () => setStepIndex((prev) => Math.min(prev + 1, totalSteps - 1));
+  const goBack = () => setStepIndex((prev) => Math.max(prev - 1, 0));
 
   const finish = async () => {
     const stressLevel = STRESS_SCALE.find((s) => s.value === stressScale)?.level ?? 'MEDIUM';
     await onSave({
       ...form,
+      recordDate: form.recordDate,
       stressLevel,
-      prodromalSymptoms: form.hadSymptoms ? form.prodromalSymptoms : [],
-      triggers: form.hadSymptoms ? form.triggers : [],
+      prodromalSymptoms: form.prodromalSymptoms ?? [],
+      triggers: form.hadSymptoms ? form.triggers ?? [] : [],
       severity: form.hadSymptoms ? form.severity ?? 3 : null,
       memo: form.memo?.trim().slice(0, 200) || null,
     });
@@ -126,7 +163,19 @@ export function JournalRecordWizard({
     });
   };
 
-  const progress = (step / TOTAL_STEPS) * 100;
+  const toggleTrigger = (value: string) => {
+    setForm((prev) => {
+      const current = prev.triggers ?? [];
+      const next = current.includes(value)
+        ? current.filter((item) => item !== value)
+        : [...current, value];
+      return { ...prev, triggers: next };
+    });
+  };
+
+  const isLastStep = stepIndex === totalSteps - 1;
+  const progress = ((stepIndex + 1) / totalSteps) * 100;
+  const isToday = form.recordDate === toDateInputValue();
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-canvas">
@@ -134,11 +183,11 @@ export function JournalRecordWizard({
         <div className="mb-3 flex items-center justify-between">
           <button
             type="button"
-            onClick={step === 1 ? resetAndClose : goBack}
+            onClick={stepIndex === 0 ? resetAndClose : goBack}
             className="flex h-9 w-9 items-center justify-center rounded-full text-ink-soft hover:bg-white"
-            aria-label={step === 1 ? '닫기' : '이전'}
+            aria-label={stepIndex === 0 ? '닫기' : '이전'}
           >
-            {step === 1 ? (
+            {stepIndex === 0 ? (
               <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" />
               </svg>
@@ -148,44 +197,51 @@ export function JournalRecordWizard({
               </svg>
             )}
           </button>
-          <span className="text-sm font-medium text-muted">
-            {step}/{TOTAL_STEPS}
-          </span>
+          <div className="text-center">
+            <span className="text-sm font-medium text-muted">
+              {stepIndex + 1}/{totalSteps}
+            </span>
+            <p className="text-[11px] text-muted">
+              {isToday ? '오늘' : formatJournalDateLabel(form.recordDate)}
+            </p>
+          </div>
           <div className="w-9" />
         </div>
-        <div className="flex gap-1">
-          <div className="journal-wizard-progress">
-            <div className="journal-wizard-progress-fill" style={{ width: `${progress}%` }} />
-          </div>
+        <div className="journal-wizard-progress">
+          <div className="journal-wizard-progress-fill" style={{ width: `${progress}%` }} />
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 pb-32 pt-2">
-        {step === 1 && (
+        {currentStepId === STEP_SYMPTOM && (
           <div className="space-y-6">
             <div>
               <h2 className="text-xl font-semibold text-ink">오늘 증상 있었나요?</h2>
               <p className="mt-2 text-sm text-muted">솔직하게 기록하면 패턴을 더 잘 파악할 수 있어요.</p>
             </div>
+            {!isToday && (
+              <label className="block space-y-1.5">
+                <span className="text-xs text-muted">기록 날짜</span>
+                <Input
+                  type="date"
+                  value={form.recordDate}
+                  onChange={(e) => setForm((prev) => ({ ...prev, recordDate: e.target.value }))}
+                />
+              </label>
+            )}
             <div className="flex gap-3">
               <button
                 type="button"
-                onClick={() => {
-                  setForm((prev) => ({ ...prev, hadSymptoms: false }));
-                  goNext();
-                }}
-                className={cn('journal-choice-btn', !form.hadSymptoms && step === 1 && 'journal-choice-btn-active')}
+                onClick={() => setForm((prev) => ({ ...prev, hadSymptoms: false }))}
+                className={cn('journal-choice-btn', !form.hadSymptoms && 'journal-choice-btn-active')}
               >
                 <span className="text-3xl">😊</span>
                 <span className="text-sm font-medium">없었어요</span>
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  setForm((prev) => ({ ...prev, hadSymptoms: true }));
-                  goNext();
-                }}
-                className={cn('journal-choice-btn', form.hadSymptoms && step === 1 && 'journal-choice-btn-active')}
+                onClick={() => setForm((prev) => ({ ...prev, hadSymptoms: true }))}
+                className={cn('journal-choice-btn', form.hadSymptoms && 'journal-choice-btn-active')}
               >
                 <span className="text-3xl">😣</span>
                 <span className="text-sm font-medium">있었어요</span>
@@ -199,7 +255,20 @@ export function JournalRecordWizard({
           </div>
         )}
 
-        {step === 2 && (
+        {currentStepId === STEP_SEVERITY && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-xl font-semibold text-ink">증상 심각도는 어느 정도였나요?</h2>
+              <p className="mt-2 text-sm text-muted">1(가벼움) ~ 5(심함)</p>
+            </div>
+            <SeveritySelector
+              value={form.severity ?? null}
+              onChange={(value) => setForm((prev) => ({ ...prev, severity: value }))}
+            />
+          </div>
+        )}
+
+        {currentStepId === STEP_PRODROMAL && (
           <div className="space-y-6">
             <div>
               <h2 className="text-xl font-semibold text-ink">전조 증상이 있었나요?</h2>
@@ -226,7 +295,34 @@ export function JournalRecordWizard({
           </div>
         )}
 
-        {step === 3 && (
+        {currentStepId === STEP_TRIGGERS && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-xl font-semibold text-ink">어떤 요인이 있었나요?</h2>
+              <p className="mt-2 text-sm text-muted">추정 트리거를 선택해 주세요.</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {TRIGGER_OPTIONS.map((option) => {
+                const active = (form.triggers ?? []).includes(option.value);
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => toggleTrigger(option.value)}
+                    className={cn(
+                      'community-chip',
+                      active ? 'community-chip-active' : 'community-chip-inactive',
+                    )}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {currentStepId === STEP_STRESS && (
           <div className="space-y-6">
             <div>
               <h2 className="text-xl font-semibold text-ink">오늘 스트레스는 어느 정도였나요?</h2>
@@ -253,7 +349,7 @@ export function JournalRecordWizard({
           </div>
         )}
 
-        {step === 4 && (
+        {currentStepId === STEP_SLEEP && (
           <div className="space-y-6">
             <div>
               <h2 className="text-xl font-semibold text-ink">어젯밤 수면은 어땠나요?</h2>
@@ -281,11 +377,11 @@ export function JournalRecordWizard({
           </div>
         )}
 
-        {step === 5 && (
+        {currentStepId === STEP_MEDICATION && (
           <div className="space-y-6">
             <div>
-              <h2 className="text-xl font-semibold text-ink">약/보조제 복용 상태</h2>
-              <p className="mt-2 text-sm text-muted">오늘 복용 상태를 알려 주세요.</p>
+              <h2 className="text-xl font-semibold text-ink">약·루틴 상태</h2>
+              <p className="mt-2 text-sm text-muted">복용과 가벼운 루틴을 알려 주세요.</p>
             </div>
             <div className="grid gap-2">
               {MEDICATION_OPTIONS.map((option) => (
@@ -309,25 +405,31 @@ export function JournalRecordWizard({
                 </button>
               ))}
             </div>
-            <button
-              type="button"
-              onClick={() =>
-                setForm((prev) => ({ ...prev, supplementTaken: !prev.supplementTaken }))
-              }
-              className={cn(
-                'flex w-full items-center justify-between rounded-card border-2 px-4 py-3.5 text-sm font-medium transition-all',
-                form.supplementTaken
-                  ? 'border-primary bg-primary/10 text-primary'
-                  : 'border-border/60 bg-white text-ink',
-              )}
-            >
-              <span>보조제 복용함</span>
-              <span className={cn('h-5 w-5 rounded-full border-2', form.supplementTaken ? 'border-primary bg-primary' : 'border-border')} />
-            </button>
+            {(['supplementTaken', 'exerciseDone'] as const).map((field) => (
+              <button
+                key={field}
+                type="button"
+                onClick={() => setForm((prev) => ({ ...prev, [field]: !prev[field] }))}
+                className={cn(
+                  'flex w-full items-center justify-between rounded-card border-2 px-4 py-3.5 text-sm font-medium transition-all',
+                  form[field]
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-border/60 bg-white text-ink',
+                )}
+              >
+                <span>{field === 'supplementTaken' ? '보조제 복용함' : '가벼운 운동 함'}</span>
+                <span
+                  className={cn(
+                    'h-5 w-5 rounded-full border-2',
+                    form[field] ? 'border-primary bg-primary' : 'border-border',
+                  )}
+                />
+              </button>
+            ))}
           </div>
         )}
 
-        {step === 6 && (
+        {currentStepId === STEP_MEMO && (
           <div className="space-y-6">
             <div>
               <h2 className="text-xl font-semibold text-ink">한줄 메모 (선택)</h2>
@@ -347,12 +449,15 @@ export function JournalRecordWizard({
       </div>
 
       <div className="fixed inset-x-0 bottom-0 z-10 border-t border-border/60 bg-white px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
-        {step > 1 && step < TOTAL_STEPS && (
+        {currentStepId === STEP_SYMPTOM ? (
           <Button fullWidth size="lg" className="rounded-pill bg-primary" onClick={goNext}>
             다음
           </Button>
-        )}
-        {step === TOTAL_STEPS && (
+        ) : !isLastStep ? (
+          <Button fullWidth size="lg" className="rounded-pill bg-primary" onClick={goNext}>
+            다음
+          </Button>
+        ) : (
           <Button
             fullWidth
             size="lg"

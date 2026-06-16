@@ -14,6 +14,14 @@ export function useJournalDashboard(enabled = true) {
   );
 }
 
+export function useJournalReviewSummary(enabled = true) {
+  return useApiQuery<import('@/domain/journal/types').JournalReviewSummary>(
+    () => journalApi.fetchJournalReviewSummary(),
+    [],
+    { enabled },
+  );
+}
+
 export function useJournalInsights() {
   return useApiQuery(() => journalApi.fetchJournalInsights(), []);
 }

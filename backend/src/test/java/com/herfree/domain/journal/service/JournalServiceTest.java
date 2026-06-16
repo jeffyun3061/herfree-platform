@@ -1,11 +1,13 @@
 package com.herfree.domain.journal.service;
 
 import com.herfree.domain.comment.repository.CommentRepository;
+import com.herfree.domain.journal.dto.response.JournalSeverityTier;
 import com.herfree.domain.journal.dto.response.JournalTodayStatusLevel;
 import com.herfree.domain.journal.dto.response.JournalTrendDirection;
 import com.herfree.domain.journal.exception.JournalRecordNotFoundException;
 import com.herfree.domain.journal.entity.JournalRecord;
 import com.herfree.domain.journal.entity.MedicationStatus;
+import com.herfree.domain.journal.entity.SleepRange;
 import com.herfree.domain.journal.entity.StressLevel;
 import com.herfree.domain.journal.repository.JournalRecordRepository;
 import com.herfree.domain.post.repository.PostRepository;
@@ -151,6 +153,49 @@ class JournalServiceTest {
 
         assertThat(dashboard.todayStatusLevel()).isEqualTo(JournalTodayStatusLevel.RELAPSE);
         assertThat(dashboard.todayStatusSummary()).contains("재발");
+    }
+
+    @Test
+    @DisplayName("최근 30일 리뷰 요약은 증상 일수·전조·트리거·심각도를 집계한다")
+    void getReviewSummary_aggregates30Days() {
+        Long userId = 1L;
+        LocalDate today = LocalDate.now();
+        User user = User.builder().email("a@b.com").password("pw").build();
+        ReflectionTestUtils.setField(user, "id", userId);
+
+        JournalRecord symptomDay = JournalRecord.builder()
+                .user(user)
+                .recordDate(today.minusDays(2))
+                .hadSymptoms(true)
+                .severity(4)
+                .prodromalSymptoms(List.of("ITCHING", "FATIGUE"))
+                .triggers(List.of("SLEEP_DEFICIT", "STRESS"))
+                .medicationStatus(MedicationStatus.NORMAL)
+                .avgSleep(SleepRange.H5_6)
+                .stressLevel(StressLevel.HIGH)
+                .supplementTaken(false)
+                .exerciseDone(false)
+                .build();
+
+        given(journalRecordRepository.findByUserIdAndRecordDateBetweenOrderByRecordDateDesc(
+                eq(userId), any(), eq(today)))
+                .willReturn(List.of(symptomDay));
+
+        var summary = journalService.getReviewSummary(userId);
+
+        assertThat(summary.periodDays()).isEqualTo(30);
+        assertThat(summary.symptomDays()).isEqualTo(1);
+        assertThat(summary.topProdromalLabels()).containsExactlyInAnyOrder("가려움", "피로감");
+        assertThat(summary.topTriggerLabels()).containsExactlyInAnyOrder("수면 부족", "스트레스");
+        assertThat(summary.severityBreakdown().highDays()).isEqualTo(1);
+        assertThat(summary.weekDays()).hasSize(7);
+        assertThat(summary.timelineDays()).hasSize(30);
+        assertThat(summary.timelineDays().stream()
+                .filter(day -> day.hadSymptoms())
+                .findFirst()
+                .orElseThrow()
+                .severityTier()).isEqualTo(JournalSeverityTier.HIGH);
+        assertThat(summary.medicationRecordedDays()).isEqualTo(1);
     }
 
     @Test

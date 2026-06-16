@@ -186,6 +186,25 @@ body {
   }
 }
 
+@media print {
+  body > *:not(#journal-print-root) {
+    display: none !important;
+  }
+
+  #journal-print-root {
+    display: block !important;
+    position: static !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .journal-print-clone {
+    box-shadow: none !important;
+    border: none !important;
+    max-width: 100% !important;
+  }
+}
+
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;

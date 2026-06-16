@@ -3,6 +3,56 @@ export type SleepRange = 'UNDER_5' | 'H5_6' | 'H6_7' | 'H7_PLUS';
 export type StressLevel = 'LOW' | 'MEDIUM' | 'HIGH';
 export type MoodType = 'PEACEFUL' | 'NORMAL' | 'STRESS';
 
+export type JournalSeverityTier = 'LOW' | 'MEDIUM' | 'HIGH';
+
+export type JournalReviewWeekDay = {
+  date: string;
+  dayLabel: string;
+  hadSymptoms: boolean;
+  severityTier: JournalSeverityTier | null;
+};
+
+export type JournalReviewTimelineDay = {
+  date: string;
+  hadSymptoms: boolean;
+  severityTier: JournalSeverityTier | null;
+};
+
+export type JournalSeverityBreakdown = {
+  lowDays: number;
+  mediumDays: number;
+  highDays: number;
+};
+
+export type JournalReviewSummary = {
+  periodStart: string;
+  periodEnd: string;
+  periodDays: number;
+  symptomDays: number;
+  weekDays: JournalReviewWeekDay[];
+  topProdromalLabels: string[];
+  topTriggerLabels: string[];
+  timelineDays: JournalReviewTimelineDay[];
+  severityBreakdown: JournalSeverityBreakdown;
+  prodromalOrder: string[];
+  avgSleepLabel: string;
+  avgStressLabel: string;
+  medicationRecordedDays: number;
+  medicationPattern: string;
+};
+
+export const SEVERITY_COLORS = {
+  LOW: '#F3C691',
+  MEDIUM: '#E67E22',
+  HIGH: '#E74C3C',
+} as const;
+
+export const SEVERITY_TIER_LABELS: Record<JournalSeverityTier, string> = {
+  LOW: '낮음',
+  MEDIUM: '보통',
+  HIGH: '높음',
+};
+
 export type JournalRecord = {
   id: number;
   recordDate: string;
@@ -201,6 +251,35 @@ export function normalizeJournalDashboard(dashboard: JournalDashboard): JournalD
       : null,
     recentRelapses: dashboard.recentRelapses.map(normalizeJournalRecord),
     timelineDays: dashboard.timelineDays.map(normalizeTimelineDay),
+  };
+}
+
+export function formatReviewDateDot(isoDate: string): string {
+  const [y, m, d] = normalizeIsoDate(isoDate).split('-');
+  return `${y}.${m}.${d}`;
+}
+
+export function formatReviewDateRange(start: string, end: string, days: number): string {
+  return `${formatReviewDateDot(start)} - ${formatReviewDateDot(end)} (${days}일)`;
+}
+
+export function formatLabelList(labels: string[], fallback = '기록 없음'): string {
+  return labels.length > 0 ? labels.join(' · ') : fallback;
+}
+
+export function normalizeReviewSummary(summary: JournalReviewSummary): JournalReviewSummary {
+  return {
+    ...summary,
+    periodStart: normalizeIsoDate(summary.periodStart),
+    periodEnd: normalizeIsoDate(summary.periodEnd),
+    weekDays: summary.weekDays.map((day) => ({
+      ...day,
+      date: normalizeIsoDate(day.date),
+    })),
+    timelineDays: summary.timelineDays.map((day) => ({
+      ...day,
+      date: normalizeIsoDate(day.date),
+    })),
   };
 }
 

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { JournalReviewDashboard } from '@/components/journal/JournalReviewDashboard';
 import { JournalTodayStatusCard } from '@/components/journal/JournalTodayStatusCard';
 import { JournalRecordWizard } from '@/components/journal/JournalRecordWizard';
 import { JournalPrivacyBanner } from '@/components/journal/JournalPrivacyBanner';
@@ -9,16 +10,23 @@ import { JournalTimeline14Days } from '@/components/journal/JournalTimeline14Day
 import { JournalPatternLine } from '@/components/journal/JournalPatternLine';
 import { JournalRecentRelapses } from '@/components/journal/JournalRecentRelapses';
 import { JournalInsightLines } from '@/components/journal/JournalInsightLines';
-import { JournalRecordForm } from '@/components/journal/JournalRecordForm';
 import { JournalShareButton } from '@/components/journal/JournalShareButton';
 import { Pagination } from '@/components/common/Pagination';
+import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { FlowGuideBanner } from '@/components/ui/FlowGuideBanner';
 import { MedicalDisclaimer } from '@/components/layout/MedicalDisclaimer';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
-import { formatStressLabel, formatTriggerLabels, formatJournalDateLabel, toDateInputValue } from '@/domain/journal/types';
+import {
+  formatStressLabel,
+  formatTriggerLabels,
+  formatJournalDateLabel,
+  toDateInputValue,
+  type JournalRecord,
+} from '@/domain/journal/types';
 import { cn } from '@/lib/cn';
+import { fetchJournalRecordByDate } from '@/lib/api/journal';
 import { useAuth } from '@/hooks/useAuth';
 import {
   useJournalDashboard,
@@ -27,6 +35,7 @@ import {
   useJournalMutation,
   useJournalRecordByDate,
   useJournalRecords,
+  useJournalReviewSummary,
 } from '@/hooks/useJournal';
 
 export default function JournalPage() {
@@ -36,6 +45,8 @@ export default function JournalPage() {
   const [historyPage, setHistoryPage] = useState(0);
   const [historyFilter, setHistoryFilter] = useState<'relapse' | 'all'>('relapse');
   const [checkinOpen, setCheckinOpen] = useState(false);
+  const [wizardTargetDate, setWizardTargetDate] = useState(toDateInputValue());
+  const [wizardInitialRecord, setWizardInitialRecord] = useState<JournalRecord | null>(null);
   const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
 
   const historyHadSymptoms = historyFilter === 'relapse' ? true : undefined;
@@ -45,6 +56,11 @@ export default function JournalPage() {
     isLoading: dashboardLoading,
     refetch: refetchDashboard,
   } = useJournalDashboard(isLoggedIn && isReady);
+  const {
+    data: reviewSummary,
+    isLoading: reviewSummaryLoading,
+    refetch: refetchReviewSummary,
+  } = useJournalReviewSummary(isLoggedIn && isReady);
   const { data: insights } = useJournalInsights();
   const { data: recordByDate, isLoading: recordLoading, refetch: refetchRecord } =
     useJournalRecordByDate(selectedDate, isLoggedIn && isReady);
@@ -60,7 +76,19 @@ export default function JournalPage() {
   }, [historyFilter]);
 
   const refreshAll = async () => {
-    await Promise.all([refetchDashboard(), refetchRecord(), refetchHistory()]);
+    await Promise.all([refetchDashboard(), refetchRecord(), refetchHistory(), refetchReviewSummary()]);
+  };
+
+  const openWizard = (date: string, record: JournalRecord | null) => {
+    setWizardTargetDate(date);
+    setWizardInitialRecord(record);
+    setSelectedDate(date);
+    setCheckinOpen(true);
+  };
+
+  const openTodayWizard = () => {
+    const today = toDateInputValue();
+    openWizard(today, dashboard?.todayRecord ?? null);
   };
 
   const handleSave = async (input: Parameters<typeof save>[0]) => {
@@ -82,9 +110,14 @@ export default function JournalPage() {
     setHistoryFilter(filter);
   };
 
-  const handleTimelineDaySelect = (date: string) => {
-    setSelectedDate(date);
-    document.getElementById('history')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const handleTimelineDaySelect = async (date: string) => {
+    if (!isLoggedIn) return;
+    try {
+      const record = await fetchJournalRecordByDate(date);
+      openWizard(date, record);
+    } catch {
+      openWizard(date, null);
+    }
   };
 
   return (
@@ -135,13 +168,14 @@ export default function JournalPage() {
               dashboard={dashboard}
               isLoggedIn={isLoggedIn}
               isLoading={isLoggedIn && dashboardLoading}
-              onCheckin={() => setCheckinOpen(true)}
+              onCheckin={openTodayWizard}
             />
 
             {isLoggedIn && (
               <JournalRecordWizard
                 open={checkinOpen}
-                dashboard={dashboard}
+                targetDate={wizardTargetDate}
+                initialRecord={wizardInitialRecord}
                 isSubmitting={isSubmitting}
                 onClose={() => setCheckinOpen(false)}
                 onSave={handleSave}
@@ -151,7 +185,7 @@ export default function JournalPage() {
             <JournalTimeline14Days
               days={dashboard?.timelineDays ?? []}
               isLoading={isLoggedIn && dashboardLoading}
-              onDaySelect={isLoggedIn ? handleTimelineDaySelect : undefined}
+              onDaySelect={isLoggedIn ? (date) => void handleTimelineDaySelect(date) : undefined}
             />
 
             {isLoggedIn && (
@@ -165,6 +199,13 @@ export default function JournalPage() {
               <JournalRecentRelapses
                 relapses={dashboard?.recentRelapses ?? []}
                 isLoading={dashboardLoading}
+              />
+            )}
+
+            {isLoggedIn && (
+              <JournalReviewDashboard
+                summary={reviewSummary}
+                isLoading={reviewSummaryLoading}
               />
             )}
           </>
@@ -195,24 +236,15 @@ export default function JournalPage() {
           </div>
           <div className="lg:col-span-5">
             {isLoggedIn ? (
-              recordLoading && !recordByDate ? (
-                <div className="journal-form-card animate-pulse space-y-4">
-                  <div className="h-6 w-32 rounded bg-canvas" />
-                  <div className="h-10 rounded bg-canvas" />
-                  <div className="h-32 rounded bg-canvas" />
-                </div>
-              ) : (
-                <JournalRecordForm
-                  key={selectedDate}
-                  initialRecord={recordByDate}
-                  isSubmitting={isSubmitting}
-                  onSubmit={handleSave}
-                  onDateChange={setSelectedDate}
-                />
-              )
+              <JournalRecordSummaryCard
+                date={selectedDate}
+                record={recordByDate}
+                isLoading={recordLoading}
+                onRecord={() => openWizard(selectedDate, recordByDate ?? null)}
+              />
             ) : isReady ? (
               <div className="journal-form-card text-sm text-muted">
-                <p>로그인 후 재발 기록 폼을 사용할 수 있습니다.</p>
+                <p>로그인 후 재발 기록을 남길 수 있습니다.</p>
                 <Link href="/login?from=%2Fjournal" className="mt-3 inline-block text-sm font-medium text-primary">
                   로그인하기
                 </Link>
@@ -307,7 +339,7 @@ export default function JournalPage() {
                         <div className="flex shrink-0 flex-col items-end gap-1">
                           <button
                             type="button"
-                            onClick={() => setSelectedDate(record.recordDate)}
+                            onClick={() => openWizard(record.recordDate, record)}
                             className="text-xs font-medium text-primary"
                           >
                             수정
@@ -371,6 +403,63 @@ function Stat({
         {value}
         {suffix && <span className="ml-0.5 text-sm font-medium text-muted">{suffix}</span>}
       </p>
+    </div>
+  );
+}
+
+function JournalRecordSummaryCard({
+  date,
+  record,
+  isLoading,
+  onRecord,
+}: {
+  date: string;
+  record: JournalRecord | null | undefined;
+  isLoading: boolean;
+  onRecord: () => void;
+}) {
+  const isToday = date === toDateInputValue();
+
+  if (isLoading && !record) {
+    return (
+      <div className="journal-form-card animate-pulse space-y-4">
+        <div className="h-6 w-32 rounded bg-canvas" />
+        <div className="h-10 rounded bg-canvas" />
+        <div className="h-20 rounded bg-canvas" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="journal-form-card space-y-4">
+      <div>
+        <h2 className="text-base font-semibold text-ink">
+          {isToday ? '오늘 기록' : formatJournalDateLabel(date)}
+        </h2>
+        <p className="mt-1 text-xs text-muted">기록·수정은 동일한 단계형 입력으로 진행됩니다.</p>
+      </div>
+
+      {record ? (
+        <div className="space-y-2 rounded-xl bg-canvas px-4 py-3 text-sm">
+          <p className="font-medium text-ink">
+            {record.hadSymptoms ? '증상 있음' : '증상 없음'}
+            {record.hadSymptoms && record.severity != null && ` · 심각도 ${record.severity}`}
+          </p>
+          {record.hadSymptoms && (
+            <p className="text-muted">트리거 {formatTriggerLabels(record.triggers)}</p>
+          )}
+          <p className="text-muted">
+            스트레스 {formatStressLabel(record.stressLevel)}
+            {record.memo && ` · ${record.memo}`}
+          </p>
+        </div>
+      ) : (
+        <p className="text-sm text-muted">아직 이 날짜의 기록이 없습니다.</p>
+      )}
+
+      <Button fullWidth onClick={onRecord}>
+        {record ? '기록 수정하기' : '기록하기'}
+      </Button>
     </div>
   );
 }
