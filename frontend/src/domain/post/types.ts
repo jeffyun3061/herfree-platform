@@ -1,6 +1,6 @@
 export type PostVisibility = 'PUBLIC' | 'MEMBERS_ONLY';
 
-// 게시글 목록 항목 (PostResponse) — 익명 글은 서버가 authorNickname을 "익명"으로 내려준다
+// 게시글 목록 항목 (PostResponse) — 익명 글 닉네임은 서버가 "익명" / "익명(나)"로 내려준다
 export type Post = {
   id: number;
   boardId: number;
@@ -54,11 +54,6 @@ export function validatePostInput(input: { title: string; content: string }): st
   return null;
 }
 
-export function displayAuthorNickname(
-  authorNickname: string,
-  isAnonymous: boolean,
-  isMine: boolean,
-): string {
-  if (isAnonymous && !isMine) return '익명';
+export function displayAuthorNickname(authorNickname: string): string {
   return authorNickname;
 }

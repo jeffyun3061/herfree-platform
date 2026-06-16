@@ -10,17 +10,24 @@ public record JournalInsightsResponse(
         String insightMessage,
         List<String> insightLines
 ) {
-    public static JournalInsightsResponse empty() {
+    public static JournalInsightsResponse insufficient(int sampleSize, int minSampleSize) {
         return new JournalInsightsResponse(
-                0,
+                sampleSize,
                 false,
                 List.of(),
                 List.of(),
-                "충분한 익명 기록이 쌓이면 패턴 인사이트를 보여 드립니다.",
+                String.format(
+                        "익명 재발 기록 %d건이 모였어요. %d건 이상이면 패턴을 보여 드립니다.",
+                        sampleSize,
+                        minSampleSize),
                 List.of(
-                        "아직 집계할 익명 재발 기록이 충분하지 않습니다.",
+                        String.format("현재 익명 재발 기록 %d건 / 최소 %d건", sampleSize, minSampleSize),
                         "회원들의 재발 기록이 더 쌓이면 트리거·전조 증상 패턴을 한 줄로 보여 드려요."
                 )
         );
+    }
+
+    public static JournalInsightsResponse empty() {
+        return insufficient(0, 10);
     }
 }

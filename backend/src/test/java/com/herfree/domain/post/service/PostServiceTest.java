@@ -117,10 +117,10 @@ class PostServiceTest {
         // when
         PostDetailResponse response = postService.createPost(userId, request);
 
-        // then — 본인 조회이므로 isMyPost=true이고 익명 글이어도 실제 닉네임이 표시된다.
-        // PostDetailResponse.of()에서 isMyPost=true이면 마스킹을 적용하지 않는다.
+        // then — 본인 익명 글은 '익명(나)'로 표시한다
         assertThat(response.isMyPost()).isTrue();
         assertThat(response.isAnonymous()).isTrue();
+        assertThat(response.authorNickname()).isEqualTo("익명(나)");
     }
 
     @Test

@@ -1,6 +1,7 @@
 package com.herfree.domain.comment.dto.response;
 
 import com.herfree.domain.comment.entity.Comment;
+import com.herfree.global.util.AnonymousNicknamePolicy;
 import java.time.LocalDateTime;
 
 // 댓글 응답 DTO — Entity를 직접 노출하지 않아 민감 필드 유출을 방지한다
@@ -19,8 +20,8 @@ public record CommentResponse(
     public static CommentResponse of(Comment comment, String authorNickname, Long currentUserId) {
         boolean isMyComment = currentUserId != null
                 && comment.getUser().getId().equals(currentUserId);
-        // 익명 댓글이면 작성자 닉네임을 마스킹한다 — 본인 댓글이면 실명 표시
-        String displayNickname = (comment.isAnonymous() && !isMyComment) ? "익명" : authorNickname;
+        String displayNickname = AnonymousNicknamePolicy.displayNickname(
+                comment.isAnonymous(), isMyComment, authorNickname);
         return new CommentResponse(
                 comment.getId(),
                 comment.getPost().getId(),

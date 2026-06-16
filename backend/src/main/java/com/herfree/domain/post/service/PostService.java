@@ -72,7 +72,7 @@ public class PostService {
                     String nickname = userProfileRepository.findByUserId(post.getUser().getId())
                             .map(UserProfile::getNickname)
                             .orElse("(알 수 없음)");
-                    return PostResponse.of(post, nickname);
+                    return PostResponse.of(post, nickname, userId);
                 });
     }
 

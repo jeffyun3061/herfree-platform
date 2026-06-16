@@ -21,12 +21,7 @@ export function validateCommentInput(content: string): string | null {
   return null;
 }
 
-export function displayAuthorNickname(
-  authorNickname: string,
-  isAnonymous: boolean,
-  isMine: boolean,
-): string {
-  if (isAnonymous && !isMine) return '익명';
+export function displayAuthorNickname(authorNickname: string): string {
   return authorNickname;
 }
 

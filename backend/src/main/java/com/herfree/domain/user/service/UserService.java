@@ -136,6 +136,6 @@ public class UserService {
                 : postRepository.findByUserIdAndStatusOrderByCreatedAtDesc(
                         userId, PostStatus.ACTIVE, pageable);
 
-        return posts.map(post -> PostResponse.of(post, profile.getNickname()));
+        return posts.map(post -> PostResponse.of(post, profile.getNickname(), userId));
     }
 }

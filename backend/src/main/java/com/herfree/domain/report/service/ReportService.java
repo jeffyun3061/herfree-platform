@@ -1,12 +1,22 @@
 package com.herfree.domain.report.service;
 
+import com.herfree.domain.comment.entity.Comment;
+import com.herfree.domain.comment.entity.CommentStatus;
+import com.herfree.domain.comment.exception.CommentNotFoundException;
+import com.herfree.domain.comment.repository.CommentRepository;
+import com.herfree.domain.post.entity.Post;
+import com.herfree.domain.post.entity.PostStatus;
+import com.herfree.domain.post.exception.PostNotFoundException;
+import com.herfree.domain.post.repository.PostRepository;
 import com.herfree.domain.report.dto.request.ReportCreateRequest;
 import com.herfree.domain.report.dto.request.ReportProcessRequest;
 import com.herfree.domain.report.dto.response.ReportResponse;
 import com.herfree.domain.report.entity.Report;
 import com.herfree.domain.report.entity.ReportStatus;
+import com.herfree.domain.report.entity.ReportTargetType;
 import com.herfree.domain.report.exception.DuplicateReportException;
 import com.herfree.domain.report.exception.ReportNotFoundException;
+import com.herfree.domain.report.exception.SelfReportException;
 import com.herfree.domain.report.repository.ReportRepository;
 import com.herfree.domain.user.entity.User;
 import com.herfree.domain.user.exception.UserNotFoundException;
@@ -23,14 +33,17 @@ public class ReportService {
 
     private final ReportRepository reportRepository;
     private final UserRepository userRepository;
+    private final PostRepository postRepository;
+    private final CommentRepository commentRepository;
 
-    // 신고 등록 — 동일 사용자가 동일 대상을 중복 신고하면 409를 반환한다
     @Transactional
     public ReportResponse createReport(Long reporterId, ReportCreateRequest request) {
         if (reportRepository.existsByReporterIdAndTargetTypeAndTargetId(
                 reporterId, request.targetType(), request.targetId())) {
             throw new DuplicateReportException();
         }
+
+        assertNotSelfReport(reporterId, request);
 
         User reporter = userRepository.findById(reporterId)
                 .orElseThrow(UserNotFoundException::new);
@@ -46,14 +59,29 @@ public class ReportService {
         return ReportResponse.from(reportRepository.save(report));
     }
 
-    // 관리자 전용 — 처리 대기 중인 신고 목록을 최신순으로 조회한다
+    private void assertNotSelfReport(Long reporterId, ReportCreateRequest request) {
+        Long authorId = switch (request.targetType()) {
+            case POST -> postRepository.findByIdAndStatus(request.targetId(), PostStatus.ACTIVE)
+                    .map(post -> post.getUser().getId())
+                    .orElseThrow(PostNotFoundException::new);
+            case COMMENT -> commentRepository.findById(request.targetId())
+                    .filter(comment -> comment.getStatus() == CommentStatus.ACTIVE)
+                    .map(comment -> comment.getUser().getId())
+                    .orElseThrow(CommentNotFoundException::new);
+            case USER -> request.targetId();
+        };
+
+        if (authorId.equals(reporterId)) {
+            throw new SelfReportException();
+        }
+    }
+
     @Transactional(readOnly = true)
     public Page<ReportResponse> getReports(ReportStatus status, Pageable pageable) {
         return reportRepository.findByStatusOrderByCreatedAtDesc(status, pageable)
                 .map(ReportResponse::from);
     }
 
-    // 신고 처리 — 인정(ACCEPTED) 또는 기각(REJECTED) 상태로 변경하고 처리자를 기록한다
     @Transactional
     public ReportResponse processReport(Long adminId, Long reportId, ReportProcessRequest request) {
         Report report = reportRepository.findById(reportId)

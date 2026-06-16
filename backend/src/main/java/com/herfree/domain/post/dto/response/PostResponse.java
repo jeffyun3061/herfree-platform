@@ -1,6 +1,7 @@
 package com.herfree.domain.post.dto.response;
 
 import com.herfree.domain.post.entity.Post;
+import com.herfree.global.util.AnonymousNicknamePolicy;
 import java.time.LocalDateTime;
 
 // 게시글 목록 응답 DTO — 목록에서는 content를 제외해 페이로드 크기를 줄인다
@@ -18,8 +19,10 @@ public record PostResponse(
 ) {
     // 익명 글이면 닉네임을 "익명"으로 마스킹하는 로직을 팩토리 메서드 안에 응집한다.
     // Service에서 매번 조건문을 쓰지 않아도 되어 코드 중복이 줄어든다.
-    public static PostResponse of(Post post, String authorNickname) {
-        String displayNickname = post.isAnonymous() ? "익명" : authorNickname;
+    public static PostResponse of(Post post, String authorNickname, Long currentUserId) {
+        boolean isMyPost = currentUserId != null && post.getUser().getId().equals(currentUserId);
+        String displayNickname = AnonymousNicknamePolicy.displayNickname(
+                post.isAnonymous(), isMyPost, authorNickname);
         return new PostResponse(
                 post.getId(),
                 post.getBoard().getId(),

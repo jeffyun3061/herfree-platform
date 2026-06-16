@@ -44,7 +44,7 @@ export function CommentItem({
       <div className="mb-1 flex items-center justify-between gap-2 text-xs text-muted">
         <div className="flex items-center gap-2">
           <span className="font-medium text-cream-foreground">
-            {displayAuthorNickname(comment.authorNickname, comment.isAnonymous, comment.isMyComment)}
+            {displayAuthorNickname(comment.authorNickname)}
           </span>
           <span>· {formatDate(comment.createdAt)}</span>
         </div>

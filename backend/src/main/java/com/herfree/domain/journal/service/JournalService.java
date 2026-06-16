@@ -322,7 +322,7 @@ public class JournalService {
                 since, PageRequest.of(0, 500));
 
         if (records.size() < INSIGHT_MIN_SAMPLE) {
-            return JournalInsightsResponse.empty();
+            return JournalInsightsResponse.insufficient(records.size(), INSIGHT_MIN_SAMPLE);
         }
 
         Map<String, Integer> triggerCounts = new HashMap<>();

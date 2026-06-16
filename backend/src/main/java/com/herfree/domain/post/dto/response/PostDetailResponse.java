@@ -2,6 +2,7 @@ package com.herfree.domain.post.dto.response;
 
 import com.herfree.domain.post.entity.Post;
 import com.herfree.domain.post.entity.PostVisibility;
+import com.herfree.global.util.AnonymousNicknamePolicy;
 import java.time.LocalDateTime;
 
 // 게시글 상세 응답 DTO — 목록 응답에 content, visibility, isMyPost 필드를 추가한다
@@ -21,8 +22,8 @@ public record PostDetailResponse(
         LocalDateTime updatedAt
 ) {
     public static PostDetailResponse of(Post post, String authorNickname, boolean isMyPost) {
-        // 익명 글인 경우 닉네임 마스킹 — 단, 본인 글이면 실명 표시를 허용한다
-        String displayNickname = (post.isAnonymous() && !isMyPost) ? "익명" : authorNickname;
+        String displayNickname = AnonymousNicknamePolicy.displayNickname(
+                post.isAnonymous(), isMyPost, authorNickname);
         return new PostDetailResponse(
                 post.getId(),
                 post.getBoard().getId(),

@@ -140,7 +140,7 @@ export default function PostDetailPage() {
       <article className="px-4 py-5">
         <h1 className="text-lg font-semibold text-cream-foreground">{post.title}</h1>
         <div className="mt-2 flex gap-2 text-xs text-muted">
-          <span>{displayAuthorNickname(post.authorNickname, post.isAnonymous, post.isMyPost)}</span>
+          <span>{displayAuthorNickname(post.authorNickname)}</span>
           <span>· 조회 {post.viewCount}</span>
         </div>
         <p className="mt-5 whitespace-pre-wrap text-sm leading-relaxed text-cream-foreground">
