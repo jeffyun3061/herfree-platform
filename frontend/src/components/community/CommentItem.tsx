@@ -1,4 +1,5 @@
 import type { Comment } from '@/domain/comment/types';
+import { displayAuthorNickname } from '@/domain/comment/types';
 import { Button } from '@/components/ui/Button';
 
 type CommentItemProps = {
@@ -31,7 +32,9 @@ export function CommentItem({
     <article className="border-b border-border py-4 last:border-b-0">
       <div className="mb-1 flex items-center justify-between gap-2 text-xs text-muted">
         <div className="flex items-center gap-2">
-          <span className="font-medium text-cream-foreground">{comment.authorNickname}</span>
+          <span className="font-medium text-cream-foreground">
+            {displayAuthorNickname(comment.authorNickname, comment.isAnonymous, comment.isMyComment)}
+          </span>
           <span>· {formatDate(comment.createdAt)}</span>
         </div>
         <div className="flex items-center gap-1">

@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/Button';
 import { Textarea } from '@/components/ui/Textarea';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { validateCommentInput } from '@/domain/comment/types';
+import { displayAuthorNickname } from '@/domain/post/types';
 import { getErrorMessage } from '@/lib/api/client';
 
 type PendingConfirm =
@@ -129,7 +130,7 @@ export default function PostDetailPage() {
       <article className="px-4 py-5">
         <h1 className="text-lg font-semibold text-cream-foreground">{post.title}</h1>
         <div className="mt-2 flex gap-2 text-xs text-muted">
-          <span>{post.authorNickname}</span>
+          <span>{displayAuthorNickname(post.authorNickname, post.isAnonymous, post.isMyPost)}</span>
           <span>· 조회 {post.viewCount}</span>
         </div>
         <p className="mt-5 whitespace-pre-wrap text-sm leading-relaxed text-cream-foreground">

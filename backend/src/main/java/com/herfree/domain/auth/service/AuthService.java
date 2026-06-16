@@ -3,18 +3,20 @@ package com.herfree.domain.auth.service;
 import com.herfree.domain.auth.dto.request.LoginRequest;
 import com.herfree.domain.auth.dto.request.SignupRequest;
 import com.herfree.domain.auth.dto.response.LoginResponse;
-import com.herfree.domain.auth.exception.InvalidPasswordException;
+import com.herfree.domain.auth.exception.InvalidLoginCredentialsException;
 import com.herfree.domain.auth.exception.SuspendedAccountException;
 import com.herfree.domain.user.entity.User;
 import com.herfree.domain.user.entity.UserProfile;
 import com.herfree.domain.user.entity.UserStatus;
 import com.herfree.domain.user.exception.DuplicateEmailException;
 import com.herfree.domain.user.exception.DuplicateNicknameException;
+import com.herfree.domain.user.exception.ReservedNicknameException;
 import com.herfree.domain.user.exception.UserNotFoundException;
 import com.herfree.domain.user.repository.UserProfileRepository;
 import com.herfree.domain.user.repository.UserRepository;
 import com.herfree.global.security.JwtProperties;
 import com.herfree.global.security.JwtTokenProvider;
+import com.herfree.global.util.ReservedNicknamePolicy;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -38,6 +40,10 @@ public class AuthService {
         // 명시적으로 검증해야 의도가 담긴 에러 메시지를 내려줄 수 있다.
         if (userRepository.existsByEmail(request.email())) {
             throw new DuplicateEmailException();
+        }
+
+        if (ReservedNicknamePolicy.isReserved(request.nickname())) {
+            throw new ReservedNicknameException();
         }
 
         // 닉네임 중복 체크 — user_profiles.nickname은 unique 컬럼이다.
@@ -76,7 +82,7 @@ public class AuthService {
         // 보안 관점에서 "이메일이 없다"와 "비밀번호가 틀렸다"를 같은 흐름으로 처리하는 게 맞지만,
         // 여기서는 UX 편의를 위해 분리한다. 실제 응답 메시지는 동일하게 유지한다.
         User user = userRepository.findByEmail(request.email())
-                .orElseThrow(UserNotFoundException::new);
+                .orElseThrow(InvalidLoginCredentialsException::new);
 
         // SUSPENDED는 자격증명은 유효하지만 서비스 접근이 금지된 상태다.
         // filter()로 ACTIVE만 통과시키면 SUSPENDED와 DELETED가 모두 UserNotFoundException을 던져
@@ -89,13 +95,13 @@ public class AuthService {
         // 탈퇴 계정 존재 여부를 공개하면 개인정보 유출이 될 수 있으므로
         // UserNotFoundException과 동일한 메시지를 사용한다.
         if (user.getStatus() != UserStatus.ACTIVE) {
-            throw new UserNotFoundException();
+            throw new InvalidLoginCredentialsException();
         }
 
         // PasswordEncoder.matches()는 요청 평문과 저장된 BCrypt 해시를 비교한다.
         // 직접 해시를 만들어 비교하면 salt 처리가 누락되므로 반드시 이 메서드를 써야 한다.
         if (!passwordEncoder.matches(request.password(), user.getPassword())) {
-            throw new InvalidPasswordException();
+            throw new InvalidLoginCredentialsException();
         }
 
         UserProfile profile = userProfileRepository.findByUserId(user.getId())

@@ -17,6 +17,7 @@ import com.herfree.domain.user.entity.UserProfile;
 import com.herfree.domain.user.exception.UserNotFoundException;
 import com.herfree.domain.user.repository.UserProfileRepository;
 import com.herfree.domain.user.repository.UserRepository;
+import com.herfree.global.util.PostVisibilityPolicy;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -63,10 +64,10 @@ public class PostService {
     // 닉네임 조회를 위해 user_id로 UserProfile을 조회하는 N+1 문제가 발생할 수 있다.
     // 현재는 단순 구조를 유지하고, 성능 이슈 발생 시 JPQL fetch join 또는 Projections으로 최적화한다.
     @Transactional(readOnly = true)
-    public Page<PostResponse> getPosts(Long boardId, String keyword, Pageable pageable) {
+    public Page<PostResponse> getPosts(Long boardId, String keyword, Pageable pageable, Long userId) {
         String normalizedKeyword = keyword != null ? keyword.trim() : null;
         return postRepository
-                .searchActivePosts(PostStatus.ACTIVE, boardId, normalizedKeyword, pageable)
+                .searchActivePosts(PostStatus.ACTIVE, boardId, normalizedKeyword, userId, pageable)
                 .map(post -> {
                     String nickname = userProfileRepository.findByUserId(post.getUser().getId())
                             .map(UserProfile::getNickname)
@@ -82,6 +83,8 @@ public class PostService {
     public PostDetailResponse getPost(Long postId, Long userId) {
         Post post = postRepository.findByIdAndStatus(postId, PostStatus.ACTIVE)
                 .orElseThrow(PostNotFoundException::new);
+
+        PostVisibilityPolicy.assertReadable(post, userId);
 
         post.increaseViewCount();
 

@@ -1,6 +1,17 @@
 # Herfree Platform
 
-헤르페스 환우·감염 불안 사용자를 위한 **커뮤니티 중심 프라이빗 헬스케어 웹앱** 모노레포입니다. 익명 게시·신고·운영자 관리와 전문가 정보·YouTube 큐레이션·제품 링크를 하나의 서비스에서 제공합니다.
+헤르페스 환우·감염 불안 사용자를 위한 **커뮤니티 중심 프라이빗 헬스케어 웹앱** 모노레포입니다.
+
+## 개발 원본 경로 (Windows)
+
+| 항목 | 경로 |
+|------|------|
+| **원본 저장소** | `C:\dev\herfree-platform` |
+| Cursor/VS Code | **File → Open Folder** → 위 경로 (또는 `herfree-platform.code-workspace` 더블클릭) |
+| 로컬 실행 안내 | `.\scripts\start-local.ps1` |
+| Cursor 열기 | `.\scripts\open-dev.ps1` |
+
+> OneDrive·바탕화면 등 **복사본 폴더는 사용하지 않습니다.** Git·빌드·커밋은 `C:\dev\herfree-platform`에서만 진행하세요. 익명 게시·신고·운영자 관리와 전문가 정보·YouTube 큐레이션·제품 링크를 하나의 서비스에서 제공합니다.
 
 **로컬 DB:** `docker compose -f docker-compose.local.yml up -d` → MySQL 8 (`herfree_db` @ `localhost:3306`)
 

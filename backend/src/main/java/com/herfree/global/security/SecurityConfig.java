@@ -18,6 +18,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
+    private final RestAccessDeniedHandler restAccessDeniedHandler;
 
     // PasswordEncoder를 SecurityConfig에 두는 이유:
     // Spring Security 컨텍스트 내에서 정의해 순환 의존성을 방지한다.
@@ -39,6 +41,9 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(restAuthenticationEntryPoint)
+                        .accessDeniedHandler(restAccessDeniedHandler))
                 .authorizeHttpRequests(auth -> auth
                         // 인증 없이 접근 가능한 경로 — signup과 login만 열어둔다.
                         // /api/auth/logout은 인증된 사용자만 호출할 수 있도록 여기서 제외한다.

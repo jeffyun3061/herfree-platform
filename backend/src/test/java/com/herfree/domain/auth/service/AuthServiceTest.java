@@ -3,7 +3,7 @@ package com.herfree.domain.auth.service;
 import com.herfree.domain.auth.dto.request.LoginRequest;
 import com.herfree.domain.auth.dto.request.SignupRequest;
 import com.herfree.domain.auth.dto.response.LoginResponse;
-import com.herfree.domain.auth.exception.InvalidPasswordException;
+import com.herfree.domain.auth.exception.InvalidLoginCredentialsException;
 import com.herfree.domain.auth.exception.SuspendedAccountException;
 import com.herfree.domain.user.entity.User;
 import com.herfree.domain.user.entity.UserProfile;
@@ -126,7 +126,7 @@ class AuthServiceTest {
     }
 
     @Test
-    @DisplayName("비밀번호가 틀리면 InvalidPasswordException이 발생한다")
+    @DisplayName("비밀번호가 틀리면 InvalidLoginCredentialsException이 발생한다")
     void login_wrongPassword_throws() {
         // given
         LoginRequest request = new LoginRequest("test@test.com", "wrong_password");
@@ -144,7 +144,17 @@ class AuthServiceTest {
 
         // when & then
         assertThatThrownBy(() -> authService.login(request))
-                .isInstanceOf(InvalidPasswordException.class);
+                .isInstanceOf(InvalidLoginCredentialsException.class);
+    }
+
+    @Test
+    @DisplayName("예약 닉네임으로 회원가입하면 ReservedNicknameException이 발생한다")
+    void signup_reservedNickname_throws() {
+        SignupRequest request = new SignupRequest("test@test.com", "password123!", "관리자");
+        given(userRepository.existsByEmail(request.email())).willReturn(false);
+
+        assertThatThrownBy(() -> authService.signup(request))
+                .isInstanceOf(com.herfree.domain.user.exception.ReservedNicknameException.class);
     }
 
     @Test

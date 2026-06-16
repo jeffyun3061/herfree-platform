@@ -21,8 +21,11 @@ public enum ErrorCode {
     DUPLICATE_EMAIL(HttpStatus.CONFLICT, "이미 사용 중인 이메일입니다."),
     // 닉네임 중복도 이메일과 동일한 이유로 Conflict 사용
     DUPLICATE_NICKNAME(HttpStatus.CONFLICT, "이미 사용 중인 닉네임입니다."),
+    RESERVED_NICKNAME(HttpStatus.BAD_REQUEST, "사용할 수 없는 닉네임입니다."),
     // 비밀번호 불일치는 403이 아닌 401 — "인증 자격증명 자체가 틀렸다"는 의미
     INVALID_PASSWORD(HttpStatus.UNAUTHORIZED, "비밀번호가 올바르지 않습니다."),
+    // 로그인 실패(이메일 없음·비밀번호 불일치) — 존재 여부를 구분하지 않는 통합 메시지
+    INVALID_LOGIN_CREDENTIALS(HttpStatus.UNAUTHORIZED, "이메일 또는 비밀번호가 올바르지 않습니다."),
     // JWT 위조·만료 모두 401로 통일 — 클라이언트는 재로그인 유도
     INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "유효하지 않은 토큰입니다."),
     // 정지된 계정은 401이 아닌 403으로 처리한다.

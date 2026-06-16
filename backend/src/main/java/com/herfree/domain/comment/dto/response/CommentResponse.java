@@ -17,10 +17,10 @@ public record CommentResponse(
         LocalDateTime createdAt
 ) {
     public static CommentResponse of(Comment comment, String authorNickname, Long currentUserId) {
-        // 익명 댓글이면 작성자 닉네임을 마스킹한다
-        String displayNickname = comment.isAnonymous() ? "익명" : authorNickname;
         boolean isMyComment = currentUserId != null
                 && comment.getUser().getId().equals(currentUserId);
+        // 익명 댓글이면 작성자 닉네임을 마스킹한다 — 본인 댓글이면 실명 표시
+        String displayNickname = (comment.isAnonymous() && !isMyComment) ? "익명" : authorNickname;
         return new CommentResponse(
                 comment.getId(),
                 comment.getPost().getId(),

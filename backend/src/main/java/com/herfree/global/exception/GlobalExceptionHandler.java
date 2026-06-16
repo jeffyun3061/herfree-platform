@@ -1,9 +1,14 @@
 package com.herfree.global.exception;
 
 import com.herfree.global.response.ErrorResponse;
+import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.BindException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -14,12 +19,12 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    private static final MediaType JSON_UTF8 = new MediaType("application", "json", StandardCharsets.UTF_8);
+
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ErrorResponse> handleBusinessException(BusinessException ex) {
         ErrorCode errorCode = ex.getErrorCode();
-        return ResponseEntity
-                .status(errorCode.getHttpStatus())
-                .body(ErrorResponse.of(ex.getMessage()));
+        return jsonResponse(errorCode.getHttpStatus(), ErrorResponse.of(ex.getMessage()));
     }
 
     // MethodArgumentNotValidException이 BindException을 상속하므로
@@ -35,16 +40,26 @@ public class GlobalExceptionHandler {
             message = ErrorCode.INVALID_INPUT.getMessage();
         }
 
-        return ResponseEntity
-                .badRequest()
-                .body(ErrorResponse.of(message));
+        return jsonResponse(HttpStatus.BAD_REQUEST, ErrorResponse.of(message));
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
+        return jsonResponse(HttpStatus.BAD_REQUEST, ErrorResponse.of(ErrorCode.INVALID_INPUT.getMessage()));
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleException(Exception ex) {
         log.error("Unhandled exception", ex);
-        return ResponseEntity
-                .internalServerError()
-                .body(ErrorResponse.of(ErrorCode.INTERNAL_ERROR.getMessage()));
+        return jsonResponse(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                ErrorResponse.of(ErrorCode.INTERNAL_ERROR.getMessage())
+        );
+    }
+
+    private ResponseEntity<ErrorResponse> jsonResponse(HttpStatus status, ErrorResponse body) {
+        return ResponseEntity.status(status)
+                .header(HttpHeaders.CONTENT_TYPE, JSON_UTF8.toString())
+                .body(body);
     }
 }

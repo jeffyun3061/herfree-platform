@@ -198,6 +198,43 @@ class PostServiceTest {
         assertThat(post.getViewCount()).isEqualTo(viewCountBefore + 1);
     }
 
+    @Test
+    @DisplayName("익명 게시글 상세 조회 시 타인에게는 닉네임이 '익명'으로 표시된다")
+    void getPost_anonymousPost_masksNicknameForOthers() {
+        Long postId = 1L;
+        Long authorId = 2L;
+        Long viewerId = 99L;
+
+        User mockAuthor = org.mockito.Mockito.mock(User.class);
+        given(mockAuthor.getId()).willReturn(authorId);
+
+        Board board = buildTestBoard();
+
+        Post post = Post.builder()
+                .board(board)
+                .user(mockAuthor)
+                .title("제목")
+                .content("내용")
+                .visibility(PostVisibility.PUBLIC)
+                .isAnonymous(true)
+                .build();
+
+        UserProfile profile = UserProfile.builder()
+                .user(mockAuthor)
+                .nickname("비밀닉네임")
+                .isPublic(true)
+                .build();
+
+        given(postRepository.findByIdAndStatus(postId, PostStatus.ACTIVE)).willReturn(Optional.of(post));
+        given(userProfileRepository.findByUserId(authorId)).willReturn(Optional.of(profile));
+
+        PostDetailResponse response = postService.getPost(postId, viewerId);
+
+        assertThat(response.authorNickname()).isEqualTo("익명");
+        assertThat(response.isAnonymous()).isTrue();
+        assertThat(response.isMyPost()).isFalse();
+    }
+
     // 테스트용 Board 객체를 생성하는 헬퍼 메서드 — 여러 테스트에서 공통으로 사용한다
     private Board buildTestBoard() {
         return org.mockito.Mockito.mock(Board.class);

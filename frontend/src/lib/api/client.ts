@@ -108,9 +108,15 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
     envelope = null;
   }
 
-  if (!response.ok || !envelope || !envelope.success) {
-    const message = envelope?.message ?? getErrorMessage(createApiError(response.status, ''));
-    throw createApiError(response.status, message);
+  if (!response.ok || !envelope || envelope.success === false) {
+    const message =
+      envelope?.message ??
+      (response.status === 401
+        ? '인증이 필요합니다.'
+        : response.status === 403
+          ? '접근 권한이 없습니다.'
+          : getErrorMessage(createApiError(response.status, '')));
+    throw createApiError(response.status || 500, message);
   }
 
   return envelope.data;

@@ -37,9 +37,10 @@ public class PostController {
     public ResponseEntity<ApiResponse<Page<PostResponse>>> getPosts(
             @RequestParam(required = false) Long boardId,
             @RequestParam(required = false) String keyword,
+            @AuthenticationPrincipal Long userId,
             @PageableDefault(size = 20) Pageable pageable
     ) {
-        return ResponseEntity.ok(ApiResponse.success(postService.getPosts(boardId, keyword, pageable)));
+        return ResponseEntity.ok(ApiResponse.success(postService.getPosts(boardId, keyword, pageable, userId)));
     }
 
     @PostMapping

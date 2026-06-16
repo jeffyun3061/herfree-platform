@@ -1,0 +1,11 @@
+{
+  "folders": [
+    {
+      "name": "herfree-platform",
+      "path": "."
+    }
+  ],
+  "settings": {
+    "files.encoding": "utf8"
+  }
+}

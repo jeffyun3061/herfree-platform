@@ -16,6 +16,7 @@ import com.herfree.domain.user.entity.UserProfile;
 import com.herfree.domain.user.exception.UserNotFoundException;
 import com.herfree.domain.user.repository.UserProfileRepository;
 import com.herfree.domain.user.repository.UserRepository;
+import com.herfree.global.util.PostVisibilityPolicy;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -35,6 +36,8 @@ public class CommentService {
     public CommentResponse createComment(Long postId, Long userId, CommentCreateRequest request) {
         Post post = postRepository.findByIdAndStatus(postId, PostStatus.ACTIVE)
                 .orElseThrow(PostNotFoundException::new);
+
+        PostVisibilityPolicy.assertReadable(post, userId);
 
         User user = userRepository.findById(userId)
                 .orElseThrow(UserNotFoundException::new);
@@ -66,6 +69,11 @@ public class CommentService {
     // 댓글 목록은 등록순으로 반환한다 — 대화의 흐름을 시간 순서대로 읽는 것이 자연스럽다
     @Transactional(readOnly = true)
     public Page<CommentResponse> getComments(Long postId, Long currentUserId, Pageable pageable) {
+        Post post = postRepository.findByIdAndStatus(postId, PostStatus.ACTIVE)
+                .orElseThrow(PostNotFoundException::new);
+
+        PostVisibilityPolicy.assertReadable(post, currentUserId);
+
         return commentRepository
                 .findByPostIdAndStatusOrderByCreatedAtAsc(postId, CommentStatus.ACTIVE, pageable)
                 .map(comment -> {

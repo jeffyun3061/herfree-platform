@@ -20,9 +20,11 @@ import com.herfree.domain.user.entity.User;
 import com.herfree.domain.user.entity.UserProfile;
 import com.herfree.domain.user.entity.UserStatus;
 import com.herfree.domain.user.exception.DuplicateNicknameException;
+import com.herfree.domain.user.exception.ReservedNicknameException;
 import com.herfree.domain.user.exception.UserNotFoundException;
 import com.herfree.domain.user.repository.UserProfileRepository;
 import com.herfree.domain.user.repository.UserRepository;
+import com.herfree.global.util.ReservedNicknamePolicy;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -68,6 +70,9 @@ public class UserService {
 
         // 현재 닉네임과 다를 때만 중복 검사 — 같은 닉네임으로 수정 요청 시 통과
         if (!profile.getNickname().equals(request.nickname())) {
+            if (ReservedNicknamePolicy.isReserved(request.nickname())) {
+                throw new ReservedNicknameException();
+            }
             if (userProfileRepository.existsByNickname(request.nickname())) {
                 throw new DuplicateNicknameException();
             }

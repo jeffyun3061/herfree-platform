@@ -43,11 +43,13 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             WHERE p.status = :status
             AND (:boardId IS NULL OR b.id = :boardId)
             AND (:keyword IS NULL OR :keyword = '' OR LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%')))
+            AND (:viewerId IS NOT NULL OR p.visibility = 'PUBLIC')
             ORDER BY CASE WHEN b.boardType = 'NOTICE' THEN 0 ELSE 1 END, p.createdAt DESC
             """)
     Page<Post> searchActivePosts(
             @Param("status") PostStatus status,
             @Param("boardId") Long boardId,
             @Param("keyword") String keyword,
+            @Param("viewerId") Long viewerId,
             Pageable pageable);
 }

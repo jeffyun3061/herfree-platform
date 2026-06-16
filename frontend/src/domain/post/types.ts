@@ -53,3 +53,12 @@ export function validatePostInput(input: { title: string; content: string }): st
   if (!input.content.trim()) return '내용을 입력해 주세요.';
   return null;
 }
+
+export function displayAuthorNickname(
+  authorNickname: string,
+  isAnonymous: boolean,
+  isMine: boolean,
+): string {
+  if (isAnonymous && !isMine) return '익명';
+  return authorNickname;
+}
