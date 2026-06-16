@@ -1,16 +1,16 @@
 'use client';
 
-import type { JournalTimelineDay } from '@/domain/journal/types';
+import { formatJournalDateLabel, type JournalTimelineDay } from '@/domain/journal/types';
 import { cn } from '@/lib/cn';
 
 type JournalTimeline14DaysProps = {
   days: JournalTimelineDay[];
   isLoading?: boolean;
+  onDaySelect?: (date: string) => void;
 };
 
 function dayLabel(dateStr: string): string {
-  const date = new Date(dateStr + 'T00:00:00');
-  return date.toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' });
+  return formatJournalDateLabel(dateStr).replace(/^\d{4}년 /, '');
 }
 
 const LEGEND = [
@@ -20,16 +20,27 @@ const LEGEND = [
   { key: 'highStress' as const, color: 'bg-amber-500', label: '스트레스' },
 ];
 
-function DayColumn({ day }: { day: JournalTimelineDay }) {
+function DayColumn({
+  day,
+  onSelect,
+}: {
+  day: JournalTimelineDay;
+  onSelect?: (date: string) => void;
+}) {
   const flags = LEGEND.map((item) => day[item.key]);
   const hasAny = flags.some(Boolean);
 
   return (
-    <div
+    <button
+      type="button"
+      disabled={!day.recorded || !onSelect}
+      onClick={() => onSelect?.(day.date)}
       className={cn(
-        'flex min-w-[2.75rem] flex-col items-center gap-2',
+        'flex min-w-[2.75rem] flex-col items-center gap-2 rounded-lg transition-colors',
         !day.recorded && 'opacity-40',
+        day.recorded && onSelect && 'hover:bg-canvas-dark/60',
       )}
+      aria-label={day.recorded ? `${dayLabel(day.date)} 기록 보기` : `${dayLabel(day.date)} 기록 없음`}
     >
       <span className="text-[10px] font-medium text-muted">{dayLabel(day.date)}</span>
       <div className="flex h-16 flex-col items-center justify-end gap-1">
@@ -50,11 +61,11 @@ function DayColumn({ day }: { day: JournalTimelineDay }) {
       {!hasAny && day.recorded && (
         <span className="h-1 w-full max-w-[1.5rem] rounded-full bg-primary/30" />
       )}
-    </div>
+    </button>
   );
 }
 
-export function JournalTimeline14Days({ days, isLoading }: JournalTimeline14DaysProps) {
+export function JournalTimeline14Days({ days, isLoading, onDaySelect }: JournalTimeline14DaysProps) {
   if (isLoading) {
     return (
       <section className="rounded-card border border-border/50 bg-white p-5 shadow-card">
@@ -73,7 +84,7 @@ export function JournalTimeline14Days({ days, isLoading }: JournalTimeline14Days
 
       <div className="mt-5 flex items-end justify-between gap-0.5 overflow-x-auto pb-2">
         {days.map((day) => (
-          <DayColumn key={day.date} day={day} />
+          <DayColumn key={day.date} day={day} onSelect={onDaySelect} />
         ))}
       </div>
 

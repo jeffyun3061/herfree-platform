@@ -166,6 +166,44 @@ export function toDateInputValue(date = new Date()): string {
   return `${y}-${m}-${d}`;
 }
 
+/** API 날짜 필드를 `YYYY-MM-DD` 문자열로 통일한다 (배열 직렬화 등 방어). */
+export function normalizeIsoDate(value: unknown): string {
+  if (typeof value === 'string') {
+    const match = value.match(/^(\d{4}-\d{2}-\d{2})/);
+    if (match) return match[1];
+  }
+  if (Array.isArray(value) && value.length >= 3) {
+    const [y, m, d] = value as [number, number, number];
+    return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  }
+  return toDateInputValue();
+}
+
+export function normalizeJournalRecord(record: JournalRecord): JournalRecord {
+  return {
+    ...record,
+    recordDate: normalizeIsoDate(record.recordDate),
+  };
+}
+
+export function normalizeTimelineDay(day: JournalTimelineDay): JournalTimelineDay {
+  return {
+    ...day,
+    date: normalizeIsoDate(day.date),
+  };
+}
+
+export function normalizeJournalDashboard(dashboard: JournalDashboard): JournalDashboard {
+  return {
+    ...dashboard,
+    todayRecord: dashboard.todayRecord
+      ? normalizeJournalRecord(dashboard.todayRecord)
+      : null,
+    recentRelapses: dashboard.recentRelapses.map(normalizeJournalRecord),
+    timelineDays: dashboard.timelineDays.map(normalizeTimelineDay),
+  };
+}
+
 export function formatJournalDateLabel(isoDate: string): string {
   const date = new Date(isoDate + 'T00:00:00');
   return date.toLocaleDateString('ko-KR', {

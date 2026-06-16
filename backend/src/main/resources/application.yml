@@ -3,6 +3,9 @@ spring:
     name: herfree-api
   profiles:
     active: local
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:

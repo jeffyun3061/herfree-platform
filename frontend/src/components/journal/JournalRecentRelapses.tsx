@@ -1,6 +1,6 @@
 'use client';
 
-import { formatTriggerLabels, type JournalRecord } from '@/domain/journal/types';
+import { formatJournalDateLabel, formatTriggerLabels, type JournalRecord } from '@/domain/journal/types';
 
 type JournalRecentRelapsesProps = {
   relapses: JournalRecord[];
@@ -28,7 +28,9 @@ export function JournalRecentRelapses({ relapses, isLoading }: JournalRecentRela
 
       <div className="mt-4 rounded-xl border border-red-100 bg-red-50/50 px-4 py-3">
         <div className="flex items-center justify-between gap-2">
-          <span className="text-sm font-semibold text-ink">{latest.recordDate}</span>
+          <span className="text-sm font-semibold text-ink">
+            {formatJournalDateLabel(latest.recordDate)}
+          </span>
           <span className="rounded-pill bg-red-100 px-2 py-0.5 text-[11px] font-medium text-red-700">
             심각도 {latest.severity ?? '—'}
           </span>
@@ -45,7 +47,7 @@ export function JournalRecentRelapses({ relapses, isLoading }: JournalRecentRela
         <ul className="mt-3 space-y-2 border-t border-border/50 pt-3">
           {relapses.slice(1, 4).map((record) => (
             <li key={record.id} className="flex items-center justify-between text-xs">
-              <span className="font-medium text-ink">{record.recordDate}</span>
+              <span className="font-medium text-ink">{formatJournalDateLabel(record.recordDate)}</span>
               <span className="text-muted">심각도 {record.severity ?? '—'}</span>
             </li>
           ))}

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { JournalTodayStatusCard } from '@/components/journal/JournalTodayStatusCard';
 import { JournalRecordWizard } from '@/components/journal/JournalRecordWizard';
+import { JournalPrivacyBanner } from '@/components/journal/JournalPrivacyBanner';
 import { JournalTimeline14Days } from '@/components/journal/JournalTimeline14Days';
 import { JournalPatternLine } from '@/components/journal/JournalPatternLine';
 import { JournalRecentRelapses } from '@/components/journal/JournalRecentRelapses';
@@ -16,7 +17,7 @@ import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { FlowGuideBanner } from '@/components/ui/FlowGuideBanner';
 import { MedicalDisclaimer } from '@/components/layout/MedicalDisclaimer';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
-import { formatStressLabel, formatTriggerLabels, toDateInputValue } from '@/domain/journal/types';
+import { formatStressLabel, formatTriggerLabels, formatJournalDateLabel, toDateInputValue } from '@/domain/journal/types';
 import { cn } from '@/lib/cn';
 import { useAuth } from '@/hooks/useAuth';
 import {
@@ -81,6 +82,11 @@ export default function JournalPage() {
     setHistoryFilter(filter);
   };
 
+  const handleTimelineDaySelect = (date: string) => {
+    setSelectedDate(date);
+    document.getElementById('history')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   return (
     <div className="bg-canvas pb-10 lg:pb-14">
       <div className="page-container space-y-6 lg:space-y-8">
@@ -114,6 +120,8 @@ export default function JournalPage() {
           link={{ href: '/community', label: '커뮤니티에서 익명으로 나누기' }}
         />
 
+        {isLoggedIn && <JournalPrivacyBanner />}
+
         {!isReady ? (
           <JournalTodayStatusCard
             dashboard={null}
@@ -143,6 +151,7 @@ export default function JournalPage() {
             <JournalTimeline14Days
               days={dashboard?.timelineDays ?? []}
               isLoading={isLoggedIn && dashboardLoading}
+              onDaySelect={isLoggedIn ? handleTimelineDaySelect : undefined}
             />
 
             {isLoggedIn && (
@@ -215,7 +224,12 @@ export default function JournalPage() {
         {isLoggedIn && isReady && (
           <section id="history" className="scroll-mt-24">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-              <h2 className="section-heading">기록 히스토리</h2>
+              <div>
+                <h2 className="section-heading">기록 히스토리</h2>
+                <p className="mt-1 text-xs text-muted">
+                  날짜별 기록을 확인하고 수정·삭제할 수 있어요. 삭제는 복구할 수 없습니다.
+                </p>
+              </div>
               <div className="flex gap-2">
                 <button
                   type="button"
@@ -272,7 +286,9 @@ export default function JournalPage() {
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <p className="font-medium text-ink">{record.recordDate}</p>
+                          <p className="font-medium text-ink">
+                            {formatJournalDateLabel(record.recordDate)}
+                          </p>
                           {record.hadSymptoms ? (
                             <p className="mt-1 text-muted">
                               재발 · 심각도 {record.severity ?? '-'} · 트리거{' '}
@@ -299,7 +315,7 @@ export default function JournalPage() {
                           <button
                             type="button"
                             onClick={() => setDeleteTargetId(record.id)}
-                            className="text-xs font-medium text-red-600"
+                            className="rounded-lg border border-red-200 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50"
                           >
                             삭제
                           </button>
@@ -327,8 +343,8 @@ export default function JournalPage() {
 
       <ConfirmModal
         open={deleteTargetId !== null}
-        title="기록 삭제"
-        message="이 날짜의 기록을 삭제할까요? 삭제 후에는 복구할 수 없습니다."
+        title="기록 영구 삭제"
+        message="이 날짜의 건강 기록을 서버에서 완전히 삭제할까요? 메모·증상 내용은 복구할 수 없으며, 본인 계정에서만 삭제됩니다."
         confirmLabel="삭제"
         variant="danger"
         isLoading={isDeleting}
