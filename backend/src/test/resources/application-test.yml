@@ -32,3 +32,7 @@ spring:
 jwt:
   secret: test-secret-key-for-unit-tests-only-do-not-use-in-production
   access-expiration-seconds: 3600
+
+app:
+  cors:
+    allowed-origin-patterns: http://localhost:*,http://127.0.0.1:*

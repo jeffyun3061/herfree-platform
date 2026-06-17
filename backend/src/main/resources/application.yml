@@ -18,6 +18,8 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+    clean-disabled: true
+    validate-on-migrate: true
 
 server:
   port: 8080
@@ -48,16 +50,34 @@ logging:
     root: INFO
     com.herfree: DEBUG
 
-# CORS — 로컬은 localhost:3000, 운영은 Vercel URL을 환경변수로 주입한다
+# CORS — 로컬은 패턴(모바일/LAN/ngrok), 운영은 Vercel URL을 환경변수로 주입한다
 app:
   cors:
-    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://127.0.0.1:3000}
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:}
+    allowed-origin-patterns: ${CORS_ALLOWED_ORIGIN_PATTERNS:}
   bootstrap:
     enabled: ${ADMIN_BOOTSTRAP_ENABLED:false}
     email: ${ADMIN_EMAIL:}
     password: ${ADMIN_PASSWORD:}
     nickname: ${ADMIN_NICKNAME:HerfreeOps}
     sync-existing: ${ADMIN_BOOTSTRAP_SYNC_EXISTING:false}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+
+app:
+  cors:
+    allowed-origin-patterns: >-
+      http://localhost:*,
+      http://127.0.0.1:*,
+      http://192.168.*.*:*,
+      http://10.*.*.*:*,
+      https://*.ngrok-free.dev,
+      https://*.ngrok-free.app,
+      https://*.ngrok.io
 
 ---
 spring:
@@ -72,3 +92,9 @@ spring:
     hibernate:
       ddl-auto: validate
     show-sql: false
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false

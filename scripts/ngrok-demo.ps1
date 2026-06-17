@@ -49,8 +49,10 @@ Write-Host "로컬 서비스 준비 완료!" -ForegroundColor Green
 Write-Host ""
 Write-Host "이제 ngrok 터미널에서 딱 이 명령만 실행:" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "  ngrok http 3000" -ForegroundColor White
+Write-Host "ngrok http 3000" -ForegroundColor White
 Write-Host ""
+Write-Host "폰에서 ngrok https 주소로 접속 (localhost 말고!)" -ForegroundColor Yellow
+Write-Host "백엔드+프론트 둘 다 PC에서 실행 중이어야 합니다." -ForegroundColor Yellow
 Write-Host "주의: ngrok http 80  (X) — 502 에러 남" -ForegroundColor Red
 Write-Host "      ngrok http 3000 (O) — 이게 맞음" -ForegroundColor Green
 Write-Host ""
