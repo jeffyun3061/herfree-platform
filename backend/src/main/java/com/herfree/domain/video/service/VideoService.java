@@ -46,11 +46,16 @@ public class VideoService {
             relatedBoard = boardRepository.findById(request.relatedBoardId()).orElse(null);
         }
 
+        String thumbnailUrl = request.thumbnailUrl();
+        if (thumbnailUrl == null || thumbnailUrl.isBlank()) {
+            thumbnailUrl = YoutubeUtils.defaultThumbnailUrl(videoId);
+        }
+
         Video video = Video.builder()
                 .title(request.title())
                 .youtubeUrl(request.youtubeUrl())
                 .youtubeVideoId(videoId)
-                .thumbnailUrl(request.thumbnailUrl())
+                .thumbnailUrl(thumbnailUrl)
                 .description(request.description())
                 .relatedBoard(relatedBoard)
                 .build();

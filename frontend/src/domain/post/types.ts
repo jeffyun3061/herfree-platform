@@ -25,6 +25,7 @@ export type PostDetail = {
   visibility: PostVisibility;
   isAnonymous: boolean;
   isMyPost: boolean;
+  imageUrl: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -34,13 +35,29 @@ export type PostCreateInput = {
   title: string;
   content: string;
   isAnonymous: boolean;
+  imageUrl?: string | null;
 };
 
 export type PostUpdateInput = {
   title: string;
   content: string;
   isAnonymous: boolean;
+  imageUrl?: string | null;
 };
+
+export type PostImageUploadUrlInput = {
+  contentType: string;
+  contentLength: number;
+};
+
+export type PostImageUploadUrlResponse = {
+  uploadUrl: string;
+  imageUrl: string;
+  objectKey: string;
+};
+
+export const POST_IMAGE_MAX_BYTES = 10 * 1024 * 1024;
+export const POST_IMAGE_ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
 
 // 백엔드 PostCreateRequest의 @Size(max = 200)과 동일 기준
 export const POST_TITLE_MAX_LENGTH = 200;

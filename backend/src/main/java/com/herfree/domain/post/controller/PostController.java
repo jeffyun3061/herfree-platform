@@ -1,11 +1,14 @@
 package com.herfree.domain.post.controller;
 
 import com.herfree.domain.post.dto.request.PostCreateRequest;
+import com.herfree.domain.post.dto.request.PostImageUploadUrlRequest;
 import com.herfree.domain.post.dto.request.PostUpdateRequest;
 import com.herfree.domain.post.dto.response.PostDetailResponse;
+import com.herfree.domain.post.dto.response.PostImageUploadUrlResponse;
 import com.herfree.domain.post.dto.response.PostResponse;
 import com.herfree.domain.post.service.PostService;
 import com.herfree.global.response.ApiResponse;
+import com.herfree.global.storage.PostImageStorageService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -30,6 +33,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class PostController {
 
     private final PostService postService;
+    private final PostImageStorageService postImageStorageService;
 
     // boardId를 쿼리 파라미터로 받는 이유:
     // 특정 게시판 필터링은 리소스 계층 구조가 아닌 조회 조건이므로 쿼리스트링이 적합하다
@@ -41,6 +45,16 @@ public class PostController {
             @PageableDefault(size = 20) Pageable pageable
     ) {
         return ResponseEntity.ok(ApiResponse.success(postService.getPosts(boardId, keyword, pageable, userId)));
+    }
+
+    @PostMapping("/images/upload-url")
+    public ResponseEntity<ApiResponse<PostImageUploadUrlResponse>> createImageUploadUrl(
+            @AuthenticationPrincipal Long userId,
+            @Valid @RequestBody PostImageUploadUrlRequest request
+    ) {
+        PostImageUploadUrlResponse response = postImageStorageService.createUploadUrl(
+                userId, request.contentType(), request.contentLength());
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @PostMapping

@@ -1,41 +1,66 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { TopBar } from '@/components/layout/TopBar';
+import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { BrandMark } from '@/components/brand/BrandMark';
 
 export default function ForgotPasswordPage() {
+  const [email, setEmail] = useState('');
+
   return (
-    <>
-      <TopBar title="비밀번호 찾기" showBack className="lg:hidden" />
-      <div className="page-container max-w-lg py-10">
-        <h1 className="hidden text-2xl font-semibold text-ink lg:block">비밀번호 찾기</h1>
-        <div className="mt-6 rounded-2xl border border-border/80 bg-card p-6">
-          <p className="text-sm leading-relaxed text-cream-foreground">
-            비밀번호 재설정 기능은 현재 준비 중입니다. 계정 이메일을 기억하지 못하시거나 로그인에
-            어려움이 있으시면 아래 이메일로 문의해 주세요.
-          </p>
-          <p className="mt-4 text-sm">
-            <span className="text-muted">문의: </span>
-            <a href="mailto:support@herfree.kr" className="font-medium text-primary">
+    <div className="min-h-screen bg-white">
+      <TopBar title="비밀번호 찾기" showBack centerTitle />
+      <div className="mx-auto max-w-app px-5 py-8">
+        <div className="mb-8 flex justify-center">
+          <BrandMark variant="wrtn" size="md" />
+        </div>
+        <h2 className="text-xl font-bold text-ink">비밀번호를 잊으셨나요?</h2>
+        <p className="mt-2 text-sm leading-relaxed text-wrtn-muted">
+          가입한 이메일을 입력해 주세요. 비밀번호 재설정 기능은 준비 중이며, 아래 이메일로 문의해 주시면
+          확인 후 안내드립니다.
+        </p>
+
+        <div className="mt-6">
+          <Input
+            label="이메일"
+            type="email"
+            required
+            placeholder="이메일을 입력해 주세요"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        </div>
+
+        <Button
+          type="button"
+          fullWidth
+          size="lg"
+          className="mt-4"
+          disabled={!email.trim()}
+          onClick={() => {
+            window.location.href = `mailto:support@herfree.kr?subject=비밀번호 찾기 문의&body=가입 이메일: ${encodeURIComponent(email)}`;
+          }}
+        >
+          인증 요청
+        </Button>
+
+        <div className="mt-8 rounded-xl bg-wrtn-bg p-4 text-sm text-ink-soft">
+          <p className="font-medium text-ink">문의 안내</p>
+          <p className="mt-2">
+            <a href="mailto:support@herfree.kr" className="font-semibold text-primary">
               support@herfree.kr
             </a>
           </p>
-          <p className="mt-2 text-xs text-muted">
-            닉네임과 가입 이메일을 함께 보내주시면 확인 후 안내드립니다.
-          </p>
-          <div className="mt-6 flex flex-col gap-2 sm:flex-row">
-            <Link href="/login" className="flex-1">
-              <Button fullWidth variant="secondary">
-                로그인으로 돌아가기
-              </Button>
-            </Link>
-            <a href="mailto:support@herfree.kr" className="flex-1">
-              <Button fullWidth>이메일 문의하기</Button>
-            </a>
-          </div>
+          <p className="mt-1 text-xs text-wrtn-muted">닉네임과 가입 이메일을 함께 보내주세요.</p>
         </div>
+
+        <Link href="/login" className="mt-6 block text-center text-sm font-semibold text-primary">
+          로그인으로 돌아가기
+        </Link>
       </div>
-    </>
+    </div>
   );
 }

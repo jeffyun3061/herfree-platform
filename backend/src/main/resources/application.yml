@@ -61,6 +61,12 @@ app:
     password: ${ADMIN_PASSWORD:}
     nickname: ${ADMIN_NICKNAME:HerfreeOps}
     sync-existing: ${ADMIN_BOOTSTRAP_SYNC_EXISTING:false}
+  s3:
+    bucket: ${S3_BUCKET:}
+    region: ${S3_REGION:ap-northeast-2}
+    access-key: ${S3_ACCESS_KEY:}
+    secret-key: ${S3_SECRET_KEY:}
+    public-base-url: ${S3_PUBLIC_BASE_URL:}
 
 ---
 spring:

@@ -11,12 +11,12 @@ export const DESKTOP_NAV_ITEMS = [
   { href: '/community', label: '커뮤니티' },
   { href: '/contents', label: '정보' },
   { href: '/journal', label: '개인일지' },
-  { href: '/lounge', label: '영상' },
+  { href: '/videos', label: '영상' },
 ] as const;
 
 export const HIDE_NAV_PATHS = ['/login', '/signup', '/community/write', '/admin'] as const;
 
-export const HIDE_SHELL_HEADER_PATHS = ['/login', '/signup', '/admin'] as const;
+export const HIDE_SHELL_HEADER_PATHS = ['/login', '/signup', '/admin', '/community/write', '/forgot-password'] as const;
 
 export function shouldShowBottomNav(pathname: string): boolean {
   if (HIDE_NAV_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {

@@ -30,6 +30,12 @@ app:
     password: HerfreeAdmin01
     nickname: HerfreeOps
     sync-existing: true
+  s3:
+    # 버킷 이름은 환경에 맞게 변경하세요. 로컬 기본: herfree-dev-uploads
+    bucket: herfree-dev-uploads
+    region: ap-northeast-2
+    # access-key / secret-key는 application-local.yml에만 설정 (커밋 금지)
+    public-base-url:
 
 springdoc:
   api-docs:

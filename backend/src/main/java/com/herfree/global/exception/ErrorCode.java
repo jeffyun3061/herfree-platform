@@ -45,6 +45,8 @@ public enum ErrorCode {
     POST_NOT_FOUND(HttpStatus.NOT_FOUND, "게시글을 찾을 수 없습니다."),
     // 본인 글이 아닌 게시글을 수정·삭제하려 할 때 403을 반환해 클라이언트가 구분할 수 있게 한다
     POST_ACCESS_DENIED(HttpStatus.FORBIDDEN, "게시글에 대한 권한이 없습니다."),
+    INVALID_IMAGE_TYPE(HttpStatus.BAD_REQUEST, "JPEG, PNG, WEBP 형식의 이미지만 업로드할 수 있습니다."),
+    INVALID_IMAGE_SIZE(HttpStatus.BAD_REQUEST, "이미지는 10MB 이하만 업로드할 수 있습니다."),
 
     // 댓글(Comment)
     COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "댓글을 찾을 수 없습니다."),

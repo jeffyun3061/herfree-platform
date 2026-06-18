@@ -10,6 +10,7 @@ type TopBarProps = {
   rightSlot?: React.ReactNode;
   className?: string;
   brand?: boolean;
+  centerTitle?: boolean;
 };
 
 export function TopBar({
@@ -19,6 +20,7 @@ export function TopBar({
   rightSlot,
   className,
   brand = false,
+  centerTitle = false,
 }: TopBarProps) {
   const router = useRouter();
 
@@ -30,10 +32,40 @@ export function TopBar({
     router.back();
   };
 
+  if (centerTitle) {
+    return (
+      <header
+        className={cn(
+          'sticky top-0 z-30 grid h-14 grid-cols-[3rem_1fr_3rem] items-center border-b border-wrtn-border bg-white px-2',
+          className,
+        )}
+      >
+        <div className="flex justify-start">
+          {showBack ? (
+            <button
+              type="button"
+              aria-label="뒤로 가기"
+              onClick={handleBack}
+              className="flex h-10 w-10 items-center justify-center rounded-full text-ink transition-colors hover:bg-wrtn-bg"
+            >
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M15 6l-6 6 6 6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          ) : (
+            <span />
+          )}
+        </div>
+        <h1 className="truncate text-center text-base font-semibold text-ink">{title}</h1>
+        <div className="flex justify-end">{rightSlot ?? <span />}</div>
+      </header>
+    );
+  }
+
   return (
     <header
       className={cn(
-        'sticky top-0 z-30 flex h-14 items-center justify-between border-b border-border/70 bg-surface/95 px-4 backdrop-blur-md',
+        'sticky top-0 z-30 flex h-14 items-center justify-between border-b border-wrtn-border bg-white px-4',
         className,
       )}
     >
@@ -43,7 +75,7 @@ export function TopBar({
             type="button"
             aria-label="뒤로 가기"
             onClick={handleBack}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-primary transition-colors hover:bg-cream-dark"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-ink transition-colors hover:bg-wrtn-bg"
           >
             <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M15 6l-6 6 6 6" strokeLinecap="round" strokeLinejoin="round" />
@@ -53,9 +85,7 @@ export function TopBar({
         <h1
           className={cn(
             'truncate',
-            brand
-              ? 'text-lg font-semibold tracking-tight text-primary'
-              : 'text-base font-semibold text-cream-foreground',
+            brand ? 'text-lg font-bold tracking-tight text-primary' : 'text-base font-semibold text-ink',
           )}
         >
           {title}

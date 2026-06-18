@@ -18,12 +18,20 @@ export default function SignupPage() {
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
   const [nickname, setNickname] = useState('');
+  const [agreeTerms, setAgreeTerms] = useState(false);
+  const [agreePrivacy, setAgreePrivacy] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const allRequiredAgreed = agreeTerms && agreePrivacy;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!allRequiredAgreed) {
+      setError('필수 약관에 동의해 주세요.');
+      return;
+    }
     const errors = validateSignup({ email, password, passwordConfirm, nickname });
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
@@ -43,22 +51,20 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-surface">
-      <div className="hero-panel mx-4 mt-6 rounded-[1.75rem] px-6 py-10 text-center">
-        <div className="relative z-10 flex justify-center">
-          <BrandMark variant="onPrimary" />
-        </div>
-        <h1 className="relative z-10 mt-2 text-2xl font-semibold">함께 시작해요</h1>
-        <p className="relative z-10 mt-2 text-sm text-primary-foreground/80">
-          이메일로 간단히 가입할 수 있어요.
-        </p>
+    <div className="auth-screen">
+      <div className="flex flex-col items-center text-center">
+        <BrandMark variant="wrtn" size="lg" />
+        <h1 className="mt-8 text-2xl font-bold text-ink">함께 시작해요</h1>
+        <p className="mt-2 text-sm text-wrtn-muted">이메일로 간단히 가입할 수 있어요.</p>
       </div>
 
-      <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4 px-4 py-8">
+      <form onSubmit={(e) => void handleSubmit(e)} className="mt-8 flex flex-1 flex-col gap-4">
         <Input
           label="이메일"
           type="email"
+          required
           autoComplete="email"
+          placeholder="이메일을 입력해 주세요"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           error={fieldErrors.email}
@@ -66,7 +72,9 @@ export default function SignupPage() {
         <Input
           label="비밀번호"
           type="password"
+          required
           autoComplete="new-password"
+          placeholder="8자 이상 입력"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           error={fieldErrors.password}
@@ -74,6 +82,7 @@ export default function SignupPage() {
         <Input
           label="비밀번호 확인"
           type="password"
+          required
           autoComplete="new-password"
           value={passwordConfirm}
           onChange={(e) => setPasswordConfirm(e.target.value)}
@@ -81,29 +90,54 @@ export default function SignupPage() {
         />
         <Input
           label="닉네임"
+          required
           value={nickname}
           onChange={(e) => setNickname(e.target.value)}
           maxLength={20}
+          placeholder="커뮤니티에 표시될 이름"
           error={fieldErrors.nickname}
         />
+
+        <div className="mt-2 space-y-3 rounded-xl border border-wrtn-border bg-wrtn-bg p-4">
+          <label className="flex items-start gap-3 text-sm text-ink">
+            <input
+              type="checkbox"
+              checked={agreeTerms}
+              onChange={(e) => setAgreeTerms(e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-wrtn-border text-primary focus:ring-primary"
+            />
+            <span>
+              <span className="font-medium text-primary">[필수]</span>{' '}
+              <Link href="/terms" className="underline underline-offset-2">
+                이용약관
+              </Link>
+              에 동의합니다
+            </span>
+          </label>
+          <label className="flex items-start gap-3 text-sm text-ink">
+            <input
+              type="checkbox"
+              checked={agreePrivacy}
+              onChange={(e) => setAgreePrivacy(e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-wrtn-border text-primary focus:ring-primary"
+            />
+            <span>
+              <span className="font-medium text-primary">[필수]</span>{' '}
+              <Link href="/privacy" className="underline underline-offset-2">
+                개인정보처리방침
+              </Link>
+              에 동의합니다
+            </span>
+          </label>
+        </div>
+
         {error && <ErrorMessage message={error} />}
-        <Button type="submit" fullWidth disabled={isSubmitting}>
-          {isSubmitting ? '가입 중…' : '가입하기'}
+        <Button type="submit" fullWidth size="lg" disabled={isSubmitting || !allRequiredAgreed}>
+          {isSubmitting ? '가입 중…' : '가입 완료'}
         </Button>
-        <p className="text-center text-[11px] leading-relaxed text-muted">
-          가입 시{' '}
-          <Link href="/terms" className="font-medium text-primary underline underline-offset-2">
-            이용약관
-          </Link>
-          {' 및 '}
-          <Link href="/privacy" className="font-medium text-primary underline underline-offset-2">
-            개인정보처리방침
-          </Link>
-          에 동의하게 됩니다.
-        </p>
-        <p className="text-center text-sm text-muted">
+        <p className="text-center text-sm text-wrtn-muted">
           이미 계정이 있으신가요?{' '}
-          <Link href="/login" className="font-medium text-primary">
+          <Link href="/login" className="font-semibold text-primary">
             로그인
           </Link>
         </p>

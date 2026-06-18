@@ -62,9 +62,7 @@ export function DesktopHeader() {
                 로그인
               </Link>
               <Link href="/signup">
-                <Button size="sm" className="bg-navy hover:bg-navy-light">
-                  회원가입
-                </Button>
+                <Button size="sm">회원가입</Button>
               </Link>
             </>
           )}

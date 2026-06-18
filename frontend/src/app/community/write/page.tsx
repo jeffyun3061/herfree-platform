@@ -6,15 +6,17 @@ import { RequireAuth } from '@/components/auth/RequireAuth';
 import { useBoards } from '@/hooks/useBoards';
 import { usePostDetail, usePostMutation } from '@/hooks/usePosts';
 import { TopBar } from '@/components/layout/TopBar';
-import { CommunityWriteGuidelines } from '@/components/community/CommunityWriteGuidelines';
 import { SymptomBoardRedirectBanner } from '@/components/community/SymptomBoardRedirectBanner';
-import { Input } from '@/components/ui/Input';
+import { CommunityPhotoAttach } from '@/components/community/CommunityPhotoAttach';
+import { CommunityWriteTipsSheet } from '@/components/community/CommunityWriteTipsSheet';
 import { Textarea } from '@/components/ui/Textarea';
 import { Button } from '@/components/ui/Button';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { getWritableBoards } from '@/domain/board/types';
-import { validatePostInput } from '@/domain/post/types';
+import { POST_TITLE_MAX_LENGTH, validatePostInput } from '@/domain/post/types';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+
+const TITLE_UI_MAX = 30;
 
 function WritePostForm() {
   const router = useRouter();
@@ -32,8 +34,10 @@ function WritePostForm() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [initialized, setInitialized] = useState(false);
+  const [tipsOpen, setTipsOpen] = useState(false);
 
   useEffect(() => {
     if (isEditMode) return;
@@ -51,6 +55,7 @@ function WritePostForm() {
     setTitle(existingPost.title);
     setContent(existingPost.content);
     setIsAnonymous(existingPost.isAnonymous);
+    setImageUrl(existingPost.imageUrl ?? null);
     setInitialized(true);
   }, [isEditMode, existingPost, initialized]);
 
@@ -61,6 +66,10 @@ function WritePostForm() {
       setValidationError(validation);
       return;
     }
+    if (title.length > POST_TITLE_MAX_LENGTH) {
+      setValidationError(`제목은 ${POST_TITLE_MAX_LENGTH}자 이하로 입력해 주세요.`);
+      return;
+    }
     if (!boardId) {
       setValidationError('게시판을 선택해 주세요.');
       return;
@@ -68,12 +77,23 @@ function WritePostForm() {
     setValidationError(null);
 
     if (isEditMode && editPostId) {
-      const result = await updatePost(editPostId, { title, content, isAnonymous });
+      const result = await updatePost(editPostId, {
+        title,
+        content,
+        isAnonymous,
+        imageUrl: imageUrl ?? '',
+      });
       if (result) router.replace(`/community/posts/${result.id}`);
       return;
     }
 
-    const result = await createPost({ boardId, title, content, isAnonymous });
+    const result = await createPost({
+      boardId,
+      title,
+      content,
+      isAnonymous,
+      imageUrl: imageUrl ?? undefined,
+    });
     if (result) router.replace(`/community/posts/${result.id}`);
   };
 
@@ -103,23 +123,28 @@ function WritePostForm() {
 
   const selectedBoard = writableBoards.find((b) => b.id === boardId);
   const isSymptomBoard = selectedBoard?.boardType === 'SYMPTOM';
+  const titleCounterMax = Math.min(TITLE_UI_MAX, POST_TITLE_MAX_LENGTH);
 
   return (
-    <>
-      <TopBar title={isEditMode ? '글 수정' : '글쓰기'} showBack />
-      <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4 px-4 py-5">
-        <CommunityWriteGuidelines />
+    <div className="min-h-screen bg-wrtn-bg">
+      <TopBar
+        title={isEditMode ? '글 수정' : '커뮤니티 글쓰기'}
+        showBack
+        centerTitle
+      />
+      <form onSubmit={(e) => void handleSubmit(e)} className="space-y-6 px-4 py-5">
         {isSymptomBoard && !isEditMode && <SymptomBoardRedirectBanner />}
-        <div>
-          <label htmlFor="board" className="mb-1.5 block text-sm font-medium text-cream-foreground">
-            게시판
+
+        <div className="wrtn-field">
+          <label htmlFor="board" className="wrtn-label">
+            게시물 종류<span className="wrtn-required">*</span>
           </label>
           <select
             id="board"
             value={boardId}
             disabled={isEditMode}
             onChange={(e) => setBoardId(Number(e.target.value))}
-            className="w-full rounded-2xl border border-border bg-card px-4 py-3 text-sm focus:border-primary focus:outline-none disabled:opacity-60"
+            className="wrtn-select disabled:opacity-60"
           >
             {writableBoards.map((board) => (
               <option key={board.id} value={board.id}>
@@ -128,28 +153,67 @@ function WritePostForm() {
             ))}
           </select>
         </div>
-        <Input
-          label="제목"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          maxLength={200}
+
+        <div className="wrtn-field">
+          <div className="flex items-center gap-1.5">
+            <label htmlFor="title" className="wrtn-label">
+              게시물 주제<span className="wrtn-required">*</span>
+            </label>
+            <button
+              type="button"
+              onClick={() => setTipsOpen(true)}
+              className="flex h-5 w-5 items-center justify-center rounded-full bg-wrtn-bg text-wrtn-muted hover:text-primary"
+              aria-label="글쓰기 예시 보기"
+            >
+              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 10v4M12 7h.01" strokeLinecap="round" />
+              </svg>
+            </button>
+          </div>
+          <input
+            id="title"
+            value={title}
+            maxLength={POST_TITLE_MAX_LENGTH}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="주제를 입력해 주세요"
+            className="wrtn-input"
+          />
+          <p className="wrtn-char-count">
+            {title.length}/{titleCounterMax}
+          </p>
+        </div>
+
+        <CommunityPhotoAttach imageUrl={imageUrl} onChange={setImageUrl} disabled={isSubmitting} />
+
+        <Textarea
+          label="본문"
+          required
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          placeholder="경험, 질문, 위로의 말을 자유롭게 적어 주세요."
         />
-        <Textarea label="내용" value={content} onChange={(e) => setContent(e.target.value)} />
-        <label className="flex items-center gap-2 text-sm text-muted">
+
+        <label className="flex items-center gap-3 rounded-xl border border-wrtn-border bg-white px-4 py-3.5 text-sm text-ink">
           <input
             type="checkbox"
             checked={isAnonymous}
             onChange={(e) => setIsAnonymous(e.target.checked)}
+            className="h-4 w-4 rounded border-wrtn-border text-primary focus:ring-primary"
           />
           익명으로 작성
         </label>
+
         {validationError && <ErrorMessage message={validationError} />}
         {error && <ErrorMessage message={error} />}
-        <Button type="submit" fullWidth disabled={isSubmitting || boardId <= 0}>
+
+        <Button type="submit" fullWidth size="lg" disabled={isSubmitting || boardId <= 0}>
           {isSubmitting ? '저장 중…' : isEditMode ? '수정하기' : '등록하기'}
         </Button>
       </form>
-    </>
+
+      <CommunityWriteTipsSheet open={tipsOpen} onClose={() => setTipsOpen(false)} />
+    </div>
   );
 }
 

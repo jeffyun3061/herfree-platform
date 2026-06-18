@@ -6,9 +6,9 @@ const config: Config = {
     extend: {
       colors: {
         primary: {
-          DEFAULT: '#2D4739',
-          light: '#3A5A49',
-          dark: '#1F3328',
+          DEFAULT: '#2F8F83',
+          light: '#3BA896',
+          dark: '#25796F',
           foreground: '#FFFFFF',
         },
         navy: {
@@ -16,26 +16,32 @@ const config: Config = {
           light: '#2A2D31',
           foreground: '#F8FAFC',
         },
+        wrtn: {
+          bg: '#F5F5F7',
+          surface: '#FFFFFF',
+          border: '#E8E8ED',
+          muted: '#8E8E93',
+        },
         canvas: {
-          DEFAULT: '#F9F9F7',
-          dark: '#F2F0EB',
+          DEFAULT: '#F5F5F7',
+          dark: '#EBEBEF',
         },
         hero: {
           DEFAULT: '#F2EFE9',
           foreground: '#1A1C1E',
         },
         sage: {
-          DEFAULT: '#4A6B52',
-          light: '#5F7660',
-          muted: '#8FA894',
+          DEFAULT: '#2F8F83',
+          light: '#3BA896',
+          muted: '#7AB5AD',
         },
         pedestal: {
           DEFAULT: '#E8DFD0',
           dark: '#D4C4A8',
         },
         cream: {
-          DEFAULT: '#F5F0E8',
-          dark: '#EDE8DF',
+          DEFAULT: '#F5F5F7',
+          dark: '#EBEBEF',
           foreground: '#1A1A1A',
         },
         gold: {
@@ -44,7 +50,7 @@ const config: Config = {
           foreground: '#FFFFFF',
         },
         surface: {
-          DEFAULT: '#FAFAF7',
+          DEFAULT: '#FFFFFF',
           foreground: '#1A1A1A',
         },
         card: {
@@ -52,10 +58,10 @@ const config: Config = {
           foreground: '#1A1A1A',
         },
         muted: {
-          DEFAULT: '#64748B',
-          foreground: '#64748B',
+          DEFAULT: '#8E8E93',
+          foreground: '#8E8E93',
         },
-        border: '#E8E6E1',
+        border: '#E8E8ED',
         ink: {
           DEFAULT: '#1A1C1E',
           soft: '#5C5F66',
@@ -71,15 +77,15 @@ const config: Config = {
         prose: '42rem',
       },
       borderRadius: {
-        shell: '32px',
-        card: '14px',
-        pill: '20px',
+        shell: '20px',
+        card: '12px',
+        pill: '9999px',
       },
       boxShadow: {
-        card: '0 2px 12px rgba(45, 71, 57, 0.06)',
-        'card-hover': '0 4px 20px rgba(45, 71, 57, 0.1)',
+        card: '0 2px 12px rgba(47, 143, 131, 0.06)',
+        'card-hover': '0 4px 20px rgba(47, 143, 131, 0.1)',
         product: '0 4px 20px rgba(30, 41, 59, 0.08)',
-        fab: '0 4px 16px rgba(45, 71, 57, 0.28)',
+        fab: '0 4px 16px rgba(47, 143, 131, 0.28)',
       },
     },
   },

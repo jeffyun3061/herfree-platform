@@ -1,10 +1,10 @@
 import { cn } from '@/lib/cn';
 
 type BrandMarkProps = {
-  size?: 'sm' | 'md';
+  size?: 'sm' | 'md' | 'lg';
   className?: string;
   showText?: boolean;
-  variant?: 'default' | 'onPrimary' | 'light';
+  variant?: 'default' | 'onPrimary' | 'light' | 'wrtn';
 };
 
 export function BrandMark({
@@ -13,8 +13,17 @@ export function BrandMark({
   showText = true,
   variant = 'default',
 }: BrandMarkProps) {
-  const iconSize = size === 'sm' ? 'h-7 w-7' : 'h-8 w-8';
-  const textSize = size === 'sm' ? 'text-[15px]' : 'text-lg';
+  const iconSize = size === 'sm' ? 'h-7 w-7' : size === 'lg' ? 'h-10 w-10' : 'h-8 w-8';
+  const textSize = size === 'sm' ? 'text-base' : size === 'lg' ? 'text-3xl' : 'text-xl';
+
+  if (variant === 'wrtn' && showText) {
+    return (
+      <div className={cn('flex items-baseline', className)}>
+        <span className={cn('font-bold tracking-tight text-ink', textSize)}>herfree</span>
+        <span className={cn('font-bold text-primary', textSize)}>.</span>
+      </div>
+    );
+  }
 
   return (
     <div className={cn('flex items-center gap-2', className)}>

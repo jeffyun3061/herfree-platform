@@ -20,6 +20,9 @@ public record PostCreateRequest(
         boolean isAnonymous,
 
         // 미입력 시 PUBLIC으로 처리
-        PostVisibility visibility
+        PostVisibility visibility,
+
+        // S3 presigned 업로드 후 공개 URL (선택)
+        String imageUrl
 ) {
 }

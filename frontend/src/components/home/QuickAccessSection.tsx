@@ -36,8 +36,8 @@ const QUICK_ITEMS = [
     ),
   },
   {
-    title: '헤르프리 영상',
-    href: '/lounge',
+    title: '영상',
+    href: '/videos',
     variant: 'video' as const,
     icon: (
       <svg viewBox="0 0 24 24" className="h-5 w-5 lg:h-6 lg:w-6" fill="currentColor" stroke="none">

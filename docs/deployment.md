@@ -1,120 +1,193 @@
-# Herfree Platform — 배포·운영
+# Herfree Platform — 배포·운영 (확정)
 
-## 0. 단계별 전략 (권장)
+> **상태:** 2026-06-10 의뢰인·개발 합의 기준 **1단계 런칭 확정안**  
+> **대상 트래픽:** 런칭 일 50~200명 (여유 시 400까지 1단계 유지), 경쟁 벤치마크 일 600은 장기 참고
 
-| 단계 | 구성 | 월 비용 | 용도 |
-|------|------|---------|------|
-| **1단계 (시작)** | Vercel + **VPS Docker**(API+MySQL) | **약 1~3만 원** | 외주 납품·초기 실운영 (DAU 수백·동시 50~80명) |
-| **2단계 (확장)** | Vercel + EC2 + RDS | 약 5~10만 원 | DAU 1,000+·DB 분리·백업 자동화 |
+---
 
-**1단계가 기본값이다.** `docker-compose.prod.yml` + `infra/` 참고.
+## 0. 확정 결정 요약
 
-관리자 계정: [admin-setup.md](admin-setup.md) — bootstrap/SQL로 SUPER_ADMIN 1명, 이후 화면에서 승격.
+| 항목 | 결정 |
+|------|------|
+| **프론트** | Vercel (`frontend/`) |
+| **API + DB** | **VPS 1대** Docker — Spring Boot + MySQL 8 |
+| **게시글 이미지** | **AWS S3** (또는 비용 절감 시 Cloudflare R2, S3 호환 API) |
+| **DB 버전·안전** | Flyway + prod `ddl-auto: validate` + 일일 백업 |
+| **월 운영비** | **약 2~4만 원** (VPS 2GB + Vercel + S3 소량) |
 
-### 1단계 빠른 시작
+### 채택하지 않음
+
+| 대안 | 이유 |
+|------|------|
+| Supabase (DB/Auth/Storage 전환) | Spring+MySQL 기존 구현 대비 재작성·납기·리스크 큼 |
+| AWS Free Tier EC2 1년 | t3.micro 1GB에 Spring+MySQL 부담, 1년 후 과금·설정 복잡 |
+| AWS Frontier / CloudFront 단독 | CDN·AI 제품명 혼동, 전체 호스팅 해법 아님 |
+| 1단계부터 RDS·EC2 | 초기 트래픽·비용 대비 과투자 |
+
+---
+
+## 1. 아키텍처 (1단계 — 런칭)
+
+```
+[Browser]
+    │
+    ├──────────────────────────────┐
+    ▼                              ▼
+[Vercel — Next.js]            [S3 / R2]
+  화면 + /api Route 프록시       게시글 이미지 (presigned PUT)
+    │
+    ▼ HTTPS api.도메인
+[VPS — Docker]
+  Nginx (TLS) → Spring Boot :8080 → MySQL 8 (named volume)
+    │
+  Flyway migration + infra/scripts/backup-db.sh (cron)
+```
+
+### 게시글 이미지 업로드
+
+1. 로그인 사용자 → API `upload-url` 요청  
+2. Spring → **S3 presigned URL** 발급  
+3. 브라우저 → **S3에 직접 업로드** (API 서버 경유 없음)  
+4. 글 등록 시 **이미지 URL만** MySQL 저장  
+
+---
+
+## 2. 단계별 전략
+
+| 단계 | 구성 | 월 비용 | 전환 조건 |
+|------|------|---------|-----------|
+| **1단계 (확정·시작)** | Vercel + **VPS Docker** (API+MySQL) + S3 | **2~4만 원** | 런칭 ~ 일 방문 400 전후 |
+| **2단계 (확장)** | Vercel + EC2 + **RDS** + S3 (+ CloudFront 선택) | 5~10만 원 | 일 400~600+ **지속**, 동시 50+ 자주 |
+
+**1단계가 기본값.** `docker-compose.prod.yml` + `infra/` 참고.
+
+### 트래픽 가이드 (운영 참고)
+
+| 일 방문 | 동시 접속(대략) | 인프라 |
+|---------|-----------------|--------|
+| 50~150 | 5~20 | 1단계 ✅ |
+| 150~400 | 15~50 | 1단계 ✅ (모니터링) |
+| 400~600+ | 40~80 | 2단계 검토 |
+| 1,000+ | 80+ | 2단계 권장 |
+
+관리자: [admin-setup.md](admin-setup.md) — bootstrap/SQL로 SUPER_ADMIN 1명.
+
+---
+
+## 3. 환경
+
+| 환경 | Frontend | Backend | DB | Object Storage |
+|------|----------|---------|-----|----------------|
+| `local` | `npm run dev` | `./gradlew bootRun` | Docker MySQL | dev 버킷 또는 mock |
+| `staging` | Vercel Preview | VPS (스테이징) | MySQL (별도 volume) | `*-staging` 버킷 |
+| `production` | Vercel Production | VPS prod | MySQL prod volume | `*-prod` 버킷 |
+
+---
+
+## 4. 계정·역할 (소유권)
+
+| 계정 | 소유 | 비고 |
+|------|------|------|
+| Vercel | **의뢰인** | 결제·도메인 |
+| VPS | **의뢰인** | Ubuntu 22.04+, **RAM 2GB** 권장 |
+| AWS (S3 IAM) | **의뢰인** | 이미지 전용 최소 권한 키 |
+| 도메인 | **의뢰인** | `www.` + `api.` |
+| 초기 세팅·배포 | 개발자 | 문서·스크립트 인수인계 |
+| 일상 운영 (신고·콘텐츠) | **의뢰인** | `/admin` |
+
+---
+
+## 5. 환경 변수
+
+### Vercel (Production)
+
+| 변수 | 값 |
+|------|-----|
+| `API_REWRITE_TARGET` | `https://api.도메인` (끝에 `/` 없음) |
+| `NEXT_PUBLIC_API_URL` | **비움** — 브라우저는 same-origin `/api` 사용 |
+
+### VPS `.env.prod` (git 커밋 금지)
+
+`.env.prod.example` 복사 후 설정.
+
+| 변수 | 설명 |
+|------|------|
+| `SPRING_PROFILES_ACTIVE` | `prod` |
+| `MYSQL_*` | Docker MySQL |
+| `JWT_SECRET` | `openssl rand -base64 32` |
+| `JWT_ACCESS_EXPIRATION` | `3600` 등 |
+| `CORS_ALLOWED_ORIGINS` | Vercel production URL (필요 시 preview 추가) |
+| `AWS_REGION` | `ap-northeast-2` |
+| `AWS_S3_BUCKET` | `herfree-prod-uploads` |
+| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | S3 전용 IAM |
+
+---
+
+## 6. 1단계 빠른 시작
 
 ```bash
 # VPS (Ubuntu 22.04+, RAM 2GB 권장)
 cp .env.prod.example .env.prod   # 값 채우기
 ./infra/scripts/deploy-vps.sh
 
-# Vercel: frontend/ 루트, NEXT_PUBLIC_API_URL=https://api.도메인
+# Vercel: Root Directory = frontend/
+# env: API_REWRITE_TARGET=https://api.도메인
 ```
 
 | 파일 | 역할 |
 |------|------|
 | `docker-compose.prod.yml` | MySQL + Spring Boot API |
 | `.env.prod.example` | 운영 환경변수 템플릿 |
-| `infra/nginx/herfree.conf` | HTTPS 리버스 프록시 (호스트 Nginx) |
+| `infra/nginx/herfree.conf` | HTTPS, `/api` → Spring |
 | `infra/scripts/backup-db.sh` | 일일 DB 백업 (cron) |
+| `infra/scripts/deploy-vps.sh` | VPS 초기 배포 |
 | `.github/workflows/ci.yml` | PR/push 시 test·build |
 
 ---
 
-## 1. 아키텍처 (2단계 — 확장 시)
+## 7. DB 안전·버전 관리 (필수)
 
-```
-[Browser]
-    │
-    ▼ HTTPS
-[Vercel] ── Next.js (frontend/)
-    │
-    ▼ HTTPS API
-[Nginx @ EC2] ── TLS, /api → upstream
-    │
-    ▼
-[Docker] Spring Boot JAR (:8080)
-    │
-    ▼ 3306 (private SG)
-[AWS RDS MySQL 8]
-```
-
-| 구성요소 | 플랫폼 | 1차 MVP |
-|----------|--------|---------|
-| Frontend | Vercel | ✅ |
-| Backend | EC2 + Docker | ✅ |
-| DB | RDS MySQL 8 | ✅ |
-| Reverse Proxy | Nginx (EC2) | ✅ |
-| Object Storage | S3 | 2차 |
-| CI | GitHub Actions | ✅ |
-
----
-
-## 2. 환경
-
-| 환경 | Frontend | Backend | DB |
-|------|----------|---------|-----|
-| `local` | `npm run dev` | `./gradlew bootRun` | Docker MySQL |
-| `staging` | Vercel Preview | EC2 staging | RDS staging |
-| `production` | Vercel Production | EC2 prod | RDS prod |
-
----
-
-## 3. Backend (EC2 + Docker)
-
-### 3.1 디렉터리 (예정)
-
-```
-infra/
-├── docker/
-│   ├── Dockerfile.backend
-│   └── docker-compose.prod.yml
-├── nginx/
-│   └── herfree.conf
-└── scripts/
-    ├── deploy-backend.sh
-    └── health-check.sh
-```
-
-### 3.2 Docker
-
-- Build: multi-stage — Gradle `bootJar` → runtime `eclipse-temurin:17-jre`
-- Health: `GET /actuator/health` (Spring Actuator)
-- Port: 컨테이너 `8080`, Nginx가 443 → proxy
-
-### 3.3 환경 변수 (운영)
-
-| 변수 | 설명 |
+| 항목 | 정책 |
 |------|------|
-| `SPRING_PROFILES_ACTIVE` | `prod` |
-| `SPRING_DATASOURCE_URL` | RDS JDBC (`jdbc:mysql://...`) |
-| `SPRING_DATASOURCE_USERNAME` / `SPRING_DATASOURCE_PASSWORD` | RDS 자격증명 |
-| `JWT_SECRET` | 서명 키 (Secrets Manager 권장) |
-| `JWT_ACCESS_EXPIRATION` | Access TTL (초) |
+| 스키마 변경 | **Flyway `V*` SQL만** — 기존 테이블 `DROP` 금지 |
+| prod JPA | `ddl-auto: validate` |
+| Flyway | `clean-disabled: true`, `validate-on-migrate: true` |
+| 로컬 | `ddl-auto: update` — gitignored `application-local.yml`만 |
+| 배포 전 | `mysqldump` 백업 1회 |
+| 운영 | cron 일일 백업, 7일 보관 (`backup-db.sh`) |
+| (선택) | 주 1회 백업 파일 S3 업로드 |
 
-git 제외: `application-secret.yml`, `application-prod.yml`
-
-### 3.4 배포 절차 (수동·자동 공통)
-
-1. Flyway migration 적용 여부 확인
-2. 이미지 빌드·레지스트리 push (ECR)
-3. EC2에서 `docker compose pull && up -d`
-4. Nginx reload, health check
-5. 실패 시 이전 이미지 태그 롤백
+**금지:** prod `create` / `create-drop`, `docker volume rm`, `flyway clean`
 
 ---
 
-## 4. Frontend (Vercel)
+## 8. 배포 절차 (매 릴리스)
+
+1. 로컬·CI green (`./gradlew test`, `npm run build`)
+2. prod DB 백업
+3. 신규 Flyway migration 확인
+4. backend Docker 이미지 빌드·재기동 (`docker compose up -d`)
+5. Nginx reload
+6. frontend 변경 시 Vercel production deploy
+7. **Smoke 5분:** 가입 → 로그인(모바일) → 이미지 글쓰기 → admin 신고
+8. 실패 시 이전 이미지·백업 롤백
+
+---
+
+## 9. Go/No-Go (소프트 런칭)
+
+- [ ] PC·모바일 가입/로그인
+- [ ] 이미지 포함 글쓰기·목록·상세
+- [ ] 신고 → admin 처리
+- [ ] `/actuator/health` 200
+- [ ] DB 백업 파일 생성 확인
+- [ ] prod `ddl-auto: validate` 확인
+- [ ] CORS·JWT·DB 비밀 env만 (git 없음)
+- [ ] 시드 콘텐츠 (공지·게시글·정보 최소 1세트)
+
+---
+
+## 10. Frontend (Vercel)
 
 | 항목 | 값 |
 |------|-----|
@@ -123,153 +196,81 @@ git 제외: `application-secret.yml`, `application-prod.yml`
 | Node | 20 LTS |
 | Framework | Next.js |
 
-| 변수 | 설명 |
-|------|------|
-| `NEXT_PUBLIC_API_URL` | Production API base |
-
-Vercel Git 연동 시 `main` push → Production, PR → Preview.
+- Git `main` push → Production, PR → Preview
+- API 프록시: `frontend/src/app/api/[...path]/route.ts`
 
 ---
 
-## 5. CI/CD — GitHub Actions
+## 11. Backend (VPS Docker)
 
-### 5.1 `ci.yml` (PR · `main` push)
+- Build: multi-stage — Gradle `bootJar` → `eclipse-temurin:17-jre`
+- Health: `GET /actuator/health`
+- Nginx: `location /api/` → `127.0.0.1:8080`
+- TLS: Let's Encrypt (certbot)
+- API 본문 업로드: 이미지는 S3 직접 — Nginx `client_max_body_size`는 JSON API 기준 유지
 
-```yaml
-# 개요 — 구현 시 .github/workflows/ci.yml 로 추가
-jobs:
-  backend:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
-        with:
-          java-version: "17"
-          distribution: "temurin"
-      - run: cd backend && ./gradlew test bootJar
-  frontend:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-      - run: cd frontend && npm ci && npm run lint && npm run build
+`deploy-backend.yml`(ECR·EC2)은 **2단계**에서 도입. 1단계는 SSH + `deploy-vps.sh`.
+
+---
+
+## 12. Nginx
+
+- `infra/nginx/herfree.conf` 참고
+- `api.도메인` — `/api/`, `/actuator/health` 프록시
+
+---
+
+## 13. CI/CD
+
+- **ci.yml:** PR·`main` — backend test + frontend build
+- **Frontend 배포:** Vercel Git Integration
+- **Backend 배포 (1단계):** VPS SSH + docker compose (수동 또는 추후 workflow)
+
+---
+
+## 14. 2단계 — RDS·EC2 (확장 시)
+
+```
+[Browser] → [Vercel] → [Nginx @ EC2] → [Spring Docker] → [RDS MySQL 8]
+                                              ↓
+                                         [S3 + CloudFront?]
 ```
 
-- PR merge 조건: `backend` + `frontend` job success
-- 캐시: Gradle wrapper, `npm` (`actions/cache`)
-
-### 5.2 `deploy-backend.yml`
-
-트리거: `main` push 또는 `v*` tag.
-
-1. `bootJar` + Docker build
-2. Push to **Amazon ECR**
-3. SSM/SSH로 EC2 배포 스크립트 실행
-4. Post-deploy: `/actuator/health` 200 확인
-
-### 5.3 Frontend 배포
-
-- 기본: Vercel Git Integration (별도 workflow 불필요)
-- 선택: `deploy-frontend.yml`에서 preview URL smoke test만 수행
-
-### 5.4 Repository Secrets (예시)
-
-| Secret | 용도 |
-|--------|------|
-| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | ECR push (최소 IAM) |
-| `EC2_HOST`, `EC2_SSH_KEY` 또는 SSM role | 배포 |
-| `JWT_SECRET` | CI 통합 테스트용 (선택) |
+- Engine: MySQL 8.0+, `utf8mb4_unicode_ci`
+- RDS: 자동 스냅샷, EC2 SG만 3306 inbound
+- Flyway·백업 정책 **1단계와 동일**
 
 ---
 
-## 6. RDS MySQL
-
-- Engine: MySQL 8.0+, charset `utf8mb4_unicode_ci`
-- Multi-AZ: production 권장
-- Backup: automated snapshot 7일+
-- Security Group: EC2 backend SG만 `3306` inbound
-- Connection pool: HikariCP (Spring Boot 기본), max pool은 인스턴스 크기에 맞게 조정
-
----
-
-## 7. Nginx
-
-- `location /api/` → `proxy_pass http://127.0.0.1:8080`
-- TLS: Let's Encrypt (certbot) 또는 ALB + ACM
-- `client_max_body_size`: 1차 MVP 파일 업로드 없음 → 기본 유지
-- Rate limit: 2차
-
----
-
-## 8. 보안·운영 체크리스트
+## 15. 보안·운영 체크리스트
 
 - [ ] CORS: Vercel production·preview origin만
-- [ ] HTTPS 강제, HSTS (운영)
-- [ ] JWT secret 로테이션 절차 문서화
-- [ ] RDS credentials Secrets Manager
-- [ ] `application-prod.yml` git 미포함
-- [ ] CI green on `main` 후 배포
+- [ ] HTTPS 강제
+- [ ] JWT·DB·AWS 키 git 미포함
+- [ ] S3 버킷 공개 쓰기 금지 (presigned only)
+- [ ] CI green 후 prod 배포
 
 ---
 
-## 9. 로컬 개발 환경
-
-로컬은 **Docker MySQL** + **Spring `local` profile** 조합을 표준으로 한다.
+## 16. 로컬 개발 환경
 
 | 단계 | 명령 |
 |------|------|
 | DB 기동 | `docker compose -f docker-compose.local.yml up -d` |
-| DB 중지 | `docker compose -f docker-compose.local.yml down` |
-| DB 로그 | `docker logs -f herfree-mysql` |
-| Backend | `cd backend && ./gradlew bootRun` (`spring.profiles.active=local`) |
+| Backend | `cd backend && ./gradlew bootRun` |
 | Frontend | `cd frontend && npm run dev` |
 
-### 9.1 Spring 로컬 설정
+- `application-local.yml` — example 복사, gitignore
+- JDBC: `localhost:3306/herfree_db`
+- `NEXT_PUBLIC_API_URL` 비움 → `/api` 프록시
 
-1. `backend/src/main/resources/application-local.yml.example`를 `application-local.yml`로 복사 (gitignored)
-2. JDBC: `jdbc:mysql://localhost:3306/herfree_db?serverTimezone=Asia/Seoul&characterEncoding=UTF-8`
-3. `ddl-auto: update` — 스키마는 JPA가 반영 (운영 전 Flyway로 전환, `decision-log.md` ADR-005)
-
-`application.yml`은 공통 설정만 포함하며, DB URL·비밀번호는 example 파일 또는 env에 둔다.
-
-### 9.2 Docker MySQL 기본값
-
-| 항목 | 값 |
-|------|-----|
-| Compose 파일 | `docker-compose.local.yml` (저장소 루트) |
-| 컨테이너명 | `herfree-mysql` |
-| DB | `herfree_db` |
-| 사용자 / 비밀번호 | `herfree_user` / `herfree_pass` |
-| root 비밀번호 | `root_pass` (로컬 전용) |
-| 포트 | `3306:3306` |
-| charset | `utf8mb4` / `utf8mb4_unicode_ci` |
-| timezone | `Asia/Seoul` |
-| volume | `herfree_mysql_data` |
-
-### 9.3 운영(prod) DB
-
-- **AWS RDS MySQL 8** — EC2 Spring 컨테이너가 private SG로 3306 접속
-- 자격증명은 **환경 변수** 또는 Secrets Manager (`SPRING_DATASOURCE_*`, `JWT_SECRET`)
-- `application-prod.yml.example` 참고 — 실제 `application-prod.yml`은 git에 포함하지 않음
-- `ddl-auto: validate` + Flyway migration
-
-### 9.4 포트 3306 충돌
-
-Windows·macOS에서 **이미 호스트 MySQL·MariaDB·다른 Docker 컨테이너가 3306을 사용 중**이면 Compose 기동이 실패한다.
-
-| 증상 | 조치 |
-|------|------|
-| `Bind for 0.0.0.0:3306 failed` | 기존 DB 서비스 중지 또는 Compose에서 `"3307:3306"` 등으로 호스트 포트 변경 |
-| JDBC URL 변경 | `jdbc:mysql://localhost:3307/herfree_db?...` 로 `application-local.yml`만 수정 (파일은 git 제외) |
-
-운영 RDS는 EC2 보안 그룹 내부 3306만 개방하므로 로컬 충돌과 무관하다.
+상세: §9 (이전 문서) — Docker MySQL 기본값·3306 충돌은 `docker-compose.local.yml` 주석 참고.
 
 ---
 
-## 10. 변경 이력
+## 17. 변경 이력
 
 | 날짜 | 변경 내용 |
 |------|-----------|
-| 2026-06-03 | EC2·Vercel·RDS·GitHub Actions CI/CD 운영 문서 |
-| 2026-06-03 | 로컬 compose 루트 통합, MySQL start/stop/logs, Spring local·RDS env 가이드 |
+| 2026-06-03 | EC2·Vercel·RDS·CI/CD 초안 |
+| 2026-06-10 | **1단계 확정:** Vercel+VPS+S3, Supabase/AWS Free Tier 미채택, 이미지 presigned, 트래픽·Go/No-Go·계정 소유권 반영 |

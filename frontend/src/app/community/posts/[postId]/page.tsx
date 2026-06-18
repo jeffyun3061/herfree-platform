@@ -143,6 +143,15 @@ export default function PostDetailPage() {
           <span>{displayAuthorNickname(post.authorNickname)}</span>
           <span>· 조회 {post.viewCount}</span>
         </div>
+        {post.imageUrl && (
+          <div className="mt-4 overflow-hidden rounded-2xl border border-border/80 bg-card">
+            <img
+              src={post.imageUrl}
+              alt="게시글 첨부 이미지"
+              className="max-h-[480px] w-full object-contain"
+            />
+          </div>
+        )}
         <p className="mt-5 whitespace-pre-wrap text-sm leading-relaxed text-cream-foreground">
           {post.content}
         </p>

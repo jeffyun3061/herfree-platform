@@ -49,50 +49,54 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen bg-surface">
-      <div className="hero-panel mx-4 mt-6 rounded-[1.75rem] px-6 py-10 text-center">
-        <div className="relative z-10 flex justify-center">
-          <BrandMark variant="onPrimary" />
-        </div>
-        <h1 className="relative z-10 mt-2 text-2xl font-semibold">다시 만나서 반가워요</h1>
-        <p className="relative z-10 mt-2 text-sm text-primary-foreground/80">
-          이메일로 로그인해 주세요.
-        </p>
+    <div className="auth-screen">
+      <div className="flex flex-col items-center text-center">
+        <BrandMark variant="wrtn" size="lg" />
+        <h1 className="mt-8 text-2xl font-bold text-ink">다시 만나서 반가워요</h1>
+        <p className="mt-2 text-sm text-wrtn-muted">이메일로 로그인해 주세요.</p>
       </div>
 
-      <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4 px-4 py-8">
+      <form onSubmit={(e) => void handleSubmit(e)} className="mt-10 flex flex-1 flex-col">
         <Input
           label="이메일"
           type="email"
           autoComplete="email"
+          placeholder="이메일을 입력해 주세요"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           error={fieldErrors.email}
         />
-        <Input
-          label="비밀번호"
-          type="password"
-          autoComplete="current-password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          error={fieldErrors.password}
-        />
-        <div className="text-right">
-          <Link href="/forgot-password" className="text-xs font-medium text-primary">
+        <div className="mt-4">
+          <Input
+            label="비밀번호"
+            type="password"
+            autoComplete="current-password"
+            placeholder="비밀번호를 입력해 주세요"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            error={fieldErrors.password}
+          />
+        </div>
+        <div className="mt-3 text-right">
+          <Link href="/forgot-password" className="text-sm font-medium text-primary">
             비밀번호를 잊으셨나요?
           </Link>
         </div>
-        {error && <ErrorMessage message={error} />}
-        <Button type="submit" fullWidth disabled={isSubmitting}>
+        {error && (
+          <div className="mt-4">
+            <ErrorMessage message={error} />
+          </div>
+        )}
+        <Button type="submit" fullWidth size="lg" className="mt-6" disabled={isSubmitting}>
           {isSubmitting ? '로그인 중…' : '로그인'}
         </Button>
-        <p className="text-center text-sm text-muted">
+        <p className="mt-6 text-center text-sm text-wrtn-muted">
           계정이 없으신가요?{' '}
-          <Link href="/signup" className="font-medium text-primary">
+          <Link href="/signup" className="font-semibold text-primary">
             회원가입
           </Link>
         </p>
-        <p className="text-center text-[11px] leading-relaxed text-muted">
+        <p className="mt-auto pt-8 text-center text-xs leading-relaxed text-wrtn-muted">
           로그인 시{' '}
           <Link href="/terms" className="underline underline-offset-2">
             이용약관

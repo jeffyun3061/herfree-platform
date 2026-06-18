@@ -36,3 +36,8 @@ jwt:
 app:
   cors:
     allowed-origin-patterns: http://localhost:*,http://127.0.0.1:*
+  s3:
+    bucket: herfree-test-uploads
+    region: ap-northeast-2
+    access-key: test-access-key
+    secret-key: test-secret-key

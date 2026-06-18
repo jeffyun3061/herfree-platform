@@ -11,7 +11,7 @@ type MobileMenuProps = {
   onClose: () => void;
 };
 
-const EXTRA_LINKS = [{ href: '/lounge', label: '헤르프리 영상' }];
+const EXTRA_LINKS = [{ href: '/videos', label: '영상' }];
 
 export function MobileMenu({ open, onClose }: MobileMenuProps) {
   const router = useRouter();

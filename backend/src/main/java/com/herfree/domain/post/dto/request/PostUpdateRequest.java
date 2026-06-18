@@ -11,6 +11,9 @@ public record PostUpdateRequest(
         @NotBlank(message = "내용은 필수입니다.")
         String content,
 
-        boolean isAnonymous
+        boolean isAnonymous,
+
+        // null이면 기존 이미지 유지, 빈 문자열이면 이미지 제거
+        String imageUrl
 ) {
 }

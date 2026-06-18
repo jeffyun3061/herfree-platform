@@ -9,6 +9,7 @@ import com.herfree.domain.post.entity.PostStatus;
 import com.herfree.domain.post.entity.PostVisibility;
 import com.herfree.domain.post.exception.PostAccessDeniedException;
 import com.herfree.domain.post.exception.PostNotFoundException;
+import com.herfree.domain.post.repository.PostImageRepository;
 import com.herfree.domain.post.repository.PostRepository;
 import com.herfree.domain.user.entity.User;
 import com.herfree.domain.user.entity.UserProfile;
@@ -48,6 +49,9 @@ class PostServiceTest {
     @Mock
     private UserProfileRepository userProfileRepository;
 
+    @Mock
+    private PostImageRepository postImageRepository;
+
     @InjectMocks
     private PostService postService;
 
@@ -56,7 +60,7 @@ class PostServiceTest {
     void createPost_success() {
         // given
         Long userId = 1L;
-        PostCreateRequest request = new PostCreateRequest(1L, "제목", "내용", false, PostVisibility.PUBLIC);
+        PostCreateRequest request = new PostCreateRequest(1L, "제목", "내용", false, PostVisibility.PUBLIC, null);
 
         User user = User.builder()
                 .email("test@test.com")
@@ -92,7 +96,7 @@ class PostServiceTest {
     void createPost_anonymousPost_nicknameHidden() {
         // given — isAnonymous=true로 요청
         Long userId = 1L;
-        PostCreateRequest request = new PostCreateRequest(1L, "제목", "내용", true, PostVisibility.PUBLIC);
+        PostCreateRequest request = new PostCreateRequest(1L, "제목", "내용", true, PostVisibility.PUBLIC, null);
 
         User user = User.builder()
                 .email("test@test.com")

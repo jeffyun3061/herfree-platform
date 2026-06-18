@@ -3,29 +3,56 @@ import { cn } from '@/lib/cn';
 type InputProps = React.InputHTMLAttributes<HTMLInputElement> & {
   label?: string;
   error?: string;
+  required?: boolean;
+  hint?: React.ReactNode;
+  showCharCount?: boolean;
+  maxCharCount?: number;
 };
 
-export function Input({ label, error, className, id, ...props }: InputProps) {
+export function Input({
+  label,
+  error,
+  required,
+  hint,
+  showCharCount,
+  maxCharCount,
+  className,
+  id,
+  value,
+  ...props
+}: InputProps) {
   const inputId = id ?? label;
+  const strValue = typeof value === 'string' ? value : '';
+  const count = strValue.length;
+  const max = maxCharCount ?? props.maxLength;
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="wrtn-field">
       {label && (
-        <label htmlFor={inputId} className="text-sm font-medium text-cream-foreground">
-          {label}
-        </label>
+        <div className="flex items-center gap-1">
+          <label htmlFor={inputId} className="wrtn-label">
+            {label}
+            {required && <span className="wrtn-required">*</span>}
+          </label>
+          {hint}
+        </div>
       )}
       <input
         id={inputId}
+        value={value}
         className={cn(
-          'w-full rounded-2xl border border-border bg-card px-4 py-3 text-sm',
-          'placeholder:text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20',
-          error && 'border-red-400 focus:border-red-400 focus:ring-red-200',
+          'wrtn-input',
+          error && 'border-red-400 focus:border-red-400',
           className,
         )}
         {...props}
       />
-      {error && <p className="text-xs text-red-600">{error}</p>}
+      {showCharCount && max !== undefined && (
+        <p className="wrtn-char-count">
+          {count}/{max}
+        </p>
+      )}
+      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
     </div>
   );
 }

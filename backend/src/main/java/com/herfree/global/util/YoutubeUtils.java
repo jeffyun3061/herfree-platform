@@ -51,4 +51,11 @@ public final class YoutubeUtils {
 
         return "";
     }
+
+    public static String defaultThumbnailUrl(String videoId) {
+        if (videoId == null || videoId.isBlank()) {
+            return "";
+        }
+        return "https://img.youtube.com/vi/" + videoId + "/mqdefault.jpg";
+    }
 }

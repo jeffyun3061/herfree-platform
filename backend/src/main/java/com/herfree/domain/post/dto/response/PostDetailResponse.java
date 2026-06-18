@@ -18,10 +18,11 @@ public record PostDetailResponse(
         boolean isAnonymous,
         // 현재 로그인한 사용자가 작성자인지 여부 — 수정/삭제 버튼 표시에 사용된다
         boolean isMyPost,
+        String imageUrl,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {
-    public static PostDetailResponse of(Post post, String authorNickname, boolean isMyPost) {
+    public static PostDetailResponse of(Post post, String authorNickname, boolean isMyPost, String imageUrl) {
         String displayNickname = AnonymousNicknamePolicy.displayNickname(
                 post.isAnonymous(), isMyPost, authorNickname);
         return new PostDetailResponse(
@@ -35,6 +36,7 @@ public record PostDetailResponse(
                 post.getVisibility(),
                 post.isAnonymous(),
                 isMyPost,
+                imageUrl,
                 post.getCreatedAt(),
                 post.getUpdatedAt()
         );

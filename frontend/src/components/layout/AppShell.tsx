@@ -18,7 +18,7 @@ export function AppShell({ children }: AppShellProps) {
   const showHeader = shouldShowShellHeader(pathname);
 
   return (
-    <div className="min-h-screen w-full bg-canvas">
+    <div className="min-h-screen w-full bg-wrtn-bg">
       {showHeader && <DesktopHeader />}
       <div className={cn('mx-auto w-full', 'max-w-app lg:max-w-none')}>
         {showHeader && <MobileHeader />}

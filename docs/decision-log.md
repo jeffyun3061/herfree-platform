@@ -342,6 +342,28 @@
 
 
 
+## ADR-016: AWS S3 SDK — 게시글 이미지 업로드
+
+
+
+- **상태:** 승인
+
+- **날짜:** 2026-06-18
+
+- **배경:** 커뮤니티 게시글에 사진 1장 첨부가 필요하다. 서버 경유 multipart 업로드 대신 presigned PUT으로 클라이언트→S3 직접 업로드하면 API 서버 부하를 줄이고 확장에 유리하다.
+
+- **결정:** `software.amazon.awssdk:s3` 의존성 추가. `PostImageStorageService`가 presigned PUT URL 발급, DB에는 `post_images.image_url`만 저장.
+
+- **대안:** 서버 multipart 업로드, Cloudinary 등 SaaS
+
+- **영향:** `build.gradle.kts`, `app.s3.*` 설정, S3 버킷 CORS·퍼블릭 읽기 정책, `POST /api/posts/images/upload-url`
+
+
+
+---
+
+
+
 ## ADR 템플릿 (신규)
 
 
