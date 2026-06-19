@@ -66,6 +66,12 @@ const config: Config = {
           DEFAULT: '#1A1C1E',
           soft: '#5C5F66',
         },
+        journal: {
+          hero: '#0B3026',
+          sun: '#F5A623',
+          success: '#1D9E75',
+          community: '#0A1A16',
+        },
       },
       fontFamily: {
         sans: ['SUIT', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],

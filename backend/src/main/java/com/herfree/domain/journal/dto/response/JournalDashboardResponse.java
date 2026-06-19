@@ -6,6 +6,8 @@ public record JournalDashboardResponse(
         int relapseFreeDays,
         int totalRelapses,
         int monthRelapses,
+        int yearRelapses,
+        String lastRelapseDate,
         int routineCompletedToday,
         int routineTotalToday,
         JournalRecordResponse todayRecord,

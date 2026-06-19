@@ -105,6 +105,8 @@ export type JournalDashboard = {
   relapseFreeDays: number;
   totalRelapses: number;
   monthRelapses: number;
+  yearRelapses: number;
+  lastRelapseDate: string | null;
   routineCompletedToday: number;
   routineTotalToday: number;
   todayRecord: JournalRecord | null;

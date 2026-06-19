@@ -1,0 +1,77 @@
+/**
+ * SUIT Variable Static (woff2) — 파일: public/fonts/suit/
+ *
+ * Weight 매핑 (Tailwind class → 파일)
+ *   font-thin       100  SUIT-Thin
+ *   font-extralight 200  SUIT-ExtraLight
+ *   font-light      300  SUIT-Light
+ *   (default)       400  SUIT-Regular   본문·입력
+ *   font-medium     500  SUIT-Medium    라벨·칩
+ *   font-semibold   600  SUIT-SemiBold  카드 제목·탭·버튼
+ *   font-bold       700  SUIT-Bold      페이지 제목
+ *   font-extrabold  800  SUIT-ExtraBold 히어로·대형 숫자
+ *   font-black      900  SUIT-Heavy
+ */
+@font-face {
+  font-family: 'SUIT';
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+  src: url('/fonts/suit/SUIT-Thin.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'SUIT';
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+  src: url('/fonts/suit/SUIT-ExtraLight.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'SUIT';
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  src: url('/fonts/suit/SUIT-Light.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'SUIT';
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url('/fonts/suit/SUIT-Regular.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'SUIT';
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  src: url('/fonts/suit/SUIT-Medium.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'SUIT';
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  src: url('/fonts/suit/SUIT-SemiBold.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'SUIT';
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  src: url('/fonts/suit/SUIT-Bold.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'SUIT';
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  src: url('/fonts/suit/SUIT-ExtraBold.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'SUIT';
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  src: url('/fonts/suit/SUIT-Heavy.woff2') format('woff2');
+}

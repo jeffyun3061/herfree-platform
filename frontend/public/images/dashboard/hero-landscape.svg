@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 280" width="300" height="280">
+  <defs>
+    <clipPath id="cardClip">
+      <rect x="0" y="0" width="300" height="280" rx="20" ry="20" />
+    </clipPath>
+  </defs>
+  <g clip-path="url(#cardClip)">
+    <rect x="0" y="0" width="300" height="280" fill="#04342C" />
+    <rect x="0" y="0" width="300" height="160" fill="#085041" />
+    <circle cx="207" cy="41" r="31" fill="#EF9F27" opacity="0.25" />
+    <circle cx="207" cy="41" r="23" fill="#FAC775" />
+    <polygon points="-10,190 50,131.5 100,154 150,122.5 190,190" fill="#0F6E56" />
+    <polygon points="110,190 187,129.5 253,96.5 330,157 330,190" fill="#0B3B36" />
+    <rect x="0" y="188" width="300" height="92" fill="#052B25" />
+    <line x1="40" y1="220" x2="130" y2="220" stroke="#FAC775" stroke-opacity="0.3" stroke-width="1" />
+    <line x1="60" y1="230" x2="190" y2="230" stroke="#FAC775" stroke-opacity="0.2" stroke-width="1" />
+  </g>
+</svg>

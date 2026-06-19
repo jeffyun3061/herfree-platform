@@ -1,11 +1,17 @@
+import Image from 'next/image';
+import { BRAND_LOGO } from '@/domain/brand/assets';
 import { cn } from '@/lib/cn';
 
 type BrandMarkProps = {
   size?: 'sm' | 'md' | 'lg';
   className?: string;
   showText?: boolean;
-  variant?: 'default' | 'onPrimary' | 'light' | 'wrtn';
+  /** auth: 로그인 h.free | default: 헤더 아이콘 | onDark: 어두운 배경 | onPrimary·light: 밝은/네이비 배경 */
+  variant?: 'default' | 'auth' | 'onPrimary' | 'onDark' | 'light' | 'wrtn';
 };
+
+const ICON_SIZE = { sm: 28, md: 32, lg: 40 } as const;
+const AUTH_SIZE = { sm: 96, md: 120, lg: 140 } as const;
 
 export function BrandMark({
   size = 'md',
@@ -13,48 +19,71 @@ export function BrandMark({
   showText = true,
   variant = 'default',
 }: BrandMarkProps) {
-  const iconSize = size === 'sm' ? 'h-7 w-7' : size === 'lg' ? 'h-10 w-10' : 'h-8 w-8';
-  const textSize = size === 'sm' ? 'text-base' : size === 'lg' ? 'text-3xl' : 'text-xl';
+  const resolvedVariant = variant === 'wrtn' ? 'auth' : variant;
 
-  if (variant === 'wrtn' && showText) {
+  if (resolvedVariant === 'auth') {
+    const dim = AUTH_SIZE[size];
     return (
-      <div className={cn('flex items-baseline', className)}>
-        <span className={cn('font-bold tracking-tight text-ink', textSize)}>herfree</span>
-        <span className={cn('font-bold text-primary', textSize)}>.</span>
-      </div>
+      <Image
+        src={BRAND_LOGO.hfreeOnPrimary}
+        alt="h.free"
+        width={dim}
+        height={dim}
+        priority
+        className={cn('h-auto w-auto max-w-[min(100%,10rem)]', className)}
+      />
+    );
+  }
+
+  if (resolvedVariant === 'onDark') {
+    const src = showText ? BRAND_LOGO.hfreeOnDark : BRAND_LOGO.hMarkOnDark;
+    const dim = showText ? AUTH_SIZE[size] : ICON_SIZE[size];
+    return (
+      <Image
+        src={src}
+        alt={showText ? 'h.free' : 'h.'}
+        width={dim}
+        height={dim}
+        className={cn('h-auto w-auto', showText ? 'max-w-[min(100%,10rem)]' : 'rounded-full', className)}
+      />
+    );
+  }
+
+  const iconSrc = BRAND_LOGO.hMarkOnPrimary;
+  const iconDim = ICON_SIZE[size];
+
+  if (!showText) {
+    return (
+      <Image
+        src={iconSrc}
+        alt="h."
+        width={iconDim}
+        height={iconDim}
+        className={cn('rounded-full', className)}
+      />
     );
   }
 
   return (
     <div className={cn('flex items-center gap-2', className)}>
+      <Image
+        src={iconSrc}
+        alt=""
+        width={iconDim}
+        height={iconDim}
+        className="rounded-full"
+        aria-hidden
+      />
       <span
         className={cn(
-          'flex items-center justify-center text-primary',
-          iconSize,
-          variant === 'onPrimary' && 'text-white',
+          'font-bold tracking-tight text-ink',
+          resolvedVariant === 'onPrimary' && 'text-white',
+          resolvedVariant === 'light' && 'text-navy-foreground',
+          size === 'sm' ? 'text-base' : size === 'lg' ? 'text-xl' : 'text-lg',
         )}
-        aria-hidden
       >
-        <svg viewBox="0 0 24 24" className="h-full w-full" fill="none" stroke="currentColor" strokeWidth="1.5">
-          <path
-            d="M12 2.5l7.5 4.3v5.5c0 4.5-3 7.9-7.5 9.5C7.5 20.2 4.5 16.8 4.5 12.3V6.8L12 2.5Z"
-            strokeLinejoin="round"
-          />
-          <path d="M12 8v6M9.5 11h5" strokeLinecap="round" />
-        </svg>
+        herfree
       </span>
-      {showText && (
-        <span
-          className={cn(
-            'font-semibold tracking-tight text-ink',
-            variant === 'onPrimary' && 'text-white',
-            variant === 'light' && 'text-navy-foreground',
-            textSize,
-          )}
-        >
-          Herfree
-        </span>
-      )}
     </div>
   );
 }

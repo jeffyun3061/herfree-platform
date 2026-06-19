@@ -56,7 +56,7 @@ public class JournalService {
 
     private static final int INSIGHT_MIN_SAMPLE = 10;
     private static final int INSIGHT_LOOKBACK_MONTHS = 6;
-    private static final int ROUTINE_TASK_COUNT = 4;
+    private static final int ROUTINE_TASK_COUNT = 3;
     private static final int TIMELINE_DAYS = 14;
     private static final int REVIEW_PERIOD_DAYS = 30;
 
@@ -123,6 +123,9 @@ public class JournalService {
         boolean supplementTaken = Boolean.TRUE.equals(request.supplementTaken());
         boolean exerciseDone = Boolean.TRUE.equals(request.exerciseDone());
         boolean hadSymptoms = Boolean.TRUE.equals(request.hadSymptoms());
+        BigDecimal sleepHours = request.sleepHours() != null
+                ? request.sleepHours()
+                : representativeSleepHours(request.avgSleep());
 
         JournalRecord record = journalRecordRepository
                 .findByUserIdAndRecordDate(userId, request.recordDate())
@@ -144,7 +147,7 @@ public class JournalService {
                 request.triggers(),
                 request.memo(),
                 request.mood(),
-                request.sleepHours(),
+                sleepHours,
                 supplementTaken,
                 exerciseDone
         );
@@ -275,18 +278,23 @@ public class JournalService {
                 .map(JournalRecordResponse::from)
                 .toList();
 
-        LocalDate lastRelapseDate = recentRelapses.stream()
+        LocalDate lastRelapseLocalDate = recentRelapses.stream()
                 .map(response -> LocalDate.parse(response.recordDate()))
                 .max(Comparator.naturalOrder())
                 .orElse(null);
 
-        int relapseFreeDays = lastRelapseDate == null
+        int relapseFreeDays = lastRelapseLocalDate == null
                 ? (int) daysSinceFirstRecordOrZero(userId, today)
-                : (int) java.time.temporal.ChronoUnit.DAYS.between(lastRelapseDate, today);
+                : (int) java.time.temporal.ChronoUnit.DAYS.between(lastRelapseLocalDate, today);
 
         int totalRelapses = (int) journalRecordRepository.countByUserIdAndHadSymptomsTrue(userId);
         int monthRelapses = (int) journalRecordRepository.countByUserIdAndHadSymptomsTrueAndRecordDateBetween(
                 userId, month.atDay(1), month.atEndOfMonth());
+        LocalDate yearStart = LocalDate.of(today.getYear(), 1, 1);
+        LocalDate yearEnd = LocalDate.of(today.getYear(), 12, 31);
+        int yearRelapses = (int) journalRecordRepository.countByUserIdAndHadSymptomsTrueAndRecordDateBetween(
+                userId, yearStart, yearEnd);
+        String lastRelapseDate = lastRelapseLocalDate != null ? lastRelapseLocalDate.toString() : null;
 
         LocalDate timelineStart = today.minusDays(TIMELINE_DAYS - 1L);
         List<JournalRecord> timelineRecords = journalRecordRepository
@@ -304,6 +312,8 @@ public class JournalService {
                 Math.max(relapseFreeDays, 0),
                 totalRelapses,
                 monthRelapses,
+                yearRelapses,
+                lastRelapseDate,
                 routineCompleted,
                 ROUTINE_TASK_COUNT,
                 todayRecord.orElse(null),
@@ -623,11 +633,41 @@ public class JournalService {
 
     private int countRoutineTasks(JournalRecordResponse record) {
         int count = 0;
-        if (record.sleepHours() != null || record.avgSleep() != null) count++;
+        if (isSleepRoutineComplete(record)) count++;
         if (record.supplementTaken()) count++;
-        if (record.exerciseDone()) count++;
-        if (record.mood() != null) count++;
+        if (isConditionRecorded(record)) count++;
         return count;
+    }
+
+    private boolean isSleepRoutineComplete(JournalRecordResponse record) {
+        if (record.avgSleep() == SleepRange.H7_PLUS) {
+            return true;
+        }
+        if (record.sleepHours() != null
+                && record.sleepHours().compareTo(BigDecimal.valueOf(7)) >= 0) {
+            return true;
+        }
+        return false;
+    }
+
+    private BigDecimal representativeSleepHours(SleepRange avgSleep) {
+        if (avgSleep == null) {
+            return null;
+        }
+        return switch (avgSleep) {
+            case UNDER_5 -> BigDecimal.valueOf(4.5);
+            case H5_6 -> BigDecimal.valueOf(5.5);
+            case H6_7 -> BigDecimal.valueOf(6.5);
+            case H7_PLUS -> BigDecimal.valueOf(7.5);
+        };
+    }
+
+    private boolean isConditionRecorded(JournalRecordResponse record) {
+        if (record.stressLevel() != null || record.mood() != null) {
+            return true;
+        }
+        String memo = record.memo();
+        return memo != null && !memo.isBlank();
     }
 
     private JournalSeverityTier resolveSeverityTier(Integer severity) {

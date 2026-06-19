@@ -53,7 +53,7 @@ export default function SignupPage() {
   return (
     <div className="auth-screen">
       <div className="flex flex-col items-center text-center">
-        <BrandMark variant="wrtn" size="lg" />
+        <BrandMark variant="auth" size="lg" />
         <h1 className="mt-8 text-2xl font-bold text-ink">함께 시작해요</h1>
         <p className="mt-2 text-sm text-wrtn-muted">이메일로 간단히 가입할 수 있어요.</p>
       </div>

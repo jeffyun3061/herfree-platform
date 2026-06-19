@@ -7,6 +7,7 @@ import com.herfree.domain.journal.dto.response.JournalTrendDirection;
 import com.herfree.domain.journal.exception.JournalRecordNotFoundException;
 import com.herfree.domain.journal.entity.JournalRecord;
 import com.herfree.domain.journal.entity.MedicationStatus;
+import com.herfree.domain.journal.entity.MoodType;
 import com.herfree.domain.journal.entity.SleepRange;
 import com.herfree.domain.journal.entity.StressLevel;
 import com.herfree.domain.journal.repository.JournalRecordRepository;
@@ -120,6 +121,10 @@ class JournalServiceTest {
         assertThat(dashboard.todayStatusSummary()).contains("증상 없음");
         assertThat(dashboard.todayStatusSummary()).contains("6.5h");
         assertThat(dashboard.todayStatusSummary()).contains("스트레스 낮음");
+        assertThat(dashboard.routineTotalToday()).isEqualTo(3);
+        assertThat(dashboard.routineCompletedToday()).isEqualTo(1);
+        assertThat(dashboard.yearRelapses()).isZero();
+        assertThat(dashboard.lastRelapseDate()).isNull();
     }
 
     @Test
@@ -153,6 +158,79 @@ class JournalServiceTest {
 
         assertThat(dashboard.todayStatusLevel()).isEqualTo(JournalTodayStatusLevel.RELAPSE);
         assertThat(dashboard.todayStatusSummary()).contains("재발");
+        assertThat(dashboard.yearRelapses()).isEqualTo(1);
+        assertThat(dashboard.lastRelapseDate()).isEqualTo(today.toString());
+        assertThat(dashboard.routineTotalToday()).isEqualTo(3);
+        assertThat(dashboard.routineCompletedToday()).isZero();
+    }
+
+    @Test
+    @DisplayName("7시간 이상 수면이면 수면 루틴이 완료로 집계된다")
+    void getDashboard_sleepRoutineRequiresSevenHours() {
+        Long userId = 1L;
+        LocalDate today = LocalDate.now();
+        User user = User.builder().email("a@b.com").password("pw").build();
+        ReflectionTestUtils.setField(user, "id", userId);
+
+        JournalRecord record = JournalRecord.builder()
+                .user(user)
+                .recordDate(today)
+                .hadSymptoms(false)
+                .avgSleep(SleepRange.H7_PLUS)
+                .supplementTaken(true)
+                .mood(MoodType.PEACEFUL)
+                .exerciseDone(false)
+                .build();
+
+        given(journalRecordRepository.findByUserIdAndRecordDate(userId, today)).willReturn(Optional.of(record));
+        given(journalRecordRepository.findByUserIdAndHadSymptomsTrueOrderByRecordDateDesc(
+                eq(userId), any(PageRequest.class)))
+                .willReturn(new PageImpl<>(List.of()));
+        given(journalRecordRepository.countByUserIdAndHadSymptomsTrue(userId)).willReturn(0L);
+        given(journalRecordRepository.countByUserIdAndHadSymptomsTrueAndRecordDateBetween(
+                eq(userId), any(), any())).willReturn(0L);
+        given(journalRecordRepository.findByUserIdAndRecordDateBetweenOrderByRecordDateDesc(
+                eq(userId), any(), eq(today))).willReturn(List.of(record));
+        given(journalRecordRepository.findByUserIdOrderByRecordDateDesc(eq(userId), any(PageRequest.class)))
+                .willReturn(new PageImpl<>(List.of(record)));
+
+        var dashboard = journalService.getDashboard(userId);
+
+        assertThat(dashboard.routineCompletedToday()).isEqualTo(3);
+    }
+
+    @Test
+    @DisplayName("컨디션 기록은 mood·memo만 있어도 루틴 완료로 집계한다")
+    void getDashboard_conditionRoutineCountsMoodAndMemo() {
+        Long userId = 1L;
+        LocalDate today = LocalDate.now();
+        User user = User.builder().email("a@b.com").password("pw").build();
+        ReflectionTestUtils.setField(user, "id", userId);
+
+        JournalRecord record = JournalRecord.builder()
+                .user(user)
+                .recordDate(today)
+                .hadSymptoms(false)
+                .mood(MoodType.PEACEFUL)
+                .supplementTaken(true)
+                .exerciseDone(false)
+                .build();
+
+        given(journalRecordRepository.findByUserIdAndRecordDate(userId, today)).willReturn(Optional.of(record));
+        given(journalRecordRepository.findByUserIdAndHadSymptomsTrueOrderByRecordDateDesc(
+                eq(userId), any(PageRequest.class)))
+                .willReturn(new PageImpl<>(List.of()));
+        given(journalRecordRepository.countByUserIdAndHadSymptomsTrue(userId)).willReturn(0L);
+        given(journalRecordRepository.countByUserIdAndHadSymptomsTrueAndRecordDateBetween(
+                eq(userId), any(), any())).willReturn(0L);
+        given(journalRecordRepository.findByUserIdAndRecordDateBetweenOrderByRecordDateDesc(
+                eq(userId), any(), eq(today))).willReturn(List.of(record));
+        given(journalRecordRepository.findByUserIdOrderByRecordDateDesc(eq(userId), any(PageRequest.class)))
+                .willReturn(new PageImpl<>(List.of(record)));
+
+        var dashboard = journalService.getDashboard(userId);
+
+        assertThat(dashboard.routineCompletedToday()).isEqualTo(2);
     }
 
     @Test

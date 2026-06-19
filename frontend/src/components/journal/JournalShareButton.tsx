@@ -3,15 +3,17 @@
 import { useState } from 'react';
 import type { JournalDashboard } from '@/domain/journal/types';
 import { buildJournalShareText, shareJournalText } from '@/domain/journal/share';
+import { JournalIcon } from '@/components/journal/JournalIcon';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/cn';
 
 type JournalShareButtonProps = {
   dashboard: JournalDashboard | null | undefined;
   className?: string;
+  variant?: 'default' | 'icon';
 };
 
-export function JournalShareButton({ dashboard, className }: JournalShareButtonProps) {
+export function JournalShareButton({ dashboard, className, variant = 'default' }: JournalShareButtonProps) {
   const [message, setMessage] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
@@ -47,18 +49,38 @@ export function JournalShareButton({ dashboard, className }: JournalShareButtonP
 
   return (
     <div className={cn('relative', className)}>
-      <Button
-        type="button"
-        variant="secondary"
-        size="sm"
-        disabled={pending}
-        onClick={() => setOpen((prev) => !prev)}
-      >
-        공유하기
-      </Button>
+      {variant === 'icon' ? (
+        <button
+          type="button"
+          disabled={pending}
+          aria-label="기록 공유하기"
+          onClick={() => setOpen((prev) => !prev)}
+          className={cn(
+            'flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-white/10',
+            'text-white/70 disabled:opacity-60',
+          )}
+        >
+          <JournalIcon name="share" size={16} className="brightness-0 invert opacity-70" />
+        </button>
+      ) : (
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          disabled={pending}
+          onClick={() => setOpen((prev) => !prev)}
+        >
+          공유하기
+        </Button>
+      )}
 
       {open && (
-        <div className="absolute right-0 top-full z-20 mt-2 w-56 rounded-2xl border border-border bg-white p-2 shadow-lg">
+        <div
+          className={cn(
+            'absolute right-0 top-full z-20 mt-2 w-56 rounded-2xl border border-border bg-white p-2 shadow-lg',
+            variant === 'icon' && 'text-ink',
+          )}
+        >
           <p className="px-2 py-1 text-[11px] text-muted">
             메모·상세 증상은 포함되지 않습니다.
           </p>

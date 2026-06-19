@@ -15,7 +15,7 @@ export default function ForgotPasswordPage() {
       <TopBar title="비밀번호 찾기" showBack centerTitle />
       <div className="mx-auto max-w-app px-5 py-8">
         <div className="mb-8 flex justify-center">
-          <BrandMark variant="wrtn" size="md" />
+          <BrandMark variant="auth" size="md" />
         </div>
         <h2 className="text-xl font-bold text-ink">비밀번호를 잊으셨나요?</h2>
         <p className="mt-2 text-sm leading-relaxed text-wrtn-muted">
