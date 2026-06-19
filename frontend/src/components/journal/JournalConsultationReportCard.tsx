@@ -89,7 +89,7 @@ export function JournalConsultationReportCard({
               Herfree
             </span>
           </div>
-          <h3 className="mt-3 font-serif text-lg font-semibold">기록 요약 리포트</h3>
+          <h3 className="mt-3 font-display text-lg font-bold">기록 요약 리포트</h3>
           <p className="mt-1 text-xs text-primary-foreground/80">
             {formatReviewDateRange(summary.periodStart, summary.periodEnd, summary.periodDays)}
           </p>

@@ -3,6 +3,9 @@ spring:
   config:
     activate:
       on-profile: local
+    import:
+      - optional:file:./local-secrets.yml
+      - optional:file:./backend/local-secrets.yml
 
   datasource:
     url: jdbc:mysql://localhost:3306/herfree_db?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
@@ -30,12 +33,12 @@ app:
     password: HerfreeAdmin01
     nickname: HerfreeOps
     sync-existing: true
+  # access-key / secret-key → local-secrets.yml (gitignore) 또는 S3_ACCESS_KEY 환경변수
+  # 이 파일에 access-key를 빈 플레이스홀더로 두지 마세요 (local-secrets 덮어씀)
   s3:
-    # 버킷 이름은 환경에 맞게 변경하세요. 로컬 기본: herfree-dev-uploads
-    bucket: herfree-dev-uploads
-    region: ap-northeast-2
-    # access-key / secret-key는 application-local.yml에만 설정 (커밋 금지)
-    public-base-url:
+    bucket: ${S3_BUCKET:${AWS_S3_BUCKET:herfree-dev-uploads}}
+    region: ${S3_REGION:${AWS_REGION:ap-northeast-2}}
+    public-base-url: ${S3_PUBLIC_BASE_URL:}
 
 springdoc:
   api-docs:

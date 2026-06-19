@@ -13,7 +13,7 @@ import { Textarea } from '@/components/ui/Textarea';
 import { Button } from '@/components/ui/Button';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { getWritableBoards } from '@/domain/board/types';
-import { POST_TITLE_MAX_LENGTH, validatePostInput } from '@/domain/post/types';
+import { POST_TITLE_MAX_LENGTH, validatePostInput, pickPostImageUrlForCreate } from '@/domain/post/types';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 const TITLE_UI_MAX = 30;
@@ -92,7 +92,7 @@ function WritePostForm() {
       title,
       content,
       isAnonymous,
-      imageUrl: imageUrl ?? undefined,
+      imageUrl: pickPostImageUrlForCreate(imageUrl),
     });
     if (result) router.replace(`/community/posts/${result.id}`);
   };

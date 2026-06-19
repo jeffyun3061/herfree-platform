@@ -34,7 +34,7 @@ export function JournalTodayStatusCard({
       <section className="journal-hero-card">
         <div className="relative z-10">
           <p className="text-sm text-white/70">개인 일지</p>
-          <h2 className="mt-2 font-serif text-2xl font-semibold">나만의 패턴을 기록해 보세요</h2>
+          <h2 className="mt-2 font-display text-2xl font-bold">나만의 패턴을 기록해 보세요</h2>
           <p className="mt-2 max-w-sm text-sm leading-relaxed text-white/75">
             재발·수면·스트레스를 비공개로 남기면 패턴을 확인할 수 있어요.
           </p>
@@ -83,7 +83,7 @@ export function JournalTodayStatusCard({
 
         <p className="mt-3 text-lg font-semibold leading-snug">{summary}</p>
 
-        <p className="mt-4 font-serif text-3xl font-bold tracking-tight">
+        <p className="mt-4 font-display text-3xl font-extrabold tracking-tight">
           재발 없이{' '}
           <span className="text-gold-light">{relapseFreeDays}</span>
           일

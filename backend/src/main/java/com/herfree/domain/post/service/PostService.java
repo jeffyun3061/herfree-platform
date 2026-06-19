@@ -20,6 +20,7 @@ import com.herfree.domain.user.exception.UserNotFoundException;
 import com.herfree.domain.user.repository.UserProfileRepository;
 import com.herfree.domain.user.repository.UserRepository;
 import com.herfree.global.util.PostVisibilityPolicy;
+import com.herfree.global.storage.PostImageStorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -36,6 +37,7 @@ public class PostService {
     private final BoardRepository boardRepository;
     private final UserRepository userRepository;
     private final UserProfileRepository userProfileRepository;
+    private final PostImageStorageService postImageStorageService;
 
     @Transactional
     public PostDetailResponse createPost(Long userId, PostCreateRequest request) {
@@ -44,6 +46,8 @@ public class PostService {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(UserNotFoundException::new);
+
+        postImageStorageService.assertImageUrlAllowed(userId, request.imageUrl());
 
         Post post = Post.builder()
                 .board(board)
@@ -106,6 +110,7 @@ public class PostService {
         }
 
         post.update(request.title(), request.content(), request.isAnonymous());
+        postImageStorageService.assertImageUrlAllowed(userId, request.imageUrl());
         updatePostImage(post, request.imageUrl());
 
         String nickname = userProfileRepository.findByUserId(userId)
@@ -160,6 +165,7 @@ public class PostService {
     private String resolveImageUrl(Long postId) {
         return postImageRepository.findFirstByPostIdOrderBySortOrderAsc(postId)
                 .map(PostImage::getImageUrl)
+                .map(postImageStorageService::toDisplayUrl)
                 .orElse(null);
     }
 }

@@ -49,3 +49,25 @@ dependencies {
 tasks.test {
     useJUnitPlatform()
 }
+
+tasks.named<org.springframework.boot.gradle.tasks.run.BootRun>("bootRun") {
+    // bootRun working directory = backend module (local-secrets.yml 경로 고정)
+    workingDir = layout.projectDirectory.asFile
+}
+
+// build 는 컴파일+테스트만. 서버 실행은 run-local.ps1 또는 bootRun 사용.
+tasks.register("printRunHelp") {
+    group = "application"
+    description = "Show how to start the API server locally"
+    doLast {
+        println(
+            """
+            |=== Herfree Backend Run ===
+            |Compile & test : ./gradlew build
+            |Start API      : ./run-local.ps1   (recommended — frees port 8080 first)
+            |Direct bootRun : ./gradlew bootRun  (fails if port 8080 is already in use)
+            |S3 keys        : backend/local-secrets.yml (gitignored)
+            """.trimMargin()
+        )
+    }
+}

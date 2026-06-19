@@ -11,16 +11,29 @@ frontend/out/
 frontend/dist/
 frontend/.turbo/
 
-# Environment
+# Environment & secrets (never commit)
 .env
-.env.*
+.env.prod
+.env.*.local
+.env.*.production
 !.env.prod.example
+!backend/.env.example
+!backend/local-secrets.yml.example
 backend/.env
+backend/local-secrets.yml
 backend/src/main/resources/application-local.yml
 backend/src/main/resources/application-secret.yml
 backend/src/main/resources/application-prod.yml
 frontend/.env.local
 frontend/.env.production
+
+# AWS / credential exports (any folder)
+**/*accessKeys*.csv
+**/*access*key*.csv
+**/*credentials*.csv
+*.pem
+*.p12
+*.pfx
 
 # Logs
 *.log
@@ -37,5 +50,4 @@ logs/
 Thumbs.db
 
 # Uploads / local files
-uploads/
 files/

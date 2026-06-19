@@ -14,6 +14,7 @@ import org.springframework.validation.BindException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import software.amazon.awssdk.core.exception.SdkClientException;
 
 @Slf4j
 @RestControllerAdvice
@@ -46,6 +47,24 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
         return jsonResponse(HttpStatus.BAD_REQUEST, ErrorResponse.of(ErrorCode.INVALID_INPUT.getMessage()));
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalState(IllegalStateException ex) {
+        log.error("Configuration error: {}", ex.getMessage());
+        return jsonResponse(
+                HttpStatus.SERVICE_UNAVAILABLE,
+                ErrorResponse.of(ErrorCode.S3_NOT_CONFIGURED.getMessage())
+        );
+    }
+
+    @ExceptionHandler(SdkClientException.class)
+    public ResponseEntity<ErrorResponse> handleSdkClient(SdkClientException ex) {
+        log.error("S3 client error: {}", ex.getMessage());
+        return jsonResponse(
+                HttpStatus.SERVICE_UNAVAILABLE,
+                ErrorResponse.of(ErrorCode.S3_NOT_CONFIGURED.getMessage())
+        );
     }
 
     @ExceptionHandler(Exception.class)

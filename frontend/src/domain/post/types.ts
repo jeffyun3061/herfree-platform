@@ -53,11 +53,26 @@ export type PostImageUploadUrlInput = {
 export type PostImageUploadUrlResponse = {
   uploadUrl: string;
   imageUrl: string;
-  objectKey: string;
+};
+
+export type PostImageUploadResponse = {
+  imageUrl: string;
 };
 
 export const POST_IMAGE_MAX_BYTES = 10 * 1024 * 1024;
 export const POST_IMAGE_ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
+
+export function resolvePostImageContentType(file: File): string | null {
+  if (POST_IMAGE_ALLOWED_TYPES.includes(file.type as (typeof POST_IMAGE_ALLOWED_TYPES)[number])) {
+    return file.type;
+  }
+
+  const lowerName = file.name.toLowerCase();
+  if (lowerName.endsWith('.jpg') || lowerName.endsWith('.jpeg')) return 'image/jpeg';
+  if (lowerName.endsWith('.png')) return 'image/png';
+  if (lowerName.endsWith('.webp')) return 'image/webp';
+  return null;
+}
 
 // 백엔드 PostCreateRequest의 @Size(max = 200)과 동일 기준
 export const POST_TITLE_MAX_LENGTH = 200;
@@ -69,6 +84,12 @@ export function validatePostInput(input: { title: string; content: string }): st
   }
   if (!input.content.trim()) return '내용을 입력해 주세요.';
   return null;
+}
+
+/** 글 등록 시 이미지 URL — 비어 있으면 필드 자체를 보내지 않음 (선택 첨부) */
+export function pickPostImageUrlForCreate(imageUrl: string | null | undefined): string | undefined {
+  const trimmed = imageUrl?.trim();
+  return trimmed ? trimmed : undefined;
 }
 
 export function displayAuthorNickname(authorNickname: string): string {

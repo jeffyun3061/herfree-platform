@@ -47,6 +47,11 @@ public enum ErrorCode {
     POST_ACCESS_DENIED(HttpStatus.FORBIDDEN, "게시글에 대한 권한이 없습니다."),
     INVALID_IMAGE_TYPE(HttpStatus.BAD_REQUEST, "JPEG, PNG, WEBP 형식의 이미지만 업로드할 수 있습니다."),
     INVALID_IMAGE_SIZE(HttpStatus.BAD_REQUEST, "이미지는 10MB 이하만 업로드할 수 있습니다."),
+    INVALID_IMAGE_URL(HttpStatus.BAD_REQUEST, "허용되지 않은 이미지 주소입니다."),
+    S3_NOT_CONFIGURED(HttpStatus.SERVICE_UNAVAILABLE, "이미지 업로드 설정이 완료되지 않았습니다. S3 키를 확인해 주세요."),
+    S3_BUCKET_NOT_FOUND(HttpStatus.BAD_GATEWAY, "S3 버킷을 찾을 수 없습니다. 버킷 이름을 확인해 주세요."),
+    S3_ACCESS_DENIED(HttpStatus.BAD_GATEWAY, "S3 업로드 권한이 없습니다. IAM 정책을 확인해 주세요."),
+    S3_UPLOAD_FAILED(HttpStatus.BAD_GATEWAY, "이미지 저장에 실패했습니다. 잠시 후 다시 시도해 주세요."),
 
     // 댓글(Comment)
     COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "댓글을 찾을 수 없습니다."),

@@ -4,7 +4,7 @@ export function SiteFooter() {
   return (
     <footer className="border-t border-border bg-white px-4 py-8 lg:px-10">
       <div className="mx-auto max-w-content">
-        <p className="font-serif text-sm font-semibold text-navy">Herfree</p>
+        <p className="font-display text-sm font-bold text-navy">Herfree</p>
         <p className="mt-1 text-xs leading-relaxed text-muted">
           헤르페스 환우를 위한 익명 건강 커뮤니티입니다. 의료 행위를 대체하지 않습니다.
         </p>

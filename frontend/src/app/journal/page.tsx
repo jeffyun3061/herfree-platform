@@ -135,7 +135,7 @@ export default function JournalPage() {
 
         <div className="flex items-center justify-between lg:hidden">
           <div>
-            <h1 className="font-serif text-xl font-semibold text-ink">개인 일지</h1>
+            <h1 className="font-display text-xl font-bold text-ink">개인 일지</h1>
             <p className="text-xs text-muted">오늘 {new Date().toLocaleDateString('ko-KR')}</p>
           </div>
           <div className="flex items-center gap-2">

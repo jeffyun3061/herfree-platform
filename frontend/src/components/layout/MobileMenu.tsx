@@ -35,7 +35,7 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
       />
       <div className="absolute right-0 top-0 flex h-full w-[min(100%,280px)] flex-col bg-white shadow-xl">
         <div className="flex items-center justify-between border-b border-border px-4 py-4">
-          <span className="font-serif text-lg font-semibold text-navy">메뉴</span>
+          <span className="font-display text-lg font-bold text-navy">메뉴</span>
           <button
             type="button"
             onClick={onClose}

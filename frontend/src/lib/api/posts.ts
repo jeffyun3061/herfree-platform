@@ -3,11 +3,11 @@ import type {
   Post,
   PostCreateInput,
   PostDetail,
-  PostImageUploadUrlInput,
-  PostImageUploadUrlResponse,
+  PostImageUploadResponse,
   PostUpdateInput,
 } from '@/domain/post/types';
-import { request } from '@/lib/api/client';
+import { resolvePostImageContentType, pickPostImageUrlForCreate } from '@/domain/post/types';
+import { request, requestMultipart } from '@/lib/api/client';
 
 // 백엔드 @PageableDefault 정렬이 오름차순이므로 항상 최신순 정렬을 명시한다
 export function fetchPosts(
@@ -33,7 +33,15 @@ export function fetchPost(postId: number): Promise<PostDetail> {
 }
 
 export function createPost(input: PostCreateInput): Promise<PostDetail> {
-  return request<PostDetail>('/api/posts', { method: 'POST', body: input });
+  const imageUrl = pickPostImageUrlForCreate(input.imageUrl);
+  const body = {
+    boardId: input.boardId,
+    title: input.title,
+    content: input.content,
+    isAnonymous: input.isAnonymous,
+    ...(imageUrl ? { imageUrl } : {}),
+  };
+  return request<PostDetail>('/api/posts', { method: 'POST', body });
 }
 
 export function updatePost(postId: number, input: PostUpdateInput): Promise<PostDetail> {
@@ -44,30 +52,20 @@ export function deletePost(postId: number): Promise<void> {
   return request<void>(`/api/posts/${postId}`, { method: 'DELETE' });
 }
 
-export function requestPostImageUploadUrl(
-  input: PostImageUploadUrlInput,
-): Promise<PostImageUploadUrlResponse> {
-  return request<PostImageUploadUrlResponse>('/api/posts/images/upload-url', {
-    method: 'POST',
-    body: input,
-  });
-}
-
+/** API 서버 경유 업로드 — 브라우저→S3 직접 PUT(CORS) 대신 사용 */
 export async function uploadPostImage(file: File): Promise<string> {
-  const { uploadUrl, imageUrl } = await requestPostImageUploadUrl({
-    contentType: file.type,
-    contentLength: file.size,
-  });
-
-  const putResponse = await fetch(uploadUrl, {
-    method: 'PUT',
-    headers: { 'Content-Type': file.type },
-    body: file,
-  });
-
-  if (!putResponse.ok) {
-    throw new Error('이미지 업로드에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+  const contentType = resolvePostImageContentType(file);
+  if (!contentType) {
+    throw new Error('JPEG, PNG, WEBP 형식의 이미지만 업로드할 수 있습니다.');
   }
+
+  const formData = new FormData();
+  formData.append('file', file, file.name);
+
+  const { imageUrl } = await requestMultipart<PostImageUploadResponse>(
+    '/api/posts/images/upload',
+    formData,
+  );
 
   return imageUrl;
 }

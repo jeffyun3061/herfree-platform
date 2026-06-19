@@ -41,7 +41,12 @@ async function proxyToBackend(request: NextRequest, pathSegments: string[]) {
   };
 
   if (request.method !== 'GET' && request.method !== 'HEAD') {
-    init.body = await request.text();
+    const contentType = request.headers.get('content-type') ?? '';
+    if (contentType.includes('multipart/form-data')) {
+      init.body = await request.arrayBuffer();
+    } else {
+      init.body = await request.text();
+    }
   }
 
   let backendResponse: Response;

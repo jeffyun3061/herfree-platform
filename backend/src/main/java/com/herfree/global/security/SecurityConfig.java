@@ -79,6 +79,7 @@ public class SecurityConfig {
                                 "/api/posts",
                                 "/api/posts/*",
                                 "/api/posts/*/comments",
+                                "/api/posts/images/object/**",
                                 "/api/contents",
                                 "/api/contents/*",
                                 "/api/videos",

@@ -33,9 +33,18 @@ public class S3Config {
     }
 
     private AwsCredentialsProvider credentialsProvider(S3Properties properties) {
-        if (StringUtils.hasText(properties.accessKey()) && StringUtils.hasText(properties.secretKey())) {
+        boolean hasAccessKey = StringUtils.hasText(properties.accessKey());
+        boolean hasSecretKey = StringUtils.hasText(properties.secretKey());
+
+        if (hasAccessKey && hasSecretKey) {
             return StaticCredentialsProvider.create(
                     AwsBasicCredentials.create(properties.accessKey(), properties.secretKey()));
+        }
+        // access-key만 있고 secret이 비어 있으면 DefaultCredentialsProvider로 넘어가
+        // Windows 로컬에서 SdkClientException → 500이 난다. 명시적으로 실패시킨다.
+        if (hasAccessKey) {
+            throw new IllegalStateException(
+                    "S3 secret key is missing. Set S3_SECRET_KEY (or AWS_SECRET_ACCESS_KEY) via environment variables only.");
         }
         return DefaultCredentialsProvider.create();
     }

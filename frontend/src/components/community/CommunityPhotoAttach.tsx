@@ -3,8 +3,8 @@
 import { useRef, useState } from 'react';
 import { uploadPostImage } from '@/lib/api/posts';
 import {
-  POST_IMAGE_ALLOWED_TYPES,
   POST_IMAGE_MAX_BYTES,
+  resolvePostImageContentType,
 } from '@/domain/post/types';
 import { getErrorMessage } from '@/lib/api/client';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
@@ -29,7 +29,8 @@ export function CommunityPhotoAttach({
     event.target.value = '';
     if (!file) return;
 
-    if (!POST_IMAGE_ALLOWED_TYPES.includes(file.type as (typeof POST_IMAGE_ALLOWED_TYPES)[number])) {
+    const contentType = resolvePostImageContentType(file);
+    if (!contentType) {
       setError('JPEG, PNG, WEBP 형식의 이미지만 업로드할 수 있습니다.');
       return;
     }

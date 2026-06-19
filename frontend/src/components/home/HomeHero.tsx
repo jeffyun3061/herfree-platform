@@ -12,7 +12,7 @@ export function HomeHero() {
           <p className="hidden text-xs font-medium uppercase tracking-[0.2em] text-primary lg:block">
             Herfree Health Community
           </p>
-          <h1 className="font-serif text-[1.2rem] font-semibold leading-[1.35] text-ink lg:mt-3 lg:text-[2.75rem] lg:leading-[1.2] xl:text-5xl">
+          <h1 className="font-display text-[1.2rem] font-extrabold leading-[1.35] text-ink lg:mt-3 lg:text-[2.75rem] lg:leading-[1.2] xl:text-5xl">
             헤르페스, 그 이후의 삶.
             <br />
             진짜 이야기를 함께합니다.

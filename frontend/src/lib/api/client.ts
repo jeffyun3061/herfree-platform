@@ -166,3 +166,49 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
 
   return envelope.data;
 }
+
+/** multipart/form-data 업로드 — Content-Type은 브라우저가 boundary 포함해 설정 */
+export async function requestMultipart<T>(path: string, formData: FormData): Promise<T> {
+  const tokenAtRequest = getAccessToken();
+  const headers = buildRequestHeaders(path, tokenAtRequest);
+
+  let response: Response;
+  try {
+    response = await fetch(buildUrl(path), {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+  } catch {
+    throw createApiError(0, '서버에 연결할 수 없습니다. Wi-Fi·서버 실행 상태를 확인해 주세요.');
+  }
+
+  if (response.status === 401) {
+    handleUnauthorized(Boolean(tokenAtRequest), tokenAtRequest);
+  }
+
+  const contentType = response.headers.get('content-type') ?? '';
+  let envelope: ApiEnvelope<T> | null = null;
+
+  if (contentType.includes('application/json')) {
+    try {
+      envelope = (await response.json()) as ApiEnvelope<T>;
+    } catch {
+      envelope = null;
+    }
+  }
+
+  if (!response.ok || !envelope || envelope.success === false) {
+    const serverMessage = envelope?.message;
+    const message =
+      serverMessage ??
+      (response.status === 401
+        ? '인증이 필요합니다.'
+        : response.status === 403
+          ? '접근 권한이 없습니다.'
+          : getErrorMessage(createApiError(response.status, '')));
+    throw createApiError(response.status || 500, message);
+  }
+
+  return envelope.data;
+}
