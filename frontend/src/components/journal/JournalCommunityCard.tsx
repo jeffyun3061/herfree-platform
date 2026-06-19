@@ -9,6 +9,7 @@ import { cn } from '@/lib/cn';
 type JournalCommunityCardProps = {
   posts: Post[];
   isLoading: boolean;
+  maxPosts?: number;
 };
 
 function PostAvatar({ nickname }: { nickname: string }) {
@@ -27,8 +28,8 @@ function postSnippet(post: Post): string {
   return post.title;
 }
 
-export function JournalCommunityCard({ posts, isLoading }: JournalCommunityCardProps) {
-  const previewPosts = posts.slice(0, 5);
+export function JournalCommunityCard({ posts, isLoading, maxPosts = 5 }: JournalCommunityCardProps) {
+  const previewPosts = posts.slice(0, maxPosts);
 
   return (
     <section className="journal-community-panel">
@@ -61,7 +62,7 @@ export function JournalCommunityCard({ posts, isLoading }: JournalCommunityCardP
         <ul>
           {previewPosts.map((post, index) => (
             <li key={post.id} className={cn(index > 0 && 'border-t border-white/[0.08]')}>
-              <Link href={`/community/posts/${post.id}`} className="flex items-center gap-3 py-3.5 group">
+              <Link href={`/community/posts/${post.id}`} className="flex items-center gap-3 py-3 group">
                 <PostAvatar nickname={post.authorNickname} />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-baseline gap-2">

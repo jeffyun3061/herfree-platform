@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { JournalPersonalDashboard } from '@/components/journal/JournalPersonalDashboard';
 import { JournalReviewDashboard } from '@/components/journal/JournalReviewDashboard';
@@ -10,19 +10,18 @@ import { JournalTimeline14Days } from '@/components/journal/JournalTimeline14Day
 import { JournalPatternLine } from '@/components/journal/JournalPatternLine';
 import { JournalRecentRelapses } from '@/components/journal/JournalRecentRelapses';
 import { JournalInsightLines } from '@/components/journal/JournalInsightLines';
-import { Pagination } from '@/components/common/Pagination';
-import { EmptyState } from '@/components/ui/EmptyState';
+import { JournalTabBar, type JournalTabId } from '@/components/journal/JournalTabBar';
+import { JournalHistoryList } from '@/components/journal/JournalHistoryList';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { MedicalDisclaimer } from '@/components/layout/MedicalDisclaimer';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
+import { toDateInputValue, type JournalRecord } from '@/domain/journal/types';
+import type { RoutineItemId } from '@/domain/journal/routine';
 import {
-  formatTriggerLabels,
-  formatJournalDateLabel,
-  toDateInputValue,
-  type JournalRecord,
-} from '@/domain/journal/types';
-import { formatConditionSummary, formatSleepLabel } from '@/domain/journal/routine';
-import { cn } from '@/lib/cn';
+  routineItemToWizardStep,
+  type WizardEntryMode,
+  type WizardStepId,
+} from '@/domain/journal/wizard';
 import { fetchJournalRecordByDate } from '@/lib/api/journal';
 import { useAuth } from '@/hooks/useAuth';
 import { usePostList } from '@/hooks/usePosts';
@@ -37,12 +36,18 @@ import {
 
 export default function JournalPage() {
   const { isLoggedIn, isReady } = useAuth();
+  const homeRef = useRef<HTMLDivElement>(null);
+
+  const [activeTab, setActiveTab] = useState<JournalTabId>('home');
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [routinePulse, setRoutinePulse] = useState(false);
   const [historyPage, setHistoryPage] = useState(0);
-  const [historyFilter, setHistoryFilter] = useState<'relapse' | 'all'>('relapse');
+  const [historyFilter, setHistoryFilter] = useState<'relapse' | 'all'>('all');
   const [checkinOpen, setCheckinOpen] = useState(false);
   const [wizardTargetDate, setWizardTargetDate] = useState(toDateInputValue());
   const [wizardInitialRecord, setWizardInitialRecord] = useState<JournalRecord | null>(null);
+  const [wizardEntryMode, setWizardEntryMode] = useState<WizardEntryMode>('daily');
+  const [wizardInitialStepId, setWizardInitialStepId] = useState<WizardStepId | undefined>();
   const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
 
   const historyHadSymptoms = historyFilter === 'relapse' ? true : undefined;
@@ -70,6 +75,7 @@ export default function JournalPage() {
   );
 
   const displayHistory = historyPageData?.content ?? [];
+  const hasTodayRecord = Boolean(dashboard?.todayRecord);
 
   useEffect(() => {
     setHistoryPage(0);
@@ -79,22 +85,43 @@ export default function JournalPage() {
     await Promise.all([refetchDashboard(), refetchHistory(), refetchReviewSummary()]);
   };
 
-  const openWizard = (date: string, record: JournalRecord | null) => {
+  const openWizard = (
+    date: string,
+    record: JournalRecord | null,
+    mode: WizardEntryMode,
+    stepId?: WizardStepId,
+  ) => {
     setWizardTargetDate(date);
     setWizardInitialRecord(record);
+    setWizardEntryMode(mode);
+    setWizardInitialStepId(stepId);
     setCheckinOpen(true);
   };
 
-  const openTodayWizard = () => {
+  const openDailyWizard = (stepId?: WizardStepId) => {
     const today = toDateInputValue();
-    openWizard(today, dashboard?.todayRecord ?? null);
+    openWizard(today, dashboard?.todayRecord ?? null, 'daily', stepId);
+  };
+
+  const openRelapseWizard = () => {
+    const today = toDateInputValue();
+    openWizard(today, dashboard?.todayRecord ?? null, 'relapse');
+  };
+
+  const handleRoutineItemClick = (itemId: RoutineItemId) => {
+    openDailyWizard(routineItemToWizardStep(itemId));
   };
 
   const handleSave = async (input: Parameters<typeof save>[0]) => {
     await save(input);
-    setSaveMessage('기록이 저장되었습니다.');
     await refreshAll();
-    setTimeout(() => setSaveMessage(null), 2500);
+    setCheckinOpen(false);
+    setActiveTab('home');
+    setSaveMessage('오늘 기록이 저장됐어요. 루틴을 확인해 보세요.');
+    setRoutinePulse(true);
+    setTimeout(() => setRoutinePulse(false), 2000);
+    setTimeout(() => setSaveMessage(null), 3000);
+    homeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   const handleDelete = async () => {
@@ -104,61 +131,77 @@ export default function JournalPage() {
     await refreshAll();
   };
 
-  const handleHistoryFilter = (filter: 'relapse' | 'all') => {
-    setHistoryFilter(filter);
-  };
-
   const handleTimelineDaySelect = async (date: string) => {
     if (!isLoggedIn) return;
     try {
       const record = await fetchJournalRecordByDate(date);
-      openWizard(date, record);
+      openWizard(date, record, 'edit');
     } catch {
-      openWizard(date, null);
+      openWizard(date, null, 'daily');
     }
   };
 
+  const handleEditRecord = (record: JournalRecord) => {
+    openWizard(record.recordDate, record, 'edit');
+  };
+
   return (
-    <div className="bg-wrtn-bg pb-10 lg:pb-14">
-      <div className="page-container space-y-8 lg:space-y-10">
+    <div className="bg-[#F2EFE9] pb-10 lg:pb-14">
+      <div className="page-container space-y-4 lg:space-y-5">
         {!isReady ? (
           <JournalPersonalDashboard
             dashboard={null}
             isLoading
-            onRecord={() => {}}
+            onRecordDaily={() => {}}
+            onRecordRelapse={() => {}}
             communityPosts={[]}
             communityLoading
           />
         ) : isLoggedIn ? (
           <>
-            <JournalPersonalDashboard
-              dashboard={dashboard ?? null}
-              isLoading={dashboardLoading}
-              onRecord={openTodayWizard}
-              communityPosts={communityPosts.content}
-              communityLoading={communityLoading}
-            />
+            <JournalTabBar active={activeTab} onChange={setActiveTab} />
 
-            <JournalRecordWizard
-              open={checkinOpen}
-              targetDate={wizardTargetDate}
-              initialRecord={wizardInitialRecord}
-              isSubmitting={isSubmitting}
-              onClose={() => setCheckinOpen(false)}
-              onSave={handleSave}
-            />
+            {saveMessage && activeTab === 'home' && (
+              <p className="mx-auto max-w-app rounded-xl bg-journal-success/15 px-4 py-3 text-sm font-medium text-journal-success">
+                {saveMessage}
+              </p>
+            )}
 
-            <JournalPrivacyBanner />
+            {activeTab === 'home' && (
+              <div ref={homeRef}>
+                <JournalPersonalDashboard
+                  dashboard={dashboard ?? null}
+                  isLoading={dashboardLoading}
+                  onRecordDaily={() => openDailyWizard()}
+                  onRecordRelapse={openRelapseWizard}
+                  onRoutineItemClick={handleRoutineItemClick}
+                  communityPosts={communityPosts.content}
+                  communityLoading={communityLoading}
+                  routinePulse={routinePulse}
+                  hasTodayRecord={hasTodayRecord}
+                />
+                <div className="mx-auto mt-4 max-w-app">
+                  <JournalPrivacyBanner />
+                </div>
+              </div>
+            )}
 
-            <details className="group rounded-[1.25rem] border border-border/50 bg-white shadow-card">
-              <summary className="cursor-pointer list-none px-5 py-4 text-sm font-semibold text-ink marker:content-none">
-                <span className="flex items-center justify-between">
-                  상세 기록 · 패턴 · 리포트
-                  <span className="text-xs font-medium text-primary group-open:hidden">펼치기</span>
-                  <span className="hidden text-xs font-medium text-primary group-open:inline">접기</span>
-                </span>
-              </summary>
-              <div className="space-y-6 border-t border-border/40 px-5 py-5">
+            {activeTab === 'records' && (
+              <JournalHistoryList
+                records={displayHistory}
+                isLoading={historyLoading}
+                filter={historyFilter}
+                page={historyPage}
+                totalPages={historyPageData?.totalPages ?? 1}
+                onFilterChange={setHistoryFilter}
+                onPageChange={setHistoryPage}
+                onEdit={handleEditRecord}
+                onDelete={setDeleteTargetId}
+              />
+            )}
+
+            {activeTab === 'insights' && (
+              <div className="mx-auto max-w-app space-y-6">
                 <JournalTimeline14Days
                   days={dashboard?.timelineDays ?? []}
                   isLoading={dashboardLoading}
@@ -184,14 +227,26 @@ export default function JournalPage() {
                   />
                 )}
               </div>
-            </details>
+            )}
+
+            <JournalRecordWizard
+              open={checkinOpen}
+              targetDate={wizardTargetDate}
+              initialRecord={wizardInitialRecord}
+              entryMode={wizardEntryMode}
+              initialStepId={wizardInitialStepId}
+              isSubmitting={isSubmitting}
+              onClose={() => setCheckinOpen(false)}
+              onSave={handleSave}
+            />
           </>
         ) : (
           <div className="mx-auto max-w-app space-y-5">
             <JournalPersonalDashboard
               dashboard={null}
               isLoading={false}
-              onRecord={() => {}}
+              onRecordDaily={() => {}}
+              onRecordRelapse={() => {}}
               communityPosts={communityPosts.content}
               communityLoading={communityLoading}
             />
@@ -199,137 +254,15 @@ export default function JournalPage() {
               <p className="text-sm text-wrtn-muted">로그인 후 나만의 건강 기록을 남길 수 있어요.</p>
               <Link
                 href="/login?from=%2Fjournal"
-                className="mt-3 inline-block text-sm font-semibold text-primary"
+                className="mt-3 inline-block rounded-pill bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground"
               >
-                로그인하기
+                로그인하고 기록 시작
               </Link>
             </div>
           </div>
         )}
 
         {(error || deleteError) && <ErrorMessage message={error ?? deleteError ?? ''} />}
-        {saveMessage && (
-          <p className="rounded-xl bg-primary/10 px-4 py-3 text-sm font-medium text-primary">
-            {saveMessage}
-          </p>
-        )}
-
-        {isLoggedIn && isReady && (
-          <section id="history" className="scroll-mt-24">
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h2 className="section-heading">기록 히스토리</h2>
-                <p className="mt-1 text-xs text-muted">
-                  날짜별 기록을 확인하고 수정·삭제할 수 있어요. 삭제는 복구할 수 없습니다.
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleHistoryFilter('relapse')}
-                  className={cn(
-                    'rounded-full border px-3 py-1.5 text-xs transition-colors',
-                    historyFilter === 'relapse'
-                      ? 'border-primary bg-primary/10 text-primary'
-                      : 'border-border text-muted',
-                  )}
-                >
-                  재발 기록
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleHistoryFilter('all')}
-                  className={cn(
-                    'rounded-full border px-3 py-1.5 text-xs transition-colors',
-                    historyFilter === 'all'
-                      ? 'border-primary bg-primary/10 text-primary'
-                      : 'border-border text-muted',
-                  )}
-                >
-                  전체 기록
-                </button>
-              </div>
-            </div>
-            {historyLoading ? (
-              <div className="animate-pulse space-y-2">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-16 rounded-2xl bg-white" />
-                ))}
-              </div>
-            ) : displayHistory.length === 0 ? (
-              <EmptyState
-                title={
-                  historyFilter === 'relapse'
-                    ? '아직 재발 기록이 없습니다'
-                    : '아직 남긴 기록이 없습니다'
-                }
-                description={
-                  historyFilter === 'relapse'
-                    ? '재발이 있었던 날에 기록을 남기면 패턴을 확인할 수 있습니다.'
-                    : '오늘의 컨디션과 루틴을 기록해 보세요.'
-                }
-              />
-            ) : (
-              <>
-                <ul className="space-y-2">
-                  {displayHistory.map((record) => (
-                    <li
-                      key={record.id}
-                      className="rounded-2xl border border-border/70 bg-white px-4 py-3 text-sm"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="font-medium text-ink">
-                            {formatJournalDateLabel(record.recordDate)}
-                          </p>
-                          {record.hadSymptoms ? (
-                            <p className="mt-1 text-muted">
-                              재발 · 심각도 {record.severity ?? '-'} · 트리거{' '}
-                              {formatTriggerLabels(record.triggers)}
-                            </p>
-                          ) : (
-                            <p className="mt-1 text-muted">
-                              무재발 · 수면 {formatSleepLabel(record)} · 컨디션{' '}
-                              {formatConditionSummary(record)}
-                            </p>
-                          )}
-                          {record.memo && (
-                            <p className="mt-2 line-clamp-2 text-xs text-muted">{record.memo}</p>
-                          )}
-                        </div>
-                        <div className="flex shrink-0 flex-col items-end gap-1">
-                          <button
-                            type="button"
-                            onClick={() => openWizard(record.recordDate, record)}
-                            className="text-xs font-medium text-primary"
-                          >
-                            수정
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setDeleteTargetId(record.id)}
-                            className="rounded-lg border border-red-200 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50"
-                          >
-                            삭제
-                          </button>
-                        </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-                {(historyPageData?.totalPages ?? 0) > 1 && (
-                  <div className="mt-4">
-                    <Pagination
-                      page={historyPage}
-                      totalPages={historyPageData?.totalPages ?? 1}
-                      onPageChange={setHistoryPage}
-                    />
-                  </div>
-                )}
-              </>
-            )}
-          </section>
-        )}
 
         <MedicalDisclaimer />
       </div>

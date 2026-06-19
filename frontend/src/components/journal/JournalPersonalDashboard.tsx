@@ -2,6 +2,7 @@
 
 import type { Post } from '@/domain/post/types';
 import type { JournalDashboard } from '@/domain/journal/types';
+import type { RoutineItemId } from '@/domain/journal/routine';
 import { JournalDashboardHeader } from '@/components/journal/JournalDashboardHeader';
 import { JournalDashboardHero } from '@/components/journal/JournalDashboardHero';
 import { JournalRoutineCard } from '@/components/journal/JournalRoutineCard';
@@ -12,39 +13,65 @@ import { cn } from '@/lib/cn';
 type JournalPersonalDashboardProps = {
   dashboard: JournalDashboard | null;
   isLoading: boolean;
-  onRecord: () => void;
+  onRecordDaily: () => void;
+  onRecordRelapse?: () => void;
+  onRoutineItemClick?: (itemId: RoutineItemId) => void;
   communityPosts: Post[];
   communityLoading: boolean;
+  routinePulse?: boolean;
+  hasTodayRecord?: boolean;
 };
 
+/** 목업 기준 홈 스택: 헤더 → 히어로(300:280) → CTA → 루틴 → 커뮤니티 */
 export function JournalPersonalDashboard({
   dashboard,
   isLoading,
-  onRecord,
+  onRecordDaily,
+  onRecordRelapse,
+  onRoutineItemClick,
   communityPosts,
   communityLoading,
+  routinePulse,
+  hasTodayRecord,
 }: JournalPersonalDashboardProps) {
+  const showFirstRecordHint = !isLoading && hasTodayRecord === false;
+
   return (
-    <div className="mx-auto w-full max-w-app space-y-4">
+    <div className="journal-home-stack mx-auto w-full max-w-app">
       <JournalDashboardHeader />
-      <JournalDashboardHero dashboard={dashboard} isLoading={isLoading} />
+
+      <JournalDashboardHero
+        dashboard={dashboard}
+        isLoading={isLoading}
+        showFirstRecordHint={showFirstRecordHint}
+        onRecordRelapse={onRecordRelapse}
+      />
 
       <button
         type="button"
-        onClick={onRecord}
+        onClick={onRecordDaily}
         disabled={isLoading}
         className={cn(
-          'flex w-full items-center justify-center gap-2 rounded-[1rem]',
-          'border border-[var(--color-border-tertiary)] bg-[var(--color-background-primary)]',
-          'px-4 py-3.5 text-sm font-semibold text-[var(--color-text-primary)] shadow-sm transition-colors',
-          'hover:border-primary/30 hover:bg-[var(--color-background-secondary)] disabled:opacity-60',
+          'journal-record-cta flex w-full items-center justify-center gap-2',
+          'rounded-[1rem] border border-[var(--color-border-tertiary)]',
+          'bg-[var(--color-background-primary)] px-4 py-3.5',
+          'text-sm font-semibold text-[var(--color-text-primary)] shadow-sm',
+          'transition-colors hover:border-primary/25 hover:bg-[var(--color-background-secondary)]/80',
+          'disabled:opacity-60',
         )}
       >
         <JournalIcon name="pencil" size={16} />
         오늘 기록하기
       </button>
 
-      <JournalRoutineCard dashboard={dashboard} isLoading={isLoading} />
+      <JournalRoutineCard
+        dashboard={dashboard}
+        isLoading={isLoading}
+        onRoutineItemClick={onRoutineItemClick}
+        pulse={routinePulse}
+        showEmptyHint={showFirstRecordHint}
+      />
+
       <JournalCommunityCard posts={communityPosts} isLoading={communityLoading} />
     </div>
   );

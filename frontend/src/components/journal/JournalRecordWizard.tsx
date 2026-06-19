@@ -17,6 +17,13 @@ import {
   type StressLevel,
 } from '@/domain/journal/types';
 import { avgSleepToHours } from '@/domain/journal/routine';
+import {
+  WIZARD_STEP,
+  buildWizardStepSequence,
+  wizardStepIndex,
+  type WizardEntryMode,
+  type WizardStepId,
+} from '@/domain/journal/wizard';
 import { SeveritySelector } from '@/components/journal/SeveritySelector';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -26,6 +33,8 @@ type JournalRecordWizardProps = {
   open: boolean;
   targetDate: string;
   initialRecord?: JournalRecord | null;
+  entryMode?: WizardEntryMode;
+  initialStepId?: WizardStepId;
   isSubmitting: boolean;
   onClose: () => void;
   onSave: (input: JournalRecordInput) => Promise<void>;
@@ -39,40 +48,27 @@ const STRESS_SCALE: { value: number; emoji: string; level: StressLevel }[] = [
   { value: 5, emoji: '😰', level: 'HIGH' },
 ];
 
-const STEP_SYMPTOM = 1;
-const STEP_SEVERITY = 2;
-const STEP_PRODROMAL = 3;
-const STEP_TRIGGERS = 4;
-const STEP_SLEEP = 5;
-const STEP_SUPPLEMENT = 6;
-const STEP_CONDITION = 7;
-const STEP_MEDICATION = 8;
-const STEP_MEMO = 9;
+const STEP_SYMPTOM = WIZARD_STEP.SYMPTOM;
+const STEP_SEVERITY = WIZARD_STEP.SEVERITY;
+const STEP_PRODROMAL = WIZARD_STEP.PRODROMAL;
+const STEP_TRIGGERS = WIZARD_STEP.TRIGGERS;
+const STEP_SLEEP = WIZARD_STEP.SLEEP;
+const STEP_SUPPLEMENT = WIZARD_STEP.SUPPLEMENT;
+const STEP_CONDITION = WIZARD_STEP.CONDITION;
+const STEP_MEDICATION = WIZARD_STEP.MEDICATION;
+const STEP_MEMO = WIZARD_STEP.MEMO;
 
-function buildStepSequence(hadSymptoms: boolean): number[] {
-  if (hadSymptoms) {
-    return [
-      STEP_SYMPTOM,
-      STEP_SEVERITY,
-      STEP_PRODROMAL,
-      STEP_TRIGGERS,
-      STEP_SLEEP,
-      STEP_SUPPLEMENT,
-      STEP_CONDITION,
-      STEP_MEDICATION,
-      STEP_MEMO,
-    ];
-  }
-  return [STEP_SYMPTOM, STEP_SLEEP, STEP_SUPPLEMENT, STEP_CONDITION, STEP_MEDICATION, STEP_MEMO];
-}
-
-function recordToForm(record: JournalRecord | null | undefined, date: string): JournalRecordInput {
+function recordToForm(
+  record: JournalRecord | null | undefined,
+  date: string,
+  mode: WizardEntryMode,
+): JournalRecordInput {
   return {
     recordDate: date,
     medicationStatus: record?.medicationStatus ?? 'NORMAL',
     avgSleep: record?.avgSleep ?? null,
     stressLevel: record?.stressLevel ?? null,
-    hadSymptoms: record?.hadSymptoms ?? false,
+    hadSymptoms: mode === 'relapse' ? true : (record?.hadSymptoms ?? false),
     prodromalSymptoms: record?.prodromalSymptoms ?? [],
     severity: record?.severity ?? null,
     triggers: record?.triggers ?? [],
@@ -91,29 +87,44 @@ function stressToScale(level: StressLevel | null | undefined): number {
   return 0;
 }
 
+function wizardTitle(mode: WizardEntryMode): string {
+  if (mode === 'daily') return '오늘 하루 기록';
+  if (mode === 'relapse') return '재발 기록';
+  return '기록 수정';
+}
+
 export function JournalRecordWizard({
   open,
   targetDate,
   initialRecord,
+  entryMode = 'edit',
+  initialStepId,
   isSubmitting,
   onClose,
   onSave,
 }: JournalRecordWizardProps) {
   const [stepIndex, setStepIndex] = useState(0);
-  const [form, setForm] = useState<JournalRecordInput>(() => recordToForm(initialRecord, targetDate));
+  const [form, setForm] = useState<JournalRecordInput>(() =>
+    recordToForm(initialRecord, targetDate, entryMode),
+  );
   const [stressScale, setStressScale] = useState(0);
 
-  const stepSequence = useMemo(() => buildStepSequence(form.hadSymptoms), [form.hadSymptoms]);
+  const stepSequence = useMemo(
+    () => buildWizardStepSequence(entryMode, form.hadSymptoms),
+    [entryMode, form.hadSymptoms],
+  );
   const currentStepId = stepSequence[stepIndex] ?? STEP_SYMPTOM;
   const totalSteps = stepSequence.length;
 
   useEffect(() => {
     if (!open) return;
-    const nextForm = recordToForm(initialRecord, targetDate);
+    const nextForm = recordToForm(initialRecord, targetDate, entryMode);
     setForm(nextForm);
     setStressScale(stressToScale(nextForm.stressLevel));
-    setStepIndex(0);
-  }, [open, initialRecord, targetDate]);
+    const sequence = buildWizardStepSequence(entryMode, nextForm.hadSymptoms);
+    const startIndex = initialStepId ? wizardStepIndex(sequence, initialStepId) : 0;
+    setStepIndex(startIndex);
+  }, [open, initialRecord, targetDate, entryMode, initialStepId]);
 
   useEffect(() => {
     if (stepIndex >= stepSequence.length) {
@@ -216,7 +227,8 @@ export function JournalRecordWizard({
             <span className="text-sm font-medium text-muted">
               {stepIndex + 1}/{totalSteps}
             </span>
-            <p className="text-[11px] text-muted">
+            <p className="text-[11px] text-muted">{wizardTitle(entryMode)}</p>
+            <p className="text-[10px] text-muted/80">
               {isToday ? '오늘' : formatJournalDateLabel(form.recordDate)}
             </p>
           </div>
