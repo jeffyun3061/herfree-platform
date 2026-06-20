@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
 import { Card } from '@/components/ui/Card';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import {
   AdminManageRow,
   AdminPublishHeader,
@@ -34,6 +35,7 @@ export function AdminVideosSection() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
 
   const previewVideoId = useMemo(() => extractYoutubeVideoId(form.youtubeUrl), [form.youtubeUrl]);
   const canSubmit = form.title.trim().length > 0 && previewVideoId !== null;
@@ -80,6 +82,21 @@ export function AdminVideosSection() {
     }
   };
 
+  const handleDelete = async (videoId: number) => {
+    setIsSubmitting(true);
+    setActionError(null);
+    try {
+      await adminApi.deleteVideo(videoId);
+      setDeleteTargetId(null);
+      if (editingId === videoId) resetForm();
+      await refetch();
+    } catch (err) {
+      setActionError(getErrorMessage(err));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const startEdit = (video: (typeof videoPage.content)[number]) => {
     setEditingId(video.id);
     setForm({
@@ -95,7 +112,7 @@ export function AdminVideosSection() {
       <AdminPublishHeader
         title="영상 링크 등록"
         description="유튜브 URL만 등록하면 됩니다. 파일 업로드 없이 /videos 에 노출됩니다."
-        note="공개 목록에는 최신 노출 영상 6개만 보입니다. 더 등록해도 되고, 오래된 영상은 숨기기로 정리하세요."
+        note="공개 목록에는 최신 노출 영상 6개만 보입니다. 숨기기는 임시 비노출, 삭제는 DB에서 제거됩니다."
       />
 
       <Card className="space-y-4">
@@ -173,6 +190,7 @@ export function AdminVideosSection() {
               isSubmitting={isSubmitting}
               onEdit={() => startEdit(video)}
               onToggleVisibility={() => void toggleVisibility(video.id, video.isVisible)}
+              onDelete={() => setDeleteTargetId(video.id)}
               preview={
                 <img
                   src={`https://img.youtube.com/vi/${video.youtubeVideoId}/mqdefault.jpg`}
@@ -189,6 +207,17 @@ export function AdminVideosSection() {
           )}
         </div>
       </div>
+
+      <ConfirmModal
+        open={deleteTargetId !== null}
+        title="영상 삭제"
+        message="이 영상을 삭제할까요? 삭제 후에는 복구할 수 없습니다."
+        confirmLabel="삭제"
+        variant="danger"
+        isLoading={isSubmitting}
+        onConfirm={() => deleteTargetId !== null && void handleDelete(deleteTargetId)}
+        onClose={() => setDeleteTargetId(null)}
+      />
     </div>
   );
 }

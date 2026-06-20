@@ -90,4 +90,11 @@ public class VideoService {
         return VideoResponse.from(video);
     }
 
+    @Transactional
+    public void deleteVideo(Long videoId) {
+        Video video = videoRepository.findById(videoId)
+                .orElseThrow(VideoNotFoundException::new);
+        videoRepository.delete(video);
+    }
+
 }

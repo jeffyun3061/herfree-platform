@@ -2,6 +2,7 @@ import type { PageData } from '@/domain/common/types';
 import type { AdminJournalStats } from '@/domain/journal/types';
 import type { AdminUser, UserRole, UserStatus } from '@/domain/user/types';
 import type { Content } from '@/domain/content/types';
+import type { AdminNotice } from '@/domain/notice/types';
 import type { Product } from '@/domain/product/types';
 import type { Report, ReportProcessInput, ReportStatus } from '@/domain/report/types';
 import type { Video } from '@/domain/video/types';
@@ -74,6 +75,10 @@ export function setContentVisibility(contentId: number, isVisible: boolean): Pro
   });
 }
 
+export function deleteContent(contentId: number): Promise<void> {
+  return request<void>(`/api/admin/contents/${contentId}`, { method: 'DELETE' });
+}
+
 export type VideoCreateInput = {
   title: string;
   youtubeUrl: string;
@@ -114,6 +119,10 @@ export function fetchAdminVideos(params: { page?: number; size?: number } = {}):
   });
 }
 
+export function deleteVideo(videoId: number): Promise<void> {
+  return request<void>(`/api/admin/videos/${videoId}`, { method: 'DELETE' });
+}
+
 export type ProductCreateInput = {
   name: string;
   category: string;
@@ -138,6 +147,46 @@ export function setProductVisibility(productId: number, isVisible: boolean): Pro
     method: 'PATCH',
     body: { isVisible },
   });
+}
+
+export function deleteProduct(productId: number): Promise<void> {
+  return request<void>(`/api/admin/products/${productId}`, { method: 'DELETE' });
+}
+
+export type NoticeCreateInput = {
+  title: string;
+  content: string;
+};
+
+export type NoticeUpdateInput = NoticeCreateInput;
+
+export function fetchAdminNotices(params: { page?: number; size?: number } = {}): Promise<PageData<AdminNotice>> {
+  return request<PageData<AdminNotice>>('/api/admin/notices', {
+    query: {
+      page: params.page ?? 0,
+      size: params.size ?? 50,
+      sort: 'createdAt,desc',
+    },
+  });
+}
+
+export function createNotice(input: NoticeCreateInput): Promise<AdminNotice> {
+  return request<AdminNotice>('/api/admin/notices', { method: 'POST', body: input });
+}
+
+export function updateNotice(postId: number, input: NoticeUpdateInput): Promise<AdminNotice> {
+  return request<AdminNotice>(`/api/admin/notices/${postId}`, { method: 'PATCH', body: input });
+}
+
+export function setNoticeVisibility(postId: number, isVisible: boolean): Promise<AdminNotice> {
+  return request<AdminNotice>(`/api/admin/notices/${postId}/visibility`, {
+    method: 'PATCH',
+    body: { isVisible },
+  });
+}
+
+export function deleteNotice(postId: number): Promise<void> {
+  return request<void>(`/api/admin/notices/${postId}`, { method: 'DELETE' });
 }
 
 export function fetchAdminJournalStats(): Promise<AdminJournalStats> {

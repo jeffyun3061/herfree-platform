@@ -68,4 +68,11 @@ public class ProductService {
         product.updateVisibility(request.isVisible());
         return ProductResponse.from(product);
     }
+
+    @Transactional
+    public void deleteProduct(Long productId) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(ProductNotFoundException::new);
+        productRepository.delete(product);
+    }
 }

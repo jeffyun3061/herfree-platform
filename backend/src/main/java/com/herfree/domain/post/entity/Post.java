@@ -93,6 +93,10 @@ public class Post extends BaseTimeEntity {
         this.status = PostStatus.HIDDEN;
     }
 
+    public void restore() {
+        this.status = PostStatus.ACTIVE;
+    }
+
     // 작성자 또는 탈퇴 시 soft delete — 물리 삭제를 피하는 이유는 연관 댓글·신고 데이터를 보존하기 위함이다
     public void delete() {
         this.status = PostStatus.DELETED;

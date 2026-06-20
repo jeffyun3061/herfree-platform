@@ -94,6 +94,12 @@ public class ContentService {
         return ContentResponse.from(content);
     }
 
+    @Transactional
+    public void deleteContent(Long contentId) {
+        Content content = findContentForAdmin(contentId);
+        content.delete();
+    }
+
     private Content findContentForAdmin(Long contentId) {
         return contentRepository.findById(contentId)
                 .filter(content -> content.getStatus() != ContentStatus.DELETED)

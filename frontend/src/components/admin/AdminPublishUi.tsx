@@ -71,6 +71,7 @@ type AdminManageRowProps = {
   statusVariant?: 'default' | 'muted';
   onEdit: () => void;
   onToggleVisibility: () => void;
+  onDelete?: () => void;
   isVisible: boolean;
   isSubmitting?: boolean;
   preview?: React.ReactNode;
@@ -83,6 +84,7 @@ export function AdminManageRow({
   statusVariant = 'default',
   onEdit,
   onToggleVisibility,
+  onDelete,
   isVisible,
   isSubmitting,
   preview,
@@ -121,6 +123,16 @@ export function AdminManageRow({
           >
             {isVisible ? '숨기기' : '다시 노출'}
           </button>
+          {onDelete && (
+            <button
+              type="button"
+              disabled={isSubmitting}
+              onClick={onDelete}
+              className="rounded-lg border border-red-200 px-2.5 py-1 text-[11px] text-red-600 hover:bg-red-50 disabled:opacity-60"
+            >
+              삭제
+            </button>
+          )}
         </div>
       </div>
     </div>

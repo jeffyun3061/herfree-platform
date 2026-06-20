@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
 import { Card } from '@/components/ui/Card';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { Badge } from '@/components/ui/Badge';
 import { getErrorMessage } from '@/lib/api/client';
 import * as adminApi from '@/lib/api/admin';
@@ -27,6 +28,7 @@ export function AdminProductsSection() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
 
   const resetForm = () => {
     setForm(EMPTY_FORM);
@@ -66,6 +68,21 @@ export function AdminProductsSection() {
     setActionError(null);
     try {
       await adminApi.setProductVisibility(productId, !isVisible);
+      await refetch();
+    } catch (err) {
+      setActionError(getErrorMessage(err));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (productId: number) => {
+    setIsSubmitting(true);
+    setActionError(null);
+    try {
+      await adminApi.deleteProduct(productId);
+      setDeleteTargetId(null);
+      if (editingId === productId) resetForm();
       await refetch();
     } catch (err) {
       setActionError(getErrorMessage(err));
@@ -162,10 +179,29 @@ export function AdminProductsSection() {
               >
                 {product.isVisible ? '숨기기' : '노출'}
               </Button>
+              <Button
+                size="sm"
+                variant="danger"
+                disabled={isSubmitting}
+                onClick={() => setDeleteTargetId(product.id)}
+              >
+                삭제
+              </Button>
             </div>
           </Card>
         ))}
       </div>
+
+      <ConfirmModal
+        open={deleteTargetId !== null}
+        title="제품 삭제"
+        message="이 제품을 삭제할까요? 삭제 후에는 복구할 수 없습니다."
+        confirmLabel="삭제"
+        variant="danger"
+        isLoading={isSubmitting}
+        onConfirm={() => deleteTargetId !== null && void handleDelete(deleteTargetId)}
+        onClose={() => setDeleteTargetId(null)}
+      />
     </div>
   );
 }

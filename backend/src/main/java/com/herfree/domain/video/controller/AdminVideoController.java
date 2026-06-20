@@ -13,6 +13,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -57,5 +58,11 @@ public class AdminVideoController {
             @Valid @RequestBody VideoVisibilityRequest request
     ) {
         return ResponseEntity.ok(ApiResponse.success(videoService.updateVisibility(videoId, request)));
+    }
+
+    @DeleteMapping("/{videoId}")
+    public ResponseEntity<ApiResponse<Void>> deleteVideo(@PathVariable Long videoId) {
+        videoService.deleteVideo(videoId);
+        return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

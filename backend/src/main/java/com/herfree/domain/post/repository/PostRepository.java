@@ -54,4 +54,10 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             @Param("keyword") String keyword,
             @Param("viewerId") Long viewerId,
             Pageable pageable);
+
+    Page<Post> findByBoard_BoardTypeAndStatusInOrderByCreatedAtDesc(
+            String boardType, java.util.Collection<PostStatus> statuses, Pageable pageable);
+
+    java.util.Optional<Post> findByIdAndBoard_BoardTypeAndStatusNot(
+            Long id, String boardType, PostStatus status);
 }
