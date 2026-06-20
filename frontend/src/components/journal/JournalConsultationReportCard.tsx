@@ -17,6 +17,7 @@ import { cn } from '@/lib/cn';
 type JournalConsultationReportCardProps = {
   summary: JournalReviewSummary;
   className?: string;
+  compact?: boolean;
 };
 
 const SEVERITY_LEGEND: Array<{
@@ -31,6 +32,7 @@ const SEVERITY_LEGEND: Array<{
 export function JournalConsultationReportCard({
   summary,
   className,
+  compact = false,
 }: JournalConsultationReportCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -78,24 +80,28 @@ export function JournalConsultationReportCard({
   };
 
   return (
-    <div className={cn('space-y-3', className)}>
+    <div className={cn(compact ? 'space-y-2' : 'space-y-3', className)}>
       <div
         ref={cardRef}
         className="overflow-hidden rounded-card border border-border/60 bg-white shadow-card"
       >
-        <div className="bg-primary px-5 py-5 text-primary-foreground">
-          <div className="flex items-center gap-2">
-            <span className="rounded-full bg-white/15 px-2 py-0.5 text-xs font-semibold tracking-wide">
-              Herfree
-            </span>
-          </div>
-          <h3 className="mt-3 font-display text-lg font-bold">기록 요약 리포트</h3>
-          <p className="mt-1 text-xs text-primary-foreground/80">
+        <div className={cn('bg-primary text-primary-foreground', compact ? 'px-4 py-3' : 'px-5 py-5')}>
+          {!compact && (
+            <div className="flex items-center gap-2">
+              <span className="rounded-full bg-white/15 px-2 py-0.5 text-xs font-semibold tracking-wide">
+                Herfree
+              </span>
+            </div>
+          )}
+          <h3 className={cn('font-display font-bold', compact ? 'text-sm' : 'mt-3 text-lg')}>
+            기록 요약 리포트
+          </h3>
+          <p className="mt-0.5 text-[11px] text-primary-foreground/80">
             {formatReviewDateRange(summary.periodStart, summary.periodEnd, summary.periodDays)}
           </p>
         </div>
 
-        <div className="space-y-5 px-5 py-5">
+        <div className={cn('space-y-4', compact ? 'px-4 py-3' : 'space-y-5 px-5 py-5')}>
           <section>
             <p className="text-sm font-semibold text-ink">
               증상 기록 일수 {summary.symptomDays}일 / {summary.periodDays}일
@@ -151,50 +157,66 @@ export function JournalConsultationReportCard({
             </div>
           </section>
 
-          <section className="grid gap-3 sm:grid-cols-3">
+          <section className={cn(compact ? 'grid gap-2' : 'grid gap-3 sm:grid-cols-3')}>
             <ReportStat
               icon="✨"
               label="전조 증상"
               value={formatLabelList(summary.prodromalOrder, '—')}
+              compact={compact}
             />
-            <ReportStat icon="🌙" label="평균 수면" value={summary.avgSleepLabel} />
-            <ReportStat icon="〰️" label="평균 스트레스" value={summary.avgStressLabel} />
+            <ReportStat icon="🌙" label="평균 수면" value={summary.avgSleepLabel} compact={compact} />
+            <ReportStat icon="〰️" label="평균 스트레스" value={summary.avgStressLabel} compact={compact} />
           </section>
 
-          <section className="rounded-xl bg-canvas px-4 py-3">
-            <p className="text-sm font-semibold text-ink">복용 기록</p>
-            <p className="mt-1 text-sm text-ink-soft">
-              기록된 날 {summary.medicationRecordedDays}일
-            </p>
-            <p className="mt-0.5 text-xs text-muted">{summary.medicationPattern}</p>
-          </section>
+          {!compact && (
+            <section className="rounded-xl bg-canvas px-4 py-3">
+              <p className="text-sm font-semibold text-ink">복용 기록</p>
+              <p className="mt-1 text-sm text-ink-soft">
+                기록된 날 {summary.medicationRecordedDays}일
+              </p>
+              <p className="mt-0.5 text-xs text-muted">{summary.medicationPattern}</p>
+            </section>
+          )}
 
-          <p className="flex items-center gap-1.5 text-xs text-muted">
+          <p className="flex items-center gap-1.5 text-[11px] text-muted">
             <span aria-hidden>🔒</span>
             개인 메모와 닉네임 제외
           </p>
         </div>
       </div>
 
-      <div className="flex flex-col gap-2 sm:flex-row">
-        <Button fullWidth variant="secondary" disabled={pending} onClick={handlePdfSave}>
-          PDF 저장
+      <div className={cn('flex gap-2', compact ? 'flex-row' : 'flex-col sm:flex-row')}>
+        <Button
+          fullWidth
+          variant="secondary"
+          size={compact ? 'sm' : 'md'}
+          disabled={pending}
+          onClick={handlePdfSave}
+        >
+          PDF
         </Button>
-        <Button fullWidth disabled={pending} onClick={() => void handleCreateLink()}>
-          링크 만들기
+        <Button
+          fullWidth
+          size={compact ? 'sm' : 'md'}
+          disabled={pending}
+          onClick={() => void handleCreateLink()}
+        >
+          링크
         </Button>
       </div>
 
-      <button
-        type="button"
-        className="w-full text-center text-xs font-medium text-primary"
-        disabled={pending}
-        onClick={() => void handleSaveImage()}
-      >
-        리포트 이미지로 저장
-      </button>
+      {!compact && (
+        <button
+          type="button"
+          className="w-full text-center text-xs font-medium text-primary"
+          disabled={pending}
+          onClick={() => void handleSaveImage()}
+        >
+          리포트 이미지로 저장
+        </button>
+      )}
 
-      {message && <p className="text-center text-xs text-primary">{message}</p>}
+      {message && <p className="text-center text-[11px] text-primary">{message}</p>}
     </div>
   );
 }
@@ -203,18 +225,27 @@ function ReportStat({
   icon,
   label,
   value,
+  compact,
 }: {
   icon: string;
   label: string;
   value: string;
+  compact?: boolean;
 }) {
   return (
-    <div className="rounded-xl border border-border/50 bg-white px-3 py-3">
-      <p className="flex items-center gap-1 text-[11px] font-semibold text-muted">
+    <div
+      className={cn(
+        'rounded-xl border border-border/50 bg-white',
+        compact ? 'px-2.5 py-2' : 'px-3 py-3',
+      )}
+    >
+      <p className="flex items-center gap-1 text-[10px] font-semibold text-muted">
         <span aria-hidden>{icon}</span>
         {label}
       </p>
-      <p className="mt-1 text-sm font-medium text-ink">{value}</p>
+      <p className={cn('mt-0.5 font-medium text-ink', compact ? 'text-[11px]' : 'text-sm')}>
+        {value}
+      </p>
     </div>
   );
 }

@@ -1,9 +1,9 @@
 export const NAV_ITEMS = [
   { href: '/', label: '홈', icon: 'home' as const },
   { href: '/community', label: '커뮤니티', icon: 'community' as const },
-  { href: '/journal', label: '일지', icon: 'journal' as const },
   { href: '/contents', label: '정보', icon: 'info' as const },
-  { href: '/mypage', label: '마이', icon: 'mypage' as const },
+  { href: '/videos', label: '영상', icon: 'video' as const },
+  { href: '/mypage', label: '마이페이지', icon: 'mypage' as const },
 ] as const;
 
 export const DESKTOP_NAV_ITEMS = [

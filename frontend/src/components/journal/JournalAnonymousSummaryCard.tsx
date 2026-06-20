@@ -15,6 +15,7 @@ import { cn } from '@/lib/cn';
 type JournalAnonymousSummaryCardProps = {
   summary: JournalReviewSummary;
   className?: string;
+  compact?: boolean;
 };
 
 function severityDotColor(tier: JournalReviewSummary['weekDays'][number]['severityTier']) {
@@ -22,7 +23,11 @@ function severityDotColor(tier: JournalReviewSummary['weekDays'][number]['severi
   return tier === 'HIGH' ? 'bg-[#E74C3C]' : 'bg-[#E67E22]';
 }
 
-export function JournalAnonymousSummaryCard({ summary, className }: JournalAnonymousSummaryCardProps) {
+export function JournalAnonymousSummaryCard({
+  summary,
+  className,
+  compact = false,
+}: JournalAnonymousSummaryCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -63,19 +68,21 @@ export function JournalAnonymousSummaryCard({ summary, className }: JournalAnony
   };
 
   return (
-    <div className={cn('space-y-3', className)}>
+    <div className={cn(compact ? 'space-y-2' : 'space-y-3', className)}>
       <div
         ref={cardRef}
         className="overflow-hidden rounded-card border border-border/60 bg-white shadow-card"
       >
-        <div className="flex items-center justify-between border-b border-border/50 px-5 py-4">
-          <h3 className="font-display text-base font-bold text-ink">최근 30일 기록 요약</h3>
-          <span className="text-lg text-sage" aria-hidden>
-            🌿
-          </span>
-        </div>
+        {!compact && (
+          <div className="flex items-center justify-between border-b border-border/50 px-5 py-4">
+            <h3 className="font-display text-base font-bold text-ink">최근 30일 기록 요약</h3>
+            <span className="text-lg text-sage" aria-hidden>
+              🌿
+            </span>
+          </div>
+        )}
 
-        <div className="space-y-4 px-5 py-4">
+        <div className={cn('space-y-3', compact ? 'px-4 py-3' : 'space-y-4 px-5 py-4')}>
           <section className="flex items-start gap-3">
             <span className="text-lg" aria-hidden>
               📅
@@ -120,24 +127,32 @@ export function JournalAnonymousSummaryCard({ summary, className }: JournalAnony
           </section>
         </div>
 
-        <div className="space-y-2 border-t border-border/50 bg-canvas/60 px-5 py-4">
-          <p className="flex items-center gap-1.5 text-xs text-muted">
-            <span aria-hidden>🔒</span>
-            메모는 공유되지 않아요
-          </p>
-          <p className="rounded-xl bg-primary/10 px-3 py-2 text-xs font-medium text-primary">
-            개인 정보는 포함되지 않아요. 안심하고 공유하세요.
-          </p>
-        </div>
+        {!compact && (
+          <div className="space-y-2 border-t border-border/50 bg-canvas/60 px-5 py-4">
+            <p className="flex items-center gap-1.5 text-xs text-muted">
+              <span aria-hidden>🔒</span>
+              메모는 공유되지 않아요
+            </p>
+            <p className="rounded-xl bg-primary/10 px-3 py-2 text-xs font-medium text-primary">
+              개인 정보는 포함되지 않아요. 안심하고 공유하세요.
+            </p>
+          </div>
+        )}
       </div>
 
-      <div className="flex flex-col gap-2 sm:flex-row">
-        <Button fullWidth disabled={pending} onClick={() => void handleShare()}>
-          커뮤니티에 공유
+      <div className={cn('flex gap-2', compact ? 'flex-row' : 'flex-col sm:flex-row')}>
+        <Button
+          fullWidth
+          size={compact ? 'sm' : 'md'}
+          disabled={pending}
+          onClick={() => void handleShare()}
+        >
+          공유
         </Button>
         <Button
           fullWidth
           variant="secondary"
+          size={compact ? 'sm' : 'md'}
           disabled={pending}
           onClick={() => void handleSaveImage()}
         >
@@ -145,15 +160,17 @@ export function JournalAnonymousSummaryCard({ summary, className }: JournalAnony
         </Button>
       </div>
 
-      <p className="text-center text-xs text-muted">
-        커뮤니티 글 작성은{' '}
-        <Link href="/community" className="font-medium text-primary underline-offset-2 hover:underline">
-          커뮤니티
-        </Link>
-        에서 이어서 진행할 수 있어요.
-      </p>
+      {!compact && (
+        <p className="text-center text-xs text-muted">
+          커뮤니티 글 작성은{' '}
+          <Link href="/community" className="font-medium text-primary underline-offset-2 hover:underline">
+            커뮤니티
+          </Link>
+          에서 이어서 진행할 수 있어요.
+        </p>
+      )}
 
-      {message && <p className="text-center text-xs text-primary">{message}</p>}
+      {message && <p className="text-center text-[11px] text-primary">{message}</p>}
     </div>
   );
 }

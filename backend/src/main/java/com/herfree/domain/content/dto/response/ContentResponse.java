@@ -1,6 +1,7 @@
 package com.herfree.domain.content.dto.response;
 
 import com.herfree.domain.content.entity.Content;
+import com.herfree.domain.content.entity.ContentStatus;
 import java.time.LocalDateTime;
 
 public record ContentResponse(
@@ -10,6 +11,7 @@ public record ContentResponse(
         String content,
         String category,
         String contentType,
+        ContentStatus status,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {
@@ -21,6 +23,7 @@ public record ContentResponse(
                 content.getContent(),
                 content.getCategory(),
                 content.getContentType(),
+                content.getStatus(),
                 content.getCreatedAt(),
                 content.getUpdatedAt()
         );

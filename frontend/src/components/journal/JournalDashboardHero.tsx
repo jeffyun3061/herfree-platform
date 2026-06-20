@@ -1,7 +1,8 @@
 'use client';
 
 import type { JournalDashboard } from '@/domain/journal/types';
-import { JOURNAL_DASHBOARD_HERO_IMAGE } from '@/domain/journal/assets';
+import { PUBLIC_IMAGES } from '@/domain/assets/static';
+import { PublicStaticImage } from '@/components/ui/PublicStaticImage';
 import { formatDashboardDateBadge, formatLastRelapseLabel } from '@/domain/journal/routine';
 import { JournalShareButton } from '@/components/journal/JournalShareButton';
 
@@ -31,11 +32,16 @@ export function JournalDashboardHero({
 
   return (
     <section className="journal-hero-card relative overflow-hidden shadow-card">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={JOURNAL_DASHBOARD_HERO_IMAGE}
+      <PublicStaticImage
+        src={PUBLIC_IMAGES.journalDashboardHero}
         alt=""
-        className="absolute inset-0 h-full w-full object-cover object-center"
+        fill
+        sizes="100vw"
+        className="object-cover object-center"
+      />
+      <div
+        className="absolute inset-0 bg-gradient-to-b from-[#092a2a]/25 via-transparent to-[#092a2a]/55"
+        aria-hidden
       />
 
       <div className="relative z-10 flex h-full min-h-0 flex-col justify-between p-4 sm:p-5">
@@ -63,10 +69,13 @@ export function JournalDashboardHero({
               <p className="text-[13px] leading-relaxed text-white/80">
                 작은 기록이 쌓여
                 <br />
-                지금의 <span className="font-semibold text-white">{relapseFreeDays}일</span>이 됐어요
+                지금의{' '}
+                <span className="font-semibold text-herfree-yellow">{relapseFreeDays}일</span>이 됐어요
               </p>
               <p className="mt-2 font-display font-extrabold leading-none tracking-tight text-white">
-                <span className="text-[2.75rem] sm:text-[3rem]">{relapseFreeDays}</span>
+                <span className="text-[2.75rem] text-herfree-yellow sm:text-[3rem]">
+                  {relapseFreeDays}
+                </span>
                 <span className="ml-2 text-xl font-bold sm:text-2xl">일째 평온</span>
               </p>
             </>

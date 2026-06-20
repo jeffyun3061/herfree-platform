@@ -11,6 +11,7 @@ import { Pagination } from '@/components/common/Pagination';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { MedicalDisclaimer } from '@/components/layout/MedicalDisclaimer';
 import { CONTENT_CATEGORIES, getContentPreview, getContentTypeLabel } from '@/domain/content/types';
+import { AdminPublishLink } from '@/components/admin/AdminPublishLink';
 import { cn } from '@/lib/cn';
 
 function ContentsPageContent() {
@@ -25,9 +26,12 @@ function ContentsPageContent() {
 
   return (
     <>
-      <TopBar title="정보글" showBack />
+      <TopBar title="정보" showBack />
       <div className="page-container mx-auto max-w-content">
-        <MedicalDisclaimer />
+        <div className="flex items-start justify-between gap-3">
+          <MedicalDisclaimer />
+          <AdminPublishLink tab="contents" label="정보 올리기" />
+        </div>
 
         <div className="mt-4 flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
           <button

@@ -2,6 +2,7 @@
 
 import type { JournalDashboard } from '@/domain/journal/types';
 import { buildTodayRoutineItems, type RoutineItemId } from '@/domain/journal/routine';
+import { JOURNAL_ROUTINE_ICON } from '@/domain/assets/static';
 import { JournalIcon } from '@/components/journal/JournalIcon';
 import { cn } from '@/lib/cn';
 
@@ -11,12 +12,6 @@ type JournalRoutineCardProps = {
   onRoutineItemClick?: (itemId: RoutineItemId) => void;
   pulse?: boolean;
   showEmptyHint?: boolean;
-};
-
-const ROUTINE_ICON_NAMES: Record<RoutineItemId, 'moon' | 'pill' | 'smiley'> = {
-  sleep: 'moon',
-  supplement: 'pill',
-  condition: 'smiley',
 };
 
 export function JournalRoutineCard({
@@ -51,10 +46,10 @@ export function JournalRoutineCard({
           <JournalIcon name="clipboard" size={20} />
         </span>
         <div>
-          <h2 className="font-display text-[15px] font-bold text-[var(--color-text-primary)]">
+          <h2 className="text-[14px] font-bold text-[var(--color-text-primary)]">
             오늘의 루틴
           </h2>
-          <p className="text-[11px] text-[var(--color-text-tertiary)]">
+          <p className="text-[10px] text-[var(--color-text-primary)]/70">
             {showEmptyHint ? '기록하기를 누르면 1분이면 채울 수 있어요' : '하루 세 가지만 체크해요'}
           </p>
         </div>
@@ -62,18 +57,19 @@ export function JournalRoutineCard({
 
       <ul className="mt-3">
         {items.map((item, index) => {
-          const RowTag = !item.completed && onRoutineItemClick ? 'button' : 'div';
+          const isClickable = Boolean(onRoutineItemClick);
+          const RowTag = isClickable ? 'button' : 'div';
           return (
             <li
               key={item.id}
               className={cn(index > 0 && 'border-t border-[var(--color-border-tertiary)]/80')}
             >
               <RowTag
-                type={RowTag === 'button' ? 'button' : undefined}
-                onClick={RowTag === 'button' ? () => onRoutineItemClick?.(item.id) : undefined}
+                type={isClickable ? 'button' : undefined}
+                onClick={isClickable ? () => onRoutineItemClick?.(item.id) : undefined}
                 className={cn(
                   'flex w-full items-center gap-3 py-3.5 text-left',
-                  !item.completed && onRoutineItemClick && 'hover:opacity-80',
+                  isClickable && 'hover:opacity-80',
                 )}
               >
                 <span
@@ -82,9 +78,9 @@ export function JournalRoutineCard({
                     item.completed ? 'text-journal-success' : 'text-[var(--color-text-tertiary)]',
                   )}
                 >
-                  <JournalIcon name={ROUTINE_ICON_NAMES[item.id]} size={18} />
+                  <JournalIcon name={JOURNAL_ROUTINE_ICON[item.id]} size={18} />
                 </span>
-                <p className="min-w-0 flex-1 text-[13px] font-medium text-[var(--color-text-primary)]">
+                <p className="min-w-0 flex-1 text-[12px] font-medium text-[var(--color-text-primary)]">
                   {item.label}
                 </p>
                 <span
@@ -115,7 +111,7 @@ export function JournalRoutineCard({
       </ul>
 
       <div className="mt-1 flex items-center gap-3 border-t border-[var(--color-border-tertiary)]/80 pt-3">
-        <span className="shrink-0 text-[11px] font-medium text-[var(--color-text-secondary)]">
+        <span className="shrink-0 text-[10px] font-medium text-[var(--color-text-primary)]">
           {completed}/{total} 완료
         </span>
         <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--color-background-secondary)]">

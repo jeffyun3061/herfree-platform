@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useEffect, useMemo, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { TopBar } from '@/components/layout/TopBar';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -21,8 +21,8 @@ type AdminTab = 'reports' | 'users' | 'contents' | 'videos' | 'products' | 'jour
 const ALL_TABS: { id: AdminTab; label: string; minRole: 'moderator' | 'admin' | 'super' }[] = [
   { id: 'reports', label: '신고', minRole: 'moderator' },
   { id: 'journal', label: '일지 통계', minRole: 'admin' },
-  { id: 'contents', label: '정보글', minRole: 'admin' },
-  { id: 'videos', label: '영상', minRole: 'admin' },
+  { id: 'contents', label: '정보 올리기', minRole: 'admin' },
+  { id: 'videos', label: '영상 등록', minRole: 'admin' },
   { id: 'products', label: '제품', minRole: 'admin' },
   { id: 'users', label: '회원', minRole: 'admin' },
 ];
@@ -38,10 +38,30 @@ function canSeeTab(
 }
 
 export default function AdminPage() {
+  return (
+    <Suspense fallback={<LoadingSpinner />}>
+      <AdminPageContent />
+    </Suspense>
+  );
+}
+
+function AdminPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { isReady, isLoggedIn, user } = useAuth();
   const tabs = useMemo(() => ALL_TABS.filter((tab) => canSeeTab(tab, user?.role)), [user?.role]);
   const [tab, setTab] = useState<AdminTab>('reports');
+
+  useEffect(() => {
+    const fromQuery = searchParams.get('tab');
+    if (
+      fromQuery &&
+      ALL_TABS.some((item) => item.id === fromQuery) &&
+      canSeeTab(ALL_TABS.find((item) => item.id === fromQuery)!, user?.role)
+    ) {
+      setTab(fromQuery as AdminTab);
+    }
+  }, [searchParams, user?.role]);
 
   useEffect(() => {
     if (isReady && !isLoggedIn) {

@@ -74,6 +74,10 @@ public class Content extends BaseTimeEntity {
         this.status = ContentStatus.HIDDEN;
     }
 
+    public void show() {
+        this.status = ContentStatus.ACTIVE;
+    }
+
     // soft delete
     public void delete() {
         this.status = ContentStatus.DELETED;

@@ -16,10 +16,12 @@ type JournalPersonalDashboardProps = {
   onRecordDaily: () => void;
   onRecordRelapse?: () => void;
   onRoutineItemClick?: (itemId: RoutineItemId) => void;
-  communityPosts: Post[];
-  communityLoading: boolean;
+  communityPosts?: Post[];
+  communityLoading?: boolean;
   routinePulse?: boolean;
   hasTodayRecord?: boolean;
+  showCommunity?: boolean;
+  afterCommunity?: React.ReactNode;
 };
 
 /** 목업 기준 홈 스택: 헤더 → 히어로(300:280) → CTA → 루틴 → 커뮤니티 */
@@ -29,10 +31,12 @@ export function JournalPersonalDashboard({
   onRecordDaily,
   onRecordRelapse,
   onRoutineItemClick,
-  communityPosts,
-  communityLoading,
+  communityPosts = [],
+  communityLoading = false,
   routinePulse,
   hasTodayRecord,
+  showCommunity = true,
+  afterCommunity,
 }: JournalPersonalDashboardProps) {
   const showFirstRecordHint = !isLoading && hasTodayRecord === false;
 
@@ -55,12 +59,12 @@ export function JournalPersonalDashboard({
           'journal-record-cta flex w-full items-center justify-center gap-2',
           'rounded-[1rem] border border-[var(--color-border-tertiary)]',
           'bg-[var(--color-background-primary)] px-4 py-3.5',
-          'text-sm font-semibold text-[var(--color-text-primary)] shadow-sm',
+          'text-[12px] font-semibold text-[var(--color-text-primary)] shadow-sm',
           'transition-colors hover:border-primary/25 hover:bg-[var(--color-background-secondary)]/80',
           'disabled:opacity-60',
         )}
       >
-        <JournalIcon name="pencil" size={16} />
+        <JournalIcon name="pencil" size={18} />
         오늘 기록하기
       </button>
 
@@ -72,7 +76,11 @@ export function JournalPersonalDashboard({
         showEmptyHint={showFirstRecordHint}
       />
 
-      <JournalCommunityCard posts={communityPosts} isLoading={communityLoading} />
+      {showCommunity && (
+        <JournalCommunityCard posts={communityPosts} isLoading={communityLoading} />
+      )}
+
+      {afterCommunity}
     </div>
   );
 }

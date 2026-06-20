@@ -1,6 +1,8 @@
 // 정보글 작성 주체 (ContentType enum)
 export type ContentAuthorType = 'CREATOR' | 'DOCTOR' | 'ADMIN';
 
+export type ContentStatus = 'ACTIVE' | 'HIDDEN' | 'DELETED';
+
 // 정보글 응답 (ContentResponse) — category는 서버에서 자유 문자열로 관리된다
 export type Content = {
   id: number;
@@ -9,6 +11,7 @@ export type Content = {
   content: string;
   category: string;
   contentType: string;
+  status?: ContentStatus;
   createdAt: string;
   updatedAt: string;
 };
@@ -24,6 +27,12 @@ export const CONTENT_TYPE_LABELS: Record<string, string> = {
   DOCTOR: '전문가',
   ADMIN: '운영팀',
 };
+
+/** 관리자 등록 시 선택 가능한 작성 주체 */
+export const CONTENT_AUTHOR_TYPE_OPTIONS: { value: ContentAuthorType; label: string }[] = [
+  { value: 'ADMIN', label: '운영팀' },
+  { value: 'DOCTOR', label: '전문가' },
+];
 
 export function getContentTypeLabel(contentType: string): string {
   return CONTENT_TYPE_LABELS[contentType] ?? contentType;

@@ -30,6 +30,12 @@ public class VideoService {
     }
 
     @Transactional(readOnly = true)
+    public Page<VideoResponse> getAdminVideos(Pageable pageable) {
+        return videoRepository.findAllByOrderByCreatedAtDesc(pageable)
+                .map(VideoResponse::from);
+    }
+
+    @Transactional(readOnly = true)
     public VideoResponse getVideo(Long videoId) {
         Video video = videoRepository.findByIdAndIsVisibleTrue(videoId)
                 .orElseThrow(VideoNotFoundException::new);

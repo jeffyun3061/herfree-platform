@@ -1,73 +1,93 @@
 'use client';
 
-import { useMemo } from 'react';
-import { useBoards } from '@/hooks/useBoards';
+import { useAuth } from '@/hooks/useAuth';
 import { usePostList } from '@/hooks/usePosts';
-import { useContentList } from '@/hooks/useContents';
-import { HomeHero } from '@/components/home/HomeHero';
-import { HomeMobileEntry } from '@/components/home/HomeMobileEntry';
-import { TrustCards } from '@/components/home/TrustCards';
-import { PrivateCommunitySection } from '@/components/home/PrivateCommunitySection';
+import { useJournalDashboard } from '@/hooks/useJournal';
+import { useJournalCheckin } from '@/hooks/useJournalCheckin';
+import { GuestHomePage } from '@/components/home/GuestHomePage';
+import { JournalPersonalDashboard } from '@/components/journal/JournalPersonalDashboard';
+import { JournalRecordSheet } from '@/components/journal/JournalRecordSheet';
 import { QuickAccessSection } from '@/components/home/QuickAccessSection';
-import { InfoCategoriesSection } from '@/components/home/InfoCategoriesSection';
-import { ExpertContentSection } from '@/components/home/ExpertContentSection';
-import { AboutSection } from '@/components/home/AboutSection';
 import { MedicalDisclaimer } from '@/components/layout/MedicalDisclaimer';
-import { findBoardByType } from '@/domain/board/types';
+import { ErrorMessage } from '@/components/ui/ErrorMessage';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
-export default function HomePage() {
-  const { boards } = useBoards();
-  const expertBoard = findBoardByType(boards, 'EXPERT');
-  const { postPage: recentPosts, isLoading: recentLoading } = usePostList(undefined, 6);
-  const { postPage: expertPosts, isLoading: expertPostsLoading } = usePostList(
-    expertBoard?.id ?? null,
-    4,
+function LoggedInHomePage() {
+  const { postPage: communityPosts, isLoading: communityLoading } = usePostList(
+    undefined,
+    5,
+    '',
+    'createdAt,desc',
   );
-  const { contentPage, isLoading: contentsLoading } = useContentList(undefined, 8);
 
-  const expertContents = useMemo(
-    () =>
-      contentPage.content.filter(
-        (item) => item.contentType === 'DOCTOR' || item.contentType === 'ADMIN',
-      ),
-    [contentPage.content],
-  );
+  const {
+    data: dashboard,
+    isLoading: dashboardLoading,
+    error: dashboardError,
+    refetch: refetchDashboard,
+  } = useJournalDashboard(true);
+
+  const {
+    routinePulse,
+    error: saveError,
+    wizardProps,
+    handleRoutineItemClick,
+    openDailyWizard,
+    openRelapseWizard,
+  } = useJournalCheckin({
+    isLoggedIn: true,
+    todayRecord: dashboard?.todayRecord,
+    timelineDays: dashboard?.timelineDays ?? [],
+    loginFrom: '/',
+    onAfterSave: refetchDashboard,
+  });
+
+  const hasTodayRecord = Boolean(dashboard?.todayRecord);
 
   return (
-    <div className="bg-canvas pb-8 lg:bg-[#eceae5] lg:pb-14">
-      <div className="page-container space-y-10 lg:space-y-14">
-        <HomeHero />
-        <HomeMobileEntry />
+    <div className="bg-[#e9ebea] pb-10 lg:pb-14">
+      <div className="page-container space-y-4">
+        <JournalPersonalDashboard
+          dashboard={dashboard ?? null}
+          isLoading={dashboardLoading}
+          onRecordDaily={() => openDailyWizard()}
+          onRecordRelapse={openRelapseWizard}
+          onRoutineItemClick={handleRoutineItemClick}
+          communityPosts={communityPosts.content}
+          communityLoading={communityLoading}
+          routinePulse={routinePulse}
+          hasTodayRecord={hasTodayRecord}
+          afterCommunity={
+            <QuickAccessSection layout="home" onChecklistClick={() => openDailyWizard()} />
+          }
+        />
 
-        <div className="hidden lg:block">
-          <TrustCards />
-        </div>
-
-        <div className="lg:grid lg:grid-cols-12 lg:items-start lg:gap-8">
-          <div className="lg:col-span-8">
-            <PrivateCommunitySection
-              posts={recentPosts.content}
-              isLoading={recentLoading}
-            />
-          </div>
-          <div className="mt-10 lg:col-span-4 lg:mt-0 lg:sticky lg:top-24">
-            <QuickAccessSection layout="panel" />
-          </div>
-        </div>
-
-        <div className="space-y-10 lg:space-y-14">
-          <InfoCategoriesSection />
-          <ExpertContentSection
-            expertBoard={expertBoard}
-            expertPosts={expertPosts.content}
-            expertContents={expertContents}
-            isLoading={expertPostsLoading || contentsLoading}
-          />
-          <AboutSection />
-        </div>
+        {(dashboardError || saveError) && (
+          <ErrorMessage message={dashboardError ?? saveError ?? ''} />
+        )}
 
         <MedicalDisclaimer />
       </div>
+
+      <JournalRecordSheet {...wizardProps} />
     </div>
   );
+}
+
+export default function HomePage() {
+  const { isLoggedIn, isReady } = useAuth();
+
+  if (!isReady) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center bg-canvas">
+        <LoadingSpinner label="불러오는 중…" />
+      </div>
+    );
+  }
+
+  if (!isLoggedIn) {
+    return <GuestHomePage />;
+  }
+
+  return <LoggedInHomePage />;
 }

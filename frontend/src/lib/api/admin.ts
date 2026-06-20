@@ -57,6 +57,23 @@ export function hideContent(contentId: number): Promise<void> {
   return request<void>(`/api/admin/contents/${contentId}/hide`, { method: 'PATCH' });
 }
 
+export function fetchAdminContents(params: { page?: number; size?: number } = {}): Promise<PageData<Content>> {
+  return request<PageData<Content>>('/api/admin/contents', {
+    query: {
+      page: params.page ?? 0,
+      size: params.size ?? 50,
+      sort: 'createdAt,desc',
+    },
+  });
+}
+
+export function setContentVisibility(contentId: number, isVisible: boolean): Promise<Content> {
+  return request<Content>(`/api/admin/contents/${contentId}/visibility`, {
+    method: 'PATCH',
+    body: { isVisible },
+  });
+}
+
 export type VideoCreateInput = {
   title: string;
   youtubeUrl: string;
@@ -84,6 +101,16 @@ export function setVideoVisibility(videoId: number, isVisible: boolean): Promise
   return request<Video>(`/api/admin/videos/${videoId}/visibility`, {
     method: 'PATCH',
     body: { isVisible },
+  });
+}
+
+export function fetchAdminVideos(params: { page?: number; size?: number } = {}): Promise<PageData<Video>> {
+  return request<PageData<Video>>('/api/admin/videos', {
+    query: {
+      page: params.page ?? 0,
+      size: params.size ?? 50,
+      sort: 'createdAt,desc',
+    },
   });
 }
 

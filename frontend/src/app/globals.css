@@ -6,21 +6,27 @@
 
 :root {
   --color-background-primary: #ffffff;
-  --color-background-secondary: #f5f5f7;
+  --color-background-secondary: #e9ebea;
   --color-border-secondary: #e8e8ed;
   --color-border-tertiary: #e0e0e5;
-  --color-text-primary: #1a1c1e;
-  --color-text-secondary: #5c5f66;
-  --color-text-tertiary: #8e8e93;
-  --journal-community-bg: #0a1a16;
-  --journal-routine-success: #1d9e75;
+  --color-text-primary: #5b5b5b;
+  --color-text-secondary: #5b5b5b;
+  --color-text-tertiary: #5b5b5b;
+  --herfree-green: #0f5050;
+  --herfree-gray: #5b5b5b;
+  --herfree-yellow: #ffe400;
+  --herfree-bg-muted: #e9ebea;
+  --herfree-bg-dark: #092a2a;
+  --herfree-icon-bg: #e1eae9;
+  --journal-community-bg: #092a2a;
+  --journal-routine-success: #0f5050;
 }
 
 body {
   font-family: 'SUIT', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-weight: 400;
-  background-color: #f5f5f7;
-  color: #1a1c1e;
+  background-color: #e9ebea;
+  color: #5b5b5b;
   -webkit-font-smoothing: antialiased;
   letter-spacing: -0.02em;
 }
@@ -104,10 +110,54 @@ body {
     @apply flex flex-col gap-3;
   }
 
+  .journal-page-stack {
+    @apply flex flex-col gap-3;
+  }
+
   /* 히어로 SVG 원본 비율 300×280 */
   .journal-hero-card {
-    @apply w-full rounded-[1.25rem];
+    @apply relative w-full overflow-hidden rounded-[1.25rem] shadow-card;
     aspect-ratio: 300 / 280;
+  }
+
+  .journal-summary-card {
+    @apply rounded-[1.25rem] border border-[var(--color-border-tertiary)] bg-[var(--color-background-primary)] p-4 shadow-card;
+  }
+
+  .journal-status-strip {
+    @apply flex items-center gap-2 rounded-[1rem] border border-[var(--color-border-tertiary)] bg-white px-3 py-2.5 shadow-sm;
+  }
+
+  .journal-review-panel {
+    @apply rounded-[1.25rem] border border-[var(--color-border-tertiary)] bg-white p-4 shadow-card;
+  }
+
+  .journal-record-screen {
+    @apply fixed inset-0 z-50 overflow-y-auto bg-[#EFF1F0];
+  }
+
+  .journal-record-card {
+    @apply rounded-2xl border border-[#DDE3E1]/80 bg-white p-[18px];
+  }
+
+  .journal-record-card__title {
+    @apply mb-1 text-sm font-semibold text-[#15201D];
+  }
+
+  .journal-record-card__sub {
+    @apply mb-3.5 text-[11.5px] text-[#8B9590];
+  }
+
+  .journal-record-field-label {
+    @apply flex items-center gap-1.5 text-[13px] text-[#5B6864];
+  }
+
+  .journal-record-range {
+    accent-color: #1d9e75;
+  }
+
+  .journal-record-textarea {
+    @apply w-full resize-none rounded-lg border border-[#DDE3E1]/80 p-2 text-[13px] text-[#15201D] outline-none focus:border-[#1D9E75];
   }
 
   .journal-routine-card {
@@ -133,11 +183,9 @@ body {
   }
 
   .quick-access-circle {
-    @apply flex h-[3.75rem] w-[3.75rem] items-center justify-center rounded-full bg-canvas-dark text-primary lg:h-16 lg:w-16;
-  }
-
-  .quick-access-circle--video {
-    @apply bg-primary text-white shadow-sm;
+    @apply flex h-[3.75rem] w-[3.75rem] items-center justify-center rounded-full lg:h-16 lg:w-16;
+    background-color: var(--herfree-icon-bg);
+    color: var(--herfree-green);
   }
 
   .product-card {
@@ -199,10 +247,6 @@ body {
 
   .post-card {
     @apply rounded-card border border-border/50 bg-white p-4 shadow-card transition-shadow hover:shadow-card-hover;
-  }
-
-  .journal-hero-card {
-    @apply relative overflow-hidden rounded-[1.25rem] bg-primary p-6 text-primary-foreground shadow-card;
   }
 
   .journal-wizard-progress {

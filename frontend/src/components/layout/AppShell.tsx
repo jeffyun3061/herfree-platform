@@ -22,7 +22,7 @@ export function AppShell({ children }: AppShellProps) {
       {showHeader && <DesktopHeader />}
       <div className={cn('mx-auto w-full', 'max-w-app lg:max-w-none')}>
         {showHeader && <MobileHeader />}
-        <main className={cn('min-h-screen', showNav && 'pb-[4.75rem] lg:pb-0')}>{children}</main>
+        <main className={cn('min-h-screen', showNav && 'pb-[5.5rem] lg:pb-0')}>{children}</main>
         {showHeader && <SiteFooter />}
       </div>
       {showNav && <BottomNav />}

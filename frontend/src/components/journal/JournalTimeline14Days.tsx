@@ -78,17 +78,17 @@ export function JournalTimeline14Days({ days, isLoading, onDaySelect }: JournalT
   }
 
   return (
-    <section className="rounded-card border border-border/50 bg-white p-5 shadow-card">
-      <h3 className="text-sm font-semibold text-ink">최근 14일 흐름</h3>
-      <p className="mt-1 text-xs text-muted">증상 · 전조 · 수면 · 스트레스 패턴</p>
+    <section className="rounded-card border border-border/50 bg-white p-4 shadow-card">
+      <h3 className="text-[13px] font-semibold text-ink">최근 14일 흐름</h3>
+      <p className="mt-0.5 text-[11px] text-muted">날짜를 눌러 기록을 수정할 수 있어요</p>
 
-      <div className="mt-5 flex items-end justify-between gap-0.5 overflow-x-auto pb-2">
+      <div className="mt-4 flex items-end gap-0.5 overflow-x-auto pb-1">
         {days.map((day) => (
           <DayColumn key={day.date} day={day} onSelect={onDaySelect} />
         ))}
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 border-t border-border/50 pt-4">
+      <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1.5 border-t border-border/50 pt-3">
         {LEGEND.map((item) => (
           <span key={item.key} className="inline-flex items-center gap-1.5 text-[11px] text-muted">
             <span className={cn('h-2 w-2 rounded-full', item.color)} />

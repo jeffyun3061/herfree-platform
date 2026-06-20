@@ -60,7 +60,7 @@ export function JournalShareButton({ dashboard, className, variant = 'default' }
             'text-white/70 disabled:opacity-60',
           )}
         >
-          <JournalIcon name="share" size={16} className="brightness-0 invert opacity-70" />
+          <JournalIcon name="link" size={18} className="opacity-90" />
         </button>
       ) : (
         <Button

@@ -2,7 +2,32 @@
 
 import Link from 'next/link';
 
-export function JournalPrivacyBanner() {
+type JournalPrivacyBannerProps = {
+  compact?: boolean;
+  onOpenRecords?: () => void;
+};
+
+export function JournalPrivacyBanner({ compact, onOpenRecords }: JournalPrivacyBannerProps) {
+  if (compact) {
+    return (
+      <p className="text-center text-[10px] leading-relaxed text-[var(--color-text-tertiary)]">
+        본인만 볼 수 있는 비공개 기록입니다.
+        {onOpenRecords && (
+          <>
+            {' '}
+            <button
+              type="button"
+              onClick={onOpenRecords}
+              className="font-medium text-primary underline-offset-2 hover:underline"
+            >
+              기록 목록
+            </button>
+          </>
+        )}
+      </p>
+    );
+  }
+
   return (
     <section
       className="rounded-card border border-primary/15 bg-primary/5 px-4 py-3.5"

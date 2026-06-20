@@ -11,5 +11,8 @@ public interface VideoRepository extends JpaRepository<Video, Long> {
     // 노출 중인 영상만 최신순으로 조회한다
     Page<Video> findByIsVisibleTrueOrderByCreatedAtDesc(Pageable pageable);
 
+    // 관리자 목록: 노출 여부 무관, 최신순
+    Page<Video> findAllByOrderByCreatedAtDesc(Pageable pageable);
+
     Optional<Video> findByIdAndIsVisibleTrue(Long id);
 }

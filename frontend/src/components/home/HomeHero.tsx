@@ -1,7 +1,8 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
+import { PUBLIC_IMAGES } from '@/domain/assets/static';
+import { PublicStaticImage } from '@/components/ui/PublicStaticImage';
 import { HeroTrustBar } from '@/components/home/HeroTrustBar';
 
 export function HomeHero() {
@@ -44,8 +45,8 @@ export function HomeHero() {
           </div>
         </div>
         <div className="hero-card__visual">
-          <Image
-            src="/images/main.png"
+          <PublicStaticImage
+            src={PUBLIC_IMAGES.homeHero}
             alt=""
             fill
             priority

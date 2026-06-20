@@ -195,13 +195,22 @@ export const PRODROMAL_OPTIONS: { value: string; label: string }[] = [
 
 export const TRIGGER_OPTIONS: { value: string; label: string }[] = [
   { value: 'STRESS', label: '스트레스' },
-  { value: 'SLEEP_DEFICIT', label: '수면 부족' },
+  { value: 'SLEEP_DEFICIT', label: '수면부족' },
   { value: 'ALCOHOL', label: '음주' },
+  { value: 'HIGH_EXERCISE', label: '고강도 운동' },
+  { value: 'SEXUAL_ACTIVITY', label: '성관계' },
   { value: 'MENSTRUATION', label: '생리 전후' },
   { value: 'OVERWORK', label: '과로' },
   { value: 'LOW_IMMUNITY', label: '면역 저하' },
   { value: 'UNKNOWN', label: '모르겠음' },
 ];
+
+/** 오늘 기록하기 증상 트리거 칩 (목업 순서) */
+export const RECORD_SYMPTOM_TRIGGER_OPTIONS = TRIGGER_OPTIONS.filter((option) =>
+  ['STRESS', 'SLEEP_DEFICIT', 'ALCOHOL', 'HIGH_EXERCISE', 'SEXUAL_ACTIVITY', 'UNKNOWN'].includes(
+    option.value,
+  ),
+);
 
 export const MOOD_OPTIONS: { value: MoodType; label: string; emoji: string }[] = [
   { value: 'PEACEFUL', label: '평온', emoji: '😊' },

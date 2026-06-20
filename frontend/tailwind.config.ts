@@ -17,10 +17,18 @@ const config: Config = {
           foreground: '#F8FAFC',
         },
         wrtn: {
-          bg: '#F5F5F7',
+          bg: '#E9EBEA',
           surface: '#FFFFFF',
           border: '#E8E8ED',
-          muted: '#8E8E93',
+          muted: '#5B5B5B',
+        },
+        herfree: {
+          green: '#0F5050',
+          gray: '#5B5B5B',
+          yellow: '#FFE400',
+          'bg-muted': '#E9EBEA',
+          'bg-dark': '#092A2A',
+          'icon-bg': '#E1EAE9',
         },
         canvas: {
           DEFAULT: '#F5F5F7',

@@ -1,3 +1,6 @@
+/** 공개 영상 목록에 노출할 최대 개수 (최신순) */
+export const VIDEO_PUBLIC_LIST_SIZE = 6;
+
 // 영상 응답 (VideoResponse)
 export type Video = {
   id: number;

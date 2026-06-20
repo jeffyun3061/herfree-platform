@@ -1,8 +1,6 @@
 import Image from 'next/image';
-import { JOURNAL_ICONS } from '@/domain/journal/assets';
+import { getJournalIconSrc, type JournalIconName } from '@/domain/assets/static';
 import { cn } from '@/lib/cn';
-
-type JournalIconName = keyof typeof JOURNAL_ICONS;
 
 type JournalIconProps = {
   name: JournalIconName;
@@ -11,8 +9,7 @@ type JournalIconProps = {
 };
 
 export function JournalIcon({ name, className, size = 20 }: JournalIconProps) {
-  const src = JOURNAL_ICONS[name];
-  if (!src) return null;
+  const src = getJournalIconSrc(name);
 
   return (
     <Image
@@ -21,7 +18,8 @@ export function JournalIcon({ name, className, size = 20 }: JournalIconProps) {
       width={size}
       height={size}
       aria-hidden
-      className={cn('shrink-0', className)}
+      unoptimized
+      className={cn('shrink-0 object-contain', className)}
     />
   );
 }

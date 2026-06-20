@@ -2,6 +2,7 @@ package com.herfree.domain.content.repository;
 
 import com.herfree.domain.content.entity.Content;
 import com.herfree.domain.content.entity.ContentStatus;
+import java.util.Collection;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -15,6 +16,9 @@ public interface ContentRepository extends JpaRepository<Content, Long> {
 
     // 카테고리 필터 없이 전체 목록 조회
     Page<Content> findByStatusOrderByCreatedAtDesc(ContentStatus status, Pageable pageable);
+
+    // 관리자 목록: 노출·숨김 포함
+    Page<Content> findByStatusInOrderByCreatedAtDesc(Collection<ContentStatus> statuses, Pageable pageable);
 
     Optional<Content> findByIdAndStatus(Long id, ContentStatus status);
 }
