@@ -12,7 +12,7 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <TopBar title="비밀번호 찾기" showBack centerTitle />
+      <TopBar title="비밀번호 찾기" showBack />
       <div className="mx-auto max-w-app px-5 py-8">
         <div className="mb-8 flex justify-center">
           <BrandMark variant="auth" size="md" />

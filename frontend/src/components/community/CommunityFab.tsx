@@ -6,13 +6,14 @@ import { cn } from '@/lib/cn';
 type CommunityFabProps = {
   href: string;
   className?: string;
+  ariaLabel?: string;
 };
 
-export function CommunityFab({ href, className }: CommunityFabProps) {
+export function CommunityFab({ href, className, ariaLabel = '글쓰기' }: CommunityFabProps) {
   return (
     <Link
       href={href}
-      aria-label="글쓰기"
+      aria-label={ariaLabel}
       className={cn(
         'fixed bottom-[5.5rem] right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-fab transition-transform hover:scale-105 active:scale-95 lg:hidden',
         className,

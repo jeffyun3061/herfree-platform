@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useApiQuery } from '@/hooks/useApiQuery';
 import { fetchVideo } from '@/lib/api/videos';
-import { TopBar } from '@/components/layout/TopBar';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { Button } from '@/components/ui/Button';
@@ -36,7 +36,7 @@ export default function VideoDetailPage() {
 
   return (
     <>
-      <TopBar title="영상" showBack backHref="/videos" />
+      <PageHeader title="영상" showBack backHref="/videos" />
       <div className="page-container pb-8">
         <div className="overflow-hidden rounded-2xl border border-border/80 bg-black">
           <div className="relative aspect-video w-full">

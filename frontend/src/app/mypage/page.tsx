@@ -7,7 +7,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { useMyPosts } from '@/hooks/useMyPosts';
 import { useMyActivity } from '@/hooks/useMyActivity';
 import { useBoards } from '@/hooks/useBoards';
-import { TopBar } from '@/components/layout/TopBar';
 import { PostCard } from '@/components/community/PostCard';
 import { Pagination } from '@/components/common/Pagination';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
@@ -80,7 +79,6 @@ export default function MyPage() {
   if (!isLoggedIn) {
     return (
       <>
-        <TopBar title="마이" className="lg:hidden" />
         <div className="flex flex-col items-center gap-4 px-4 py-16 text-center">
           <p className="text-sm text-muted">로그인 후 내 정보와 작성 글을 확인할 수 있습니다.</p>
           <Link href="/login?from=%2Fmypage">
@@ -123,7 +121,6 @@ export default function MyPage() {
 
   return (
     <>
-      <TopBar title="마이" className="lg:hidden" />
       <div className="page-container">
         <section className="mb-6 rounded-2xl border border-border/80 bg-card p-4">
           <div className="flex items-center gap-4">

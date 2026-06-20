@@ -31,3 +31,16 @@ export function shouldShowShellHeader(pathname: string): boolean {
   }
   return true;
 }
+
+/** 하단 탭 루트 — MobileHeader에 로고 옆 제목만 표시 (뒤로가기 없음) */
+const MOBILE_TAB_ROOT_TITLES: Record<string, string> = {
+  '/contents': '정보',
+  '/videos': '영상',
+  '/mypage': '마이',
+  '/journal': '개인일지',
+  '/community': '커뮤니티',
+};
+
+export function getMobileTabRootTitle(pathname: string): string | null {
+  return MOBILE_TAB_ROOT_TITLES[pathname] ?? null;
+}

@@ -14,7 +14,8 @@ import { Pagination } from '@/components/common/Pagination';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { Button } from '@/components/ui/Button';
-import { getWritableBoards, findBoardByType } from '@/domain/board/types';
+import { AdminPublishFab, AdminPublishLink } from '@/components/admin/AdminPublishLink';
+import { getWritableBoards, findBoardByType, isStaffOnlyBoardType } from '@/domain/board/types';
 import { getErrorMessage } from '@/lib/api/client';
 import { FlowGuideBanner } from '@/components/ui/FlowGuideBanner';
 
@@ -59,14 +60,21 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
     setPage(0);
   };
 
-  const canWrite =
+  const selectedBoard =
+    selectedBoardId !== null ? boards.find((board) => board.id === selectedBoardId) : null;
+  const isNoticeBoard = selectedBoard?.boardType === 'NOTICE';
+  const isStaffOnlyBoard =
+    selectedBoard !== null && selectedBoard !== undefined && isStaffOnlyBoardType(selectedBoard.boardType);
+
+  const canCommunityWrite =
     isLoggedIn &&
+    !isStaffOnlyBoard &&
     (selectedBoardId === null
       ? getWritableBoards(boards).length > 0
       : getWritableBoards(boards).some((b) => b.id === selectedBoardId));
 
   const writeHref =
-    selectedBoardId !== null
+    selectedBoardId !== null && canCommunityWrite
       ? `/community/write?boardId=${selectedBoardId}`
       : '/community/write';
 
@@ -110,12 +118,14 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
         />
       </div>
 
-      <FlowGuideBanner
-        className="mb-4"
-        title="익명으로 이야기 나누는 공간"
-        description="글과 댓글은 커뮤니티에 공개됩니다. 나만 보는 재발·루틴 기록은 개인 일지를 이용해 주세요."
-        link={{ href: '/journal', label: '개인 일지로 비공개 기록하기' }}
-      />
+      {!isNoticeBoard && (
+        <FlowGuideBanner
+          className="mb-4"
+          title="익명으로 이야기 나누는 공간"
+          description="글과 댓글은 커뮤니티에 공개됩니다. 나만 보는 재발·루틴 기록은 개인 일지를 이용해 주세요."
+          link={{ href: '/journal', label: '개인 일지로 비공개 기록하기' }}
+        />
+      )}
 
       {isSymptomBoard && (
         <FlowGuideBanner
@@ -146,18 +156,20 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
         )}
       </div>
 
-      <div className="mb-4 hidden justify-end lg:flex">
-        {canWrite ? (
+      <div className="mb-4 hidden items-center justify-end gap-2 lg:flex">
+        {isNoticeBoard ? (
+          <AdminPublishLink tab="notices" label="공지 올리기" />
+        ) : canCommunityWrite ? (
           <Link href={writeHref}>
             <Button size="sm">글쓰기</Button>
           </Link>
-        ) : (
+        ) : !isLoggedIn ? (
           <Link href={loginHref}>
             <Button size="sm" variant="secondary">
               로그인 후 글쓰기
             </Button>
           </Link>
-        )}
+        ) : null}
       </div>
 
       {isLoadingAll && (
@@ -178,9 +190,9 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
         <div className="py-8">
           <EmptyState
             title="글이 없습니다"
-            description="첫 이야기를 남겨 보세요."
+            description={isNoticeBoard ? '등록된 공지가 없습니다.' : '첫 이야기를 남겨 보세요.'}
             action={
-              canWrite ? (
+              !isNoticeBoard && canCommunityWrite ? (
                 <Link href={writeHref}>
                   <Button size="sm">글쓰기</Button>
                 </Link>
@@ -204,10 +216,11 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
         </div>
       )}
 
-      {canWrite && <CommunityFab href={writeHref} />}
-      {!canWrite && (
+      {canCommunityWrite && <CommunityFab href={writeHref} />}
+      {!canCommunityWrite && !isLoggedIn && !isStaffOnlyBoard && (
         <CommunityFab href={loginHref} className="opacity-90" />
       )}
+      {isNoticeBoard && <AdminPublishFab tab="notices" label="공지 올리기" />}
     </div>
   );
 }

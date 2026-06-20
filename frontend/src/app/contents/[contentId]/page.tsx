@@ -2,7 +2,7 @@
 
 import { useParams } from 'next/navigation';
 import { useContentDetail } from '@/hooks/useContents';
-import { TopBar } from '@/components/layout/TopBar';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { Badge } from '@/components/ui/Badge';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
@@ -26,7 +26,7 @@ export default function ContentDetailPage() {
 
   return (
     <>
-      <TopBar title="정보글" showBack />
+      <PageHeader title="정보글" showBack />
       <article className="px-4 py-5">
         <div className="mb-4 flex items-center gap-2">
           <Badge variant="gold">{content.category}</Badge>

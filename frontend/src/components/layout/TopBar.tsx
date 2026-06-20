@@ -10,6 +10,7 @@ type TopBarProps = {
   rightSlot?: React.ReactNode;
   className?: string;
   brand?: boolean;
+  /** @deprecated 인라인 제목 레이아웃으로 통일됨 — 무시됩니다 */
   centerTitle?: boolean;
 };
 
@@ -20,7 +21,6 @@ export function TopBar({
   rightSlot,
   className,
   brand = false,
-  centerTitle = false,
 }: TopBarProps) {
   const router = useRouter();
 
@@ -32,66 +32,36 @@ export function TopBar({
     router.back();
   };
 
-  if (centerTitle) {
-    return (
-      <header
-        className={cn(
-          'sticky top-0 z-30 grid h-14 grid-cols-[3rem_1fr_3rem] items-center border-b border-wrtn-border bg-white px-2',
-          className,
-        )}
-      >
-        <div className="flex justify-start">
-          {showBack ? (
-            <button
-              type="button"
-              aria-label="뒤로 가기"
-              onClick={handleBack}
-              className="flex h-10 w-10 items-center justify-center rounded-full text-ink transition-colors hover:bg-wrtn-bg"
-            >
-              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M15 6l-6 6 6 6" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
-          ) : (
-            <span />
-          )}
-        </div>
-        <h1 className="truncate text-center text-base font-semibold text-ink">{title}</h1>
-        <div className="flex justify-end">{rightSlot ?? <span />}</div>
-      </header>
-    );
-  }
-
   return (
     <header
       className={cn(
-        'sticky top-0 z-30 flex h-14 items-center justify-between border-b border-wrtn-border bg-white px-4',
+        'sticky top-0 z-30 flex h-12 items-center gap-1 border-b border-wrtn-border bg-white px-2',
         className,
       )}
     >
-      <div className="flex min-w-0 items-center gap-2">
-        {showBack && (
-          <button
-            type="button"
-            aria-label="뒤로 가기"
-            onClick={handleBack}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-ink transition-colors hover:bg-wrtn-bg"
-          >
-            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M15 6l-6 6 6 6" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-        )}
-        <h1
-          className={cn(
-            'truncate',
-            brand ? 'text-lg font-bold tracking-tight text-primary' : 'text-base font-semibold text-ink',
-          )}
+      {showBack ? (
+        <button
+          type="button"
+          aria-label="뒤로 가기"
+          onClick={handleBack}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink transition-colors hover:bg-wrtn-bg"
         >
-          {title}
-        </h1>
-      </div>
-      {rightSlot && <div className="shrink-0">{rightSlot}</div>}
+          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M15 6l-6 6 6 6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+      ) : (
+        <span className="w-1 shrink-0" aria-hidden />
+      )}
+      <h1
+        className={cn(
+          'min-w-0 flex-1 truncate',
+          brand ? 'text-base font-bold tracking-tight text-primary' : 'text-base font-semibold text-ink',
+        )}
+      >
+        {title}
+      </h1>
+      {rightSlot ? <div className="shrink-0">{rightSlot}</div> : null}
     </header>
   );
 }

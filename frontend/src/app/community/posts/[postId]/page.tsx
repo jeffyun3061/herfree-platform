@@ -6,7 +6,8 @@ import Link from 'next/link';
 import { usePostDetail, usePostMutation } from '@/hooks/usePosts';
 import { useComments } from '@/hooks/useComments';
 import { useAuth } from '@/hooks/useAuth';
-import { TopBar } from '@/components/layout/TopBar';
+import { useBoards } from '@/hooks/useBoards';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { ReactionBar } from '@/components/community/ReactionBar';
 import { CommentItem } from '@/components/community/CommentItem';
 import { ReportModal } from '@/components/community/ReportModal';
@@ -17,7 +18,9 @@ import { Button } from '@/components/ui/Button';
 import { Textarea } from '@/components/ui/Textarea';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { buildCommentTree, validateCommentInput } from '@/domain/comment/types';
+import { isStaffOnlyBoardType } from '@/domain/board/types';
 import { displayAuthorNickname } from '@/domain/post/types';
+import { isAdmin } from '@/domain/user/types';
 import { getErrorMessage } from '@/lib/api/client';
 
 type PendingConfirm =
@@ -28,7 +31,8 @@ export default function PostDetailPage() {
   const params = useParams();
   const router = useRouter();
   const postId = Number(params.postId);
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, user } = useAuth();
+  const { boards } = useBoards();
   const { post, isLoading, error } = usePostDetail(postId);
   const { deletePost, isSubmitting: isDeletingPost } = usePostMutation();
   const {
@@ -104,10 +108,12 @@ export default function PostDetailPage() {
       : '이 댓글을 삭제할까요?';
 
   const commentTree = buildCommentTree(commentPage.content);
+  const postBoard = boards.find((board) => board.id === post.boardId);
+  const isStaffOnlyPost = postBoard != null && isStaffOnlyBoardType(postBoard.boardType);
 
   return (
     <>
-      <TopBar
+      <PageHeader
         title={post.boardName}
         showBack
         backHref={`/community/${post.boardId}`}
@@ -118,7 +124,14 @@ export default function PostDetailPage() {
                 신고
               </Button>
             )}
-            {post.isMyPost && (
+            {post.isMyPost && isStaffOnlyPost && isAdmin(user?.role) && (
+              <Link href="/admin?tab=notices">
+                <Button variant="secondary" size="sm">
+                  공지 관리
+                </Button>
+              </Link>
+            )}
+            {post.isMyPost && !isStaffOnlyPost && (
               <>
                 <Link href={`/community/write?postId=${post.id}`}>
                   <Button variant="secondary" size="sm">

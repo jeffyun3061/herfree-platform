@@ -4,14 +4,13 @@ import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useContentList } from '@/hooks/useContents';
-import { TopBar } from '@/components/layout/TopBar';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Pagination } from '@/components/common/Pagination';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { MedicalDisclaimer } from '@/components/layout/MedicalDisclaimer';
 import { CONTENT_CATEGORIES, getContentPreview, getContentTypeLabel } from '@/domain/content/types';
-import { AdminPublishLink } from '@/components/admin/AdminPublishLink';
+import { AdminPublishFab, AdminPublishLink } from '@/components/admin/AdminPublishLink';
 import { cn } from '@/lib/cn';
 
 function ContentsPageContent() {
@@ -26,10 +25,10 @@ function ContentsPageContent() {
 
   return (
     <>
-      <TopBar title="정보" showBack />
-      <div className="page-container mx-auto max-w-content">
-        <div className="flex items-start justify-between gap-3">
-          <MedicalDisclaimer />
+      <div className="page-container mx-auto max-w-content pb-28 lg:pb-10">
+        <MedicalDisclaimer />
+
+        <div className="mt-4 hidden justify-end lg:flex">
           <AdminPublishLink tab="contents" label="정보 올리기" />
         </div>
 
@@ -83,6 +82,7 @@ function ContentsPageContent() {
         )}
         <Pagination page={page} totalPages={contentPage.totalPages} onPageChange={setPage} />
       </div>
+      <AdminPublishFab tab="contents" label="정보 올리기" />
     </>
   );
 }

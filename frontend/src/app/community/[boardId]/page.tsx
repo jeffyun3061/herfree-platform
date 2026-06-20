@@ -2,7 +2,7 @@
 
 import { useParams } from 'next/navigation';
 import { CommunityFeed } from '@/components/community/CommunityFeed';
-import { TopBar } from '@/components/layout/TopBar';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { useBoards } from '@/hooks/useBoards';
 
 export default function BoardPostsPage() {
@@ -13,7 +13,7 @@ export default function BoardPostsPage() {
 
   return (
     <>
-      <TopBar title={board?.name ?? '게시판'} showBack />
+      <PageHeader title={board?.name ?? '게시판'} showBack />
       <CommunityFeed initialBoardId={boardId} />
     </>
   );

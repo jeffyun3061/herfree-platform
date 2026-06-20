@@ -12,7 +12,7 @@ import { CommunityWriteTipsSheet } from '@/components/community/CommunityWriteTi
 import { Textarea } from '@/components/ui/Textarea';
 import { Button } from '@/components/ui/Button';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
-import { getWritableBoards } from '@/domain/board/types';
+import { getWritableBoards, isStaffOnlyBoardType } from '@/domain/board/types';
 import { POST_TITLE_MAX_LENGTH, validatePostInput, pickPostImageUrlForCreate } from '@/domain/post/types';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
@@ -38,6 +38,22 @@ function WritePostForm() {
   const [validationError, setValidationError] = useState<string | null>(null);
   const [initialized, setInitialized] = useState(false);
   const [tipsOpen, setTipsOpen] = useState(false);
+
+  useEffect(() => {
+    if (boardsLoading || boards.length === 0 || isEditMode) return;
+    const target = boards.find((board) => board.id === initialBoardId);
+    if (target && isStaffOnlyBoardType(target.boardType)) {
+      router.replace('/admin?tab=notices');
+    }
+  }, [boardsLoading, boards, initialBoardId, isEditMode, router]);
+
+  useEffect(() => {
+    if (!isEditMode || !existingPost || boards.length === 0) return;
+    const board = boards.find((item) => item.id === existingPost.boardId);
+    if (board && isStaffOnlyBoardType(board.boardType)) {
+      router.replace('/admin?tab=notices');
+    }
+  }, [isEditMode, existingPost, boards, router]);
 
   useEffect(() => {
     if (isEditMode) return;
@@ -72,6 +88,11 @@ function WritePostForm() {
     }
     if (!boardId) {
       setValidationError('게시판을 선택해 주세요.');
+      return;
+    }
+    const selected = boards.find((board) => board.id === boardId);
+    if (selected && isStaffOnlyBoardType(selected.boardType)) {
+      setValidationError('이 게시판에는 운영 관리 화면에서만 글을 등록할 수 있습니다.');
       return;
     }
     setValidationError(null);
@@ -130,7 +151,6 @@ function WritePostForm() {
       <TopBar
         title={isEditMode ? '글 수정' : '커뮤니티 글쓰기'}
         showBack
-        centerTitle
       />
       <form onSubmit={(e) => void handleSubmit(e)} className="space-y-6 px-4 py-5">
         {isSymptomBoard && !isEditMode && <SymptomBoardRedirectBanner />}

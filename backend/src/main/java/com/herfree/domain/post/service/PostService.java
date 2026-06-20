@@ -21,6 +21,7 @@ import com.herfree.domain.user.repository.UserProfileRepository;
 import com.herfree.domain.user.repository.UserRepository;
 import com.herfree.global.util.PostVisibilityPolicy;
 import com.herfree.global.storage.PostImageStorageService;
+import com.herfree.global.util.BoardWritePolicy;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -43,6 +44,8 @@ public class PostService {
     public PostDetailResponse createPost(Long userId, PostCreateRequest request) {
         Board board = boardRepository.findById(request.boardId())
                 .orElseThrow(BoardNotFoundException::new);
+
+        BoardWritePolicy.assertCommunityWritable(board);
 
         User user = userRepository.findById(userId)
                 .orElseThrow(UserNotFoundException::new);
@@ -108,6 +111,8 @@ public class PostService {
         if (!post.getUser().getId().equals(userId)) {
             throw new PostAccessDeniedException();
         }
+
+        BoardWritePolicy.assertCommunityWritable(post.getBoard());
 
         post.update(request.title(), request.content(), request.isAnonymous());
         postImageStorageService.assertImageUrlAllowed(userId, request.imageUrl());

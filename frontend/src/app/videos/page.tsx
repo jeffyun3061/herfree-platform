@@ -3,24 +3,25 @@
 import Link from 'next/link';
 import { useVideos } from '@/hooks/useVideos';
 import { VIDEO_PUBLIC_LIST_SIZE, getVideoThumbnail } from '@/domain/video/types';
-import { TopBar } from '@/components/layout/TopBar';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { AdminPublishLink } from '@/components/admin/AdminPublishLink';
+import { AdminPublishFab, AdminPublishLink } from '@/components/admin/AdminPublishLink';
 
 export default function VideosPage() {
   const { videoPage, isLoading } = useVideos(VIDEO_PUBLIC_LIST_SIZE);
 
   return (
     <>
-      <TopBar title="영상" className="lg:hidden" />
-      <div className="page-container pb-8">
-        <div className="mb-6 flex items-start justify-between gap-3">
+      <div className="page-container pb-28 lg:pb-8">
+        <div className="mb-6 hidden items-center justify-between gap-3 lg:flex">
           <p className="text-sm leading-relaxed text-muted">
             마음을 다스리고 위로를 받을 수 있는 영상을 모았습니다.
           </p>
           <AdminPublishLink tab="videos" label="영상 등록" />
         </div>
+        <p className="mb-6 text-sm leading-relaxed text-muted lg:hidden">
+          마음을 다스리고 위로를 받을 수 있는 영상을 모았습니다.
+        </p>
 
         {isLoading ? (
           <LoadingSpinner label="영상 불러오는 중…" />
@@ -47,6 +48,7 @@ export default function VideosPage() {
           </div>
         )}
       </div>
+      <AdminPublishFab tab="videos" label="영상 등록" />
     </>
   );
 }

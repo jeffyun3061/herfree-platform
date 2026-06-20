@@ -77,9 +77,17 @@ export function findBoardByType(boards: Board[], boardType: BoardType): Board | 
   return boards.find((board) => board.boardType === boardType);
 }
 
+/** 운영자 전용 게시판 — 커뮤니티 글쓰기 UI·API 모두 금지, 공지는 `/admin` CMS 사용 */
+export function isStaffOnlyBoardType(boardType: string): boolean {
+  return boardType === 'NOTICE' || boardType === 'EXPERT';
+}
+
 // 공지·전문가 게시판은 운영자 전용이므로 일반 회원 글쓰기 대상에서 제외한다
 export function getWritableBoards(boards: Board[]): Board[] {
-  return boards.filter(
-    (board) => board.boardType !== 'NOTICE' && board.boardType !== 'EXPERT',
-  );
+  return boards.filter((board) => !isStaffOnlyBoardType(board.boardType));
+}
+
+export function canWriteToBoardViaCommunity(board: Board | undefined | null): boolean {
+  if (!board) return false;
+  return !isStaffOnlyBoardType(board.boardType);
 }
