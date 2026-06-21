@@ -44,7 +44,8 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             JOIN FETCH p.user u
             WHERE p.status = :status
             AND (:boardId IS NULL OR b.id = :boardId)
-            AND (:keyword IS NULL OR :keyword = '' OR LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%')))
+            AND (:boardId IS NOT NULL OR b.boardType NOT IN ('INQUIRY', 'PRIVATE_CONSULT'))
+            AND (:keyword IS NULL OR :keyword = '' OR LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%')))
             AND (:viewerId IS NOT NULL OR p.visibility = 'PUBLIC')
             ORDER BY CASE WHEN b.boardType = 'NOTICE' THEN 0 ELSE 1 END,
                      CASE WHEN b.boardType = 'NOTICE' AND p.isPinned = true THEN 0 ELSE 1 END,
@@ -56,6 +57,38 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             @Param("boardId") Long boardId,
             @Param("keyword") String keyword,
             @Param("viewerId") Long viewerId,
+            Pageable pageable);
+
+    @Query("""
+            SELECT p FROM Post p
+            JOIN FETCH p.board b
+            JOIN FETCH p.user u
+            WHERE p.status = :status
+            AND b.boardType = 'INQUIRY'
+            AND b.id = :boardId
+            AND (:keyword IS NULL OR :keyword = '' OR LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%')))
+            ORDER BY p.createdAt DESC
+            """)
+    Page<Post> searchInquiryPosts(
+            @Param("status") PostStatus status,
+            @Param("boardId") Long boardId,
+            @Param("keyword") String keyword,
+            Pageable pageable);
+
+    @Query("""
+            SELECT p FROM Post p
+            JOIN FETCH p.board b
+            JOIN FETCH p.user u
+            WHERE p.status = :status
+            AND b.boardType = 'PRIVATE_CONSULT'
+            AND b.id = :boardId
+            AND (:keyword IS NULL OR :keyword = '' OR LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%')))
+            ORDER BY p.createdAt DESC
+            """)
+    Page<Post> searchSecretConsultPosts(
+            @Param("status") PostStatus status,
+            @Param("boardId") Long boardId,
+            @Param("keyword") String keyword,
             Pageable pageable);
 
     Page<Post> findByBoard_BoardTypeAndStatusInOrderByCreatedAtDesc(

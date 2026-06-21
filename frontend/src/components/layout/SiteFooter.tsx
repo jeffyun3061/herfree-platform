@@ -19,9 +19,9 @@ export function SiteFooter() {
           <Link href="/forgot-password" className="text-muted hover:text-primary">
             비밀번호 찾기
           </Link>
-          <a href="mailto:support@herfree.kr" className="text-muted hover:text-primary">
+          <Link href="/inquiry" className="text-muted hover:text-primary">
             문의하기
-          </a>
+          </Link>
         </nav>
         <p className="mt-4 text-[10px] text-muted">© {new Date().getFullYear()} Herfree. All rights reserved.</p>
       </div>

@@ -35,8 +35,8 @@
 
 ### 큐레이션 (운영자 CMS)
 - **정보글**: `/contents` — 카테고리 필터, 상세 읽기
-- **영상**: YouTube URL만 등록, 사이트 내 iframe 재생, 공개 **최신 6개**
-- **제품**: 외부 링크 큐레이션, 노출 on/off
+- **영상**: YouTube URL만 등록, 사이트 내 iframe 재생, 추천·순서 기반 **최대 6개**
+- **제품**: API·관리자 CMS는 준비됨 — **런칭 시 UI 비노출** (커뮤니티 신뢰 형성 후 `FEATURE_PRODUCTS_ENABLED`로 공개)
 
 ### 인증·권한
 - JWT (Stateless), 역할: `USER` · `MODERATOR` · `ADMIN` · `SUPER_ADMIN`

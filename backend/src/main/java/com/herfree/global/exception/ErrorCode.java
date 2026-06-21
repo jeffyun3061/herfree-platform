@@ -26,6 +26,8 @@ public enum ErrorCode {
     INVALID_PASSWORD(HttpStatus.UNAUTHORIZED, "비밀번호가 올바르지 않습니다."),
     // 로그인 실패(이메일 없음·비밀번호 불일치) — 존재 여부를 구분하지 않는 통합 메시지
     INVALID_LOGIN_CREDENTIALS(HttpStatus.UNAUTHORIZED, "이메일 또는 비밀번호가 올바르지 않습니다."),
+    // 로그인 10회 연속 실패 후 30분 잠금
+    LOGIN_LOCKED(HttpStatus.TOO_MANY_REQUESTS, "로그인 시도 횟수를 초과했습니다. 30분 후 다시 시도해 주세요."),
     // JWT 위조·만료 모두 401로 통일 — 클라이언트는 재로그인 유도
     INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "유효하지 않은 토큰입니다."),
     // 정지된 계정은 401이 아닌 403으로 처리한다.

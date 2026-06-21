@@ -5,9 +5,11 @@ import { useParams } from 'next/navigation';
 import { useApiQuery } from '@/hooks/useApiQuery';
 import { fetchVideo } from '@/lib/api/videos';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { VideoPlayerSection } from '@/components/video/VideoPlayerSection';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { Button } from '@/components/ui/Button';
+import { Badge } from '@/components/ui/Badge';
 import { getErrorMessage } from '@/lib/api/client';
 
 export default function VideoDetailPage() {
@@ -36,25 +38,33 @@ export default function VideoDetailPage() {
 
   return (
     <>
-      <PageHeader title="영상" showBack backHref="/videos" />
-      <div className="page-container pb-8">
-        <div className="overflow-hidden rounded-2xl border border-border/80 bg-black">
-          <div className="relative aspect-video w-full">
-            <iframe
-              src={`https://www.youtube.com/embed/${video.youtubeVideoId}`}
-              title={video.title}
-              className="absolute inset-0 h-full w-full"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              allowFullScreen
-            />
+      <PageHeader title="영상" showBack backHref="/videos" mobileOnly />
+      <div className="page-container mx-auto max-w-content pb-28 lg:pb-10">
+        <VideoPlayerSection youtubeVideoId={video.youtubeVideoId} title={video.title} />
+
+        <article className="surface-card mt-6 p-5 lg:mt-8 lg:p-7">
+          <div className="flex flex-wrap items-center gap-2">
+            {video.isFeatured && <Badge variant="gold">추천 영상</Badge>}
+            <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-primary/70">
+              YouTube
+            </span>
           </div>
-        </div>
-        <h1 className="mt-4 text-lg font-semibold text-cream-foreground">{video.title}</h1>
-        {video.description && (
-          <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-muted">
-            {video.description}
-          </p>
-        )}
+          <h1 className="mt-3 font-display text-xl font-bold leading-snug text-ink lg:text-2xl">
+            {video.title}
+          </h1>
+          {video.description ? (
+            <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-muted">{video.description}</p>
+          ) : (
+            <p className="mt-4 text-sm text-muted">영상 설명이 준비 중입니다.</p>
+          )}
+          <div className="mt-6 flex flex-wrap gap-2 border-t border-border/60 pt-5">
+            <Link href="/videos">
+              <Button size="sm" variant="secondary">
+                목록으로
+              </Button>
+            </Link>
+          </div>
+        </article>
       </div>
     </>
   );

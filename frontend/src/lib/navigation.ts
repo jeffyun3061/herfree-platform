@@ -39,6 +39,8 @@ const MOBILE_TAB_ROOT_TITLES: Record<string, string> = {
   '/mypage': '마이',
   '/journal': '개인일지',
   '/community': '커뮤니티',
+  '/inquiry': '운영 문의',
+  '/consult': '1:1 비밀 상담',
 };
 
 export function getMobileTabRootTitle(pathname: string): string | null {

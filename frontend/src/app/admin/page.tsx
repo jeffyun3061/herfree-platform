@@ -15,6 +15,7 @@ import { AdminVideosSection } from '@/components/admin/AdminVideosSection';
 import { AdminProductsSection } from '@/components/admin/AdminProductsSection';
 import { AdminJournalStatsSection } from '@/components/admin/AdminJournalStatsSection';
 import { AdminUsersSection } from '@/components/admin/AdminUsersSection';
+import { FEATURE_PRODUCTS_ENABLED } from '@/domain/featureFlags';
 import { isAdmin, isStaff, isSuperAdmin, USER_ROLE_LABELS, type UserRole } from '@/domain/user/types';
 import { cn } from '@/lib/cn';
 
@@ -53,7 +54,14 @@ function AdminPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isReady, isLoggedIn, user } = useAuth();
-  const tabs = useMemo(() => ALL_TABS.filter((tab) => canSeeTab(tab, user?.role)), [user?.role]);
+  const tabs = useMemo(
+    () =>
+      ALL_TABS.filter((tab) => {
+        if (tab.id === 'products' && !FEATURE_PRODUCTS_ENABLED) return false;
+        return canSeeTab(tab, user?.role);
+      }),
+    [user?.role],
+  );
   const [tab, setTab] = useState<AdminTab>('reports');
 
   useEffect(() => {
@@ -130,7 +138,7 @@ function AdminPageContent() {
         {tab === 'notices' && <AdminNoticesSection />}
         {tab === 'contents' && <AdminContentsSection />}
         {tab === 'videos' && <AdminVideosSection />}
-        {tab === 'products' && <AdminProductsSection />}
+        {FEATURE_PRODUCTS_ENABLED && tab === 'products' && <AdminProductsSection />}
         {tab === 'users' && <AdminUsersSection />}
       </div>
     </>

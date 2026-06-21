@@ -3,6 +3,8 @@ package com.herfree.domain.post.service;
 import com.herfree.domain.board.entity.Board;
 import com.herfree.domain.board.exception.BoardNotFoundException;
 import com.herfree.domain.board.repository.BoardRepository;
+import com.herfree.domain.comment.entity.CommentStatus;
+import com.herfree.domain.comment.repository.CommentRepository;
 import com.herfree.domain.post.dto.request.PostCreateRequest;
 import com.herfree.domain.post.dto.request.AdminPostUpdateRequest;
 import com.herfree.domain.post.dto.request.PostUpdateRequest;
@@ -21,15 +23,23 @@ import com.herfree.domain.user.entity.UserProfile;
 import com.herfree.domain.user.exception.UserNotFoundException;
 import com.herfree.domain.user.repository.UserProfileRepository;
 import com.herfree.domain.user.repository.UserRepository;
+import com.herfree.domain.post.entity.PostVisibility;
+import com.herfree.domain.user.entity.UserRole;
 import com.herfree.global.util.PostVisibilityPolicy;
 import com.herfree.global.storage.PostImageStorageService;
 import com.herfree.global.util.BoardWritePolicy;
+import com.herfree.global.util.PrivateBoardPolicy;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -38,6 +48,7 @@ public class PostService {
     private final PostRepository postRepository;
     private final PostImageRepository postImageRepository;
     private final BoardRepository boardRepository;
+    private final CommentRepository commentRepository;
     private final UserRepository userRepository;
     private final UserProfileRepository userProfileRepository;
     private final PostImageStorageService postImageStorageService;
@@ -47,19 +58,23 @@ public class PostService {
         Board board = boardRepository.findById(request.boardId())
                 .orElseThrow(BoardNotFoundException::new);
 
-        BoardWritePolicy.assertCommunityWritable(board);
-
         User user = userRepository.findById(userId)
                 .orElseThrow(UserNotFoundException::new);
 
+        BoardWritePolicy.assertCommunityWritable(board, user.getRole());
+
         postImageStorageService.assertImageUrlAllowed(userId, request.imageUrl());
+
+        PostVisibility visibility = PrivateBoardPolicy.isPrivateBoard(board.getBoardType())
+                ? PostVisibility.MEMBERS_ONLY
+                : request.visibility();
 
         Post post = Post.builder()
                 .board(board)
                 .user(user)
                 .title(request.title())
                 .content(request.content())
-                .visibility(request.visibility())
+                .visibility(visibility)
                 .isAnonymous(request.isAnonymous())
                 .build();
 
@@ -75,15 +90,45 @@ public class PostService {
 
     @Transactional(readOnly = true)
     public Page<PostResponse> getPosts(Long boardId, String keyword, Pageable pageable, Long userId) {
-        String normalizedKeyword = keyword != null ? keyword.trim() : null;
-        return postRepository
-                .searchActivePosts(PostStatus.ACTIVE, boardId, normalizedKeyword, userId, pageable)
-                .map(post -> {
-                    String nickname = userProfileRepository.findByUserId(post.getUser().getId())
-                            .map(UserProfile::getNickname)
-                            .orElse("(알 수 없음)");
-                    return PostResponse.of(post, nickname, userId);
-                });
+        String normalizedKeyword = normalizeKeyword(keyword);
+        UserRole viewerRole = resolveViewerRole(userId);
+        Page<Post> posts = fetchActivePosts(boardId, normalizedKeyword, userId, viewerRole, pageable);
+        boolean trackStaffReplies = boardId != null
+                && boardRepository.findById(boardId)
+                        .map(board -> PrivateBoardPolicy.isPrivateBoard(board.getBoardType()))
+                        .orElse(false);
+        Map<Long, Boolean> staffRepliedMap = trackStaffReplies
+                ? resolveStaffRepliedMap(posts.getContent())
+                : Map.of();
+        return posts.map(post -> {
+            String nickname = userProfileRepository.findByUserId(post.getUser().getId())
+                    .map(UserProfile::getNickname)
+                    .orElse("(알 수 없음)");
+            boolean staffReplied = staffRepliedMap.getOrDefault(post.getId(), false);
+            return PostResponse.of(post, nickname, userId, viewerRole, staffReplied);
+        });
+    }
+
+    private Page<Post> fetchActivePosts(
+            Long boardId,
+            String keyword,
+            Long userId,
+            UserRole viewerRole,
+            Pageable pageable
+    ) {
+        if (boardId != null) {
+            Board board = boardRepository.findById(boardId).orElseThrow(BoardNotFoundException::new);
+            if (PrivateBoardPolicy.isPrivateBoard(board.getBoardType()) && userId == null) {
+                throw new PostAccessDeniedException();
+            }
+            if (PrivateBoardPolicy.isInquiryBoard(board.getBoardType())) {
+                return postRepository.searchInquiryPosts(PostStatus.ACTIVE, boardId, keyword, pageable);
+            }
+            if (PrivateBoardPolicy.isSecretConsultBoard(board.getBoardType())) {
+                return postRepository.searchSecretConsultPosts(PostStatus.ACTIVE, boardId, keyword, pageable);
+            }
+        }
+        return postRepository.searchActivePosts(PostStatus.ACTIVE, boardId, keyword, userId, pageable);
     }
 
     @Transactional
@@ -91,7 +136,8 @@ public class PostService {
         Post post = postRepository.findByIdAndStatus(postId, PostStatus.ACTIVE)
                 .orElseThrow(PostNotFoundException::new);
 
-        PostVisibilityPolicy.assertReadable(post, userId);
+        UserRole viewerRole = resolveViewerRole(userId);
+        PostVisibilityPolicy.assertReadable(post, userId, viewerRole);
 
         post.increaseViewCount();
 
@@ -101,8 +147,9 @@ public class PostService {
 
         boolean isMyPost = userId != null && post.getUser().getId().equals(userId);
         String imageUrl = resolveImageUrl(post.getId());
+        boolean staffReplied = resolveStaffReplied(post);
 
-        return PostDetailResponse.of(post, nickname, isMyPost, imageUrl);
+        return PostDetailResponse.of(post, nickname, isMyPost, imageUrl, staffReplied);
     }
 
     @Transactional
@@ -125,7 +172,7 @@ public class PostService {
                 .orElse("(알 수 없음)");
 
         String imageUrl = resolveImageUrl(post.getId());
-        return PostDetailResponse.of(post, nickname, true, imageUrl);
+        return PostDetailResponse.of(post, nickname, true, imageUrl, resolveStaffReplied(post));
     }
 
     @Transactional
@@ -192,6 +239,31 @@ public class PostService {
 
     private String normalizeKeyword(String keyword) {
         return StringUtils.hasText(keyword) ? keyword.trim() : null;
+    }
+
+    private boolean resolveStaffReplied(Post post) {
+        if (!PrivateBoardPolicy.isPrivateBoard(post.getBoard().getBoardType())) {
+            return false;
+        }
+        return commentRepository.existsStaffReplyOnPost(post.getId(), CommentStatus.ACTIVE);
+    }
+
+    private Map<Long, Boolean> resolveStaffRepliedMap(List<Post> posts) {
+        if (posts.isEmpty()) {
+            return Map.of();
+        }
+        List<Long> ids = posts.stream().map(Post::getId).toList();
+        Set<Long> replied = commentRepository.findPostIdsWithStaffReplies(ids, CommentStatus.ACTIVE);
+        return ids.stream().collect(Collectors.toMap(id -> id, replied::contains));
+    }
+
+    private UserRole resolveViewerRole(Long userId) {
+        if (userId == null) {
+            return null;
+        }
+        return userRepository.findById(userId)
+                .map(User::getRole)
+                .orElse(UserRole.USER);
     }
 
     private void savePostImageIfPresent(Post post, String imageUrl) {

@@ -19,6 +19,7 @@ import { Textarea } from '@/components/ui/Textarea';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { buildCommentTree, validateCommentInput } from '@/domain/comment/types';
 import { isStaffOnlyBoardType } from '@/domain/board/types';
+import { isPrivateBoardType } from '@/domain/board/privateBoard';
 import { displayAuthorNickname } from '@/domain/post/types';
 import { isAdmin, isStaff } from '@/domain/user/types';
 import { getErrorMessage } from '@/lib/api/client';
@@ -36,7 +37,7 @@ export default function PostDetailPage() {
   const postId = Number(params.postId);
   const { isLoggedIn, user } = useAuth();
   const { boards } = useBoards();
-  const { post, isLoading, error } = usePostDetail(postId);
+  const { post, isLoading, error, refetch: refetchPost } = usePostDetail(postId);
   const { deletePost, isSubmitting: isDeletingPost } = usePostMutation();
   const {
     commentPage,
@@ -78,6 +79,7 @@ export default function PostDetailPage() {
     if (ok) {
       setCommentText('');
       setReplyParentId(null);
+      await refetchPost();
     }
   };
 
@@ -87,13 +89,29 @@ export default function PostDetailPage() {
     try {
       if (pendingConfirm.type === 'delete-post') {
         const ok = await deletePost(postId);
-        if (ok) router.replace(`/community/${post?.boardId}`);
+        if (ok) {
+          const board = boards.find((item) => item.id === post?.boardId);
+          const href =
+            board && isPrivateBoardType(board.boardType)
+              ? board.boardType === 'INQUIRY'
+                ? '/inquiry'
+                : '/consult'
+              : `/community/${post?.boardId}`;
+          router.replace(href);
+        }
       } else if (pendingConfirm.type === 'delete-comment') {
         await removeComment(pendingConfirm.commentId);
       } else if (pendingConfirm.type === 'hide-post') {
         setIsHiding(true);
         await adminApi.hidePost(postId);
-        router.replace(`/community/${post?.boardId}`);
+        const board = boards.find((item) => item.id === post?.boardId);
+        const href =
+          board && isPrivateBoardType(board.boardType)
+            ? board.boardType === 'INQUIRY'
+              ? '/inquiry'
+              : '/consult'
+            : `/community/${post?.boardId}`;
+        router.replace(href);
       } else if (pendingConfirm.type === 'hide-comment') {
         setIsHiding(true);
         await adminApi.hideComment(pendingConfirm.commentId);
@@ -145,21 +163,40 @@ export default function PostDetailPage() {
   const commentTree = buildCommentTree(commentPage.content);
   const postBoard = boards.find((board) => board.id === post.boardId);
   const isStaffOnlyPost = postBoard != null && isStaffOnlyBoardType(postBoard.boardType);
+  const isPrivatePost = postBoard != null && isPrivateBoardType(postBoard.boardType);
+  const backHref =
+    isPrivatePost && postBoard?.boardType === 'INQUIRY'
+      ? '/inquiry'
+      : isPrivatePost
+        ? '/consult'
+        : `/community/${post.boardId}`;
+  const showComments = !isPrivatePost || post.isMyPost || staffUser;
+  const canWriteComments = isPrivatePost ? staffUser && isLoggedIn : isLoggedIn;
+  const privateCommentHint = isPrivatePost && post.isMyPost && !staffUser;
 
   return (
     <>
       <PageHeader
         title={post.boardName}
         showBack
-        backHref={`/community/${post.boardId}`}
+        backHref={backHref}
         rightSlot={
           <div className="flex gap-2">
-            {isLoggedIn && (
+            {isLoggedIn && !isPrivatePost && (
               <Button variant="ghost" size="sm" onClick={() => setReportOpen(true)}>
                 신고
               </Button>
             )}
-            {staffUser && !isStaffOnlyPost && (
+            {staffUser && isPrivatePost && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setPendingConfirm({ type: 'hide-post' })}
+              >
+                숨김 처리
+              </Button>
+            )}
+            {staffUser && !isStaffOnlyPost && !isPrivatePost && (
               <>
                 <Link href={`/community/write?postId=${post.id}&admin=1`}>
                   <Button variant="secondary" size="sm">
@@ -202,7 +239,20 @@ export default function PostDetailPage() {
         }
       />
       <article className="px-4 py-5">
-        <h1 className="text-lg font-semibold text-cream-foreground">{post.title}</h1>
+        <div className="flex flex-wrap items-center gap-2">
+          <h1 className="text-lg font-semibold text-cream-foreground">{post.title}</h1>
+          {isPrivatePost && (
+            <span
+              className={`inline-flex items-center rounded-pill px-2.5 py-0.5 text-[11px] font-medium ${
+                post.staffReplied
+                  ? 'bg-primary/15 text-primary'
+                  : 'bg-canvas-dark text-muted'
+              }`}
+            >
+              {post.staffReplied ? '답변완료' : '답변 대기'}
+            </span>
+          )}
+        </div>
         <div className="mt-2 flex gap-2 text-xs text-muted">
           <span>{displayAuthorNickname(post.authorNickname)}</span>
           <span>· 조회 {post.viewCount}</span>
@@ -220,14 +270,22 @@ export default function PostDetailPage() {
           {post.content}
         </p>
 
-        <div className="mt-6 border-t border-border pt-5">
-          <ReactionBar targetType="POST" targetId={post.id} />
-        </div>
+        {!isPrivatePost && (
+          <div className="mt-6 border-t border-border pt-5">
+            <ReactionBar targetType="POST" targetId={post.id} />
+          </div>
+        )}
 
+        {showComments && (
         <section className="mt-8">
           <h2 className="mb-4 font-medium text-cream-foreground">
-            댓글 {commentPage.totalElements}
+            {isPrivatePost ? '운영자 답변' : '댓글'} {commentPage.totalElements}
           </h2>
+          {privateCommentHint && (
+            <p className="mb-4 text-xs leading-relaxed text-muted">
+              운영자 답변이 등록되면 여기에 표시됩니다. 답글은 운영자만 작성할 수 있습니다.
+            </p>
+          )}
           {commentsLoading ? (
             <LoadingSpinner label="댓글 불러오는 중…" />
           ) : (
@@ -237,7 +295,7 @@ export default function PostDetailPage() {
                   key={comment.id}
                   comment={comment}
                   isLoggedIn={isLoggedIn}
-                  isStaff={staffUser && !isStaffOnlyPost}
+                  isStaff={staffUser && (!isStaffOnlyPost || isPrivatePost)}
                   onDelete={(commentId) =>
                     setPendingConfirm({ type: 'delete-comment', commentId })
                   }
@@ -245,17 +303,21 @@ export default function PostDetailPage() {
                     setPendingConfirm({ type: 'hide-comment', commentId })
                   }
                   onReport={(commentId) => setReportCommentId(commentId)}
-                  onReply={(commentId) => {
-                    setReplyParentId(commentId);
-                    setCommentText('');
-                  }}
+                  onReply={
+                    canWriteComments
+                      ? (commentId) => {
+                          setReplyParentId(commentId);
+                          setCommentText('');
+                        }
+                      : undefined
+                  }
                 />
               ))}
               <Pagination page={page} totalPages={commentPage.totalPages} onPageChange={setPage} />
             </>
           )}
 
-          {isLoggedIn ? (
+          {canWriteComments ? (
             <div className="mt-6 space-y-3 rounded-2xl border border-border bg-card p-4">
               {replyParentId !== null && (
                 <p className="text-xs text-primary">
@@ -270,33 +332,36 @@ export default function PostDetailPage() {
                 </p>
               )}
               <Textarea
-                placeholder="댓글을 남겨 주세요."
+                placeholder={isPrivatePost ? '운영자 답변을 작성해 주세요.' : '댓글을 남겨 주세요.'}
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
               />
-              <label className="flex items-center gap-2 text-sm text-muted">
-                <input
-                  type="checkbox"
-                  checked={isAnonymous}
-                  onChange={(e) => setIsAnonymous(e.target.checked)}
-                />
-                익명으로 작성
-              </label>
+              {!isPrivatePost && (
+                <label className="flex items-center gap-2 text-sm text-muted">
+                  <input
+                    type="checkbox"
+                    checked={isAnonymous}
+                    onChange={(e) => setIsAnonymous(e.target.checked)}
+                  />
+                  익명으로 작성
+                </label>
+              )}
               {commentError && <ErrorMessage message={commentError} />}
               {mutationError && <ErrorMessage message={mutationError} />}
               <Button disabled={isSubmitting} onClick={() => void handleComment()}>
-                {isSubmitting ? '등록 중…' : replyParentId ? '답글 등록' : '댓글 등록'}
+                {isSubmitting ? '등록 중…' : replyParentId ? '답글 등록' : isPrivatePost ? '답변 등록' : '댓글 등록'}
               </Button>
             </div>
-          ) : (
+          ) : !isLoggedIn ? (
             <div className="mt-6 rounded-2xl border border-dashed border-border bg-card p-5 text-center">
               <p className="text-sm text-muted">댓글을 남기려면 로그인이 필요합니다.</p>
               <Link href={loginHref} className="mt-3 inline-block">
                 <Button size="sm">로그인하기</Button>
               </Link>
             </div>
-          )}
+          ) : null}
         </section>
+        )}
       </article>
 
       <ReportModal

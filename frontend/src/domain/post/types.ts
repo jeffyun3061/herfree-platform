@@ -11,6 +11,9 @@ export type Post = {
   authorNickname: string;
   viewCount: number;
   createdAt: string;
+  isMyPost: boolean;
+  readable: boolean;
+  staffReplied: boolean;
 };
 
 // 게시글 상세 (PostDetailResponse) — isMyPost로 수정·삭제 버튼 노출을 결정한다
@@ -26,6 +29,7 @@ export type PostDetail = {
   isAnonymous: boolean;
   isMyPost: boolean;
   imageUrl: string | null;
+  staffReplied: boolean;
   createdAt: string;
   updatedAt: string;
 };

@@ -52,7 +52,7 @@ function authPathErrorMessage(status: number, serverMessage?: string): string {
   }
   if (status === 409) return '이미 가입된 이메일이거나 사용 중인 닉네임입니다.';
   if (status === 400) return '입력값을 확인해 주세요.';
-  if (status === 429) return '요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.';
+  if (status === 429) return '로그인 시도 횟수를 초과했습니다. 30분 후 다시 시도해 주세요.';
   if (status >= 500) return '서버에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.';
   return '요청을 처리하지 못했습니다.';
 }

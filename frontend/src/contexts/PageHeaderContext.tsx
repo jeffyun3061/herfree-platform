@@ -19,7 +19,19 @@ export function PageHeaderProvider({ children }: { children: ReactNode }) {
   const [header, setHeaderState] = useState<PageHeaderState | null>(null);
 
   const setHeader = useCallback((next: PageHeaderState | null) => {
-    setHeaderState(next);
+    setHeaderState((prev) => {
+      if (prev === null && next === null) return prev;
+      if (
+        prev !== null &&
+        next !== null &&
+        prev.title === next.title &&
+        prev.showBack === next.showBack &&
+        prev.backHref === next.backHref
+      ) {
+        return prev;
+      }
+      return next;
+    });
   }, []);
 
   const value = useMemo(() => ({ header, setHeader }), [header, setHeader]);

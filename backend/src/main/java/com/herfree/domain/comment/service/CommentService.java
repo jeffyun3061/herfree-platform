@@ -18,6 +18,8 @@ import com.herfree.domain.user.exception.UserNotFoundException;
 import com.herfree.domain.user.repository.UserProfileRepository;
 import com.herfree.domain.user.repository.UserRepository;
 import com.herfree.global.util.PostVisibilityPolicy;
+import com.herfree.global.util.PrivateBoardPolicy;
+import com.herfree.global.util.StaffRolePolicy;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -39,10 +41,15 @@ public class CommentService {
         Post post = postRepository.findByIdAndStatus(postId, PostStatus.ACTIVE)
                 .orElseThrow(PostNotFoundException::new);
 
-        PostVisibilityPolicy.assertReadable(post, userId);
-
         User user = userRepository.findById(userId)
                 .orElseThrow(UserNotFoundException::new);
+
+        PostVisibilityPolicy.assertReadable(post, userId, user.getRole());
+
+        if (PrivateBoardPolicy.isPrivateBoard(post.getBoard().getBoardType())
+                && !PrivateBoardPolicy.canStaffWriteCommentOnPrivateBoard(user.getRole())) {
+            throw new CommentAccessDeniedException();
+        }
 
         // parentId가 있으면 대댓글 — 부모 댓글이 ACTIVE 상태인지 확인한다
         Comment parent = null;
@@ -74,7 +81,15 @@ public class CommentService {
         Post post = postRepository.findByIdAndStatus(postId, PostStatus.ACTIVE)
                 .orElseThrow(PostNotFoundException::new);
 
-        PostVisibilityPolicy.assertReadable(post, currentUserId);
+        var viewerRole = currentUserId == null
+                ? null
+                : userRepository.findById(currentUserId).map(User::getRole).orElse(null);
+        PostVisibilityPolicy.assertReadable(post, currentUserId, viewerRole);
+
+        if (PrivateBoardPolicy.isPrivateBoard(post.getBoard().getBoardType())
+                && !PrivateBoardPolicy.canViewerReadComments(post, currentUserId, viewerRole)) {
+            throw new CommentAccessDeniedException();
+        }
 
         return commentRepository
                 .findByPostIdAndStatusOrderByCreatedAtAsc(postId, CommentStatus.ACTIVE, pageable)
@@ -93,7 +108,16 @@ public class CommentService {
                 .filter(c -> c.getStatus() == CommentStatus.ACTIVE)
                 .orElseThrow(CommentNotFoundException::new);
 
-        if (!comment.getUser().getId().equals(userId)) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(UserNotFoundException::new);
+        Post post = comment.getPost();
+        boolean privateBoard = PrivateBoardPolicy.isPrivateBoard(post.getBoard().getBoardType());
+
+        if (privateBoard) {
+            if (!StaffRolePolicy.isStaff(user.getRole())) {
+                throw new CommentAccessDeniedException();
+            }
+        } else if (!comment.getUser().getId().equals(userId)) {
             throw new CommentAccessDeniedException();
         }
 

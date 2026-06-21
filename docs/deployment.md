@@ -186,14 +186,17 @@ cp .env.prod.example .env.prod   # 값 채우기
 
 ## 9. Go/No-Go (소프트 런칭)
 
-- [ ] PC·모바일 가입/로그인
+- [ ] PC·모바일 가입/로그인 (**시크릿 창**에서 `POST /api/auth/login` → `200` + `accessToken` 확인)
+- [ ] Vercel `API_REWRITE_TARGET` = VPS API URL (502 「백엔드에 연결…」 없음)
 - [ ] 이미지 포함 글쓰기·목록·상세
-- [ ] 신고 → admin 처리
-- [ ] `/actuator/health` 200
+- [ ] 신고 → admin 처리·숨김/복구
+- [ ] `GET /api/health` 또는 `/actuator/health` → 200
 - [ ] DB 백업 파일 생성 확인
-- [ ] prod `ddl-auto: validate` 확인
+- [ ] prod `ddl-auto: validate` · `ADMIN_BOOTSTRAP_ENABLED=false`
 - [ ] CORS·JWT·DB 비밀 env만 (git 없음)
+- [ ] 배포 DB 관리자 계정 SQL 시드 ([admin-setup.md](admin-setup.md))
 - [ ] 시드 콘텐츠 (공지·게시글·정보 최소 1세트)
+- [ ] **제품 큐레이션 UI 비노출** 확인 (`FEATURE_PRODUCTS_ENABLED=false`)
 
 ---
 

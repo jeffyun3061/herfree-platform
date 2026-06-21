@@ -136,6 +136,7 @@ public class UserService {
                 : postRepository.findByUserIdAndStatusOrderByCreatedAtDesc(
                         userId, PostStatus.ACTIVE, pageable);
 
-        return posts.map(post -> PostResponse.of(post, profile.getNickname(), userId));
+        User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
+        return posts.map(post -> PostResponse.of(post, profile.getNickname(), userId, user.getRole()));
     }
 }

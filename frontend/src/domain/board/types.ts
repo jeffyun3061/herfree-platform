@@ -8,7 +8,9 @@ export type BoardType =
   | 'SUPPORT'
   | 'EXPERT'
   | 'PRODUCT_REVIEW'
-  | 'FREE';
+  | 'FREE'
+  | 'INQUIRY'
+  | 'PRIVATE_CONSULT';
 
 // GET /api/boards 응답 (BoardResponse)
 export type Board = {

@@ -7,8 +7,12 @@ import {
   QuickAccessVideoIcon,
 } from '@/components/home/QuickAccessIcons';
 
+import {
+  PRIVATE_BOARD_META,
+} from '@/domain/board/privateBoard';
+
 const QUICK_ITEMS = [
-  { title: '1:1 비밀 상담', href: '/community', Icon: QuickAccessLockIcon },
+  { title: '1:1 비밀 상담', href: PRIVATE_BOARD_META.PRIVATE_CONSULT.path, Icon: QuickAccessLockIcon },
   { title: '체크리스트', href: '/journal?record=daily', Icon: QuickAccessChecklistIcon },
   { title: '전문가 칼럼', href: '/contents', Icon: QuickAccessColumnIcon },
   { title: '헤르프리 영상', href: '/videos', Icon: QuickAccessVideoIcon },

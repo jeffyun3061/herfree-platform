@@ -23,13 +23,13 @@ export function PageHeader({
   rightSlot,
   className,
 }: PageHeaderProps) {
-  const ctx = usePageHeaderContext();
+  const setHeader = usePageHeaderContext()?.setHeader;
 
   useEffect(() => {
-    if (!ctx) return undefined;
-    ctx.setHeader({ title, showBack, backHref });
-    return () => ctx.setHeader(null);
-  }, [title, showBack, backHref, ctx]);
+    if (!setHeader) return undefined;
+    setHeader({ title, showBack, backHref });
+    return () => setHeader(null);
+  }, [title, showBack, backHref, setHeader]);
 
   if (mobileOnly) return null;
 

@@ -14,6 +14,10 @@ import { Textarea } from '@/components/ui/Textarea';
 import { Button } from '@/components/ui/Button';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { getWritableBoards, isStaffOnlyBoardType } from '@/domain/board/types';
+import {
+  getPrivateBoardMetaByType,
+  isPrivateBoardType,
+} from '@/domain/board/privateBoard';
 import { POST_TITLE_MAX_LENGTH, validatePostInput, pickPostImageUrlForCreate } from '@/domain/post/types';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { isStaff } from '@/domain/user/types';
@@ -35,7 +39,9 @@ function WritePostForm() {
   const isStaffAdminEdit = isEditMode && isAdminEdit && staffUser;
 
   const { boards, isLoading: boardsLoading, error: boardsError } = useBoards();
-  const writableBoards = getWritableBoards(boards);
+  const writableBoards = getWritableBoards(boards).filter(
+    (board) => !(staffUser && isPrivateBoardType(board.boardType)),
+  );
   const { post: existingPost, isLoading: postLoading } = usePostDetail(editPostId ?? 0);
   const { createPost, updatePost, isSubmitting, error } = usePostMutation();
 
@@ -55,8 +61,13 @@ function WritePostForm() {
     const target = boards.find((board) => board.id === initialBoardId);
     if (target && isStaffOnlyBoardType(target.boardType)) {
       router.replace('/admin?tab=notices');
+      return;
     }
-  }, [boardsLoading, boards, initialBoardId, isEditMode, router]);
+    if (target && isPrivateBoardType(target.boardType) && staffUser) {
+      const meta = getPrivateBoardMetaByType(target.boardType);
+      router.replace(meta?.path ?? '/');
+    }
+  }, [boardsLoading, boards, initialBoardId, isEditMode, router, staffUser]);
 
   useEffect(() => {
     if (!isEditMode || !existingPost || boards.length === 0) return;
@@ -106,6 +117,10 @@ function WritePostForm() {
       setValidationError('이 게시판에는 운영 관리 화면에서만 글을 등록할 수 있습니다.');
       return;
     }
+    if (selected && isPrivateBoardType(selected.boardType) && staffUser) {
+      setValidationError('문의·상담 글은 일반 회원만 작성할 수 있습니다.');
+      return;
+    }
     setValidationError(null);
 
     if (isEditMode && editPostId) {
@@ -143,7 +158,11 @@ function WritePostForm() {
       isAnonymous,
       imageUrl: pickPostImageUrlForCreate(imageUrl),
     });
-    if (result) router.replace(`/community/posts/${result.id}`);
+    if (result) {
+      const createdBoard = boards.find((item) => item.id === boardId);
+      const privateMeta = createdBoard ? getPrivateBoardMetaByType(createdBoard.boardType) : null;
+      router.replace(privateMeta ? privateMeta.path : `/community/posts/${result.id}`);
+    }
   };
 
   if (isEditMode && (postLoading || !initialized)) {
@@ -172,14 +191,35 @@ function WritePostForm() {
 
   const selectedBoard = writableBoards.find((b) => b.id === boardId);
   const isSymptomBoard = selectedBoard?.boardType === 'SYMPTOM';
+  const privateMeta = selectedBoard ? getPrivateBoardMetaByType(selectedBoard.boardType) : null;
+  const lockedPrivateBoard =
+    !isEditMode &&
+    initialBoardId > 0 &&
+    writableBoards.some(
+      (board) => board.id === initialBoardId && isPrivateBoardType(board.boardType),
+    );
   const titleCounterMax = Math.min(TITLE_UI_MAX, POST_TITLE_MAX_LENGTH);
+  const writeTitle = isStaffAdminEdit
+    ? '운영자 글 수정'
+    : isEditMode
+      ? '글 수정'
+      : privateMeta
+        ? privateMeta.writeLabel
+        : '커뮤니티 글쓰기';
+  const titlePlaceholder = privateMeta
+    ? boardId && selectedBoard?.boardType === 'INQUIRY'
+      ? '문의 제목을 입력해 주세요'
+      : '상담 제목을 입력해 주세요'
+    : '주제를 입력해 주세요';
+  const contentPlaceholder = privateMeta
+    ? selectedBoard?.boardType === 'INQUIRY'
+      ? '문의·건의·신고 내용을 자세히 적어 주세요. 운영팀만 전체 내용을 확인합니다.'
+      : '상담하고 싶은 내용을 편하게 적어 주세요. 관리자만 열람할 수 있습니다.'
+    : '경험, 질문, 위로의 말을 자유롭게 적어 주세요.';
 
   return (
     <div className="min-h-screen bg-wrtn-bg">
-      <TopBar
-        title={isStaffAdminEdit ? '운영자 글 수정' : isEditMode ? '글 수정' : '커뮤니티 글쓰기'}
-        showBack
-      />
+      <TopBar title={writeTitle} showBack />
       <form onSubmit={(e) => void handleSubmit(e)} className="space-y-6 px-4 py-5">
         {isSymptomBoard && !isEditMode && <SymptomBoardRedirectBanner />}
 
@@ -190,7 +230,7 @@ function WritePostForm() {
           <select
             id="board"
             value={boardId}
-            disabled={isEditMode}
+            disabled={isEditMode || lockedPrivateBoard}
             onChange={(e) => setBoardId(Number(e.target.value))}
             className="wrtn-select disabled:opacity-60"
           >
@@ -224,7 +264,7 @@ function WritePostForm() {
             value={title}
             maxLength={POST_TITLE_MAX_LENGTH}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="주제를 입력해 주세요"
+            placeholder={titlePlaceholder}
             className="wrtn-input"
           />
           <p className="wrtn-char-count">
@@ -232,25 +272,29 @@ function WritePostForm() {
           </p>
         </div>
 
-        <CommunityPhotoAttach imageUrl={imageUrl} onChange={setImageUrl} disabled={isSubmitting} />
+        {!privateMeta && (
+          <CommunityPhotoAttach imageUrl={imageUrl} onChange={setImageUrl} disabled={isSubmitting} />
+        )}
 
         <Textarea
           label="본문"
           required
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          placeholder="경험, 질문, 위로의 말을 자유롭게 적어 주세요."
+          placeholder={contentPlaceholder}
         />
 
-        <label className="flex items-center gap-3 rounded-xl border border-wrtn-border bg-white px-4 py-3.5 text-sm text-ink">
-          <input
-            type="checkbox"
-            checked={isAnonymous}
-            onChange={(e) => setIsAnonymous(e.target.checked)}
-            className="h-4 w-4 rounded border-wrtn-border text-primary focus:ring-primary"
-          />
-          익명으로 작성
-        </label>
+        {!privateMeta && (
+          <label className="flex items-center gap-3 rounded-xl border border-wrtn-border bg-white px-4 py-3.5 text-sm text-ink">
+            <input
+              type="checkbox"
+              checked={isAnonymous}
+              onChange={(e) => setIsAnonymous(e.target.checked)}
+              className="h-4 w-4 rounded border-wrtn-border text-primary focus:ring-primary"
+            />
+            익명으로 작성
+          </label>
+        )}
 
         {validationError && <ErrorMessage message={validationError} />}
         {adminSubmitError && <ErrorMessage message={adminSubmitError} />}

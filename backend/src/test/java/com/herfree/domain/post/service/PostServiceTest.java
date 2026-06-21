@@ -24,12 +24,18 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
@@ -243,8 +249,85 @@ class PostServiceTest {
         assertThat(response.isMyPost()).isFalse();
     }
 
+    @Test
+    @DisplayName("게시글 목록 조회 시 keyword는 trim 후 searchActivePosts에 전달된다")
+    void getPosts_withKeyword_delegatesToSearchActivePosts() {
+        Pageable pageable = PageRequest.of(0, 15);
+        Page<Post> emptyPage = new PageImpl<>(List.of(), pageable, 0);
+        given(postRepository.searchActivePosts(
+                        eq(PostStatus.ACTIVE), eq(1L), eq("검색어"), eq(null), eq(pageable)))
+                .willReturn(emptyPage);
+
+        postService.getPosts(1L, "  검색어  ", pageable, null);
+
+        verify(postRepository)
+                .searchActivePosts(PostStatus.ACTIVE, 1L, "검색어", null, pageable);
+    }
+
+    @Test
+    @DisplayName("관리자 숨김 처리 시 ACTIVE 게시글이 HIDDEN 상태로 변경된다")
+    void hidePost_activePost_becomesHidden() {
+        Board board = buildWritableBoard();
+        Post post = Post.builder()
+                .board(board)
+                .user(org.mockito.Mockito.mock(User.class))
+                .title("제목")
+                .content("내용")
+                .visibility(PostVisibility.PUBLIC)
+                .isAnonymous(false)
+                .build();
+
+        given(postRepository.findByIdAndStatus(1L, PostStatus.ACTIVE)).willReturn(Optional.of(post));
+
+        postService.hidePost(1L);
+
+        assertThat(post.getStatus()).isEqualTo(PostStatus.HIDDEN);
+    }
+
+    @Test
+    @DisplayName("관리자 복구 처리 시 HIDDEN 게시글이 ACTIVE 상태로 변경된다")
+    void restorePost_hiddenPost_becomesActive() {
+        Board board = buildWritableBoard();
+        Post post = Post.builder()
+                .board(board)
+                .user(org.mockito.Mockito.mock(User.class))
+                .title("제목")
+                .content("내용")
+                .visibility(PostVisibility.PUBLIC)
+                .isAnonymous(false)
+                .build();
+        post.hide();
+
+        given(postRepository.findByIdAndStatus(1L, PostStatus.HIDDEN)).willReturn(Optional.of(post));
+
+        postService.restorePost(1L);
+
+        assertThat(post.getStatus()).isEqualTo(PostStatus.ACTIVE);
+    }
+
+    @Test
+    @DisplayName("관리자 목록 조회 시 keyword는 trim 후 repository에 전달된다")
+    void getAdminCommunityPosts_withKeyword_delegatesToRepository() {
+        Pageable pageable = PageRequest.of(0, 20);
+        Page<Post> emptyPage = new PageImpl<>(List.of(), pageable, 0);
+        given(postRepository.searchCommunityPostsForAdmin(
+                        eq(List.of(PostStatus.ACTIVE, PostStatus.HIDDEN)), eq("모더"), eq(pageable)))
+                .willReturn(emptyPage);
+
+        postService.getAdminCommunityPosts("  모더  ", null, pageable);
+
+        verify(postRepository)
+                .searchCommunityPostsForAdmin(List.of(PostStatus.ACTIVE, PostStatus.HIDDEN), "모더", pageable);
+    }
+
     // 테스트용 Board 객체를 생성하는 헬퍼 메서드 — 여러 테스트에서 공통으로 사용한다
     private Board buildTestBoard() {
         return org.mockito.Mockito.mock(Board.class);
+    }
+
+    private Board buildWritableBoard() {
+        Board board = org.mockito.Mockito.mock(Board.class);
+        given(board.getBoardType()).willReturn("FREE");
+        return board;
     }
 }

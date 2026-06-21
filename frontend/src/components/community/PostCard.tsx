@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import type { Post } from '@/domain/post/types';
 import { formatRelativeTime } from '@/domain/common/format';
+import { isPrivateBoardType } from '@/domain/board/privateBoard';
 
 type PostCardProps = {
   post: Post;
@@ -48,14 +49,43 @@ export function PostCard({ post, boardName }: PostCardProps) {
   };
 
   const displayBoard = boardName ?? post.boardName;
+  const canOpen = post.readable !== false;
+  const showReplyStatus = isPrivateBoardType(post.boardType) && canOpen;
+
+  if (!canOpen) {
+    return (
+      <article className="post-card opacity-70">
+        <div className="mb-2.5 flex items-center justify-between gap-2">
+          <span className="inline-flex items-center rounded-pill bg-cream-dark px-2.5 py-0.5 text-[11px] font-medium text-muted">
+            {displayBoard.replace(/방$/, '')}
+          </span>
+        </div>
+        <h3 className="text-[15px] font-semibold tracking-wide text-muted">{post.title}</h3>
+        <p className="mt-2 text-xs text-muted">다른 회원의 비공개 글입니다. 내용을 열람할 수 없습니다.</p>
+      </article>
+    );
+  }
 
   return (
     <Link href={`/community/posts/${post.id}`} className="block">
       <article className="post-card">
         <div className="mb-2.5 flex items-center justify-between gap-2">
-          <span className="inline-flex items-center rounded-pill bg-primary/10 px-2.5 py-0.5 text-[11px] font-medium text-primary">
-            {displayBoard.replace(/방$/, '')}
-          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center rounded-pill bg-primary/10 px-2.5 py-0.5 text-[11px] font-medium text-primary">
+              {displayBoard.replace(/방$/, '')}
+            </span>
+            {showReplyStatus && (
+              <span
+                className={`inline-flex items-center rounded-pill px-2.5 py-0.5 text-[11px] font-medium ${
+                  post.staffReplied
+                    ? 'bg-primary/15 text-primary'
+                    : 'bg-canvas-dark text-muted'
+                }`}
+              >
+                {post.staffReplied ? '답변완료' : '답변 대기'}
+              </span>
+            )}
+          </div>
           <button
             type="button"
             onClick={toggleBookmark}

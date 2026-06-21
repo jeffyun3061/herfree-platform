@@ -35,4 +35,24 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
             Pageable pageable);
 
     java.util.Optional<Comment> findByIdAndStatusIn(Long id, java.util.Collection<CommentStatus> statuses);
+
+    @Query("""
+            SELECT DISTINCT c.post.id FROM Comment c
+            JOIN c.user u
+            WHERE c.post.id IN :postIds
+            AND c.status = :status
+            AND u.role IN ('MODERATOR', 'ADMIN', 'SUPER_ADMIN')
+            """)
+    java.util.Set<Long> findPostIdsWithStaffReplies(
+            @Param("postIds") java.util.Collection<Long> postIds,
+            @Param("status") CommentStatus status);
+
+    @Query("""
+            SELECT CASE WHEN COUNT(c) > 0 THEN true ELSE false END FROM Comment c
+            JOIN c.user u
+            WHERE c.post.id = :postId
+            AND c.status = :status
+            AND u.role IN ('MODERATOR', 'ADMIN', 'SUPER_ADMIN')
+            """)
+    boolean existsStaffReplyOnPost(@Param("postId") Long postId, @Param("status") CommentStatus status);
 }

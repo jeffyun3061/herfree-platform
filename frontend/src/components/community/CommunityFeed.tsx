@@ -16,6 +16,7 @@ import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { Button } from '@/components/ui/Button';
 import { AdminPublishFab, AdminPublishLink } from '@/components/admin/AdminPublishLink';
 import { getWritableBoards, findBoardByType, isStaffOnlyBoardType } from '@/domain/board/types';
+import { getCommunityBoards } from '@/domain/board/privateBoard';
 import { getErrorMessage } from '@/lib/api/client';
 import { FlowGuideBanner } from '@/components/ui/FlowGuideBanner';
 
@@ -95,27 +96,32 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
         </p>
       </div>
 
-      <div className="relative mb-4">
-        <svg
-          viewBox="0 0 24 24"
-          className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-        >
-          <circle cx="11" cy="11" r="7" />
-          <path d="M20 20l-3-3" strokeLinecap="round" />
-        </svg>
-        <input
-          type="search"
-          placeholder="제목, 내용, 태그로 검색"
-          value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') handleSearch();
-          }}
-          className="community-search"
-        />
+      <div className="mb-4 flex gap-2">
+        <div className="relative min-w-0 flex-1">
+          <svg
+            viewBox="0 0 24 24"
+            className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <circle cx="11" cy="11" r="7" />
+            <path d="M20 20l-3-3" strokeLinecap="round" />
+          </svg>
+          <input
+            type="search"
+            placeholder="제목, 내용으로 검색"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleSearch();
+            }}
+            className="community-search"
+          />
+        </div>
+        <Button type="button" size="sm" onClick={handleSearch} className="shrink-0">
+          검색
+        </Button>
       </div>
 
       {!isNoticeBoard && (
@@ -140,7 +146,7 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
       {!boardsLoading && boards.length > 0 && (
         <div className="mb-4">
           <BoardTabBar
-            boards={boards}
+            boards={getCommunityBoards(boards)}
             selectedBoardId={selectedBoardId}
             onSelect={handleBoardSelect}
           />
@@ -189,8 +195,14 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
       {!isLoadingAll && !listError && postPage.content.length === 0 && (
         <div className="py-8">
           <EmptyState
-            title="글이 없습니다"
-            description={isNoticeBoard ? '등록된 공지가 없습니다.' : '첫 이야기를 남겨 보세요.'}
+            title={keyword ? '검색 결과가 없습니다' : '글이 없습니다'}
+            description={
+              keyword
+                ? '다른 검색어로 다시 시도해 보세요.'
+                : isNoticeBoard
+                  ? '등록된 공지가 없습니다.'
+                  : '첫 이야기를 남겨 보세요.'
+            }
             action={
               !isNoticeBoard && canCommunityWrite ? (
                 <Link href={writeHref}>
