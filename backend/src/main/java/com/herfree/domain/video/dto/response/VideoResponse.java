@@ -12,6 +12,8 @@ public record VideoResponse(
         String description,
         Long relatedBoardId,
         boolean isVisible,
+        int sortOrder,
+        boolean isFeatured,
         LocalDateTime createdAt
 ) {
     public static VideoResponse from(Video video) {
@@ -24,6 +26,8 @@ public record VideoResponse(
                 video.getDescription(),
                 video.getRelatedBoard() != null ? video.getRelatedBoard().getId() : null,
                 video.isVisible(),
+                video.getSortOrder(),
+                video.isFeatured(),
                 video.getCreatedAt()
         );
     }

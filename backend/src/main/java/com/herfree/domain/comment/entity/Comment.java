@@ -77,6 +77,10 @@ public class Comment extends BaseTimeEntity {
         this.status = CommentStatus.HIDDEN;
     }
 
+    public void restore() {
+        this.status = CommentStatus.ACTIVE;
+    }
+
     // 탈퇴 회원의 댓글은 삭제하지 않고 익명으로 전환한다
     public void anonymize() {
         this.isAnonymous = true;

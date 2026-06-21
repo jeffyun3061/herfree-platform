@@ -51,6 +51,12 @@ public class Content extends BaseTimeEntity {
     @Column(nullable = false, length = 20)
     private ContentStatus status;
 
+    @Column(nullable = false)
+    private int sortOrder;
+
+    @Column(nullable = false)
+    private boolean isPinned;
+
     @Builder
     private Content(User author, String title, String content, String category, String contentType) {
         this.author = author;
@@ -59,6 +65,8 @@ public class Content extends BaseTimeEntity {
         this.category = category;
         this.contentType = contentType;
         this.status = ContentStatus.ACTIVE;
+        this.sortOrder = 0;
+        this.isPinned = false;
     }
 
     // --- 도메인 메서드 ---
@@ -81,5 +89,21 @@ public class Content extends BaseTimeEntity {
     // soft delete
     public void delete() {
         this.status = ContentStatus.DELETED;
+    }
+
+    public void updateSortOrder(int sortOrder) {
+        this.sortOrder = sortOrder;
+    }
+
+    public void pin() {
+        this.isPinned = true;
+    }
+
+    public void unpin() {
+        this.isPinned = false;
+    }
+
+    public void setPinned(boolean pinned) {
+        this.isPinned = pinned;
     }
 }

@@ -1,6 +1,7 @@
 package com.herfree.domain.video.controller;
 
 import com.herfree.domain.video.dto.request.VideoCreateRequest;
+import com.herfree.domain.video.dto.request.VideoCurationRequest;
 import com.herfree.domain.video.dto.request.VideoUpdateRequest;
 import com.herfree.domain.video.dto.request.VideoVisibilityRequest;
 import com.herfree.domain.video.dto.response.VideoResponse;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -31,9 +33,12 @@ public class AdminVideoController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<Page<VideoResponse>>> getVideos(
-            @PageableDefault(size = 50) Pageable pageable
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Boolean visible,
+            @PageableDefault(size = 20) Pageable pageable
     ) {
-        return ResponseEntity.ok(ApiResponse.success(videoService.getAdminVideos(pageable)));
+        return ResponseEntity.ok(
+                ApiResponse.success(videoService.getAdminVideos(keyword, visible, pageable)));
     }
 
     @PostMapping
@@ -58,6 +63,14 @@ public class AdminVideoController {
             @Valid @RequestBody VideoVisibilityRequest request
     ) {
         return ResponseEntity.ok(ApiResponse.success(videoService.updateVisibility(videoId, request)));
+    }
+
+    @PatchMapping("/{videoId}/curation")
+    public ResponseEntity<ApiResponse<VideoResponse>> updateCuration(
+            @PathVariable Long videoId,
+            @RequestBody VideoCurationRequest request
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(videoService.updateCuration(videoId, request)));
     }
 
     @DeleteMapping("/{videoId}")

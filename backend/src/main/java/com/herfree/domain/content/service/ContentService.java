@@ -1,6 +1,7 @@
 package com.herfree.domain.content.service;
 
 import com.herfree.domain.content.dto.request.ContentCreateRequest;
+import com.herfree.domain.content.dto.request.ContentCurationRequest;
 import com.herfree.domain.content.dto.request.ContentUpdateRequest;
 import com.herfree.domain.content.dto.request.ContentVisibilityRequest;
 import com.herfree.domain.content.dto.response.ContentResponse;
@@ -31,19 +32,31 @@ public class ContentService {
         // category가 있으면 필터링, 없으면 전체 조회
         if (StringUtils.hasText(category)) {
             return contentRepository
-                    .findByCategoryAndStatusOrderByCreatedAtDesc(category, ContentStatus.ACTIVE, pageable)
+                    .findByCategoryAndStatusOrderByIsPinnedDescSortOrderDescCreatedAtDesc(
+                            category, ContentStatus.ACTIVE, pageable)
                     .map(ContentResponse::from);
         }
         return contentRepository
-                .findByStatusOrderByCreatedAtDesc(ContentStatus.ACTIVE, pageable)
+                .findByStatusOrderByIsPinnedDescSortOrderDescCreatedAtDesc(ContentStatus.ACTIVE, pageable)
                 .map(ContentResponse::from);
     }
 
     @Transactional(readOnly = true)
-    public Page<ContentResponse> getAdminContents(Pageable pageable) {
-        return contentRepository
-                .findByStatusInOrderByCreatedAtDesc(
-                        List.of(ContentStatus.ACTIVE, ContentStatus.HIDDEN), pageable)
+    public Page<ContentResponse> getAdminContents(
+            String keyword,
+            ContentStatus statusFilter,
+            String category,
+            Pageable pageable
+    ) {
+        List<ContentStatus> statuses = statusFilter != null
+                ? List.of(statusFilter)
+                : List.of(ContentStatus.ACTIVE, ContentStatus.HIDDEN);
+
+        return contentRepository.searchAdminContents(
+                        statuses,
+                        StringUtils.hasText(category) ? category.trim() : null,
+                        StringUtils.hasText(keyword) ? keyword.trim() : null,
+                        pageable)
                 .map(ContentResponse::from);
     }
 
@@ -66,6 +79,10 @@ public class ContentService {
                 .category(request.category())
                 .contentType(request.contentType())
                 .build();
+        content.updateSortOrder(
+                contentRepository.findTopByOrderBySortOrderDesc()
+                        .map(c -> c.getSortOrder() + 1)
+                        .orElse(1));
 
         return ContentResponse.from(contentRepository.save(content));
     }
@@ -90,6 +107,18 @@ public class ContentService {
             content.show();
         } else {
             content.hide();
+        }
+        return ContentResponse.from(content);
+    }
+
+    @Transactional
+    public ContentResponse updateCuration(Long contentId, ContentCurationRequest request) {
+        Content content = findContentForAdmin(contentId);
+        if (request.sortOrder() != null) {
+            content.updateSortOrder(request.sortOrder());
+        }
+        if (request.isPinned() != null) {
+            content.setPinned(request.isPinned());
         }
         return ContentResponse.from(content);
     }

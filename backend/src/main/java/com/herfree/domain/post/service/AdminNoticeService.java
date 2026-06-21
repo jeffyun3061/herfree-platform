@@ -4,6 +4,7 @@ import com.herfree.domain.board.entity.Board;
 import com.herfree.domain.board.exception.BoardNotFoundException;
 import com.herfree.domain.board.repository.BoardRepository;
 import com.herfree.domain.post.dto.request.NoticeCreateRequest;
+import com.herfree.domain.post.dto.request.NoticeCurationRequest;
 import com.herfree.domain.post.dto.request.NoticeUpdateRequest;
 import com.herfree.domain.post.dto.request.NoticeVisibilityRequest;
 import com.herfree.domain.post.dto.response.AdminNoticeResponse;
@@ -21,6 +22,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -33,11 +35,19 @@ public class AdminNoticeService {
     private final UserRepository userRepository;
 
     @Transactional(readOnly = true)
-    public Page<AdminNoticeResponse> getNotices(Pageable pageable) {
+    public Page<AdminNoticeResponse> getNotices(
+            String keyword,
+            PostStatus statusFilter,
+            Pageable pageable
+    ) {
+        List<PostStatus> statuses = statusFilter != null
+                ? List.of(statusFilter)
+                : List.of(PostStatus.ACTIVE, PostStatus.HIDDEN);
+
         return postRepository
-                .findByBoard_BoardTypeAndStatusInOrderByCreatedAtDesc(
-                        NOTICE_BOARD_TYPE,
-                        List.of(PostStatus.ACTIVE, PostStatus.HIDDEN),
+                .searchNoticesForAdmin(
+                        statuses,
+                        StringUtils.hasText(keyword) ? keyword.trim() : null,
                         pageable)
                 .map(AdminNoticeResponse::from);
     }
@@ -57,6 +67,11 @@ public class AdminNoticeService {
                 .visibility(PostVisibility.PUBLIC)
                 .isAnonymous(false)
                 .build();
+        post.updateSortOrder(
+                postRepository.findTopByBoard_BoardTypeAndStatusInOrderBySortOrderDesc(
+                                NOTICE_BOARD_TYPE, List.of(PostStatus.ACTIVE, PostStatus.HIDDEN))
+                        .map(p -> p.getSortOrder() + 1)
+                        .orElse(1));
 
         return AdminNoticeResponse.from(postRepository.save(post));
     }
@@ -75,6 +90,18 @@ public class AdminNoticeService {
             post.restore();
         } else {
             post.hide();
+        }
+        return AdminNoticeResponse.from(post);
+    }
+
+    @Transactional
+    public AdminNoticeResponse updateCuration(Long postId, NoticeCurationRequest request) {
+        Post post = findNoticeForAdmin(postId);
+        if (request.sortOrder() != null) {
+            post.updateSortOrder(request.sortOrder());
+        }
+        if (request.isPinned() != null) {
+            post.setPinned(request.isPinned());
         }
         return AdminNoticeResponse.from(post);
     }

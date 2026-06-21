@@ -7,7 +7,9 @@ type CommentItemProps = {
   comment: CommentTreeNode;
   depth?: number;
   isLoggedIn?: boolean;
+  isStaff?: boolean;
   onDelete?: (commentId: number) => void;
+  onHide?: (commentId: number) => void;
   onReport?: (commentId: number) => void;
   onReply?: (commentId: number) => void;
 };
@@ -27,12 +29,15 @@ export function CommentItem({
   comment,
   depth = 0,
   isLoggedIn = false,
+  isStaff = false,
   onDelete,
+  onHide,
   onReport,
   onReply,
 }: CommentItemProps) {
   const canDelete = comment.isMyComment;
   const canReport = isLoggedIn && !comment.isMyComment;
+  const canHide = isStaff && onHide;
 
   return (
     <article
@@ -59,6 +64,11 @@ export function CommentItem({
               신고
             </Button>
           )}
+          {canHide && (
+            <Button variant="ghost" size="sm" onClick={() => onHide(comment.id)}>
+              숨김
+            </Button>
+          )}
           {canDelete && onDelete && (
             <Button variant="ghost" size="sm" className="text-red-600" onClick={() => onDelete(comment.id)}>
               삭제
@@ -77,7 +87,9 @@ export function CommentItem({
               comment={reply}
               depth={depth + 1}
               isLoggedIn={isLoggedIn}
+              isStaff={isStaff}
               onDelete={onDelete}
+              onHide={onHide}
               onReport={onReport}
               onReply={onReply}
             />

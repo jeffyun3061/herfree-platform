@@ -7,6 +7,7 @@ import { TopBar } from '@/components/layout/TopBar';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { Button } from '@/components/ui/Button';
+import { AdminModerationSection } from '@/components/admin/AdminModerationSection';
 import { AdminReportsSection } from '@/components/admin/AdminReportsSection';
 import { AdminContentsSection } from '@/components/admin/AdminContentsSection';
 import { AdminNoticesSection } from '@/components/admin/AdminNoticesSection';
@@ -17,10 +18,11 @@ import { AdminUsersSection } from '@/components/admin/AdminUsersSection';
 import { isAdmin, isStaff, isSuperAdmin, USER_ROLE_LABELS, type UserRole } from '@/domain/user/types';
 import { cn } from '@/lib/cn';
 
-type AdminTab = 'reports' | 'users' | 'notices' | 'contents' | 'videos' | 'products' | 'journal';
+type AdminTab = 'reports' | 'moderation' | 'users' | 'notices' | 'contents' | 'videos' | 'products' | 'journal';
 
 const ALL_TABS: { id: AdminTab; label: string; minRole: 'moderator' | 'admin' | 'super' }[] = [
   { id: 'reports', label: '신고', minRole: 'moderator' },
+  { id: 'moderation', label: '숨김 관리', minRole: 'moderator' },
   { id: 'journal', label: '일지 통계', minRole: 'admin' },
   { id: 'notices', label: '공지 올리기', minRole: 'admin' },
   { id: 'contents', label: '정보 올리기', minRole: 'admin' },
@@ -123,6 +125,7 @@ function AdminPageContent() {
         </div>
 
         {tab === 'reports' && <AdminReportsSection />}
+        {tab === 'moderation' && <AdminModerationSection />}
         {tab === 'journal' && <AdminJournalStatsSection />}
         {tab === 'notices' && <AdminNoticesSection />}
         {tab === 'contents' && <AdminContentsSection />}

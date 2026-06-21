@@ -1,9 +1,11 @@
 package com.herfree.domain.content.controller;
 
 import com.herfree.domain.content.dto.request.ContentCreateRequest;
+import com.herfree.domain.content.dto.request.ContentCurationRequest;
 import com.herfree.domain.content.dto.request.ContentUpdateRequest;
 import com.herfree.domain.content.dto.request.ContentVisibilityRequest;
 import com.herfree.domain.content.dto.response.ContentResponse;
+import com.herfree.domain.content.entity.ContentStatus;
 import com.herfree.domain.content.service.ContentService;
 import com.herfree.global.response.ApiResponse;
 import jakarta.validation.Valid;
@@ -21,6 +23,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -32,9 +35,13 @@ public class AdminContentController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<Page<ContentResponse>>> getContents(
-            @PageableDefault(size = 50) Pageable pageable
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) ContentStatus status,
+            @RequestParam(required = false) String category,
+            @PageableDefault(size = 20) Pageable pageable
     ) {
-        return ResponseEntity.ok(ApiResponse.success(contentService.getAdminContents(pageable)));
+        return ResponseEntity.ok(
+                ApiResponse.success(contentService.getAdminContents(keyword, status, category, pageable)));
     }
 
     @PostMapping
@@ -66,6 +73,14 @@ public class AdminContentController {
             @Valid @RequestBody ContentVisibilityRequest request
     ) {
         return ResponseEntity.ok(ApiResponse.success(contentService.updateVisibility(contentId, request)));
+    }
+
+    @PatchMapping("/{contentId}/curation")
+    public ResponseEntity<ApiResponse<ContentResponse>> updateCuration(
+            @PathVariable Long contentId,
+            @RequestBody ContentCurationRequest request
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(contentService.updateCuration(contentId, request)));
     }
 
     @DeleteMapping("/{contentId}")

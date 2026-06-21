@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { RequireAuth } from '@/components/auth/RequireAuth';
 import { useBoards } from '@/hooks/useBoards';
 import { usePostDetail, usePostMutation } from '@/hooks/usePosts';
+import { useAuth } from '@/hooks/useAuth';
 import { TopBar } from '@/components/layout/TopBar';
 import { SymptomBoardRedirectBanner } from '@/components/community/SymptomBoardRedirectBanner';
 import { CommunityPhotoAttach } from '@/components/community/CommunityPhotoAttach';
@@ -15,6 +16,9 @@ import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { getWritableBoards, isStaffOnlyBoardType } from '@/domain/board/types';
 import { POST_TITLE_MAX_LENGTH, validatePostInput, pickPostImageUrlForCreate } from '@/domain/post/types';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { isStaff } from '@/domain/user/types';
+import { getErrorMessage } from '@/lib/api/client';
+import * as adminApi from '@/lib/api/admin';
 
 const TITLE_UI_MAX = 30;
 
@@ -23,7 +27,12 @@ function WritePostForm() {
   const searchParams = useSearchParams();
   const editPostId = Number(searchParams.get('postId')) || null;
   const initialBoardId = Number(searchParams.get('boardId')) || 0;
+  const isAdminEdit = searchParams.get('admin') === '1';
   const isEditMode = editPostId !== null;
+
+  const { user } = useAuth();
+  const staffUser = isStaff(user?.role);
+  const isStaffAdminEdit = isEditMode && isAdminEdit && staffUser;
 
   const { boards, isLoading: boardsLoading, error: boardsError } = useBoards();
   const writableBoards = getWritableBoards(boards);
@@ -38,6 +47,8 @@ function WritePostForm() {
   const [validationError, setValidationError] = useState<string | null>(null);
   const [initialized, setInitialized] = useState(false);
   const [tipsOpen, setTipsOpen] = useState(false);
+  const [adminSubmitError, setAdminSubmitError] = useState<string | null>(null);
+  const [isAdminSubmitting, setIsAdminSubmitting] = useState(false);
 
   useEffect(() => {
     if (boardsLoading || boards.length === 0 || isEditMode) return;
@@ -98,6 +109,23 @@ function WritePostForm() {
     setValidationError(null);
 
     if (isEditMode && editPostId) {
+      if (isStaffAdminEdit) {
+        setIsAdminSubmitting(true);
+        setAdminSubmitError(null);
+        try {
+          await adminApi.updateAdminPost(editPostId, {
+            title: title.trim(),
+            content: content.trim(),
+          });
+          router.replace(`/community/posts/${editPostId}`);
+        } catch (err) {
+          setAdminSubmitError(getErrorMessage(err));
+        } finally {
+          setIsAdminSubmitting(false);
+        }
+        return;
+      }
+
       const result = await updatePost(editPostId, {
         title,
         content,
@@ -149,7 +177,7 @@ function WritePostForm() {
   return (
     <div className="min-h-screen bg-wrtn-bg">
       <TopBar
-        title={isEditMode ? '글 수정' : '커뮤니티 글쓰기'}
+        title={isStaffAdminEdit ? '운영자 글 수정' : isEditMode ? '글 수정' : '커뮤니티 글쓰기'}
         showBack
       />
       <form onSubmit={(e) => void handleSubmit(e)} className="space-y-6 px-4 py-5">
@@ -225,10 +253,22 @@ function WritePostForm() {
         </label>
 
         {validationError && <ErrorMessage message={validationError} />}
+        {adminSubmitError && <ErrorMessage message={adminSubmitError} />}
         {error && <ErrorMessage message={error} />}
 
-        <Button type="submit" fullWidth size="lg" disabled={isSubmitting || boardId <= 0}>
-          {isSubmitting ? '저장 중…' : isEditMode ? '수정하기' : '등록하기'}
+        <Button
+          type="submit"
+          fullWidth
+          size="lg"
+          disabled={isSubmitting || isAdminSubmitting || boardId <= 0}
+        >
+          {isSubmitting || isAdminSubmitting
+            ? '저장 중…'
+            : isStaffAdminEdit
+              ? '운영자 수정 저장'
+              : isEditMode
+                ? '수정하기'
+                : '등록하기'}
         </Button>
       </form>
 

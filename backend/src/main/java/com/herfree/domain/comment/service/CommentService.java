@@ -1,6 +1,7 @@
 package com.herfree.domain.comment.service;
 
 import com.herfree.domain.comment.dto.request.CommentCreateRequest;
+import com.herfree.domain.comment.dto.response.AdminCommunityCommentResponse;
 import com.herfree.domain.comment.dto.response.CommentResponse;
 import com.herfree.domain.comment.entity.Comment;
 import com.herfree.domain.comment.entity.CommentStatus;
@@ -22,6 +23,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -106,5 +108,37 @@ public class CommentService {
                 .orElseThrow(CommentNotFoundException::new);
 
         comment.hide();
+    }
+
+    @Transactional
+    public void restoreComment(Long commentId) {
+        Comment comment = commentRepository.findByIdAndStatusIn(
+                        commentId, java.util.List.of(CommentStatus.HIDDEN))
+                .orElseThrow(CommentNotFoundException::new);
+
+        comment.restore();
+    }
+
+    @Transactional(readOnly = true)
+    public Page<AdminCommunityCommentResponse> getAdminComments(
+            String keyword,
+            CommentStatus statusFilter,
+            Pageable pageable
+    ) {
+        java.util.List<CommentStatus> statuses = statusFilter != null
+                ? java.util.List.of(statusFilter)
+                : java.util.List.of(CommentStatus.ACTIVE, CommentStatus.HIDDEN);
+
+        return commentRepository.searchForAdmin(statuses, normalizeKeyword(keyword), pageable)
+                .map(comment -> {
+                    String nickname = userProfileRepository.findByUserId(comment.getUser().getId())
+                            .map(UserProfile::getNickname)
+                            .orElse("(알 수 없음)");
+                    return AdminCommunityCommentResponse.from(comment, nickname);
+                });
+    }
+
+    private String normalizeKeyword(String keyword) {
+        return StringUtils.hasText(keyword) ? keyword.trim() : null;
     }
 }

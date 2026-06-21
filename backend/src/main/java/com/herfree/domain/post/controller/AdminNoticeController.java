@@ -1,9 +1,11 @@
 package com.herfree.domain.post.controller;
 
 import com.herfree.domain.post.dto.request.NoticeCreateRequest;
+import com.herfree.domain.post.dto.request.NoticeCurationRequest;
 import com.herfree.domain.post.dto.request.NoticeUpdateRequest;
 import com.herfree.domain.post.dto.request.NoticeVisibilityRequest;
 import com.herfree.domain.post.dto.response.AdminNoticeResponse;
+import com.herfree.domain.post.entity.PostStatus;
 import com.herfree.domain.post.service.AdminNoticeService;
 import com.herfree.global.response.ApiResponse;
 import jakarta.validation.Valid;
@@ -21,6 +23,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -32,9 +35,12 @@ public class AdminNoticeController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<Page<AdminNoticeResponse>>> getNotices(
-            @PageableDefault(size = 50) Pageable pageable
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) PostStatus status,
+            @PageableDefault(size = 20) Pageable pageable
     ) {
-        return ResponseEntity.ok(ApiResponse.success(adminNoticeService.getNotices(pageable)));
+        return ResponseEntity.ok(
+                ApiResponse.success(adminNoticeService.getNotices(keyword, status, pageable)));
     }
 
     @PostMapping
@@ -60,6 +66,14 @@ public class AdminNoticeController {
             @Valid @RequestBody NoticeVisibilityRequest request
     ) {
         return ResponseEntity.ok(ApiResponse.success(adminNoticeService.updateVisibility(postId, request)));
+    }
+
+    @PatchMapping("/{postId}/curation")
+    public ResponseEntity<ApiResponse<AdminNoticeResponse>> updateCuration(
+            @PathVariable Long postId,
+            @RequestBody NoticeCurationRequest request
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(adminNoticeService.updateCuration(postId, request)));
     }
 
     @DeleteMapping("/{postId}")

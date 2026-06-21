@@ -46,7 +46,10 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             AND (:boardId IS NULL OR b.id = :boardId)
             AND (:keyword IS NULL OR :keyword = '' OR LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%')))
             AND (:viewerId IS NOT NULL OR p.visibility = 'PUBLIC')
-            ORDER BY CASE WHEN b.boardType = 'NOTICE' THEN 0 ELSE 1 END, p.createdAt DESC
+            ORDER BY CASE WHEN b.boardType = 'NOTICE' THEN 0 ELSE 1 END,
+                     CASE WHEN b.boardType = 'NOTICE' AND p.isPinned = true THEN 0 ELSE 1 END,
+                     p.sortOrder DESC,
+                     p.createdAt DESC
             """)
     Page<Post> searchActivePosts(
             @Param("status") PostStatus status,
@@ -58,6 +61,52 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     Page<Post> findByBoard_BoardTypeAndStatusInOrderByCreatedAtDesc(
             String boardType, java.util.Collection<PostStatus> statuses, Pageable pageable);
 
+    @Query("""
+            SELECT p FROM Post p
+            JOIN FETCH p.board b
+            WHERE b.boardType = :boardType
+            AND p.status IN :statuses
+            AND (:keyword IS NULL OR :keyword = '' OR LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%')))
+            ORDER BY p.createdAt DESC
+            """)
+    Page<Post> searchByBoardTypeForAdmin(
+            @Param("boardType") String boardType,
+            @Param("statuses") java.util.Collection<PostStatus> statuses,
+            @Param("keyword") String keyword,
+            Pageable pageable);
+
     java.util.Optional<Post> findByIdAndBoard_BoardTypeAndStatusNot(
             Long id, String boardType, PostStatus status);
+
+    @Query("""
+            SELECT p FROM Post p
+            JOIN FETCH p.board b
+            JOIN FETCH p.user u
+            WHERE b.boardType <> 'NOTICE'
+            AND p.status IN :statuses
+            AND (:keyword IS NULL OR :keyword = '' OR LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%')))
+            ORDER BY p.createdAt DESC
+            """)
+    Page<Post> searchCommunityPostsForAdmin(
+            @Param("statuses") java.util.Collection<PostStatus> statuses,
+            @Param("keyword") String keyword,
+            Pageable pageable);
+
+    @Query("""
+            SELECT p FROM Post p
+            JOIN FETCH p.board b
+            WHERE b.boardType = 'NOTICE'
+            AND p.status IN :statuses
+            AND (:keyword IS NULL OR :keyword = '' OR LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%')))
+            ORDER BY p.isPinned DESC, p.sortOrder DESC, p.createdAt DESC
+            """)
+    Page<Post> searchNoticesForAdmin(
+            @Param("statuses") java.util.Collection<PostStatus> statuses,
+            @Param("keyword") String keyword,
+            Pageable pageable);
+
+    Optional<Post> findTopByBoard_BoardTypeAndStatusInOrderBySortOrderDesc(
+            String boardType, java.util.Collection<PostStatus> statuses);
+
+    Optional<Post> findByIdAndStatusIn(Long id, java.util.Collection<PostStatus> statuses);
 }

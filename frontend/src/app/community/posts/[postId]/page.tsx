@@ -20,12 +20,15 @@ import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { buildCommentTree, validateCommentInput } from '@/domain/comment/types';
 import { isStaffOnlyBoardType } from '@/domain/board/types';
 import { displayAuthorNickname } from '@/domain/post/types';
-import { isAdmin } from '@/domain/user/types';
+import { isAdmin, isStaff } from '@/domain/user/types';
 import { getErrorMessage } from '@/lib/api/client';
+import * as adminApi from '@/lib/api/admin';
 
 type PendingConfirm =
   | { type: 'delete-post' }
-  | { type: 'delete-comment'; commentId: number };
+  | { type: 'delete-comment'; commentId: number }
+  | { type: 'hide-post' }
+  | { type: 'hide-comment'; commentId: number };
 
 export default function PostDetailPage() {
   const params = useParams();
@@ -44,6 +47,7 @@ export default function PostDetailPage() {
     isSubmitting,
     addComment,
     removeComment,
+    refetch: refetchComments,
   } = useComments(postId);
 
   const [commentText, setCommentText] = useState('');
@@ -54,8 +58,10 @@ export default function PostDetailPage() {
   const [commentError, setCommentError] = useState<string | null>(null);
   const [pendingConfirm, setPendingConfirm] = useState<PendingConfirm | null>(null);
   const [isConfirming, setIsConfirming] = useState(false);
+  const [isHiding, setIsHiding] = useState(false);
 
   const loginHref = `/login?from=${encodeURIComponent(`/community/posts/${postId}`)}`;
+  const staffUser = isStaff(user?.role);
 
   const handleComment = async () => {
     const validation = validateCommentInput(commentText);
@@ -82,12 +88,23 @@ export default function PostDetailPage() {
       if (pendingConfirm.type === 'delete-post') {
         const ok = await deletePost(postId);
         if (ok) router.replace(`/community/${post?.boardId}`);
-      } else {
+      } else if (pendingConfirm.type === 'delete-comment') {
         await removeComment(pendingConfirm.commentId);
+      } else if (pendingConfirm.type === 'hide-post') {
+        setIsHiding(true);
+        await adminApi.hidePost(postId);
+        router.replace(`/community/${post?.boardId}`);
+      } else if (pendingConfirm.type === 'hide-comment') {
+        setIsHiding(true);
+        await adminApi.hideComment(pendingConfirm.commentId);
+        await refetchComments();
       }
       setPendingConfirm(null);
+    } catch (err) {
+      setCommentError(getErrorMessage(err));
     } finally {
       setIsConfirming(false);
+      setIsHiding(false);
     }
   };
 
@@ -101,11 +118,29 @@ export default function PostDetailPage() {
   }
 
   const confirmTitle =
-    pendingConfirm?.type === 'delete-post' ? '글 삭제' : '댓글 삭제';
+    pendingConfirm?.type === 'delete-post'
+      ? '글 삭제'
+      : pendingConfirm?.type === 'hide-post'
+        ? '글 숨김 처리'
+        : pendingConfirm?.type === 'hide-comment'
+          ? '댓글 숨김 처리'
+          : '댓글 삭제';
   const confirmMessage =
     pendingConfirm?.type === 'delete-post'
       ? '이 글을 삭제할까요? 삭제 후에는 복구할 수 없습니다.'
-      : '이 댓글을 삭제할까요?';
+      : pendingConfirm?.type === 'hide-post'
+        ? '이 글을 숨김 처리할까요? 운영 관리에서 복구할 수 있습니다.'
+        : pendingConfirm?.type === 'hide-comment'
+          ? '이 댓글을 숨김 처리할까요? 운영 관리에서 복구할 수 있습니다.'
+          : '이 댓글을 삭제할까요?';
+  const confirmVariant =
+    pendingConfirm?.type === 'hide-post' || pendingConfirm?.type === 'hide-comment'
+      ? 'default'
+      : 'danger';
+  const confirmLabel =
+    pendingConfirm?.type === 'hide-post' || pendingConfirm?.type === 'hide-comment'
+      ? '숨김 처리'
+      : '삭제';
 
   const commentTree = buildCommentTree(commentPage.content);
   const postBoard = boards.find((board) => board.id === post.boardId);
@@ -123,6 +158,22 @@ export default function PostDetailPage() {
               <Button variant="ghost" size="sm" onClick={() => setReportOpen(true)}>
                 신고
               </Button>
+            )}
+            {staffUser && !isStaffOnlyPost && (
+              <>
+                <Link href={`/community/write?postId=${post.id}&admin=1`}>
+                  <Button variant="secondary" size="sm">
+                    수정
+                  </Button>
+                </Link>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setPendingConfirm({ type: 'hide-post' })}
+                >
+                  숨김 처리
+                </Button>
+              </>
             )}
             {post.isMyPost && isStaffOnlyPost && isAdmin(user?.role) && (
               <Link href="/admin?tab=notices">
@@ -186,8 +237,12 @@ export default function PostDetailPage() {
                   key={comment.id}
                   comment={comment}
                   isLoggedIn={isLoggedIn}
+                  isStaff={staffUser && !isStaffOnlyPost}
                   onDelete={(commentId) =>
                     setPendingConfirm({ type: 'delete-comment', commentId })
+                  }
+                  onHide={(commentId) =>
+                    setPendingConfirm({ type: 'hide-comment', commentId })
                   }
                   onReport={(commentId) => setReportCommentId(commentId)}
                   onReply={(commentId) => {
@@ -264,9 +319,9 @@ export default function PostDetailPage() {
         open={pendingConfirm !== null}
         title={confirmTitle}
         message={confirmMessage}
-        confirmLabel="삭제"
-        variant="danger"
-        isLoading={isConfirming || isDeletingPost}
+        confirmLabel={confirmLabel}
+        variant={confirmVariant}
+        isLoading={isConfirming || isDeletingPost || isHiding}
         onConfirm={() => void handleConfirm()}
         onClose={() => setPendingConfirm(null)}
       />

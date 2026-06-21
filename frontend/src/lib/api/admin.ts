@@ -33,6 +33,115 @@ export function hideComment(commentId: number): Promise<void> {
   return request<void>(`/api/admin/comments/${commentId}/hide`, { method: 'PATCH' });
 }
 
+export function restorePost(postId: number): Promise<void> {
+  return request<void>(`/api/admin/posts/${postId}/restore`, { method: 'PATCH' });
+}
+
+export function restoreComment(commentId: number): Promise<void> {
+  return request<void>(`/api/admin/comments/${commentId}/restore`, { method: 'PATCH' });
+}
+
+export type AdminPostUpdateInput = {
+  title: string;
+  content: string;
+};
+
+export function updateAdminPost(postId: number, input: AdminPostUpdateInput): Promise<void> {
+  return request<void>(`/api/admin/posts/${postId}`, { method: 'PATCH', body: input });
+}
+
+export type VideoCurationInput = {
+  sortOrder?: number;
+  isFeatured?: boolean;
+  isVisible?: boolean;
+};
+
+export type ContentCurationInput = {
+  sortOrder?: number;
+  isPinned?: boolean;
+};
+
+export type NoticeCurationInput = {
+  sortOrder?: number;
+  isPinned?: boolean;
+};
+
+export function updateVideoCuration(videoId: number, input: VideoCurationInput): Promise<Video> {
+  return request<Video>(`/api/admin/videos/${videoId}/curation`, { method: 'PATCH', body: input });
+}
+
+export function updateContentCuration(contentId: number, input: ContentCurationInput): Promise<Content> {
+  return request<Content>(`/api/admin/contents/${contentId}/curation`, {
+    method: 'PATCH',
+    body: input,
+  });
+}
+
+export function updateNoticeCuration(postId: number, input: NoticeCurationInput): Promise<AdminNotice> {
+  return request<AdminNotice>(`/api/admin/notices/${postId}/curation`, {
+    method: 'PATCH',
+    body: input,
+  });
+}
+
+export type AdminCommunityPost = {
+  id: number;
+  title: string;
+  boardName: string;
+  status: 'ACTIVE' | 'HIDDEN';
+  authorNickname: string;
+  createdAt: string;
+};
+
+export type AdminCommunityComment = {
+  id: number;
+  postId: number;
+  postTitle: string;
+  contentPreview: string;
+  status: 'ACTIVE' | 'HIDDEN';
+  authorNickname: string;
+  createdAt: string;
+};
+
+export type AdminModerationStatus = 'ACTIVE' | 'HIDDEN';
+
+export type AdminListQuery = {
+  page?: number;
+  size?: number;
+  keyword?: string;
+  status?: AdminModerationStatus;
+  category?: string;
+  visible?: boolean;
+};
+
+export function fetchAdminCommunityPosts(
+  params: AdminListQuery = {},
+): Promise<PageData<AdminCommunityPost>> {
+  return request<PageData<AdminCommunityPost>>('/api/admin/posts', {
+    query: {
+      page: params.page ?? 0,
+      size: params.size ?? 20,
+      sort: 'createdAt,desc',
+      ...(params.keyword ? { keyword: params.keyword } : {}),
+      ...(params.status ? { status: params.status } : {}),
+    },
+  });
+}
+
+export function fetchAdminCommunityComments(
+  params: AdminListQuery = {},
+): Promise<PageData<AdminCommunityComment>> {
+  return request<PageData<AdminCommunityComment>>('/api/admin/comments', {
+    query: {
+      page: params.page ?? 0,
+      size: params.size ?? 20,
+      sort: 'createdAt,desc',
+      ...(params.keyword ? { keyword: params.keyword } : {}),
+      ...(params.status ? { status: params.status } : {}),
+    },
+  });
+}
+
 export type ContentCreateInput = {
   title: string;
   content: string;
@@ -58,12 +167,15 @@ export function hideContent(contentId: number): Promise<void> {
   return request<void>(`/api/admin/contents/${contentId}/hide`, { method: 'PATCH' });
 }
 
-export function fetchAdminContents(params: { page?: number; size?: number } = {}): Promise<PageData<Content>> {
+export function fetchAdminContents(params: AdminListQuery = {}): Promise<PageData<Content>> {
   return request<PageData<Content>>('/api/admin/contents', {
     query: {
       page: params.page ?? 0,
-      size: params.size ?? 50,
-      sort: 'createdAt,desc',
+      size: params.size ?? 20,
+      sort: 'sortOrder,desc',
+      ...(params.keyword ? { keyword: params.keyword } : {}),
+      ...(params.status ? { status: params.status } : {}),
+      ...(params.category ? { category: params.category } : {}),
     },
   });
 }
@@ -109,12 +221,14 @@ export function setVideoVisibility(videoId: number, isVisible: boolean): Promise
   });
 }
 
-export function fetchAdminVideos(params: { page?: number; size?: number } = {}): Promise<PageData<Video>> {
+export function fetchAdminVideos(params: AdminListQuery = {}): Promise<PageData<Video>> {
   return request<PageData<Video>>('/api/admin/videos', {
     query: {
       page: params.page ?? 0,
-      size: params.size ?? 50,
-      sort: 'createdAt,desc',
+      size: params.size ?? 20,
+      sort: 'sortOrder,desc',
+      ...(params.keyword ? { keyword: params.keyword } : {}),
+      ...(params.visible !== undefined ? { visible: params.visible } : {}),
     },
   });
 }
@@ -160,12 +274,14 @@ export type NoticeCreateInput = {
 
 export type NoticeUpdateInput = NoticeCreateInput;
 
-export function fetchAdminNotices(params: { page?: number; size?: number } = {}): Promise<PageData<AdminNotice>> {
+export function fetchAdminNotices(params: AdminListQuery = {}): Promise<PageData<AdminNotice>> {
   return request<PageData<AdminNotice>>('/api/admin/notices', {
     query: {
       page: params.page ?? 0,
-      size: params.size ?? 50,
-      sort: 'createdAt,desc',
+      size: params.size ?? 20,
+      sort: 'sortOrder,desc',
+      ...(params.keyword ? { keyword: params.keyword } : {}),
+      ...(params.status ? { status: params.status } : {}),
     },
   });
 }

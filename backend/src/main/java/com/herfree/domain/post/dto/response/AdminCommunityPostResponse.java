@@ -4,23 +4,21 @@ import com.herfree.domain.post.entity.Post;
 import com.herfree.domain.post.entity.PostStatus;
 import java.time.LocalDateTime;
 
-public record AdminNoticeResponse(
+public record AdminCommunityPostResponse(
         Long id,
         String title,
-        String content,
+        String boardName,
         PostStatus status,
-        int sortOrder,
-        boolean isPinned,
+        String authorNickname,
         LocalDateTime createdAt
 ) {
-    public static AdminNoticeResponse from(Post post) {
-        return new AdminNoticeResponse(
+    public static AdminCommunityPostResponse from(Post post, String authorNickname) {
+        return new AdminCommunityPostResponse(
                 post.getId(),
                 post.getTitle(),
-                post.getContent(),
+                post.getBoard().getName(),
                 post.getStatus(),
-                post.getSortOrder(),
-                post.isPinned(),
+                authorNickname,
                 post.getCreatedAt()
         );
     }

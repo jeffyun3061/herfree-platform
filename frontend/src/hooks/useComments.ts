@@ -54,5 +54,6 @@ export function useComments(postId: number) {
     isSubmitting,
     addComment,
     removeComment,
+    refetch,
   };
 }

@@ -12,6 +12,8 @@ public record ContentResponse(
         String category,
         String contentType,
         ContentStatus status,
+        int sortOrder,
+        boolean isPinned,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {
@@ -24,6 +26,8 @@ public record ContentResponse(
                 content.getCategory(),
                 content.getContentType(),
                 content.getStatus(),
+                content.getSortOrder(),
+                content.isPinned(),
                 content.getCreatedAt(),
                 content.getUpdatedAt()
         );

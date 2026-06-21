@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAdminContents } from '@/hooks/useAdminContents';
+import { Pagination } from '@/components/common/Pagination';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { Button } from '@/components/ui/Button';
@@ -12,8 +13,11 @@ import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { Badge } from '@/components/ui/Badge';
 import {
   AdminChipGroup,
+  AdminListToolbar,
   AdminManageRow,
   AdminPublishHeader,
+  AdminSectionModeTabs,
+  type AdminSectionMode,
 } from '@/components/admin/AdminPublishUi';
 import {
   CONTENT_AUTHOR_TYPE_OPTIONS,
@@ -22,6 +26,8 @@ import {
   getContentTypeLabel,
   type ContentAuthorType,
 } from '@/domain/content/types';
+import type { AdminModerationStatus } from '@/lib/api/admin';
+import { swapSortOrderWithNeighbor } from '@/lib/adminCuration';
 import { getErrorMessage } from '@/lib/api/client';
 import * as adminApi from '@/lib/api/admin';
 
@@ -39,12 +45,29 @@ function formatContentDate(iso: string): string {
 }
 
 export function AdminContentsSection() {
-  const { contentPage, isLoading, error, refetch } = useAdminContents(50);
+  const [mode, setMode] = useState<AdminSectionMode>('list');
+  const [page, setPage] = useState(0);
+  const [searchInput, setSearchInput] = useState('');
+  const [keyword, setKeyword] = useState('');
+  const [statusFilter, setStatusFilter] = useState<AdminModerationStatus | ''>('');
+  const [categoryFilter, setCategoryFilter] = useState('');
+
+  const { contentPage, isLoading, error, refetch } = useAdminContents({
+    page,
+    keyword,
+    status: statusFilter,
+    category: categoryFilter,
+  });
+
   const [form, setForm] = useState(EMPTY_FORM);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
+
+  useEffect(() => {
+    setPage(0);
+  }, [keyword, statusFilter, categoryFilter]);
 
   const resetForm = () => {
     setForm(EMPTY_FORM);
@@ -73,6 +96,7 @@ export function AdminContentsSection() {
         });
       }
       resetForm();
+      setMode('list');
       await refetch();
     } catch (err) {
       setActionError(getErrorMessage(err));
@@ -109,6 +133,19 @@ export function AdminContentsSection() {
     }
   };
 
+  const applyContentCuration = async (contentId: number, input: adminApi.ContentCurationInput) => {
+    setIsSubmitting(true);
+    setActionError(null);
+    try {
+      await adminApi.updateContentCuration(contentId, input);
+      await refetch();
+    } catch (err) {
+      setActionError(getErrorMessage(err));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const startEdit = (item: (typeof contentPage.content)[number]) => {
     setEditingId(item.id);
     setForm({
@@ -117,6 +154,7 @@ export function AdminContentsSection() {
       category: item.category,
       contentType: (item.contentType as ContentAuthorType) ?? 'ADMIN',
     });
+    setMode('create');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -128,105 +166,146 @@ export function AdminContentsSection() {
         note="제목 · 카테고리 · 본문을 작성한 뒤 등록하면 /contents 에 바로 반영됩니다. 숨기기는 임시 비노출, 삭제는 복구할 수 없습니다."
       />
 
-      <Card className="space-y-4">
-        <div className="flex items-center justify-between gap-2">
-          <h3 className="text-[14px] font-semibold text-cream-foreground">
-            {editingId ? '정보 수정' : '새 정보 작성'}
-          </h3>
-          {editingId && (
-            <button
-              type="button"
-              onClick={resetForm}
-              className="text-[11px] font-medium text-primary hover:underline"
-            >
-              새 글 작성
-            </button>
-          )}
-        </div>
+      <AdminSectionModeTabs mode={mode} onChange={setMode} />
 
-        <Input
-          label="제목"
-          required
-          placeholder="예) 재발 전에 챙기면 좋은 수면 루틴"
-          value={form.title}
-          onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
-        />
-
-        <AdminChipGroup
-          label="카테고리"
-          value={form.category}
-          options={CONTENT_CATEGORIES.map((category) => ({ value: category, label: category }))}
-          onChange={(category) => setForm((prev) => ({ ...prev, category }))}
-        />
-
-        {!editingId && (
-          <AdminChipGroup
-            label="작성 주체 표시"
-            value={form.contentType}
-            options={CONTENT_AUTHOR_TYPE_OPTIONS}
-            onChange={(contentType) => setForm((prev) => ({ ...prev, contentType }))}
+      {mode === 'list' ? (
+        <>
+          <AdminListToolbar
+            searchValue={searchInput}
+            onSearchChange={setSearchInput}
+            onSearchSubmit={() => setKeyword(searchInput.trim())}
+            statusFilter={statusFilter}
+            onStatusFilterChange={setStatusFilter}
+            categoryFilter={categoryFilter}
+            onCategoryFilterChange={setCategoryFilter}
+            categoryOptions={[...CONTENT_CATEGORIES]}
           />
-        )}
 
-        <Textarea
-          label="본문"
-          required
-          rows={14}
-          placeholder="정보 본문을 입력하세요. 줄바꿈이 그대로 반영됩니다."
-          value={form.content}
-          onChange={(e) => setForm((prev) => ({ ...prev, content: e.target.value }))}
-          className="min-h-[280px]"
-        />
+          {actionError && <ErrorMessage message={actionError} />}
+          {isLoading && <LoadingSpinner />}
+          {error && <ErrorMessage message={getErrorMessage(error)} />}
 
-        {form.title.trim() && form.content.trim() && (
-          <div className="rounded-xl border border-dashed border-border bg-cream-dark/40 p-3">
-            <p className="text-[10px] font-medium text-muted">미리보기 (정보 목록)</p>
-            <div className="mt-2 flex items-center gap-2">
-              <Badge variant="gold">{form.category}</Badge>
-              <span className="text-[10px] text-muted">
-                {getContentTypeLabel(form.contentType)}
-              </span>
-            </div>
-            <p className="mt-2 text-[13px] font-medium text-cream-foreground">{form.title}</p>
-            <p className="mt-1 text-[12px] text-muted">{getContentPreview(form.content)}</p>
+          <div className="space-y-2">
+            {contentPage.content.map((item, index) => {
+              const isVisible = item.status !== 'HIDDEN';
+              return (
+                <AdminManageRow
+                  key={item.id}
+                  title={item.title}
+                  meta={`${item.category} · ${formatContentDate(item.createdAt)}`}
+                  statusLabel={isVisible ? '노출 중' : '숨김'}
+                  statusVariant={isVisible ? 'default' : 'muted'}
+                  isVisible={isVisible}
+                  isSubmitting={isSubmitting}
+                  sortOrder={item.sortOrder ?? 0}
+                  isPinned={item.isPinned}
+                  canMoveUp={index > 0}
+                  canMoveDown={index < contentPage.content.length - 1}
+                  onMoveUp={() =>
+                    void swapSortOrderWithNeighbor(
+                      contentPage.content,
+                      index,
+                      'up',
+                      (id, sortOrder) => applyContentCuration(id, { sortOrder }),
+                    )
+                  }
+                  onMoveDown={() =>
+                    void swapSortOrderWithNeighbor(
+                      contentPage.content,
+                      index,
+                      'down',
+                      (id, sortOrder) => applyContentCuration(id, { sortOrder }),
+                    )
+                  }
+                  onTogglePin={() =>
+                    void applyContentCuration(item.id, { isPinned: !item.isPinned })
+                  }
+                  onEdit={() => startEdit(item)}
+                  onToggleVisibility={() => void toggleVisibility(item.id, isVisible)}
+                  onDelete={() => setDeleteTargetId(item.id)}
+                />
+              );
+            })}
+            {!isLoading && contentPage.content.length === 0 && (
+              <p className="rounded-xl border border-dashed border-border px-4 py-8 text-center text-[12px] text-muted">
+                조건에 맞는 정보글이 없습니다.
+              </p>
+            )}
           </div>
-        )}
 
-        {actionError && <ErrorMessage message={actionError} />}
-        <Button disabled={isSubmitting || !canSubmit} onClick={() => void handleSubmit()}>
-          {isSubmitting ? '저장 중…' : editingId ? '수정 저장' : '정보 등록'}
-        </Button>
-      </Card>
+          <Pagination page={page} totalPages={contentPage.totalPages} onPageChange={setPage} />
+        </>
+      ) : (
+        <Card className="space-y-4">
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="text-[14px] font-semibold text-cream-foreground">
+              {editingId ? '정보 수정' : '새 정보 작성'}
+            </h3>
+            {editingId && (
+              <button
+                type="button"
+                onClick={resetForm}
+                className="text-[11px] font-medium text-primary hover:underline"
+              >
+                새 글 작성
+              </button>
+            )}
+          </div>
 
-      <div>
-        <h3 className="mb-3 text-[13px] font-semibold text-cream-foreground">등록된 정보</h3>
-        {isLoading && <LoadingSpinner />}
-        {error && <ErrorMessage message={getErrorMessage(error)} />}
-        <div className="space-y-2">
-          {contentPage.content.map((item) => {
-            const isVisible = item.status !== 'HIDDEN';
-            return (
-              <AdminManageRow
-                key={item.id}
-                title={item.title}
-                meta={`${item.category} · ${formatContentDate(item.createdAt)}`}
-                statusLabel={isVisible ? '노출 중' : '숨김'}
-                statusVariant={isVisible ? 'default' : 'muted'}
-                isVisible={isVisible}
-                isSubmitting={isSubmitting}
-                onEdit={() => startEdit(item)}
-                onToggleVisibility={() => void toggleVisibility(item.id, isVisible)}
-                onDelete={() => setDeleteTargetId(item.id)}
-              />
-            );
-          })}
-          {!isLoading && contentPage.content.length === 0 && (
-            <p className="rounded-xl border border-dashed border-border px-4 py-8 text-center text-[12px] text-muted">
-              아직 등록된 정보가 없습니다.
-            </p>
+          <Input
+            label="제목"
+            required
+            placeholder="예) 재발 전에 챙기면 좋은 수면 루틴"
+            value={form.title}
+            onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
+          />
+
+          <AdminChipGroup
+            label="카테고리"
+            value={form.category}
+            options={CONTENT_CATEGORIES.map((category) => ({ value: category, label: category }))}
+            onChange={(category) => setForm((prev) => ({ ...prev, category }))}
+          />
+
+          {!editingId && (
+            <AdminChipGroup
+              label="작성 주체 표시"
+              value={form.contentType}
+              options={CONTENT_AUTHOR_TYPE_OPTIONS}
+              onChange={(contentType) => setForm((prev) => ({ ...prev, contentType }))}
+            />
           )}
-        </div>
-      </div>
+
+          <Textarea
+            label="본문"
+            required
+            rows={14}
+            placeholder="정보 본문을 입력하세요. 줄바꿈이 그대로 반영됩니다."
+            value={form.content}
+            onChange={(e) => setForm((prev) => ({ ...prev, content: e.target.value }))}
+            className="min-h-[280px]"
+          />
+
+          {form.title.trim() && form.content.trim() && (
+            <div className="rounded-xl border border-dashed border-border bg-cream-dark/40 p-3">
+              <p className="text-[10px] font-medium text-muted">미리보기 (정보 목록)</p>
+              <div className="mt-2 flex items-center gap-2">
+                <Badge variant="gold">{form.category}</Badge>
+                <span className="text-[10px] text-muted">
+                  {getContentTypeLabel(form.contentType)}
+                </span>
+              </div>
+              <p className="mt-2 text-[13px] font-medium text-cream-foreground">{form.title}</p>
+              <p className="mt-1 text-[12px] text-muted">{getContentPreview(form.content)}</p>
+            </div>
+          )}
+
+          {actionError && <ErrorMessage message={actionError} />}
+          <Button disabled={isSubmitting || !canSubmit} onClick={() => void handleSubmit()}>
+            {isSubmitting ? '저장 중…' : editingId ? '수정 저장' : '정보 등록'}
+          </Button>
+        </Card>
+      )}
 
       <ConfirmModal
         open={deleteTargetId !== null}

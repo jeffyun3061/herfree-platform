@@ -3,6 +3,7 @@ package com.herfree.domain.video.service;
 import com.herfree.domain.board.entity.Board;
 import com.herfree.domain.board.repository.BoardRepository;
 import com.herfree.domain.video.dto.request.VideoCreateRequest;
+import com.herfree.domain.video.dto.request.VideoCurationRequest;
 import com.herfree.domain.video.dto.request.VideoUpdateRequest;
 import com.herfree.domain.video.dto.request.VideoVisibilityRequest;
 import com.herfree.domain.video.dto.response.VideoResponse;
@@ -15,6 +16,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -25,13 +27,16 @@ public class VideoService {
 
     @Transactional(readOnly = true)
     public Page<VideoResponse> getVideos(Pageable pageable) {
-        return videoRepository.findByIsVisibleTrueOrderByCreatedAtDesc(pageable)
+        return videoRepository.findPublicVideos(pageable)
                 .map(VideoResponse::from);
     }
 
     @Transactional(readOnly = true)
-    public Page<VideoResponse> getAdminVideos(Pageable pageable) {
-        return videoRepository.findAllByOrderByCreatedAtDesc(pageable)
+    public Page<VideoResponse> getAdminVideos(String keyword, Boolean visibleFilter, Pageable pageable) {
+        return videoRepository.searchAdminVideos(
+                        visibleFilter,
+                        StringUtils.hasText(keyword) ? keyword.trim() : null,
+                        pageable)
                 .map(VideoResponse::from);
     }
 
@@ -65,6 +70,10 @@ public class VideoService {
                 .description(request.description())
                 .relatedBoard(relatedBoard)
                 .build();
+        video.updateSortOrder(
+                videoRepository.findTopByOrderBySortOrderDesc()
+                        .map(v -> v.getSortOrder() + 1)
+                        .orElse(1));
 
         return VideoResponse.from(videoRepository.save(video));
     }
@@ -87,6 +96,23 @@ public class VideoService {
                 .orElseThrow(VideoNotFoundException::new);
 
         video.updateVisibility(request.isVisible());
+        return VideoResponse.from(video);
+    }
+
+    @Transactional
+    public VideoResponse updateCuration(Long videoId, VideoCurationRequest request) {
+        Video video = videoRepository.findById(videoId)
+                .orElseThrow(VideoNotFoundException::new);
+
+        if (request.sortOrder() != null) {
+            video.updateSortOrder(request.sortOrder());
+        }
+        if (request.isFeatured() != null) {
+            video.setFeatured(request.isFeatured());
+        }
+        if (request.isVisible() != null) {
+            video.updateVisibility(request.isVisible());
+        }
         return VideoResponse.from(video);
     }
 

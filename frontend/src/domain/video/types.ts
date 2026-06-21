@@ -11,6 +11,8 @@ export type Video = {
   description: string | null;
   relatedBoardId: number | null;
   isVisible: boolean;
+  sortOrder: number;
+  isFeatured: boolean;
   createdAt: string;
 };
 

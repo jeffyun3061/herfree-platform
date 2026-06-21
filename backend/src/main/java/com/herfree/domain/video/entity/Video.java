@@ -52,6 +52,12 @@ public class Video extends BaseTimeEntity {
     @Column(nullable = false)
     private boolean isVisible;
 
+    @Column(nullable = false)
+    private int sortOrder;
+
+    @Column(nullable = false)
+    private boolean isFeatured;
+
     @Builder
     private Video(String title, String youtubeUrl, String youtubeVideoId,
                   String thumbnailUrl, String description, Board relatedBoard) {
@@ -62,6 +68,8 @@ public class Video extends BaseTimeEntity {
         this.description = description;
         this.relatedBoard = relatedBoard;
         this.isVisible = true;
+        this.sortOrder = 0;
+        this.isFeatured = false;
     }
 
     // --- 도메인 메서드 ---
@@ -78,5 +86,13 @@ public class Video extends BaseTimeEntity {
     // 노출 여부를 토글 — 관리자가 임시로 숨기거나 다시 공개할 때 사용한다
     public void updateVisibility(boolean isVisible) {
         this.isVisible = isVisible;
+    }
+
+    public void updateSortOrder(int sortOrder) {
+        this.sortOrder = sortOrder;
+    }
+
+    public void setFeatured(boolean featured) {
+        this.isFeatured = featured;
     }
 }

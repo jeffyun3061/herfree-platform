@@ -65,6 +65,12 @@ public class Post extends BaseTimeEntity {
     @Column(nullable = false)
     private boolean isAnonymous;
 
+    @Column(nullable = false)
+    private int sortOrder;
+
+    @Column(nullable = false)
+    private boolean isPinned;
+
     @Builder
     private Post(Board board, User user, String title, String content,
                  PostVisibility visibility, boolean isAnonymous) {
@@ -76,6 +82,8 @@ public class Post extends BaseTimeEntity {
         this.status = PostStatus.ACTIVE;
         this.visibility = (visibility != null) ? visibility : PostVisibility.PUBLIC;
         this.isAnonymous = isAnonymous;
+        this.sortOrder = 0;
+        this.isPinned = false;
     }
 
     // --- 도메인 메서드 ---
@@ -111,5 +119,21 @@ public class Post extends BaseTimeEntity {
     // 동시성 이슈(Race condition)는 향후 낙관적 락 또는 Redis 카운터로 해결한다.
     public void increaseViewCount() {
         this.viewCount++;
+    }
+
+    public void updateSortOrder(int sortOrder) {
+        this.sortOrder = sortOrder;
+    }
+
+    public void pin() {
+        this.isPinned = true;
+    }
+
+    public void unpin() {
+        this.isPinned = false;
+    }
+
+    public void setPinned(boolean pinned) {
+        this.isPinned = pinned;
     }
 }

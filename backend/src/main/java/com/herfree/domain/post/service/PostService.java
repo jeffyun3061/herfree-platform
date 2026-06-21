@@ -4,7 +4,9 @@ import com.herfree.domain.board.entity.Board;
 import com.herfree.domain.board.exception.BoardNotFoundException;
 import com.herfree.domain.board.repository.BoardRepository;
 import com.herfree.domain.post.dto.request.PostCreateRequest;
+import com.herfree.domain.post.dto.request.AdminPostUpdateRequest;
 import com.herfree.domain.post.dto.request.PostUpdateRequest;
+import com.herfree.domain.post.dto.response.AdminCommunityPostResponse;
 import com.herfree.domain.post.dto.response.PostDetailResponse;
 import com.herfree.domain.post.dto.response.PostResponse;
 import com.herfree.domain.post.entity.Post;
@@ -143,7 +145,53 @@ public class PostService {
         Post post = postRepository.findByIdAndStatus(postId, PostStatus.ACTIVE)
                 .orElseThrow(PostNotFoundException::new);
 
+        BoardWritePolicy.assertCommunityWritable(post.getBoard());
         post.hide();
+    }
+
+    @Transactional
+    public void restorePost(Long postId) {
+        Post post = postRepository.findByIdAndStatus(postId, PostStatus.HIDDEN)
+                .orElseThrow(PostNotFoundException::new);
+
+        BoardWritePolicy.assertCommunityWritable(post.getBoard());
+        post.restore();
+    }
+
+    @Transactional
+    public void adminUpdatePost(Long postId, AdminPostUpdateRequest request) {
+        Post post = postRepository.findByIdAndStatusIn(
+                        postId, java.util.List.of(PostStatus.ACTIVE, PostStatus.HIDDEN))
+                .orElseThrow(PostNotFoundException::new);
+
+        if ("NOTICE".equals(post.getBoard().getBoardType())) {
+            throw new PostAccessDeniedException();
+        }
+        BoardWritePolicy.assertCommunityWritable(post.getBoard());
+        post.update(request.title().trim(), request.content().trim(), post.isAnonymous());
+    }
+
+    @Transactional(readOnly = true)
+    public Page<AdminCommunityPostResponse> getAdminCommunityPosts(
+            String keyword,
+            PostStatus statusFilter,
+            Pageable pageable
+    ) {
+        java.util.List<PostStatus> statuses = statusFilter != null
+                ? java.util.List.of(statusFilter)
+                : java.util.List.of(PostStatus.ACTIVE, PostStatus.HIDDEN);
+
+        return postRepository.searchCommunityPostsForAdmin(statuses, normalizeKeyword(keyword), pageable)
+                .map(post -> {
+                    String nickname = userProfileRepository.findByUserId(post.getUser().getId())
+                            .map(UserProfile::getNickname)
+                            .orElse("(알 수 없음)");
+                    return AdminCommunityPostResponse.from(post, nickname);
+                });
+    }
+
+    private String normalizeKeyword(String keyword) {
+        return StringUtils.hasText(keyword) ? keyword.trim() : null;
     }
 
     private void savePostImageIfPresent(Post post, String imageUrl) {

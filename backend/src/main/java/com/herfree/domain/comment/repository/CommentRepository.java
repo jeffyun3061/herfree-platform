@@ -6,6 +6,8 @@ import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface CommentRepository extends JpaRepository<Comment, Long> {
 
@@ -17,4 +19,20 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     List<Comment> findByUserIdAndStatusNot(Long userId, CommentStatus status);
 
     long countByStatus(CommentStatus status);
+
+    @Query("""
+            SELECT c FROM Comment c
+            JOIN FETCH c.post p
+            JOIN FETCH p.board b
+            JOIN FETCH c.user u
+            WHERE c.status IN :statuses
+            AND (:keyword IS NULL OR :keyword = '' OR LOWER(c.content) LIKE LOWER(CONCAT('%', :keyword, '%')))
+            ORDER BY c.createdAt DESC
+            """)
+    Page<Comment> searchForAdmin(
+            @Param("statuses") java.util.Collection<CommentStatus> statuses,
+            @Param("keyword") String keyword,
+            Pageable pageable);
+
+    java.util.Optional<Comment> findByIdAndStatusIn(Long id, java.util.Collection<CommentStatus> statuses);
 }

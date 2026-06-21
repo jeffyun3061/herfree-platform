@@ -12,6 +12,8 @@ export type Content = {
   category: string;
   contentType: string;
   status?: ContentStatus;
+  sortOrder?: number;
+  isPinned?: boolean;
   createdAt: string;
   updatedAt: string;
 };
