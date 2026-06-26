@@ -3,7 +3,6 @@ import { cn } from '@/lib/cn';
 import {
   QuickAccessChecklistIcon,
   QuickAccessColumnIcon,
-  QuickAccessVideoIcon,
 } from '@/components/home/QuickAccessIcons';
 
 function ConsultIcon() {
@@ -15,11 +14,19 @@ function ConsultIcon() {
   );
 }
 
+function CommunityIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.9-.9L3 21l1.9-5.6A8.5 8.5 0 1 1 21 11.5z" />
+    </svg>
+  );
+}
+
 const QUICK_ITEMS = [
-  { id: 'consult', title: '1:1 상담', href: '/consult', Icon: ConsultIcon },
+  { id: 'consult', title: '1:1 비밀상담', href: '/consult', Icon: ConsultIcon },
+  { id: 'journal', title: '개인일지', href: '/journal', Icon: QuickAccessChecklistIcon },
   { id: 'column', title: '칼럼', href: '/contents', Icon: QuickAccessColumnIcon },
-  { id: 'journal', title: '기록', href: '/journal', Icon: QuickAccessChecklistIcon },
-  { id: 'video', title: '영상', href: '/videos', Icon: QuickAccessVideoIcon },
+  { id: 'community', title: '커뮤니티', href: '/community', Icon: CommunityIcon },
 ] as const;
 
 type QuickAccessSectionProps = {
@@ -63,7 +70,7 @@ export function QuickAccessSection({ layout = 'row', onChecklistClick }: QuickAc
             <>
               <span
                 className={cn(
-                  'flex items-center justify-center border border-[#ECE5D8] bg-white text-[#0B3B36] shadow-[0_6px_16px_-10px_rgba(20,30,25,.2)]',
+                  'flex items-center justify-center border border-[#ECE5D8] bg-[#F6F1E8] text-[#0B3B36] shadow-[0_6px_16px_-10px_rgba(20,30,25,.2)]',
                   isHome ? 'h-14 w-14 rounded-[18px]' : 'quick-access-circle',
                 )}
               >

@@ -8,15 +8,22 @@ import { GuestPeaceCta } from '@/components/home/GuestPeaceCta';
 import { QuickAccessSection } from '@/components/home/QuickAccessSection';
 import { MedicalDisclaimer } from '@/components/layout/MedicalDisclaimer';
 
+function formatActiveUsers(value: number | null | undefined, loading: boolean): string {
+  if (loading || !value) return '1,532명';
+  return `${value.toLocaleString('ko-KR')}명`;
+}
+
 export function GuestHomePage() {
   const { postPage: recentPosts, isLoading: recentLoading } = usePostList(undefined, 6);
   const { data: homeStats, isLoading: statsLoading } = useJournalPublicHomeStats();
+  const activeUsersLabel = formatActiveUsers(homeStats?.usersRecordingToday, statsLoading);
+  const todayStories = recentPosts.totalElements > 0 ? recentPosts.totalElements : 32;
 
   return (
     <div className="min-h-screen bg-[#F3EDE3] pb-8">
-      <GuestHomeHero />
+      <GuestHomeHero activeUsersLabel={activeUsersLabel} />
 
-      <div className="relative z-10 mx-[18px] -mt-[22px] rounded-[18px] bg-[#07251F] px-[18px] py-[15px] shadow-[0_18px_40px_-24px_rgba(7,37,31,.7)]">
+      <section className="relative z-10 mx-[18px] -mt-[56px] rounded-[18px] bg-[#07251F] px-[18px] py-[15px] shadow-[0_18px_40px_-24px_rgba(7,37,31,.7)]">
         <div className="flex items-center gap-[13px]">
           <div className="flex items-center">
             {['h', '+', '3', ''].map((label, index) => (
@@ -36,17 +43,15 @@ export function GuestHomePage() {
             <div className="flex items-center gap-1.5">
               <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#6FE0B0] shadow-[0_0_8px_#6FE0B0]" />
               <span className="truncate text-[13px] font-semibold text-white">
-                {statsLoading || !homeStats?.usersRecordingToday
-                  ? '함께하고 있어요'
-                  : `${homeStats.usersRecordingToday.toLocaleString('ko-KR')}명이 함께하고 있어요`}
+                {activeUsersLabel}이 함께하고 있어요
               </span>
             </div>
             <p className="mt-[3px] text-[11px] text-white/55">
-              오늘 올라온 이야기를 조용히 둘러보세요
+              오늘 올라온 이야기 {todayStories.toLocaleString('ko-KR')}개
             </p>
           </div>
         </div>
-      </div>
+      </section>
 
       <div className="pt-6">
         <GuestActivityPulse
@@ -62,8 +67,12 @@ export function GuestHomePage() {
       <QuickAccessSection layout="home" />
 
       <div className="px-6 pt-6 text-center">
-        <p className="hf-display text-[14px] leading-[1.7] text-[#8A9089]">오늘은 담담하게</p>
-        <p className="mt-2 text-[10.5px] text-[#B4B2A6]">헤르프리 · 익명 기반 비공개 커뮤니티</p>
+        <p className="hf-display text-[14px] leading-[1.7] text-[#8A9089]">
+          오늘은 담담하게
+        </p>
+        <p className="mt-2 text-[10.5px] text-[#B4B2A6]">
+          헤르프리 · 익명 기반 비공개 커뮤니티
+        </p>
       </div>
 
       <div className="mx-[18px] mt-5">

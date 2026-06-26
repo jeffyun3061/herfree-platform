@@ -4,19 +4,23 @@ import Link from 'next/link';
 import { PUBLIC_IMAGES } from '@/domain/assets/static';
 import { PublicStaticImage } from '@/components/ui/PublicStaticImage';
 
-export function GuestHomeHero() {
+type GuestHomeHeroProps = {
+  activeUsersLabel: string;
+};
+
+export function GuestHomeHero({ activeUsersLabel }: GuestHomeHeroProps) {
   return (
-    <section className="relative h-[330px] overflow-hidden">
+    <section className="relative h-[472px] overflow-hidden">
       <PublicStaticImage
         src={PUBLIC_IMAGES.homeHero}
         alt=""
         fill
         priority
         sizes="390px"
-        className="object-cover object-[50%_38%]"
+        className="object-cover object-[50%_42%]"
       />
       <div
-        className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,37,31,.5)_0%,rgba(7,37,31,.14)_30%,rgba(7,37,31,.32)_66%,rgba(7,37,31,.5)_86%,rgba(243,237,227,.55)_97%,#F3EDE3_100%)]"
+        className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,37,31,.42)_0%,rgba(7,37,31,.06)_30%,rgba(243,237,227,0)_55%,rgba(243,237,227,.85)_86%,#F3EDE3_100%)]"
         aria-hidden
       />
 
@@ -25,9 +29,7 @@ export function GuestHomeHero() {
           <span className="flex h-[30px] w-[30px] items-center justify-center rounded-full bg-white/16 text-[16px] font-bold text-white backdrop-blur-md">
             h.
           </span>
-          <span className="text-[15px] font-semibold tracking-[-0.01em] text-white">
-            헤르프리
-          </span>
+          <span className="text-[15px] font-semibold text-white">헤르프리</span>
         </Link>
         <div className="flex items-center gap-4">
           <Link href="/login" className="text-[13.5px] font-medium text-white/90">
@@ -51,8 +53,11 @@ export function GuestHomeHero() {
         </div>
       </div>
 
-      <div className="absolute bottom-[42px] left-0 right-0 px-[26px]">
-        <h1 className="hf-display m-0 text-[30px] font-extrabold leading-[1.4] tracking-[-0.01em] text-white [text-shadow:0_2px_18px_rgba(7,37,31,.4)]">
+      <div className="absolute bottom-[86px] left-0 right-0 px-[26px]">
+        <span className="inline-flex items-center rounded-full bg-white/16 px-3 py-1.5 text-[11.5px] font-semibold text-white shadow-sm backdrop-blur-md">
+          · {activeUsersLabel}이 함께하고 있어요
+        </span>
+        <h1 className="hf-display mt-5 text-[33px] font-extrabold leading-[1.4] tracking-[-0.01em] text-white [text-shadow:0_2px_18px_rgba(7,37,31,.4)]">
           편하게
           <br />
           들어오세요

@@ -27,6 +27,73 @@ type CommunityFeedProps = {
   initialBoardId?: number | null;
 };
 
+function LockedCommunityFeed() {
+  const samples = [
+    ['정진초기', '처음 진단받고 마음이 너무 복잡해요', '방금 전'],
+    ['정보공유', '재발 간격 기록해본 분들 계신가요?', '12분 전'],
+    ['자유·응원', '오늘은 조금 담담하게 지나갔어요', '28분 전'],
+  ];
+
+  return (
+    <div className="page-container mx-auto max-w-app pb-36 lg:max-w-content lg:pb-12">
+      <div className="mb-5">
+        <h1 className="hf-display text-[24px] font-extrabold text-[#15201D]">커뮤니티</h1>
+        <p className="mt-2 text-[13px] leading-relaxed text-[#8B9590]">
+          같은 경험을 가진 사람들의 이야기가 모이는 곳
+        </p>
+      </div>
+
+      <div className="relative overflow-hidden rounded-[22px] border border-[#ECE5D8] bg-white p-4 shadow-card">
+        <div className="space-y-3 blur-[5px] opacity-50" aria-hidden>
+          {samples.map(([tag, title, time]) => (
+            <article key={title} className="border-b border-[#EEF0EC] pb-3 last:border-b-0 last:pb-0">
+              <span className="rounded-md bg-[#E1F5EE] px-2 py-0.5 text-[10.5px] font-semibold text-[#04342C]">
+                {tag}
+              </span>
+              <h2 className="mt-2 text-[14px] font-semibold text-[#15201D]">{title}</h2>
+              <p className="mt-1 text-[11px] text-[#A6ABA3]">익명 회원 · {time} · 공감 4 · 댓글 2</p>
+              <p className="mt-2 line-clamp-2 text-[12.5px] leading-5 text-[#5C645A]">
+                혼자 검색하다 지쳐서 들어왔는데 비슷한 경험이 있는 사람들의 이야기가 도움이 됐어요.
+              </p>
+            </article>
+          ))}
+        </div>
+
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-[linear-gradient(180deg,rgba(255,255,255,.2)_0%,rgba(255,255,255,.9)_42%,#fff_100%)] px-7 text-center">
+          <div className="mb-3 flex h-[46px] w-[46px] items-center justify-center rounded-full bg-[#0B3B36] text-[#F0C778] shadow-[0_10px_22px_-10px_rgba(11,59,54,.6)]">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="5" y="11" width="14" height="9" rx="2" />
+              <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+            </svg>
+          </div>
+          <p className="text-[15px] font-bold text-[#1E2621]">가입하면 바로 글을 볼 수 있어요</p>
+          <p className="mt-2 text-[12.5px] leading-5 text-[#5C645A]">
+            1,532명의 회원과 함께하는
+            <br />
+            헤르프리 비공개 커뮤니티에 들어오세요.
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-4 rounded-[22px] bg-[#07251F] p-4 text-white shadow-[0_18px_40px_-24px_rgba(7,37,31,.7)]">
+        <p className="text-[13px] font-semibold">헤르프리 비공개 커뮤니티</p>
+        <p className="mt-1.5 text-[12px] leading-5 text-white/64">
+          닉네임 기반으로 안전하게 가입하고, 같은 고민을 가진 사람들의 이야기를 확인하세요.
+        </p>
+        <Link
+          href="/signup?from=/community"
+          className="mt-4 flex min-h-11 items-center justify-center rounded-xl bg-[#F0C778] text-[13px] font-extrabold text-[#07251F]"
+        >
+          30초 만에 가입하기
+        </Link>
+        <Link href="/" className="mt-3 block text-center text-[12px] text-white/55">
+          처음으로
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -137,6 +204,10 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
 
   const isLoadingAll = boardsLoading || isLoading;
   const listError = boardsError ?? error;
+
+  if (!isLoggedIn) {
+    return <LockedCommunityFeed />;
+  }
 
   return (
     <div className="page-container mx-auto max-w-app pb-36 lg:max-w-content lg:pb-12">

@@ -18,10 +18,7 @@ function postSnippet(post: Post): string {
   return post.title;
 }
 
-export function GuestActivityPulse({
-  posts,
-  isLoading,
-}: GuestActivityPulseProps) {
+export function GuestActivityPulse({ posts, isLoading }: GuestActivityPulseProps) {
   const previewPosts = posts.slice(0, 3);
 
   return (
@@ -39,11 +36,8 @@ export function GuestActivityPulse({
         </span>
       </div>
 
-      <div className="relative">
-        <div
-          className="flex select-none flex-col gap-[11px] blur-[5px] opacity-50"
-          aria-hidden
-        >
+      <div className="relative min-h-[248px] overflow-hidden rounded-[22px]">
+        <div className="flex select-none flex-col gap-[11px] blur-[5px] opacity-50" aria-hidden>
           {isLoading ? (
             <div className="rounded-[16px] bg-white px-4 py-8 shadow-[0_12px_28px_-24px_rgba(20,30,25,.3)]">
               <LoadingSpinner label="이야기를 불러오는 중..." />
@@ -56,10 +50,10 @@ export function GuestActivityPulse({
               >
                 <div className="mb-2.5 flex items-center gap-2.5">
                   <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#EDF2EC] text-[13px] font-semibold text-[#0B3B36]">
-                    {post.authorNickname?.charAt(0) || '?'}
+                    {post.authorNickname?.charAt(0) || 'h'}
                   </span>
                   <span className="truncate text-[13px] font-semibold text-[#2C342E]">
-                    {post.authorNickname}
+                    {post.authorNickname || 'herfree'}
                   </span>
                   <span className="ml-auto shrink-0 text-[10.5px] text-[#B4B2A6]">
                     {formatRelativeTime(post.createdAt)}
@@ -71,16 +65,16 @@ export function GuestActivityPulse({
               </article>
             ))
           ) : (
-            [1, 2, 3].map((item) => (
+            ['초기 진단 뒤 마음이 너무 흔들려요', '재발 간격을 기록해보니 보이는 게 있어요', '혼자 검색하다 지쳤을 때'].map((title) => (
               <article
-                key={item}
+                key={title}
                 className="rounded-[16px] bg-white px-4 py-[15px] shadow-[0_1px_2px_rgba(20,30,25,.04),0_12px_28px_-24px_rgba(20,30,25,.3)]"
               >
                 <div className="mb-2.5 flex items-center gap-2.5">
                   <span className="h-7 w-7 rounded-full bg-[#EDF2EC]" />
                   <span className="h-3 w-20 rounded-full bg-[#EDF2EC]" />
                 </div>
-                <span className="block h-3 w-full rounded-full bg-[#EDF2EC]" />
+                <p className="text-[13.5px] leading-[1.6] text-[#2C342E]">{title}</p>
               </article>
             ))
           )}
