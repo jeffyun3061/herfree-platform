@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
@@ -11,6 +11,11 @@ import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { validateLogin } from '@/domain/auth/validate';
 import { getErrorMessage } from '@/lib/api/client';
+import {
+  clearRememberedEmail,
+  getRememberedEmail,
+  setRememberedEmail,
+} from '@/lib/auth-storage';
 
 function resolveReturnUrl(from: string | null): string {
   if (!from || !from.startsWith('/') || from.startsWith('//')) return '/';
@@ -24,9 +29,18 @@ function LoginForm() {
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberEmail, setRememberEmail] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    const savedEmail = getRememberedEmail();
+    if (savedEmail) {
+      setEmail(savedEmail);
+      setRememberEmail(true);
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,6 +54,11 @@ function LoginForm() {
     setIsSubmitting(true);
     try {
       await login({ email, password });
+      if (rememberEmail) {
+        setRememberedEmail(email);
+      } else {
+        clearRememberedEmail();
+      }
       router.replace(resolveReturnUrl(searchParams.get('from')));
     } catch (err) {
       setError(getErrorMessage(err));
@@ -77,6 +96,14 @@ function LoginForm() {
             error={fieldErrors.password}
           />
         </div>
+        <label className="mt-3 flex items-center gap-2 text-sm text-wrtn-muted">
+          <input
+            type="checkbox"
+            checked={rememberEmail}
+            onChange={(e) => setRememberEmail(e.target.checked)}
+          />
+          아이디 저장
+        </label>
         <div className="mt-3 text-right">
           <Link href="/forgot-password" className="text-sm font-medium text-primary">
             비밀번호를 잊으셨나요?

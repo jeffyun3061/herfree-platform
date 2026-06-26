@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useMyPosts } from '@/hooks/useMyPosts';
 import { useMyActivity } from '@/hooks/useMyActivity';
 import { useBoards } from '@/hooks/useBoards';
+import { useJournalDashboard } from '@/hooks/useJournal';
 import { PostCard } from '@/components/community/PostCard';
 import { Pagination } from '@/components/common/Pagination';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
@@ -15,77 +16,111 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { isAdmin, isStaff, USER_ROLE_LABELS } from '@/domain/user/types';
+import { isAdmin, isStaff } from '@/domain/user/types';
+import { formatDate } from '@/domain/common/format';
+import { KAKAO_CONSULT_URL } from '@/domain/consult/constants';
 import { findBoardByType } from '@/domain/board/types';
 import { getErrorMessage } from '@/lib/api/client';
-import { cn } from '@/lib/cn';
 
-type PostFilter = 'all' | 'symptom' | 'free';
+const BOOKMARK_KEY = 'herfree-bookmarks';
 
-const FILTER_LABELS: Record<PostFilter, string> = {
-  all: '전체',
-  symptom: '증상 기록',
-  free: '자유글',
-};
-
-function ProfileAvatar({ nickname }: { nickname: string }) {
-  const initial = nickname.trim().charAt(0) || '?';
-
-  return (
-    <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-xl font-semibold text-primary-foreground">
-      {initial}
-    </span>
-  );
+function loadBookmarkCount(): number {
+  if (typeof window === 'undefined') return 0;
+  try {
+    const raw = localStorage.getItem(BOOKMARK_KEY);
+    return raw ? (JSON.parse(raw) as number[]).length : 0;
+  } catch {
+    return 0;
+  }
 }
 
-function formatLastPostAt(iso: string | null | undefined): string {
-  if (!iso) return '아직 없음';
-  return new Date(iso).toLocaleDateString('ko-KR', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
+function MenuRow({
+  href,
+  icon,
+  label,
+  trailing,
+  external,
+  danger,
+  onClick,
+}: {
+  href?: string;
+  icon: string;
+  label: string;
+  trailing?: React.ReactNode;
+  external?: boolean;
+  danger?: boolean;
+  onClick?: () => void;
+}) {
+  const className = `mypage-menu-row ${danger ? 'text-[#C0512F]' : ''}`;
+  const inner = (
+  <>
+      <span className={`flex items-center gap-2.5 text-[13.5px] ${danger ? 'text-[#C0512F]' : 'text-[#15201D]'}`}>
+        <span className="text-[15px] text-[#5B6864]" aria-hidden>
+          {icon}
+        </span>
+        {label}
+      </span>
+      <span className="flex items-center gap-1.5 text-xs text-[#A6ABA3]">
+        {trailing}
+        {!danger && <span className="text-[#C7CECB]">›</span>}
+      </span>
+    </>
+  );
+
+  if (onClick) {
+    return (
+      <button type="button" onClick={onClick} className={`${className} w-full text-left`}>
+        {inner}
+      </button>
+    );
+  }
+
+  if (external && href) {
+    return (
+      <a href={href} target="_blank" rel="noopener noreferrer" className={className}>
+        {inner}
+      </a>
+    );
+  }
+
+  return (
+    <Link href={href ?? '#'} className={className}>
+      {inner}
+    </Link>
+  );
 }
 
 export default function MyPage() {
   const router = useRouter();
   const { isReady, isLoggedIn, user, logout, withdraw, updateNickname } = useAuth();
-  const { boards } = useBoards();
   const { activity, isLoading: activityLoading } = useMyActivity(isLoggedIn);
-  const [postFilter, setPostFilter] = useState<PostFilter>('all');
+  const { boards } = useBoards();
+  const { data: journalDashboard } = useJournalDashboard(isLoggedIn);
+  const { postPage, page, setPage, isLoading: postsLoading } = useMyPosts(isLoggedIn, 10);
+  const [showPosts, setShowPosts] = useState(false);
   const [nickname, setNickname] = useState('');
   const [profileError, setProfileError] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [isWithdrawing, setIsWithdrawing] = useState(false);
+  const [bookmarkCount, setBookmarkCount] = useState(0);
 
-  const symptomBoard = findBoardByType(boards, 'SYMPTOM');
-  const freeBoard = findBoardByType(boards, 'FREE');
-  const boardIdForFilter =
-    postFilter === 'symptom' ? symptomBoard?.id : postFilter === 'free' ? freeBoard?.id : undefined;
-
-  const { postPage, page, setPage, isLoading: postsLoading } = useMyPosts(
-    isLoggedIn,
-    10,
-    boardIdForFilter,
-  );
+  const noticeBoard = findBoardByType(boards, 'NOTICE');
 
   useEffect(() => {
-    setPage(0);
-  }, [postFilter, setPage]);
+    setBookmarkCount(loadBookmarkCount());
+  }, []);
 
   if (!isReady) return <LoadingSpinner />;
 
   if (!isLoggedIn) {
     return (
-      <>
-        <div className="flex flex-col items-center gap-4 px-4 py-16 text-center">
-          <p className="text-sm text-muted">로그인 후 내 정보와 작성 글을 확인할 수 있습니다.</p>
-          <Link href="/login?from=%2Fmypage">
-            <Button>로그인</Button>
-          </Link>
-        </div>
-      </>
+      <div className="flex flex-col items-center gap-4 px-4 py-16 text-center">
+        <p className="text-sm text-muted">로그인 후 마이페이지를 이용할 수 있습니다.</p>
+        <Link href="/login?from=%2Fmypage">
+          <Button>로그인</Button>
+        </Link>
+      </div>
     );
   }
 
@@ -119,162 +154,137 @@ export default function MyPage() {
     }
   };
 
+  const peaceDays = journalDashboard?.relapseFreeDays ?? 0;
+  const memberSince = activity?.memberSince ? formatDate(activity.memberSince) : null;
+
   return (
     <>
-      <div className="page-container">
-        <section className="mb-6 rounded-2xl border border-border/80 bg-card p-4">
-          <div className="flex items-center gap-4">
-            <ProfileAvatar nickname={user?.nickname ?? ''} />
-            <div>
-              <p className="text-lg font-semibold text-cream-foreground">{user?.nickname}</p>
-              <p className="mt-0.5 text-sm text-muted">
-                {user?.role ? USER_ROLE_LABELS[user.role] : '회원'}
-              </p>
-              {isAdmin(user?.role) && (
-                <Link href="/admin?tab=contents" className="mt-2 inline-block text-sm font-medium text-primary">
-                  정보·영상 올리기 (운영)
-                </Link>
-              )}
-              {isStaff(user?.role) && !isAdmin(user?.role) && (
-                <Link href="/admin" className="mt-2 inline-block text-sm font-medium text-primary">
-                  운영 관리 페이지
-                </Link>
-              )}
-            </div>
+      <div className="pb-24 lg:pb-10">
+        <section className="mypage-profile-card">
+          <span className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full bg-white/10 text-[22px]">
+            🌿
+          </span>
+          <div className="min-w-0">
+            <p className="truncate text-[15.5px] font-semibold text-white">{user?.nickname}</p>
+            <p className="mt-0.5 text-[11.5px] text-white/60">
+              {memberSince ? `${memberSince} 가입` : '헤르프리 회원'}
+            </p>
+          </div>
+          <div className="ml-auto shrink-0 text-right">
+            <p className="text-lg font-bold text-[#FFD566]">{peaceDays}일</p>
+            <p className="text-[10.5px] text-white/60">평온 유지중</p>
           </div>
         </section>
 
-        <section className="mb-6">
-          <h3 className="mb-3 text-base font-semibold text-cream-foreground">활동 요약</h3>
-          {activityLoading ? (
-            <LoadingSpinner label="활동 정보 불러오는 중…" />
-          ) : (
-            <div className="grid grid-cols-2 gap-2">
-              <div className="rounded-2xl border border-border/80 bg-card px-3 py-4 text-center">
-                <p className="text-[11px] text-muted">작성 글</p>
-                <p className="mt-1 text-xl font-semibold">{activity?.totalPosts ?? 0}</p>
-              </div>
-              <div className="rounded-2xl border border-border/80 bg-card px-3 py-4 text-center">
-                <p className="text-[11px] text-muted">증상 기록</p>
-                <p className="mt-1 text-xl font-semibold">{activity?.symptomPosts ?? 0}</p>
-              </div>
-              <div className="rounded-2xl border border-border/80 bg-card px-3 py-4 text-center">
-                <p className="text-[11px] text-muted">받은 공감</p>
-                <p className="mt-1 text-xl font-semibold">{activity?.receivedReactions ?? 0}</p>
-              </div>
-              <div className="rounded-2xl border border-border/80 bg-card px-3 py-4 text-center">
-                <p className="text-[11px] text-muted">최근 작성</p>
-                <p className="mt-1 text-sm font-semibold leading-snug">
-                  {formatLastPostAt(activity?.lastPostAt)}
-                </p>
-              </div>
-            </div>
-          )}
-        </section>
-
-        <section className="mb-6 rounded-2xl border border-border/80 bg-card p-4">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <h3 className="font-medium text-cream-foreground">개인 일지</h3>
-              <p className="mt-1 text-xs text-muted">재발 기록과 루틴을 비공개로 관리하세요.</p>
-            </div>
-            <Link href="/journal">
-              <Button size="sm" variant="secondary">
-                기록 대시보드
-              </Button>
-            </Link>
-          </div>
-        </section>
-
-        <section className="space-y-3 rounded-2xl border border-border/80 bg-card p-4">
-          <h3 className="font-medium text-cream-foreground">닉네임 변경</h3>
-          <Input
-            placeholder="새 닉네임"
-            value={nickname}
-            onChange={(e) => setNickname(e.target.value)}
-            maxLength={20}
-          />
-          {profileError && <ErrorMessage message={profileError} />}
-          <Button disabled={isUpdating} onClick={() => void handleNicknameUpdate()}>
-            {isUpdating ? '저장 중…' : '저장'}
-          </Button>
-        </section>
-
-        <section className="mt-8">
-          <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-base font-semibold text-cream-foreground">내가 쓴 글</h3>
-          </div>
-          <div className="mb-4 flex gap-2">
-            {(Object.keys(FILTER_LABELS) as PostFilter[]).map((filter) => (
-              <button
-                key={filter}
-                type="button"
-                onClick={() => setPostFilter(filter)}
-                className={cn(
-                  'rounded-full border px-3 py-1.5 text-xs transition-colors',
-                  postFilter === filter
-                    ? 'border-primary bg-primary/10 text-primary'
-                    : 'border-border text-muted',
-                )}
-              >
-                {FILTER_LABELS[filter]}
-              </button>
-            ))}
-          </div>
-          {postsLoading ? (
-            <LoadingSpinner label="글 불러오는 중…" />
-          ) : postPage.content.length === 0 ? (
-            <EmptyState
-              title="표시할 글이 없습니다"
-              description={
-                postFilter === 'symptom'
-                  ? '증상 기록방에 첫 글을 남겨 보세요.'
-                  : postFilter === 'free'
-                    ? '자유글 게시판에 첫 글을 남겨 보세요.'
-                    : '커뮤니티에서 이야기를 나눠 보세요.'
-              }
-              action={
-                symptomBoard ? (
-                  <Link href={`/community/write?boardId=${symptomBoard.id}`}>
-                    <Button size="sm">글쓰기</Button>
-                  </Link>
-                ) : undefined
-              }
+        <div className="mx-4 mt-[18px]">
+          <p className="mb-2 px-0.5 text-xs text-[#8B9590]">활동</p>
+          <div className="mypage-menu-card">
+            <MenuRow
+              icon="📝"
+              label="내가 쓴 글"
+              trailing={activityLoading ? '…' : (activity?.totalPosts ?? 0)}
+              onClick={() => setShowPosts((v) => !v)}
             />
-          ) : (
-            <>
-              {postPage.content.map((post) => (
-                <PostCard key={post.id} post={post} />
-              ))}
-              <Pagination page={page} totalPages={postPage.totalPages} onPageChange={setPage} />
-            </>
-          )}
-        </section>
-
-        <section className="mt-8 flex flex-col gap-3">
-          <div className="flex flex-wrap gap-3 text-xs text-muted">
-            <Link href="/terms" className="hover:text-primary">
-              이용약관
-            </Link>
-            <Link href="/privacy" className="hover:text-primary">
-              개인정보처리방침
-            </Link>
+            <MenuRow
+              icon="💬"
+              label="받은 공감"
+              trailing={activityLoading ? '…' : (activity?.receivedReactions ?? 0)}
+              href="/community"
+            />
+            <MenuRow
+              icon="🔖"
+              label="스크랩한 글"
+              trailing={bookmarkCount}
+              href="/community"
+            />
           </div>
-          <Button variant="secondary" onClick={() => void logout()}>
-            로그아웃
-          </Button>
-          <Button variant="ghost" className="text-red-600" onClick={() => setWithdrawOpen(true)}>
-            회원 탈퇴
-          </Button>
-        </section>
+        </div>
+
+        <div className="mx-4 mt-[18px]">
+          <p className="mb-2 px-0.5 text-xs text-[#8B9590]">설정</p>
+          <div className="mypage-menu-card">
+            <div className="border-b border-[#EAEDEC] px-4 py-3.5">
+              <p className="mb-2 text-[13.5px] font-medium text-[#15201D]">닉네임 변경</p>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="새 닉네임"
+                  value={nickname}
+                  onChange={(e) => setNickname(e.target.value)}
+                  maxLength={20}
+                />
+                <Button size="sm" disabled={isUpdating} onClick={() => void handleNicknameUpdate()}>
+                  저장
+                </Button>
+              </div>
+              {profileError && <div className="mt-2"><ErrorMessage message={profileError} /></div>}
+            </div>
+            <MenuRow icon="📓" label="개인일지" href="/journal" />
+            {isAdmin(user?.role) && (
+              <MenuRow icon="⚙️" label="칼럼·영상 올리기" href="/admin?tab=contents" />
+            )}
+            {isStaff(user?.role) && !isAdmin(user?.role) && (
+              <MenuRow icon="⚙️" label="운영 관리" href="/admin" />
+            )}
+          </div>
+        </div>
+
+        <div className="mx-4 mt-[18px]">
+          <p className="mb-2 px-0.5 text-xs text-[#8B9590]">고객지원</p>
+          <div className="mypage-menu-card">
+            <MenuRow icon="❓" label="자주 묻는 질문" href="/community" />
+            <MenuRow icon="🔒" label="1:1 비밀상담" href="/consult" />
+            <MenuRow
+              icon="💬"
+              label="카카오톡 상담 신청"
+              href={KAKAO_CONSULT_URL}
+              external
+              trailing={<span className="ext-badge rounded bg-[#F4F6F5] px-1.5 py-0.5 text-[10px]">외부</span>}
+            />
+            <MenuRow icon="📢" label="공지사항" href={noticeBoard ? `/community/${noticeBoard.id}` : '/community'} />
+          </div>
+        </div>
+
+        <div className="mx-4 mt-[18px]">
+          <div className="mypage-menu-card">
+            <MenuRow icon="🚪" label="로그아웃" danger onClick={() => void logout()} />
+          </div>
+        </div>
+
+        <p className="mt-4 text-center">
+          <button
+            type="button"
+            className="text-[11px] text-[#C7CECB]"
+            onClick={() => setWithdrawOpen(true)}
+          >
+            회원탈퇴
+          </button>
+        </p>
+
+        {showPosts && (
+          <section className="page-container mt-6">
+            <h3 className="mb-3 text-base font-semibold text-[#15201D]">내가 쓴 글</h3>
+            {postsLoading ? (
+              <LoadingSpinner label="글 불러오는 중…" />
+            ) : postPage.content.length === 0 ? (
+              <EmptyState title="작성한 글이 없습니다" description="커뮤니티에서 첫 이야기를 남겨 보세요." />
+            ) : (
+              <>
+                <div className="community-feed-list">
+                  {postPage.content.map((post) => (
+                    <PostCard key={post.id} post={post} />
+                  ))}
+                </div>
+                <Pagination page={page} totalPages={postPage.totalPages} onPageChange={setPage} />
+              </>
+            )}
+          </section>
+        )}
       </div>
 
       <ConfirmModal
         open={withdrawOpen}
         title="회원 탈퇴"
-        message={
-          '정말 탈퇴하시겠습니까?\n작성한 글은 익명 처리되며, 계정은 복구할 수 없습니다.'
-        }
+        message={'정말 탈퇴하시겠습니까?\n작성한 글은 익명 처리되며, 계정은 복구할 수 없습니다.'}
         confirmLabel="탈퇴하기"
         variant="danger"
         isLoading={isWithdrawing}

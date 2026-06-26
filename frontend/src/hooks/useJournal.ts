@@ -26,6 +26,10 @@ export function useJournalInsights() {
   return useApiQuery(() => journalApi.fetchJournalInsights(), []);
 }
 
+export function useJournalPublicHomeStats() {
+  return useApiQuery(() => journalApi.fetchJournalPublicHomeStats(), []);
+}
+
 export function useJournalRecordByDate(date: string, enabled = true) {
   return useApiQuery(
     async () => {

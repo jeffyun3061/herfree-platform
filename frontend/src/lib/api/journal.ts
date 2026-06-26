@@ -35,6 +35,12 @@ export function fetchJournalInsights() {
   return request<JournalInsights>('/api/journal/insights');
 }
 
+export function fetchJournalPublicHomeStats() {
+  return request<import('@/domain/journal/types').JournalPublicHomeStats>(
+    '/api/journal/public/home-stats',
+  );
+}
+
 export async function fetchJournalRecords(page = 0, size = 20, hadSymptoms?: boolean) {
   const pageData = await request<PageData<JournalRecord>>('/api/journal/records', {
     query: { page, size, hadSymptoms },

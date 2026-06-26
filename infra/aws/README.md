@@ -53,5 +53,5 @@ S3_SECRET_KEY=...
 | 메시지 | 조치 |
 |--------|------|
 | S3 버킷을 찾을 수 없습니다 | 버킷 생성·`bucket` 이름 일치 확인 |
-| S3 업로드 권한이 없습니다 | IAM `s3:PutObject` on `posts/*` |
+| S3 업로드 권한이 없습니다 | IAM `s3:PutObject` on `posts/*` + `s3:ListBucket`(prefix `posts/*`) |
 | S3 키를 확인해 주세요 | `local-secrets.yml` 키·버킷 확인 |

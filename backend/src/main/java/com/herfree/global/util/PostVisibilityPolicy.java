@@ -14,6 +14,12 @@ public final class PostVisibilityPolicy {
         if (post.getVisibility() == PostVisibility.MEMBERS_ONLY && viewerId == null) {
             throw new PostNotFoundException();
         }
+
+        // 비밀사연: 상세 페이지 진입은 허용하고 본문은 응답 단계에서 마스킹한다
+        if (PrivateBoardPolicy.isSecretStoryBoard(post.getBoard().getBoardType())) {
+            return;
+        }
+
         if (!PrivateBoardPolicy.canViewerReadPost(post, viewerId, viewerRole)) {
             throw new PostNotFoundException();
         }

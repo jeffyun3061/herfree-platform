@@ -21,3 +21,16 @@ export function getVideoThumbnail(video: Video): string {
   if (video.thumbnailUrl) return video.thumbnailUrl;
   return `https://img.youtube.com/vi/${video.youtubeVideoId}/hqdefault.jpg`;
 }
+
+export const VIDEO_THUMB_GRADIENTS = [
+  'bg-[#04342C]',
+  'bg-[#0B3B36]',
+  'bg-[#1D9E75]',
+  'bg-[#3C443E]',
+  'bg-[#0F6E56]',
+  'bg-[#093430]',
+] as const;
+
+export function getVideoThumbGradient(videoId: number): string {
+  return VIDEO_THUMB_GRADIENTS[videoId % VIDEO_THUMB_GRADIENTS.length];
+}

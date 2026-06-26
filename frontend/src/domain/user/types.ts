@@ -64,4 +64,12 @@ export function isSuperAdmin(role: UserRole | undefined | null): boolean {
   return role === 'SUPER_ADMIN';
 }
 
+export function canWriteContent(role: UserRole | undefined | null): boolean {
+  return (
+    isStaff(role) ||
+    role === 'DOCTOR' ||
+    role === 'CREATOR'
+  );
+}
+
 export const ASSIGNABLE_ROLES: UserRole[] = ['USER', 'MODERATOR', 'ADMIN'];

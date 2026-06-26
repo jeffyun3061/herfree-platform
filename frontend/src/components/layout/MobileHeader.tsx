@@ -47,7 +47,8 @@ export function MobileHeader() {
   const { header } = usePageHeaderContext() ?? {};
 
   const tabTitle = getMobileTabRootTitle(pathname);
-  const title = header?.title ?? tabTitle;
+  const homeJournalTitle = pathname === '/' && isLoggedIn ? '개인일지' : null;
+  const title = header?.title ?? homeJournalTitle ?? tabTitle;
   const showBack = header?.showBack ?? false;
 
   const handleBack = () => {
@@ -92,7 +93,7 @@ export function MobileHeader() {
           )}
         </div>
         <div className="flex shrink-0 items-center gap-0.5">
-          <HeaderIconButton href="/community" label="검색">
+          <HeaderIconButton href="/community?focus=search" label="커뮤니티 검색">
             <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.8">
               <circle cx="11" cy="11" r="7" />
               <path d="M20 20l-3-3" strokeLinecap="round" />

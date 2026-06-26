@@ -16,6 +16,7 @@ export function fetchPosts(
   size = 15,
   keyword = '',
   sort = 'createdAt,desc',
+  period?: 'week' | 'all',
 ): Promise<PageData<Post>> {
   return request<PageData<Post>>('/api/posts', {
     query: {
@@ -24,6 +25,7 @@ export function fetchPosts(
       size,
       keyword: keyword.trim() || undefined,
       sort,
+      period: period ?? undefined,
     },
   });
 }

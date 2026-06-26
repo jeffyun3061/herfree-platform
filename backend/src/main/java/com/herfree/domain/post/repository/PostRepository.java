@@ -1,7 +1,9 @@
 package com.herfree.domain.post.repository;
 
+import com.herfree.domain.comment.entity.CommentStatus;
 import com.herfree.domain.post.entity.Post;
 import com.herfree.domain.post.entity.PostStatus;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
@@ -44,7 +46,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             JOIN FETCH p.user u
             WHERE p.status = :status
             AND (:boardId IS NULL OR b.id = :boardId)
-            AND (:boardId IS NOT NULL OR b.boardType NOT IN ('INQUIRY', 'PRIVATE_CONSULT'))
+            AND (:boardId IS NOT NULL OR b.boardType NOT IN ('INQUIRY', 'PRIVATE_CONSULT', 'SECRET_STORY'))
             AND (:keyword IS NULL OR :keyword = '' OR LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%')))
             AND (:viewerId IS NOT NULL OR p.visibility = 'PUBLIC')
             ORDER BY CASE WHEN b.boardType = 'NOTICE' THEN 0 ELSE 1 END,
@@ -57,6 +59,112 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             @Param("boardId") Long boardId,
             @Param("keyword") String keyword,
             @Param("viewerId") Long viewerId,
+            Pageable pageable);
+
+    @Query("""
+            SELECT p FROM Post p
+            JOIN FETCH p.board b
+            JOIN FETCH p.user u
+            WHERE p.status = :status
+            AND (:boardId IS NULL OR b.id = :boardId)
+            AND (:boardId IS NOT NULL OR b.boardType NOT IN ('INQUIRY', 'PRIVATE_CONSULT', 'SECRET_STORY'))
+            AND (:keyword IS NULL OR :keyword = '' OR LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%')))
+            AND (:viewerId IS NOT NULL OR p.visibility = 'PUBLIC')
+            ORDER BY CASE WHEN b.boardType = 'NOTICE' THEN 0 ELSE 1 END,
+                     CASE WHEN b.boardType = 'NOTICE' AND p.isPinned = true THEN 0 ELSE 1 END,
+                     p.sortOrder DESC,
+                     (
+                       (SELECT COUNT(r) FROM Reaction r
+                        WHERE r.targetType = com.herfree.domain.reaction.entity.ReactionTargetType.POST
+                        AND r.targetId = p.id) * 3
+                       + p.commentCount * 2
+                       + p.viewCount / 5
+                     ) DESC,
+                     p.createdAt DESC
+            """)
+    Page<Post> searchActivePostsByEngagementScore(
+            @Param("status") PostStatus status,
+            @Param("boardId") Long boardId,
+            @Param("keyword") String keyword,
+            @Param("viewerId") Long viewerId,
+            Pageable pageable);
+
+    @Query("""
+            SELECT p FROM Post p
+            JOIN FETCH p.board b
+            JOIN FETCH p.user u
+            WHERE p.status = :status
+            AND (:boardId IS NULL OR b.id = :boardId)
+            AND (:boardId IS NOT NULL OR b.boardType NOT IN ('INQUIRY', 'PRIVATE_CONSULT', 'SECRET_STORY'))
+            AND (:keyword IS NULL OR :keyword = '' OR LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%')))
+            AND (:viewerId IS NOT NULL OR p.visibility = 'PUBLIC')
+            ORDER BY CASE WHEN b.boardType = 'NOTICE' THEN 0 ELSE 1 END,
+                     CASE WHEN b.boardType = 'NOTICE' AND p.isPinned = true THEN 0 ELSE 1 END,
+                     p.sortOrder DESC,
+                     (
+                       (SELECT COUNT(r) FROM Reaction r
+                        WHERE r.targetType = com.herfree.domain.reaction.entity.ReactionTargetType.POST
+                        AND r.targetId = p.id AND r.createdAt >= :since) * 3
+                       + (SELECT COUNT(c) FROM Comment c
+                          WHERE c.post.id = p.id AND c.status = com.herfree.domain.comment.entity.CommentStatus.ACTIVE
+                          AND c.createdAt >= :since) * 2
+                       + p.viewCount / 5
+                     ) DESC,
+                     p.createdAt DESC
+            """)
+    Page<Post> searchActivePostsByEngagementScoreThisWeek(
+            @Param("status") PostStatus status,
+            @Param("boardId") Long boardId,
+            @Param("keyword") String keyword,
+            @Param("viewerId") Long viewerId,
+            @Param("since") LocalDateTime since,
+            Pageable pageable);
+
+    @Query("""
+            SELECT p FROM Post p
+            JOIN FETCH p.board b
+            JOIN FETCH p.user u
+            WHERE p.status = :status
+            AND (:boardId IS NULL OR b.id = :boardId)
+            AND (:boardId IS NOT NULL OR b.boardType NOT IN ('INQUIRY', 'PRIVATE_CONSULT', 'SECRET_STORY'))
+            AND (:keyword IS NULL OR :keyword = '' OR LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%')))
+            AND (:viewerId IS NOT NULL OR p.visibility = 'PUBLIC')
+            ORDER BY CASE WHEN b.boardType = 'NOTICE' THEN 0 ELSE 1 END,
+                     CASE WHEN b.boardType = 'NOTICE' AND p.isPinned = true THEN 0 ELSE 1 END,
+                     p.sortOrder DESC,
+                     p.commentCount DESC,
+                     p.createdAt DESC
+            """)
+    Page<Post> searchActivePostsByCommentCount(
+            @Param("status") PostStatus status,
+            @Param("boardId") Long boardId,
+            @Param("keyword") String keyword,
+            @Param("viewerId") Long viewerId,
+            Pageable pageable);
+
+    @Query("""
+            SELECT p FROM Post p
+            JOIN FETCH p.board b
+            JOIN FETCH p.user u
+            WHERE p.status = :status
+            AND (:boardId IS NULL OR b.id = :boardId)
+            AND (:boardId IS NOT NULL OR b.boardType NOT IN ('INQUIRY', 'PRIVATE_CONSULT', 'SECRET_STORY'))
+            AND (:keyword IS NULL OR :keyword = '' OR LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%')))
+            AND (:viewerId IS NOT NULL OR p.visibility = 'PUBLIC')
+            ORDER BY CASE WHEN b.boardType = 'NOTICE' THEN 0 ELSE 1 END,
+                     CASE WHEN b.boardType = 'NOTICE' AND p.isPinned = true THEN 0 ELSE 1 END,
+                     p.sortOrder DESC,
+                     (SELECT COUNT(c) FROM Comment c
+                      WHERE c.post.id = p.id AND c.status = :commentStatus AND c.createdAt >= :since) DESC,
+                     p.createdAt DESC
+            """)
+    Page<Post> searchActivePostsByRecentCommentCount(
+            @Param("status") PostStatus status,
+            @Param("boardId") Long boardId,
+            @Param("keyword") String keyword,
+            @Param("viewerId") Long viewerId,
+            @Param("since") LocalDateTime since,
+            @Param("commentStatus") CommentStatus commentStatus,
             Pageable pageable);
 
     @Query("""
@@ -86,6 +194,22 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             ORDER BY p.createdAt DESC
             """)
     Page<Post> searchSecretConsultPosts(
+            @Param("status") PostStatus status,
+            @Param("boardId") Long boardId,
+            @Param("keyword") String keyword,
+            Pageable pageable);
+
+    @Query("""
+            SELECT p FROM Post p
+            JOIN FETCH p.board b
+            JOIN FETCH p.user u
+            WHERE p.status = :status
+            AND b.boardType = 'SECRET_STORY'
+            AND b.id = :boardId
+            AND (:keyword IS NULL OR :keyword = '' OR LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%')))
+            ORDER BY p.createdAt DESC
+            """)
+    Page<Post> searchSecretStoryPosts(
             @Param("status") PostStatus status,
             @Param("boardId") Long boardId,
             @Param("keyword") String keyword,

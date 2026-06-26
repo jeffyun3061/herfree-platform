@@ -3,7 +3,13 @@
 import { toDateInputValue, type JournalTimelineDay } from '@/domain/journal/types';
 import { cn } from '@/lib/cn';
 
-const LAYER_COLORS = ['#2563EB', '#16A34A', '#FBBF24', '#F97316', '#DC2626'] as const;
+const LAYER_COLORS = [
+  'var(--journal-flow-sleep)',
+  'var(--journal-flow-supplement)',
+  'var(--journal-flow-stress)',
+  'var(--journal-flow-prodromal)',
+  'var(--journal-flow-symptom)',
+] as const;
 const LAYER_LABELS = ['수면', '영양제', '스트레스', '전조증상', '증상'] as const;
 const ROW_GAP = 21;
 const BASELINE = 98;
@@ -39,7 +45,7 @@ export function JournalRecordFlowChart({ days }: JournalRecordFlowChartProps) {
       <h3 className="journal-record-card__title">최근 14일 흐름</h3>
       <div className="mb-3.5 flex flex-wrap gap-x-3 gap-y-2">
         {LAYER_LABELS.map((label, index) => (
-          <span key={label} className="inline-flex items-center gap-1.5 text-[11px] text-[#3C443E]">
+          <span key={label} className="inline-flex items-center gap-1.5 text-[11px] text-ink-soft">
             <span
               className="h-2 w-2 shrink-0 rounded-full"
               style={{ backgroundColor: LAYER_COLORS[index] }}
@@ -63,18 +69,18 @@ export function JournalRecordFlowChart({ days }: JournalRecordFlowChartProps) {
                   className={cn(
                     'mb-0.5 flex h-5 w-5 items-center justify-center text-[10px]',
                     isToday
-                      ? 'rounded-full bg-[#0B3B36] font-semibold text-white'
-                      : 'text-[11px] text-[#8A8F88]',
+                      ? 'rounded-full bg-journal-hero font-semibold text-white'
+                      : 'text-[11px] text-muted',
                   )}
                 >
                   {dayNumber(day.date)}
                 </span>
-                <span className="mb-1.5 text-[10px] text-[#A6ABA3]">{weekdayLabel(day.date)}</span>
+                <span className="mb-1.5 text-[10px] text-muted">{weekdayLabel(day.date)}</span>
                 <div className="relative h-[108px] w-8">
                   {activeIndexes.length > 0 && (
                     <>
                       <div
-                        className="absolute left-1/2 w-0.5 -translate-x-1/2 bg-[#E3E6E4]"
+                        className="absolute left-1/2 w-0.5 -translate-x-1/2 bg-[var(--journal-flow-axis)]"
                         style={{
                           top: `${BASELINE - Math.max(...activeIndexes) * ROW_GAP}px`,
                           height: `${

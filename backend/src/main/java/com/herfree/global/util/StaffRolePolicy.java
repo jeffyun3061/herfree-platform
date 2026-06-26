@@ -22,6 +22,8 @@ public final class StaffRolePolicy {
                     "ROLE_SUPER_ADMIN", "ROLE_ADMIN", "ROLE_MODERATOR", "ROLE_USER");
             case ADMIN -> List.of("ROLE_ADMIN", "ROLE_MODERATOR", "ROLE_USER");
             case MODERATOR -> List.of("ROLE_MODERATOR", "ROLE_USER");
+            case DOCTOR -> List.of("ROLE_DOCTOR", "ROLE_USER");
+            case CREATOR -> List.of("ROLE_CREATOR", "ROLE_USER");
             default -> List.of("ROLE_USER");
         };
     }

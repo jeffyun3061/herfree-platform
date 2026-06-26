@@ -24,7 +24,8 @@ export function buildPublicPath(segment: string): `/${string}` {
 
 /** 배경·일러스트 이미지 */
 export const PUBLIC_IMAGES = {
-  homeHero: publicPath('images/main.png'),
+  homeHero: publicPath('assets/bg.png'),
+  logo: publicPath('assets/logo.png'),
   journalDashboardHero: publicPath('images/dashboard/hero-landscape.png'),
 } as const;
 

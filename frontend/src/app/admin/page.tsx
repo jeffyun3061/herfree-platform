@@ -16,7 +16,7 @@ import { AdminProductsSection } from '@/components/admin/AdminProductsSection';
 import { AdminJournalStatsSection } from '@/components/admin/AdminJournalStatsSection';
 import { AdminUsersSection } from '@/components/admin/AdminUsersSection';
 import { FEATURE_PRODUCTS_ENABLED } from '@/domain/featureFlags';
-import { isAdmin, isStaff, isSuperAdmin, USER_ROLE_LABELS, type UserRole } from '@/domain/user/types';
+import { isAdmin, isStaff, isSuperAdmin, canWriteContent, USER_ROLE_LABELS, type UserRole } from '@/domain/user/types';
 import { cn } from '@/lib/cn';
 
 type AdminTab = 'reports' | 'moderation' | 'users' | 'notices' | 'contents' | 'videos' | 'products' | 'journal';
@@ -26,7 +26,7 @@ const ALL_TABS: { id: AdminTab; label: string; minRole: 'moderator' | 'admin' | 
   { id: 'moderation', label: '숨김 관리', minRole: 'moderator' },
   { id: 'journal', label: '일지 통계', minRole: 'admin' },
   { id: 'notices', label: '공지 올리기', minRole: 'admin' },
-  { id: 'contents', label: '정보 올리기', minRole: 'admin' },
+  { id: 'contents', label: '칼럼 올리기', minRole: 'moderator' },
   { id: 'videos', label: '영상 등록', minRole: 'admin' },
   { id: 'products', label: '제품', minRole: 'admin' },
   { id: 'users', label: '회원', minRole: 'admin' },
@@ -36,6 +36,7 @@ function canSeeTab(
   tab: (typeof ALL_TABS)[number],
   role: UserRole | undefined | null,
 ): boolean {
+  if (tab.id === 'contents') return canWriteContent(role);
   if (!isStaff(role)) return false;
   if (tab.minRole === 'moderator') return isStaff(role);
   if (tab.minRole === 'admin') return isAdmin(role);
@@ -91,7 +92,7 @@ function AdminPageContent() {
 
   if (!isLoggedIn) return null;
 
-  if (!isStaff(user?.role)) {
+  if (!isStaff(user?.role) && !canWriteContent(user?.role)) {
     return (
       <>
         <TopBar title="운영 관리" showBack />

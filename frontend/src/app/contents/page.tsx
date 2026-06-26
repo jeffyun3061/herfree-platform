@@ -1,15 +1,13 @@
 'use client';
 
 import { Suspense, useEffect, useState } from 'react';
-import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useContentList } from '@/hooks/useContents';
-import { Card } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
+import { ContentCard, ContentCardSkeleton } from '@/components/content/ContentCard';
 import { Pagination } from '@/components/common/Pagination';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { MedicalDisclaimer } from '@/components/layout/MedicalDisclaimer';
-import { CONTENT_CATEGORIES, getContentPreview, getContentTypeLabel } from '@/domain/content/types';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { CONTENT_CATEGORIES } from '@/domain/content/types';
 import { AdminPublishFab, AdminPublishLink } from '@/components/admin/AdminPublishLink';
 import { cn } from '@/lib/cn';
 
@@ -25,22 +23,30 @@ function ContentsPageContent() {
 
   return (
     <>
-      <div className="page-container mx-auto max-w-content pb-28 lg:pb-10">
-        <MedicalDisclaimer />
-
-        <div className="mt-4 hidden justify-end lg:flex">
-          <AdminPublishLink tab="contents" label="정보 올리기" />
+      <div className="page-container mx-auto max-w-app pb-28 lg:max-w-content lg:pb-10">
+        <div className="mb-4 lg:hidden">
+          <p className="text-[19px] font-semibold text-[#15201D]">칼럼</p>
+          <p className="mt-1 text-[12.5px] text-[#8B9590]">13년의 경험에서 나온 이야기</p>
         </div>
 
-        <div className="mt-4 flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+        <div className="mb-4 hidden items-start justify-between gap-3 lg:flex">
+          <div>
+            <h1 className="section-heading">칼럼</h1>
+            <p className="mt-2 text-sm text-muted">13년의 경험에서 나온 이야기</p>
+          </div>
+          <AdminPublishLink tab="contents" label="칼럼 올리기" />
+        </div>
+
+        <div className="mb-4 flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
           <button
             type="button"
-            onClick={() => setCategory(undefined)}
+            onClick={() => {
+              setCategory(undefined);
+              setPage(0);
+            }}
             className={cn(
-              'shrink-0 rounded-lg px-4 py-1.5 text-sm',
-              category === undefined
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-cream-dark text-muted',
+              'community-chip',
+              category === undefined ? 'community-chip-active' : 'community-chip-inactive',
             )}
           >
             전체
@@ -49,12 +55,13 @@ function ContentsPageContent() {
             <button
               key={cat}
               type="button"
-              onClick={() => setCategory(cat)}
+              onClick={() => {
+                setCategory(cat);
+                setPage(0);
+              }}
               className={cn(
-                'shrink-0 rounded-lg px-4 py-1.5 text-sm',
-                category === cat
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-cream-dark text-muted',
+                'community-chip',
+                category === cat ? 'community-chip-active' : 'community-chip-inactive',
               )}
             >
               {cat}
@@ -63,33 +70,31 @@ function ContentsPageContent() {
         </div>
 
         {isLoading ? (
-          <LoadingSpinner />
+          <div className="flex flex-col gap-3">
+            {[1, 2, 3].map((i) => (
+              <ContentCardSkeleton key={i} />
+            ))}
+          </div>
+        ) : contentPage.content.length === 0 ? (
+          <EmptyState title="등록된 칼럼이 없습니다" description="곧 새로운 칼럼이 준비될 예정입니다." />
         ) : (
-          <div className="mt-4 space-y-3">
+          <div className="mx-auto flex max-w-app flex-col gap-3 lg:max-w-3xl lg:grid lg:grid-cols-2 lg:gap-3">
             {contentPage.content.map((item) => (
-              <Link key={item.id} href={`/contents/${item.id}`}>
-                <Card>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="gold">{item.category}</Badge>
-                    <span className="text-xs text-muted">{getContentTypeLabel(item.contentType)}</span>
-                  </div>
-                  <p className="mt-2 font-medium text-cream-foreground">{item.title}</p>
-                  <p className="mt-1 text-sm text-muted">{getContentPreview(item.content)}</p>
-                </Card>
-              </Link>
+              <ContentCard key={item.id} content={item} />
             ))}
           </div>
         )}
+
         <Pagination page={page} totalPages={contentPage.totalPages} onPageChange={setPage} />
       </div>
-      <AdminPublishFab tab="contents" label="정보 올리기" />
+      <AdminPublishFab tab="contents" label="칼럼 올리기" />
     </>
   );
 }
 
 export default function ContentsPage() {
   return (
-    <Suspense fallback={<LoadingSpinner label="정보글 불러오는 중…" />}>
+    <Suspense fallback={<LoadingSpinner label="칼럼 불러오는 중…" />}>
       <ContentsPageContent />
     </Suspense>
   );

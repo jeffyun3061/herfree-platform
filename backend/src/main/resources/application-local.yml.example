@@ -27,12 +27,17 @@ jwt:
 
 # 로컬 고정 관리자 (서버 재시작 시 role·비밀번호 동기화)
 app:
-  bootstrap:
+    bootstrap:
     enabled: true
     email: admin@herfree.local
     password: HerfreeAdmin01
     nickname: HerfreeOps
     sync-existing: true
+  # 로컬 둘러보기용 샘플 데이터 (게시판·정보·제품·일지). 최초 1회만 삽입됩니다.
+  # 운영(prod)에서는 app.demo-seed.enabled=false — DemoDataSeedRunner는 @Profile("local") 전용
+  demo-seed:
+    enabled: true
+    password: Demo1234!
   # access-key / secret-key → local-secrets.yml (gitignore) 또는 S3_ACCESS_KEY 환경변수
   # 이 파일에 access-key를 빈 플레이스홀더로 두지 마세요 (local-secrets 덮어씀)
   s3:

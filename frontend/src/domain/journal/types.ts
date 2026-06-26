@@ -133,6 +133,10 @@ export type JournalInsights = {
   insightLines: string[];
 };
 
+export type JournalPublicHomeStats = {
+  usersRecordingToday: number;
+};
+
 export type AdminJournalStats = {
   totalRecords: number;
   totalUsers: number;

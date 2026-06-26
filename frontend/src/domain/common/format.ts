@@ -32,6 +32,23 @@ export function formatRelativeTime(isoString: string): string {
   return formatDate(isoString);
 }
 
+/** 영상·칼럼 목록용 — 주·개월 단위 상대 시각 */
+export function formatRelativeTimeMedia(isoString: string): string {
+  const diffMs = Date.now() - new Date(isoString).getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays < 1) return '오늘';
+  if (diffDays < 7) return `${diffDays}일 전`;
+
+  const diffWeeks = Math.floor(diffDays / 7);
+  if (diffWeeks < 5) return `${diffWeeks}주 전`;
+
+  const diffMonths = Math.floor(diffDays / 30);
+  if (diffMonths < 12) return `${diffMonths}개월 전`;
+
+  return formatDate(isoString);
+}
+
 export function formatPrice(price: number | null): string {
   if (price == null) return '가격 정보 없음';
   return `${price.toLocaleString('ko-KR')}원`;

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { PUBLIC_IMAGES } from '@/domain/assets/static';
 import { PublicStaticImage } from '@/components/ui/PublicStaticImage';
 import { HeroTrustBar } from '@/components/home/HeroTrustBar';
+import { ButtonLink } from '@/components/ui/Button';
 
 export function HomeHero() {
   return (
@@ -23,35 +24,42 @@ export function HomeHero() {
         />
 
         <div className="hero-card__text">
-          <p className="hidden text-xs font-medium uppercase tracking-[0.2em] text-primary lg:block">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-primary lg:text-xs lg:tracking-[0.2em]">
             Herfree Health Community
           </p>
-          <h1 className="font-display text-[1.2rem] font-extrabold leading-[1.35] text-ink lg:mt-3 lg:text-[2.75rem] lg:leading-[1.2] xl:text-5xl">
+          <h1 className="font-display mt-2 text-[1.35rem] font-extrabold leading-[1.3] text-ink lg:mt-3 lg:text-[2.75rem] lg:leading-[1.2] xl:text-5xl">
             헤르프리
           </h1>
-          <p className="mt-2.5 text-[11px] leading-relaxed text-ink-soft lg:mt-5 lg:text-base lg:leading-relaxed">
+          <p className="mt-2.5 text-sm leading-relaxed text-ink-soft lg:mt-5 lg:text-base lg:leading-relaxed">
             당신의 새로운 건강한 일상을
             <br className="lg:hidden" />
             헤르프리와 함께 만들어가세요.
           </p>
-          <div className="mt-5 hidden flex-wrap gap-2 lg:mt-6 lg:flex lg:gap-3">
-            <Link
-              href="/community"
-              className="inline-flex h-10 items-center rounded-full bg-navy px-5 text-xs font-medium text-white transition-colors hover:bg-navy-light lg:h-11 lg:px-6 lg:text-sm"
-            >
-              커뮤니티 참여하기
-            </Link>
-            <Link
+
+          {/* 모바일: 개인 일지 우선 CTA (Wrtn식 단일 흐름) */}
+          <div className="cta-stack mt-5 lg:mt-6">
+            <ButtonLink
               href="/journal"
-              className="inline-flex h-10 items-center rounded-full border border-border bg-white/90 px-5 text-xs font-medium text-ink backdrop-blur-sm transition-colors hover:border-primary/30 hover:text-primary lg:h-11 lg:px-6 lg:text-sm"
+              fullWidth
+              size="lg"
+              className="lg:w-auto lg:min-w-[10.5rem] lg:rounded-pill"
             >
-              개인 일지 시작
-            </Link>
+              개인일지 시작
+            </ButtonLink>
+            <ButtonLink
+              href="/community"
+              variant="secondary"
+              fullWidth
+              size="lg"
+              className="lg:w-auto lg:min-w-[10.5rem] lg:rounded-pill"
+            >
+              커뮤니티 둘러보기
+            </ButtonLink>
             <Link
               href="/contents"
-              className="inline-flex h-10 items-center rounded-full border border-border bg-white/90 px-5 text-xs font-medium text-ink backdrop-blur-sm transition-colors hover:border-primary/30 hover:text-primary lg:h-11 lg:px-6 lg:text-sm"
+              className="cta-pill-secondary w-full text-center lg:w-auto lg:min-w-[9.5rem] lg:rounded-pill"
             >
-              건강 정보 보기
+              칼럼 보기
             </Link>
           </div>
         </div>

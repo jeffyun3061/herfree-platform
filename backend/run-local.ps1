@@ -36,6 +36,18 @@ function Ensure-LocalMysql {
     }
 }
 
+function Repair-FlywayFailures {
+    try {
+        $failed = docker exec herfree-mysql mysql -uherfree_user -pherfree_pass herfree_db -N -e "SELECT COUNT(*) FROM flyway_schema_history WHERE success = 0;" 2>$null
+        if ($failed -and [int]$failed -gt 0) {
+            Write-Host "Repairing Flyway failed migrations ($failed entries)..."
+            docker exec herfree-mysql mysql -uherfree_user -pherfree_pass herfree_db -e "DELETE FROM flyway_schema_history WHERE success = 0;"
+        }
+    } catch {
+        Write-Host "[WARN] Flyway repair skipped: $($_.Exception.Message)"
+    }
+}
+
 function Stop-ListenerOnPort([int]$Port) {
     $pids = [System.Collections.Generic.HashSet[int]]::new()
 
@@ -77,6 +89,7 @@ function Stop-ListenerOnPort([int]$Port) {
 }
 
 Ensure-LocalMysql
+Repair-FlywayFailures
 
 Stop-ListenerOnPort -Port 8080
 

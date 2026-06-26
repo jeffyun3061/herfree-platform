@@ -13,15 +13,15 @@ const ENTRIES = [
   },
   {
     href: '/journal',
-    title: '개인 일지',
+    title: '개인일지',
     description: '나만 보는 재발·루틴 기록',
     emoji: '📔',
     className: 'bg-navy text-white',
   },
   {
     href: '/contents',
-    title: '검증 정보',
-    description: '검사·재발·치료 정보 확인',
+    title: '칼럼',
+    description: '검사·재발·치료 칼럼 확인',
     emoji: '📚',
     className: 'bg-gold text-gold-foreground',
   },

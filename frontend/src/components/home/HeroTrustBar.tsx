@@ -9,7 +9,7 @@ const TRUST_ITEMS = [
     ),
   },
   {
-    label: '전문 정보',
+    label: '칼럼',
     icon: (
       <svg viewBox="0 0 24 24" className="h-[18px] w-[18px] lg:h-5 lg:w-5" fill="none" stroke="currentColor" strokeWidth="1.5">
         <path d="M12 3l7 4v5c0 4.2-2.8 7.4-7 9-4.2-1.6-7-4.8-7-9V7l7-4Z" strokeLinejoin="round" />

@@ -1,24 +1,27 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useBoards } from '@/hooks/useBoards';
 import { usePostList } from '@/hooks/usePosts';
 import { BoardTabBar } from '@/components/community/BoardTabBar';
 import { CommunityFab } from '@/components/community/CommunityFab';
-import { CommunitySortTabs, postSortToQuery, type PostSortOption } from '@/components/community/CommunitySortTabs';
+import { CommunityPageSizeSelect, type CommunityPageSize } from '@/components/community/CommunityPageSizeSelect';
+import { CommunitySortTabs, CommunityPeriodToggle, postSortToQuery, type PostListPeriod, type PostSortOption } from '@/components/community/CommunitySortTabs';
+import { needsPostListPeriod, postListPeriodHint, postListPeriodQuery } from '@/domain/post/sort';
 import { PostCard, PostCardSkeleton } from '@/components/community/PostCard';
 import { Pagination } from '@/components/common/Pagination';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { Button } from '@/components/ui/Button';
 import { AdminPublishFab, AdminPublishLink } from '@/components/admin/AdminPublishLink';
-import { getWritableBoards, findBoardByType, isStaffOnlyBoardType } from '@/domain/board/types';
-import { getCommunityBoards } from '@/domain/board/privateBoard';
+import { getWritableBoards, isStaffOnlyBoardType } from '@/domain/board/types';
+import { getCommunityBoards, isSecretStoryBoardType } from '@/domain/board/privateBoard';
+import { validatePostSearchKeyword } from '@/domain/post/search';
+import { isStaff } from '@/domain/user/types';
 import { getErrorMessage } from '@/lib/api/client';
-import { FlowGuideBanner } from '@/components/ui/FlowGuideBanner';
 
 type CommunityFeedProps = {
   initialBoardId?: number | null;
@@ -26,24 +29,54 @@ type CommunityFeedProps = {
 
 export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
   const router = useRouter();
-  const { isLoggedIn } = useAuth();
+  const searchParams = useSearchParams();
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const { isLoggedIn, user } = useAuth();
   const { boards, isLoading: boardsLoading, error: boardsError } = useBoards();
   const [selectedBoardId, setSelectedBoardId] = useState<number | null>(initialBoardId);
   const [keyword, setKeyword] = useState('');
   const [searchInput, setSearchInput] = useState('');
+  const [searchHint, setSearchHint] = useState<string | null>(null);
   const [sort, setSort] = useState<PostSortOption>('latest');
+  const [period, setPeriod] = useState<PostListPeriod>('week');
+  const [pageSize, setPageSize] = useState<CommunityPageSize>(20);
 
   const { postPage, page, setPage, isLoading, error } = usePostList(
     selectedBoardId,
-    15,
+    pageSize,
     keyword,
     postSortToQuery(sort),
+    postListPeriodQuery(sort, period),
   );
 
   useEffect(() => {
     setSelectedBoardId(initialBoardId);
     setPage(0);
   }, [initialBoardId, setPage]);
+
+  useEffect(() => {
+    const q = searchParams.get('q')?.trim();
+    if (q) {
+      const hint = validatePostSearchKeyword(q);
+      setSearchInput(q);
+      if (hint) {
+        setSearchHint(hint);
+        setKeyword('');
+      } else {
+        setSearchHint(null);
+        setKeyword(q);
+        setPage(0);
+      }
+    }
+    if (searchParams.get('focus') === 'search') {
+      const timer = window.setTimeout(() => {
+        searchInputRef.current?.focus({ preventScroll: true });
+        searchInputRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }, 80);
+      return () => window.clearTimeout(timer);
+    }
+    return undefined;
+  }, [searchParams, setPage]);
 
   const handleBoardSelect = (boardId: number | null) => {
     setSelectedBoardId(boardId);
@@ -52,6 +85,12 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
   };
 
   const handleSearch = () => {
+    const hint = validatePostSearchKeyword(searchInput);
+    if (hint) {
+      setSearchHint(hint);
+      return;
+    }
+    setSearchHint(null);
     setKeyword(searchInput.trim());
     setPage(0);
   };
@@ -61,15 +100,30 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
     setPage(0);
   };
 
+  const handlePeriodChange = (value: PostListPeriod) => {
+    setPeriod(value);
+    setPage(0);
+  };
+
+  const handlePageSizeChange = (size: CommunityPageSize) => {
+    setPageSize(size);
+    setPage(0);
+  };
+
+  const periodHint = postListPeriodHint(sort, period);
+
   const selectedBoard =
     selectedBoardId !== null ? boards.find((board) => board.id === selectedBoardId) : null;
   const isNoticeBoard = selectedBoard?.boardType === 'NOTICE';
+  const isSecretStoryBoard = selectedBoard != null && isSecretStoryBoardType(selectedBoard.boardType);
+  const staffUser = isStaff(user?.role);
   const isStaffOnlyBoard =
     selectedBoard !== null && selectedBoard !== undefined && isStaffOnlyBoardType(selectedBoard.boardType);
 
   const canCommunityWrite =
     isLoggedIn &&
     !isStaffOnlyBoard &&
+    !(isSecretStoryBoard && staffUser) &&
     (selectedBoardId === null
       ? getWritableBoards(boards).length > 0
       : getWritableBoards(boards).some((b) => b.id === selectedBoardId));
@@ -81,23 +135,28 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
 
   const loginHref = `/login?from=${encodeURIComponent(writeHref)}`;
 
-  const symptomBoard = findBoardByType(boards, 'SYMPTOM');
-  const isSymptomBoard = symptomBoard != null && selectedBoardId === symptomBoard.id;
-
   const isLoadingAll = boardsLoading || isLoading;
   const listError = boardsError ?? error;
 
   return (
-    <div className="page-container pb-28 lg:pb-10">
-      <div className="mb-6 hidden lg:block">
-        <h1 className="section-heading">커뮤니티</h1>
-        <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted">
-          자유롭게 소통하고 정보를 나누는 공간입니다. 익명으로 안전하게 이야기를 나눠 보세요.
+    <div className="page-container mx-auto max-w-app pb-20 lg:max-w-content lg:pb-8">
+      <div className="mb-4 lg:hidden">
+        <h2 className="text-[19px] font-semibold text-[#15201D]">커뮤니티</h2>
+        <p className="mt-1 text-[12.5px] leading-relaxed text-[#8B9590]">
+          같은 경험을 가진 사람들의 이야기가 모이는 곳
         </p>
       </div>
 
-      <div className="mb-4 flex gap-2">
-        <div className="relative min-w-0 flex-1">
+      <div className="mb-4 hidden lg:block">
+        <h1 className="section-heading">커뮤니티</h1>
+        <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted">
+          같은 경험을 가진 사람들의 이야기가 모이는 곳
+        </p>
+      </div>
+
+      <div className="mb-4 hidden lg:block">
+        <div className="flex gap-2">
+          <div className="relative min-w-0 flex-1">
           <svg
             viewBox="0 0 24 24"
             className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
@@ -109,8 +168,10 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
             <path d="M20 20l-3-3" strokeLinecap="round" />
           </svg>
           <input
+            ref={searchInputRef}
             type="search"
-            placeholder="제목, 내용으로 검색"
+            placeholder="두 글자 이상 검색"
+            aria-label="게시글 검색"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             onKeyDown={(e) => {
@@ -122,26 +183,13 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
         <Button type="button" size="sm" onClick={handleSearch} className="shrink-0">
           검색
         </Button>
+        </div>
+        {searchHint && (
+          <p className="mt-1.5 text-xs text-amber-700" role="status">
+            {searchHint}
+          </p>
+        )}
       </div>
-
-      {!isNoticeBoard && (
-        <FlowGuideBanner
-          className="mb-4"
-          title="익명으로 이야기 나누는 공간"
-          description="글과 댓글은 커뮤니티에 공개됩니다. 나만 보는 재발·루틴 기록은 개인 일지를 이용해 주세요."
-          link={{ href: '/journal', label: '개인 일지로 비공개 기록하기' }}
-        />
-      )}
-
-      {isSymptomBoard && (
-        <FlowGuideBanner
-          className="mb-4"
-          variant="accent"
-          title="증상 기록방 — 공개 게시판"
-          description="다른 회원과 경험을 나누는 공간입니다. 매일의 루틴·재발 패턴을 혼자 관리하려면 개인 일지가 더 적합합니다."
-          link={{ href: '/journal', label: '개인 일지 열기' }}
-        />
-      )}
 
       {!boardsLoading && boards.length > 0 && (
         <div className="mb-4">
@@ -153,12 +201,21 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
         </div>
       )}
 
-      <div className="mb-4">
+      {!isLoadingAll && !listError && (
+        <p className="mb-3 text-xs text-[#8B9590]">총 {postPage.totalElements.toLocaleString('ko-KR')}개</p>
+      )}
+
+      <div className="mb-4 hidden lg:block">
         <CommunitySortTabs value={sort} onChange={handleSortChange} />
-        {sort === 'comments' && (
-          <p className="mt-2 text-[11px] text-muted">
-            댓글 수 정렬은 준비 중입니다. 현재는 최신순으로 표시됩니다.
-          </p>
+        {needsPostListPeriod(sort) && (
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            {periodHint && (
+              <p className="text-xs text-muted" role="status">
+                {periodHint}
+              </p>
+            )}
+            <CommunityPeriodToggle value={period} onChange={handlePeriodChange} />
+          </div>
         )}
       </div>
 
@@ -179,7 +236,7 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
       </div>
 
       {isLoadingAll && (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {[1, 2, 3].map((i) => (
             <PostCardSkeleton key={i} />
           ))}
@@ -193,7 +250,7 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
       )}
 
       {!isLoadingAll && !listError && postPage.content.length === 0 && (
-        <div className="py-8">
+        <div className="py-6">
           <EmptyState
             title={keyword ? '검색 결과가 없습니다' : '글이 없습니다'}
             description={
@@ -215,7 +272,7 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
       )}
 
       {!isLoadingAll && !listError && postPage.content.length > 0 && (
-        <div className="space-y-3">
+        <div className="community-feed-list">
           {postPage.content.map((post) => (
             <PostCard key={post.id} post={post} boardName={post.boardName} />
           ))}
@@ -223,9 +280,13 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
       )}
 
       {!isLoadingAll && !listError && postPage.totalPages > 1 && (
-        <div className="mt-6">
+        <div className="mt-2">
           <Pagination page={page} totalPages={postPage.totalPages} onPageChange={setPage} />
         </div>
+      )}
+
+      {!isLoadingAll && !listError && postPage.content.length > 0 && (
+        <CommunityPageSizeSelect value={pageSize} onChange={handlePageSizeChange} />
       )}
 
       {canCommunityWrite && <CommunityFab href={writeHref} />}

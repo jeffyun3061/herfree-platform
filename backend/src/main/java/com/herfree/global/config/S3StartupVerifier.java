@@ -1,7 +1,5 @@
 package com.herfree.global.config;
 
-import com.herfree.global.exception.BusinessException;
-import com.herfree.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -9,7 +7,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.HeadBucketRequest;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 
 /** 기동 시 S3 버킷·권한을 검증해 업로드 실패 원인을 로그에 남긴다 */
@@ -31,8 +29,12 @@ public class S3StartupVerifier {
         }
 
         try {
-            s3Client.headBucket(HeadBucketRequest.builder()
+            // HeadBucket 은 IAM 에서 s3:ListBucket 이 함께 필요하다.
+            // 업로드 경로(posts/*) 기준으로 ListBucket 권한만 검증한다.
+            s3Client.listObjectsV2(ListObjectsV2Request.builder()
                     .bucket(s3Properties.bucket())
+                    .prefix("posts/")
+                    .maxKeys(1)
                     .build());
             log.info("S3 startup check OK — bucket '{}' reachable (region={})",
                     s3Properties.bucket(), s3Properties.region());
@@ -40,7 +42,8 @@ public class S3StartupVerifier {
             String code = ex.awsErrorDetails() != null ? ex.awsErrorDetails().errorCode() : "Unknown";
             log.error("S3 startup check FAILED — bucket='{}' region={} errorCode={} message={}",
                     s3Properties.bucket(), s3Properties.region(), code, ex.getMessage());
-            log.error("Fix: (1) bucket name/region in local-secrets.yml (2) IAM s3:PutObject on arn:aws:s3:::{}/posts/*",
+            log.error(
+                    "Fix: (1) bucket/region in local-secrets.yml (2) IAM s3:PutObject + s3:ListBucket on arn:aws:s3:::{}/posts/*",
                     s3Properties.bucket());
         } catch (Exception ex) {
             log.error("S3 startup check FAILED — {}", ex.getMessage());

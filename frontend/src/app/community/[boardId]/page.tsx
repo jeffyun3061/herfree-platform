@@ -1,20 +1,21 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useParams } from 'next/navigation';
 import { CommunityFeed } from '@/components/community/CommunityFeed';
-import { PageHeader } from '@/components/layout/PageHeader';
-import { useBoards } from '@/hooks/useBoards';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
-export default function BoardPostsPage() {
+function BoardPostsContent() {
   const params = useParams();
   const boardId = Number(params.boardId);
-  const { boards } = useBoards();
-  const board = boards.find((b) => b.id === boardId);
 
+  return <CommunityFeed initialBoardId={boardId} />;
+}
+
+export default function BoardPostsPage() {
   return (
-    <>
-      <PageHeader title={board?.name ?? '게시판'} showBack />
-      <CommunityFeed initialBoardId={boardId} />
-    </>
+    <Suspense fallback={<LoadingSpinner label="게시판 불러오는 중…" />}>
+      <BoardPostsContent />
+    </Suspense>
   );
 }

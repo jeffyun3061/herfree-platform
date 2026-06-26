@@ -11,7 +11,7 @@ const CATEGORY_DESC: Record<string, string> = {
 export function InfoCategoriesSection() {
   return (
     <section>
-      <h2 className="section-heading">정보 카테고리</h2>
+      <h2 className="section-heading">칼럼 카테고리</h2>
       <p className="mt-1 mb-4 text-sm text-muted">검증된 건강 정보를 주제별로 탐색하세요.</p>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {CONTENT_CATEGORIES.map((category) => (
@@ -24,7 +24,7 @@ export function InfoCategoriesSection() {
               {category}
             </p>
             <p className="mt-2 text-xs leading-relaxed text-muted">
-              {CATEGORY_DESC[category] ?? '관련 정보글 모음'}
+              {CATEGORY_DESC[category] ?? '관련 칼럼 모음'}
             </p>
           </Link>
         ))}

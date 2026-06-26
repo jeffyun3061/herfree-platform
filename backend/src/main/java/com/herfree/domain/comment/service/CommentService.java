@@ -46,7 +46,7 @@ public class CommentService {
 
         PostVisibilityPolicy.assertReadable(post, userId, user.getRole());
 
-        if (PrivateBoardPolicy.isPrivateBoard(post.getBoard().getBoardType())
+        if (PrivateBoardPolicy.isAdminMaskedBoard(post.getBoard().getBoardType())
                 && !PrivateBoardPolicy.canStaffWriteCommentOnPrivateBoard(user.getRole())) {
             throw new CommentAccessDeniedException();
         }
@@ -68,6 +68,7 @@ public class CommentService {
                 .build();
 
         commentRepository.save(comment);
+        post.increaseCommentCount();
 
         UserProfile profile = userProfileRepository.findByUserId(userId)
                 .orElseThrow(UserNotFoundException::new);
@@ -86,7 +87,7 @@ public class CommentService {
                 : userRepository.findById(currentUserId).map(User::getRole).orElse(null);
         PostVisibilityPolicy.assertReadable(post, currentUserId, viewerRole);
 
-        if (PrivateBoardPolicy.isPrivateBoard(post.getBoard().getBoardType())
+        if (PrivateBoardPolicy.isAdminMaskedBoard(post.getBoard().getBoardType())
                 && !PrivateBoardPolicy.canViewerReadComments(post, currentUserId, viewerRole)) {
             throw new CommentAccessDeniedException();
         }
@@ -111,7 +112,7 @@ public class CommentService {
         User user = userRepository.findById(userId)
                 .orElseThrow(UserNotFoundException::new);
         Post post = comment.getPost();
-        boolean privateBoard = PrivateBoardPolicy.isPrivateBoard(post.getBoard().getBoardType());
+        boolean privateBoard = PrivateBoardPolicy.isAdminMaskedBoard(post.getBoard().getBoardType());
 
         if (privateBoard) {
             if (!StaffRolePolicy.isStaff(user.getRole())) {
@@ -122,6 +123,7 @@ public class CommentService {
         }
 
         comment.delete();
+        post.decreaseCommentCount();
     }
 
     // 관리자 전용 숨김 처리 — AdminCommentController에서 호출한다
@@ -132,6 +134,7 @@ public class CommentService {
                 .orElseThrow(CommentNotFoundException::new);
 
         comment.hide();
+        comment.getPost().decreaseCommentCount();
     }
 
     @Transactional
@@ -141,6 +144,7 @@ public class CommentService {
                 .orElseThrow(CommentNotFoundException::new);
 
         comment.restore();
+        comment.getPost().increaseCommentCount();
     }
 
     @Transactional(readOnly = true)

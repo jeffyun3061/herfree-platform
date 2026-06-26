@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { RequireAuth } from '@/components/auth/RequireAuth';
 import { useBoards } from '@/hooks/useBoards';
@@ -16,7 +16,11 @@ import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { getWritableBoards, isStaffOnlyBoardType } from '@/domain/board/types';
 import {
   getPrivateBoardMetaByType,
-  isPrivateBoardType,
+  isMaskedBoardType,
+  isOffCommunityPrivateBoardType,
+  isSecretStoryBoardType,
+  resolvePrivateBoardWritePath,
+  SECRET_STORY_BOARD_COPY,
 } from '@/domain/board/privateBoard';
 import { POST_TITLE_MAX_LENGTH, validatePostInput, pickPostImageUrlForCreate } from '@/domain/post/types';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -40,7 +44,7 @@ function WritePostForm() {
 
   const { boards, isLoading: boardsLoading, error: boardsError } = useBoards();
   const writableBoards = getWritableBoards(boards).filter(
-    (board) => !(staffUser && isPrivateBoardType(board.boardType)),
+    (board) => !(staffUser && isMaskedBoardType(board.boardType)),
   );
   const { post: existingPost, isLoading: postLoading } = usePostDetail(editPostId ?? 0);
   const { createPost, updatePost, isSubmitting, error } = usePostMutation();
@@ -56,22 +60,36 @@ function WritePostForm() {
   const [adminSubmitError, setAdminSubmitError] = useState<string | null>(null);
   const [isAdminSubmitting, setIsAdminSubmitting] = useState(false);
 
+  const privateWriteRedirect = useMemo(
+    () => resolvePrivateBoardWritePath(boards, initialBoardId),
+    [boards, initialBoardId],
+  );
+
   useEffect(() => {
-    if (boardsLoading || boards.length === 0 || isEditMode) return;
+    if (!privateWriteRedirect) return;
+    router.replace(privateWriteRedirect);
+  }, [privateWriteRedirect, router]);
+
+  useEffect(() => {
+    if (boardsLoading || boards.length === 0) return;
+    if (privateWriteRedirect) return;
+    if (isEditMode) return;
     const target = boards.find((board) => board.id === initialBoardId);
     if (target && isStaffOnlyBoardType(target.boardType)) {
       router.replace('/admin?tab=notices');
-      return;
     }
-    if (target && isPrivateBoardType(target.boardType) && staffUser) {
-      const meta = getPrivateBoardMetaByType(target.boardType);
-      router.replace(meta?.path ?? '/');
-    }
-  }, [boardsLoading, boards, initialBoardId, isEditMode, router, staffUser]);
+  }, [boardsLoading, boards, initialBoardId, isEditMode, privateWriteRedirect, router]);
 
   useEffect(() => {
     if (!isEditMode || !existingPost || boards.length === 0) return;
     const board = boards.find((item) => item.id === existingPost.boardId);
+    if (board && isOffCommunityPrivateBoardType(board.boardType)) {
+      const meta = getPrivateBoardMetaByType(board.boardType);
+      if (meta) {
+        router.replace(`${meta.writePath}?postId=${existingPost.id}`);
+      }
+      return;
+    }
     if (board && isStaffOnlyBoardType(board.boardType)) {
       router.replace('/admin?tab=notices');
     }
@@ -79,13 +97,14 @@ function WritePostForm() {
 
   useEffect(() => {
     if (isEditMode) return;
+    if (privateWriteRedirect) return;
     if (writableBoards.length === 0 || initialized) return;
     const defaultBoardId = writableBoards.some((b) => b.id === initialBoardId)
       ? initialBoardId
       : writableBoards[0].id;
     setBoardId(defaultBoardId);
     setInitialized(true);
-  }, [isEditMode, writableBoards, initialBoardId, initialized]);
+  }, [isEditMode, privateWriteRedirect, writableBoards, initialBoardId, initialized]);
 
   useEffect(() => {
     if (!isEditMode || !existingPost || initialized) return;
@@ -99,6 +118,7 @@ function WritePostForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
     const validation = validatePostInput({ title, content });
     if (validation) {
       setValidationError(validation);
@@ -117,8 +137,8 @@ function WritePostForm() {
       setValidationError('이 게시판에는 운영 관리 화면에서만 글을 등록할 수 있습니다.');
       return;
     }
-    if (selected && isPrivateBoardType(selected.boardType) && staffUser) {
-      setValidationError('문의·상담 글은 일반 회원만 작성할 수 있습니다.');
+    if (selected && isMaskedBoardType(selected.boardType) && staffUser) {
+      setValidationError('문의·상담·비밀사연 글은 일반 회원만 작성할 수 있습니다.');
       return;
     }
     setValidationError(null);
@@ -161,9 +181,19 @@ function WritePostForm() {
     if (result) {
       const createdBoard = boards.find((item) => item.id === boardId);
       const privateMeta = createdBoard ? getPrivateBoardMetaByType(createdBoard.boardType) : null;
-      router.replace(privateMeta ? privateMeta.path : `/community/posts/${result.id}`);
+      if (privateMeta) {
+        router.replace(privateMeta.path);
+      } else if (createdBoard && isSecretStoryBoardType(createdBoard.boardType)) {
+        router.replace(`/community/${boardId}`);
+      } else {
+        router.replace(`/community/posts/${result.id}`);
+      }
     }
   };
+
+  if (!isEditMode && (boardsLoading || privateWriteRedirect)) {
+    return <LoadingSpinner label="불러오는 중…" />;
+  }
 
   if (isEditMode && (postLoading || !initialized)) {
     return <LoadingSpinner label="글 불러오는 중…" />;
@@ -192,12 +222,12 @@ function WritePostForm() {
   const selectedBoard = writableBoards.find((b) => b.id === boardId);
   const isSymptomBoard = selectedBoard?.boardType === 'SYMPTOM';
   const privateMeta = selectedBoard ? getPrivateBoardMetaByType(selectedBoard.boardType) : null;
+  const isSecretStoryWrite = selectedBoard != null && isSecretStoryBoardType(selectedBoard.boardType);
+  const isMaskedWrite = Boolean(privateMeta) || isSecretStoryWrite;
   const lockedPrivateBoard =
     !isEditMode &&
     initialBoardId > 0 &&
-    writableBoards.some(
-      (board) => board.id === initialBoardId && isPrivateBoardType(board.boardType),
-    );
+    writableBoards.some((board) => board.id === initialBoardId && isOffCommunityPrivateBoardType(board.boardType));
   const titleCounterMax = Math.min(TITLE_UI_MAX, POST_TITLE_MAX_LENGTH);
   const writeTitle = isStaffAdminEdit
     ? '운영자 글 수정'
@@ -205,17 +235,27 @@ function WritePostForm() {
       ? '글 수정'
       : privateMeta
         ? privateMeta.writeLabel
-        : '커뮤니티 글쓰기';
-  const titlePlaceholder = privateMeta
-    ? boardId && selectedBoard?.boardType === 'INQUIRY'
-      ? '문의 제목을 입력해 주세요'
-      : '상담 제목을 입력해 주세요'
-    : '주제를 입력해 주세요';
-  const contentPlaceholder = privateMeta
-    ? selectedBoard?.boardType === 'INQUIRY'
-      ? '문의·건의·신고 내용을 자세히 적어 주세요. 운영팀만 전체 내용을 확인합니다.'
-      : '상담하고 싶은 내용을 편하게 적어 주세요. 관리자만 열람할 수 있습니다.'
-    : '경험, 질문, 위로의 말을 자유롭게 적어 주세요.';
+        : isSecretStoryWrite
+          ? SECRET_STORY_BOARD_COPY.writeLabel
+          : '커뮤니티 글쓰기';
+  const titlePlaceholder = isSecretStoryWrite
+    ? '사연 제목을 입력해 주세요'
+    : privateMeta
+      ? selectedBoard?.boardType === 'INQUIRY'
+        ? '문의 제목을 입력해 주세요'
+        : '상담 제목을 입력해 주세요'
+      : selectedBoard?.boardType === 'QUESTION'
+        ? '질문 제목을 입력해 주세요'
+        : '주제를 입력해 주세요';
+  const contentPlaceholder = isSecretStoryWrite
+    ? '헤르프리에게 전하고 싶은 사연을 편하게 적어 주세요. 운영자만 전체 내용을 확인합니다.'
+    : privateMeta
+      ? selectedBoard?.boardType === 'INQUIRY'
+        ? '문의·건의·신고 내용을 자세히 적어 주세요. 운영팀만 전체 내용을 확인합니다.'
+        : '상담하고 싶은 내용을 편하게 적어 주세요. 관리자만 열람할 수 있습니다.'
+      : selectedBoard?.boardType === 'QUESTION'
+        ? '궁금한 점을 구체적으로 적어 주세요. 다른 회원들이 댓글로 답해 줄 수 있습니다.'
+        : '경험, 질문, 위로의 말을 자유롭게 적어 주세요.';
 
   return (
     <div className="min-h-screen bg-wrtn-bg">
@@ -272,7 +312,7 @@ function WritePostForm() {
           </p>
         </div>
 
-        {!privateMeta && (
+        {!isMaskedWrite && (
           <CommunityPhotoAttach imageUrl={imageUrl} onChange={setImageUrl} disabled={isSubmitting} />
         )}
 
@@ -284,7 +324,7 @@ function WritePostForm() {
           placeholder={contentPlaceholder}
         />
 
-        {!privateMeta && (
+        {!isMaskedWrite && (
           <label className="flex items-center gap-3 rounded-xl border border-wrtn-border bg-white px-4 py-3.5 text-sm text-ink">
             <input
               type="checkbox"

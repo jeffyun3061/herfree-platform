@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { BrandMark } from '@/components/brand/BrandMark';
+import { PRIVATE_BOARD_META } from '@/domain/board/privateBoard';
 
 export function SiteFooter() {
   return (
@@ -19,7 +20,7 @@ export function SiteFooter() {
           <Link href="/forgot-password" className="text-muted hover:text-primary">
             비밀번호 찾기
           </Link>
-          <Link href="/inquiry" className="text-muted hover:text-primary">
+          <Link href={PRIVATE_BOARD_META.INQUIRY.writePath} className="text-muted hover:text-primary">
             문의하기
           </Link>
         </nav>

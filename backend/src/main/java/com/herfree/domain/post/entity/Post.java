@@ -52,6 +52,10 @@ public class Post extends BaseTimeEntity {
     @Column(nullable = false)
     private int viewCount;
 
+    // ACTIVE 댓글 수 — 목록 댓글순 정렬·표시용 (CommentService에서 동기화)
+    @Column(nullable = false)
+    private int commentCount;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private PostStatus status;
@@ -79,6 +83,7 @@ public class Post extends BaseTimeEntity {
         this.title = title;
         this.content = content;
         this.viewCount = 0;
+        this.commentCount = 0;
         this.status = PostStatus.ACTIVE;
         this.visibility = (visibility != null) ? visibility : PostVisibility.PUBLIC;
         this.isAnonymous = isAnonymous;
@@ -119,6 +124,16 @@ public class Post extends BaseTimeEntity {
     // 동시성 이슈(Race condition)는 향후 낙관적 락 또는 Redis 카운터로 해결한다.
     public void increaseViewCount() {
         this.viewCount++;
+    }
+
+    public void increaseCommentCount() {
+        this.commentCount++;
+    }
+
+    public void decreaseCommentCount() {
+        if (this.commentCount > 0) {
+            this.commentCount--;
+        }
     }
 
     public void updateSortOrder(int sortOrder) {

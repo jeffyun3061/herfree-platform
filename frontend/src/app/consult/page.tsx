@@ -1,7 +1,7 @@
 'use client';
 
-import { PrivateBoardFeed } from '@/components/community/PrivateBoardFeed';
+import { ConsultIntroPage } from '@/components/consult/ConsultIntroPage';
 
 export default function ConsultPage() {
-  return <PrivateBoardFeed boardType="PRIVATE_CONSULT" />;
+  return <ConsultIntroPage />;
 }

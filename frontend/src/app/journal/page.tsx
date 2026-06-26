@@ -4,8 +4,7 @@
 
 import { Suspense, useEffect, useRef, useState } from 'react';
 
-import Link from 'next/link';
-
+import { GuestJournalPromo } from '@/components/home/GuestJournalPromo';
 import { JournalHomeTab } from '@/components/journal/JournalHomeTab';
 
 import { JournalRecordFromQuery } from '@/components/journal/JournalRecordFromQuery';
@@ -222,9 +221,9 @@ export default function JournalPage() {
 
   return (
 
-    <div className="bg-[#e9ebea] pb-10 lg:pb-14">
+    <div className="bg-[#e9ebea] pb-6 lg:pb-10">
 
-      <div className="page-container space-y-4">
+      <div className="page-container space-y-3">
 
         {!isReady ? (
 
@@ -393,35 +392,9 @@ export default function JournalPage() {
           </>
 
         ) : (
-
-          <div className="mx-auto max-w-app space-y-5">
-
-            <div className="rounded-[1.25rem] border border-border/50 bg-white p-6 text-center shadow-card">
-
-              <p className="text-[15px] font-bold text-ink">개인 일지</p>
-
-              <p className="mt-2 text-sm text-muted">
-
-                재발·수면·루틴을 비공개로 기록하고 패턴을 확인해 보세요.
-
-              </p>
-
-              <Link
-
-                href="/login?from=%2Fjournal"
-
-                className="mt-4 inline-block rounded-pill bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground"
-
-              >
-
-                로그인하고 기록 시작
-
-              </Link>
-
-            </div>
-
+          <div className="mx-auto max-w-app">
+            <GuestJournalPromo />
           </div>
-
         )}
 
 

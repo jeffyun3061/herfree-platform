@@ -6,9 +6,9 @@ const config: Config = {
     extend: {
       colors: {
         primary: {
-          DEFAULT: '#2F8F83',
-          light: '#3BA896',
-          dark: '#25796F',
+          DEFAULT: '#0B3B36',
+          light: '#0F4F48',
+          dark: '#082E2A',
           foreground: '#FFFFFF',
         },
         navy: {
@@ -17,18 +17,18 @@ const config: Config = {
           foreground: '#F8FAFC',
         },
         wrtn: {
-          bg: '#E9EBEA',
+          bg: '#EFF1F0',
           surface: '#FFFFFF',
-          border: '#E8E8ED',
-          muted: '#5B5B5B',
+          border: '#DDE3E1',
+          muted: '#5B6864',
         },
         herfree: {
-          green: '#0F5050',
-          gray: '#5B5B5B',
-          yellow: '#FFE400',
-          'bg-muted': '#E9EBEA',
-          'bg-dark': '#092A2A',
-          'icon-bg': '#E1EAE9',
+          green: '#0B3B36',
+          gray: '#5B6864',
+          yellow: '#FFD566',
+          'bg-muted': '#EFF1F0',
+          'bg-dark': '#1A1A1A',
+          'icon-bg': '#F4F6F5',
         },
         canvas: {
           DEFAULT: '#F5F5F7',
@@ -75,9 +75,9 @@ const config: Config = {
           soft: '#5C5F66',
         },
         journal: {
-          hero: '#0B3026',
+          hero: '#0B3B36',
           sun: '#F5A623',
-          success: '#1D9E75',
+          success: '#0B3B36',
           community: '#0A1A16',
         },
       },

@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { BrandMark } from '@/components/brand/BrandMark';
@@ -11,8 +11,15 @@ import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { validateSignup } from '@/domain/auth/validate';
 import { getErrorMessage } from '@/lib/api/client';
 
-export default function SignupPage() {
+function resolveReturnUrl(from: string | null): string {
+  if (!from || !from.startsWith('/') || from.startsWith('//')) return '/journal';
+  if (from.startsWith('/login') || from.startsWith('/signup')) return '/journal';
+  return from;
+}
+
+function SignupForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { signup } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -42,7 +49,7 @@ export default function SignupPage() {
     setIsSubmitting(true);
     try {
       await signup({ email, password, nickname });
-      router.replace('/journal');
+      router.replace(resolveReturnUrl(searchParams.get('from')));
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -143,5 +150,13 @@ export default function SignupPage() {
         </p>
       </form>
     </div>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={null}>
+      <SignupForm />
+    </Suspense>
   );
 }

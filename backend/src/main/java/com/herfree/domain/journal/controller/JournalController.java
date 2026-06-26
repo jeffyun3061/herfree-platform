@@ -3,6 +3,7 @@ package com.herfree.domain.journal.controller;
 import com.herfree.domain.journal.dto.request.JournalRecordUpsertRequest;
 import com.herfree.domain.journal.dto.response.JournalDashboardResponse;
 import com.herfree.domain.journal.dto.response.JournalInsightsResponse;
+import com.herfree.domain.journal.dto.response.JournalPublicHomeStatsResponse;
 import com.herfree.domain.journal.dto.response.JournalRecordResponse;
 import com.herfree.domain.journal.dto.response.JournalReviewSummaryResponse;
 import com.herfree.domain.journal.service.JournalService;
@@ -93,5 +94,10 @@ public class JournalController {
     @GetMapping("/insights")
     public ResponseEntity<ApiResponse<JournalInsightsResponse>> getInsights() {
         return ResponseEntity.ok(ApiResponse.success(journalService.getCommunityInsights()));
+    }
+
+    @GetMapping("/public/home-stats")
+    public ResponseEntity<ApiResponse<JournalPublicHomeStatsResponse>> getPublicHomeStats() {
+        return ResponseEntity.ok(ApiResponse.success(journalService.getPublicHomeStats()));
     }
 }

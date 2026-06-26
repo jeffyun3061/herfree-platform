@@ -7,6 +7,7 @@ public record UserActivityResponse(
         int totalPosts,
         int symptomPosts,
         long receivedReactions,
-        LocalDateTime lastPostAt
+        LocalDateTime lastPostAt,
+        LocalDateTime memberSince
 ) {
 }

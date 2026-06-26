@@ -21,6 +21,7 @@ export type UserActivity = {
   symptomPosts: number;
   receivedReactions: number;
   lastPostAt: string | null;
+  memberSince: string | null;
 };
 
 export function fetchMyActivity(): Promise<UserActivity> {

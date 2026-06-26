@@ -21,6 +21,9 @@ export function JournalPatternLine({ line, isLoading }: JournalPatternLineProps)
   return (
     <section className="rounded-card border border-border/50 bg-white p-4 shadow-card">
       <h3 className="text-[13px] font-semibold text-ink">패턴 한줄</h3>
+      <p className="mt-1 text-[11px] leading-relaxed text-muted">
+        본인 최근 재발 기록(최대 5건)에서 가장 자주 남긴 트리거를 요약합니다.
+      </p>
       <p className="mt-2 text-[12px] leading-relaxed text-ink-soft">{line}</p>
     </section>
   );

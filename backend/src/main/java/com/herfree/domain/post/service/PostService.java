@@ -16,6 +16,7 @@ import com.herfree.domain.post.entity.PostImage;
 import com.herfree.domain.post.entity.PostStatus;
 import com.herfree.domain.post.exception.PostAccessDeniedException;
 import com.herfree.domain.post.exception.PostNotFoundException;
+import com.herfree.domain.post.repository.PostFulltextSearchRepository;
 import com.herfree.domain.post.repository.PostImageRepository;
 import com.herfree.domain.post.repository.PostRepository;
 import com.herfree.domain.user.entity.User;
@@ -25,8 +26,12 @@ import com.herfree.domain.user.repository.UserProfileRepository;
 import com.herfree.domain.user.repository.UserRepository;
 import com.herfree.domain.post.entity.PostVisibility;
 import com.herfree.domain.user.entity.UserRole;
+import com.herfree.global.util.PostListPeriod;
+import com.herfree.global.util.PostListSort;
+import com.herfree.global.util.PostSearchKeywordPolicy;
 import com.herfree.global.util.PostVisibilityPolicy;
 import com.herfree.global.storage.PostImageStorageService;
+import com.herfree.domain.reaction.repository.ReactionRepository;
 import com.herfree.global.util.BoardWritePolicy;
 import com.herfree.global.util.PrivateBoardPolicy;
 import lombok.RequiredArgsConstructor;
@@ -46,12 +51,14 @@ import java.util.stream.Collectors;
 public class PostService {
 
     private final PostRepository postRepository;
+    private final PostFulltextSearchRepository postFulltextSearchRepository;
     private final PostImageRepository postImageRepository;
     private final BoardRepository boardRepository;
     private final CommentRepository commentRepository;
     private final UserRepository userRepository;
     private final UserProfileRepository userProfileRepository;
     private final PostImageStorageService postImageStorageService;
+    private final ReactionRepository reactionRepository;
 
     @Transactional
     public PostDetailResponse createPost(Long userId, PostCreateRequest request) {
@@ -65,7 +72,7 @@ public class PostService {
 
         postImageStorageService.assertImageUrlAllowed(userId, request.imageUrl());
 
-        PostVisibility visibility = PrivateBoardPolicy.isPrivateBoard(board.getBoardType())
+        PostVisibility visibility = PrivateBoardPolicy.isAdminMaskedBoard(board.getBoardType())
                 ? PostVisibility.MEMBERS_ONLY
                 : request.visibility();
 
@@ -89,24 +96,45 @@ public class PostService {
     }
 
     @Transactional(readOnly = true)
-    public Page<PostResponse> getPosts(Long boardId, String keyword, Pageable pageable, Long userId) {
+    public Page<PostResponse> getPosts(
+            Long boardId,
+            String keyword,
+            Pageable pageable,
+            Long userId,
+            String period
+    ) {
         String normalizedKeyword = normalizeKeyword(keyword);
         UserRole viewerRole = resolveViewerRole(userId);
-        Page<Post> posts = fetchActivePosts(boardId, normalizedKeyword, userId, viewerRole, pageable);
+        PostListPeriod listPeriod = PostListPeriod.from(period);
+        Page<Post> posts = fetchActivePosts(boardId, normalizedKeyword, userId, viewerRole, pageable, listPeriod);
         boolean trackStaffReplies = boardId != null
                 && boardRepository.findById(boardId)
-                        .map(board -> PrivateBoardPolicy.isPrivateBoard(board.getBoardType()))
+                        .map(board -> PrivateBoardPolicy.isAdminMaskedBoard(board.getBoardType()))
                         .orElse(false);
         Map<Long, Boolean> staffRepliedMap = trackStaffReplies
                 ? resolveStaffRepliedMap(posts.getContent())
                 : Map.of();
+        Map<Long, Integer> reactionCountMap = resolveReactionCountMap(posts.getContent());
         return posts.map(post -> {
             String nickname = userProfileRepository.findByUserId(post.getUser().getId())
                     .map(UserProfile::getNickname)
                     .orElse("(알 수 없음)");
             boolean staffReplied = staffRepliedMap.getOrDefault(post.getId(), false);
-            return PostResponse.of(post, nickname, userId, viewerRole, staffReplied);
+            int reactionCount = reactionCountMap.getOrDefault(post.getId(), 0);
+            return PostResponse.of(post, nickname, userId, viewerRole, staffReplied, reactionCount);
         });
+    }
+
+    private Map<Long, Integer> resolveReactionCountMap(List<Post> posts) {
+        if (posts.isEmpty()) {
+            return Map.of();
+        }
+        Set<Long> postIds = posts.stream().map(Post::getId).collect(Collectors.toSet());
+        return reactionRepository.countReactionsByPostIds(postIds).stream()
+                .collect(Collectors.toMap(
+                        row -> ((Number) row[0]).longValue(),
+                        row -> ((Number) row[1]).intValue()
+                ));
     }
 
     private Page<Post> fetchActivePosts(
@@ -114,21 +142,67 @@ public class PostService {
             String keyword,
             Long userId,
             UserRole viewerRole,
-            Pageable pageable
+            Pageable pageable,
+            PostListPeriod period
     ) {
+        PostListSort sort = PostListSort.from(pageable);
         if (boardId != null) {
             Board board = boardRepository.findById(boardId).orElseThrow(BoardNotFoundException::new);
-            if (PrivateBoardPolicy.isPrivateBoard(board.getBoardType()) && userId == null) {
+            if (PrivateBoardPolicy.isOffCommunityBoard(board.getBoardType()) && userId == null) {
                 throw new PostAccessDeniedException();
             }
+            if (keyword != null) {
+                return postFulltextSearchRepository.searchBoardPosts(boardId, keyword, sort, period, pageable);
+            }
             if (PrivateBoardPolicy.isInquiryBoard(board.getBoardType())) {
-                return postRepository.searchInquiryPosts(PostStatus.ACTIVE, boardId, keyword, pageable);
+                return postRepository.searchInquiryPosts(PostStatus.ACTIVE, boardId, null, pageable);
             }
             if (PrivateBoardPolicy.isSecretConsultBoard(board.getBoardType())) {
-                return postRepository.searchSecretConsultPosts(PostStatus.ACTIVE, boardId, keyword, pageable);
+                return postRepository.searchSecretConsultPosts(PostStatus.ACTIVE, boardId, null, pageable);
             }
+            if (PrivateBoardPolicy.isSecretStoryBoard(board.getBoardType())) {
+                return postRepository.searchSecretStoryPosts(PostStatus.ACTIVE, boardId, null, pageable);
+            }
+            return searchCommunityPosts(PostStatus.ACTIVE, boardId, null, userId, sort, period, pageable);
         }
-        return postRepository.searchActivePosts(PostStatus.ACTIVE, boardId, keyword, userId, pageable);
+
+        if (keyword != null) {
+            return postFulltextSearchRepository.searchCommunityPosts(boardId, keyword, userId, sort, period, pageable);
+        }
+        return searchCommunityPosts(PostStatus.ACTIVE, null, null, userId, sort, period, pageable);
+    }
+
+    private Page<Post> searchCommunityPosts(
+            PostStatus status,
+            Long boardId,
+            String keyword,
+            Long viewerId,
+            PostListSort sort,
+            PostListPeriod period,
+            Pageable pageable
+    ) {
+        if (sort == PostListSort.LATEST) {
+            return postRepository.searchActivePosts(status, boardId, keyword, viewerId, pageable);
+        }
+
+        if (period == PostListPeriod.WEEK) {
+            var since = period.weekSince();
+            return switch (sort) {
+                case POPULAR -> postRepository.searchActivePostsByEngagementScoreThisWeek(
+                        status, boardId, keyword, viewerId, since, pageable);
+                case COMMENTS -> postRepository.searchActivePostsByRecentCommentCount(
+                        status, boardId, keyword, viewerId, since, CommentStatus.ACTIVE, pageable);
+                default -> postRepository.searchActivePosts(status, boardId, keyword, viewerId, pageable);
+            };
+        }
+
+        return switch (sort) {
+            case POPULAR -> postRepository.searchActivePostsByEngagementScore(
+                    status, boardId, keyword, viewerId, pageable);
+            case COMMENTS -> postRepository.searchActivePostsByCommentCount(
+                    status, boardId, keyword, viewerId, pageable);
+            default -> postRepository.searchActivePosts(status, boardId, keyword, viewerId, pageable);
+        };
     }
 
     @Transactional
@@ -149,7 +223,7 @@ public class PostService {
         String imageUrl = resolveImageUrl(post.getId());
         boolean staffReplied = resolveStaffReplied(post);
 
-        return PostDetailResponse.of(post, nickname, isMyPost, imageUrl, staffReplied);
+        return PostDetailResponse.of(post, nickname, isMyPost, imageUrl, staffReplied, userId, viewerRole);
     }
 
     @Transactional
@@ -238,11 +312,11 @@ public class PostService {
     }
 
     private String normalizeKeyword(String keyword) {
-        return StringUtils.hasText(keyword) ? keyword.trim() : null;
+        return PostSearchKeywordPolicy.normalizeForSearch(keyword);
     }
 
     private boolean resolveStaffReplied(Post post) {
-        if (!PrivateBoardPolicy.isPrivateBoard(post.getBoard().getBoardType())) {
+        if (!PrivateBoardPolicy.isAdminMaskedBoard(post.getBoard().getBoardType())) {
             return false;
         }
         return commentRepository.existsStaffReplyOnPost(post.getId(), CommentStatus.ACTIVE);

@@ -7,6 +7,7 @@ import com.herfree.domain.journal.dto.response.AdminJournalStatsResponse;
 import com.herfree.domain.journal.dto.response.JournalDashboardResponse;
 import com.herfree.domain.journal.dto.response.JournalInsightItemResponse;
 import com.herfree.domain.journal.dto.response.JournalInsightsResponse;
+import com.herfree.domain.journal.dto.response.JournalPublicHomeStatsResponse;
 import com.herfree.domain.journal.dto.response.JournalRecordResponse;
 import com.herfree.domain.journal.dto.response.JournalReviewSummaryResponse;
 import com.herfree.domain.journal.dto.response.JournalReviewTimelineDayResponse;
@@ -324,6 +325,12 @@ public class JournalService {
                 personalPatternLine,
                 timelineDays
         );
+    }
+
+    @Transactional(readOnly = true)
+    public JournalPublicHomeStatsResponse getPublicHomeStats() {
+        long usersToday = journalRecordRepository.countDistinctUsersByRecordDate(LocalDate.now());
+        return new JournalPublicHomeStatsResponse(usersToday);
     }
 
     public JournalInsightsResponse getCommunityInsights() {

@@ -3,12 +3,11 @@
 import type { Post } from '@/domain/post/types';
 import type { JournalDashboard } from '@/domain/journal/types';
 import type { RoutineItemId } from '@/domain/journal/routine';
-import { JournalDashboardHeader } from '@/components/journal/JournalDashboardHeader';
 import { JournalDashboardHero } from '@/components/journal/JournalDashboardHero';
 import { JournalRoutineCard } from '@/components/journal/JournalRoutineCard';
 import { JournalCommunityCard } from '@/components/journal/JournalCommunityCard';
 import { JournalIcon } from '@/components/journal/JournalIcon';
-import { cn } from '@/lib/cn';
+import { Button } from '@/components/ui/Button';
 
 type JournalPersonalDashboardProps = {
   dashboard: JournalDashboard | null;
@@ -42,8 +41,6 @@ export function JournalPersonalDashboard({
 
   return (
     <div className="journal-home-stack mx-auto w-full max-w-app">
-      <JournalDashboardHeader />
-
       <JournalDashboardHero
         dashboard={dashboard}
         isLoading={isLoading}
@@ -51,22 +48,18 @@ export function JournalPersonalDashboard({
         onRecordRelapse={onRecordRelapse}
       />
 
-      <button
+      <Button
         type="button"
         onClick={onRecordDaily}
         disabled={isLoading}
-        className={cn(
-          'journal-record-cta flex w-full items-center justify-center gap-2',
-          'rounded-[1rem] border border-[var(--color-border-tertiary)]',
-          'bg-[var(--color-background-primary)] px-4 py-3.5',
-          'text-[12px] font-semibold text-[var(--color-text-primary)] shadow-sm',
-          'transition-colors hover:border-primary/25 hover:bg-[var(--color-background-secondary)]/80',
-          'disabled:opacity-60',
-        )}
+        fullWidth
+        size="md"
+        variant="secondary"
+        className="journal-record-cta gap-2 shadow-sm"
       >
         <JournalIcon name="pencil" size={18} />
         오늘 기록하기
-      </button>
+      </Button>
 
       <JournalRoutineCard
         dashboard={dashboard}

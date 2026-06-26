@@ -20,7 +20,7 @@ type JournalAnonymousSummaryCardProps = {
 
 function severityDotColor(tier: JournalReviewSummary['weekDays'][number]['severityTier']) {
   if (!tier) return 'bg-border/60';
-  return tier === 'HIGH' ? 'bg-[#E74C3C]' : 'bg-[#E67E22]';
+  return tier === 'HIGH' ? 'bg-[var(--journal-risk-high)]' : 'bg-[var(--journal-risk-medium)]';
 }
 
 export function JournalAnonymousSummaryCard({

@@ -20,7 +20,7 @@ export function JournalInsightLines({
       <h3 className="text-sm font-semibold text-ink">{title}</h3>
       <p className="mt-1 text-xs text-muted">
         {sufficientData
-          ? '개인을 특정할 수 없는 익명 집계입니다.'
+          ? '최근 6개월·재발 기록 10건 이상일 때, 회원 전체 익명 집계로 보여 드립니다.'
           : (insightMessage ?? '회원들의 재발 기록이 더 쌓이면 패턴을 보여 드립니다.')}
       </p>
       <ul className="mt-4 space-y-2">

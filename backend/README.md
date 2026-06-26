@@ -4,11 +4,23 @@
 
 | 명령 | 용도 |
 |------|------|
+| `.\build.ps1` | **권장** — Java 17 자동 확인 후 `clean build` |
 | `./gradlew build` | 컴파일 + 테스트 (JAR 생성). **서버는 안 뜸** |
 | `./run-local.ps1` | API 서버 실행 (**권장**) — 8080 점유 시 기존 프로세스 종료 |
 | `./gradlew bootRun` | 직접 실행 — **8080이 이미 쓰이면 BUILD FAILED** |
 
-`BUILD FAILED`가 `bootRun`에서만 난다면 **빌드 문제가 아니라 포트 충돌**입니다. `.\run-local.ps1`을 사용하세요.
+**반드시 `C:\dev\herfree-platform\backend`에서 실행하세요.**  
+`OneDrive\바탕 화면\herfree-platform\backend`에는 소스가 없어 `gradlew`만 없는 것처럼 보일 수 있습니다. (위임용 `gradlew.bat`을 넣어 두었습니다.)
+
+`BUILD FAILED`가 `bootRun`에서만 난다면 **빌드 문제가 아니라 포트 충돌**이거나 **Flyway 마이그레이션 실패**입니다.
+
+- 포트 충돌: `.\run-local.ps1` 사용 (8080 점유 프로세스 자동 종료)
+- Flyway `Detected failed migration`: `.\run-local.ps1`이 로컬에서 실패 이력을 자동 정리한 뒤 재시도합니다. 수동 복구:
+  ```powershell
+  docker exec herfree-mysql mysql -uherfree_user -pherfree_pass herfree_db -e "DELETE FROM flyway_schema_history WHERE success = 0;"
+  cd C:\dev\herfree-platform\backend
+  .\run-local.ps1
+  ```
 
 ## 로컬 실행 순서
 

@@ -9,31 +9,28 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Badge } from '@/components/ui/Badge';
 
 type ExpertContentSectionProps = {
-  expertBoard?: Board;
-  expertPosts: Post[];
+  questionBoard?: Board;
+  questionPosts: Post[];
   expertContents: Content[];
   isLoading: boolean;
 };
 
 export function ExpertContentSection({
-  expertBoard,
-  expertPosts,
+  questionBoard,
+  questionPosts,
   expertContents,
   isLoading,
 }: ExpertContentSectionProps) {
   return (
     <section>
       <div className="mb-4 flex items-end justify-between">
-        <h2 className="section-heading">전문가 콘텐츠 / Q&A</h2>
-        <Link
-          href={expertBoard ? `/community/${expertBoard.id}` : '/contents'}
-          className="section-link"
-        >
-          더 보기
+        <h2 className="section-heading">칼럼 / 질문하기</h2>
+        <Link href="/contents" className="section-link">
+          칼럼 더 보기
         </Link>
       </div>
       <p className="mb-4 text-sm text-muted">
-        전문가 정보와 커뮤니티 Q&A를 통해 신뢰할 수 있는 답을 찾아보세요.
+        검증된 칼럼과 커뮤니티 질문을 통해 궁금한 점을 찾아보세요.
       </p>
 
       {isLoading ? (
@@ -41,9 +38,9 @@ export function ExpertContentSection({
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
           <div className="surface-card p-5">
-            <h3 className="text-sm font-semibold text-ink">전문가 정보글</h3>
+            <h3 className="text-sm font-semibold text-ink">전문가 칼럼</h3>
             {expertContents.length === 0 ? (
-              <p className="mt-3 text-sm text-muted">등록된 전문가 정보글이 없습니다.</p>
+              <p className="mt-3 text-sm text-muted">등록된 전문가 칼럼이 없습니다.</p>
             ) : (
               <ul className="mt-4 space-y-4">
                 {expertContents.slice(0, 3).map((item) => (
@@ -67,12 +64,19 @@ export function ExpertContentSection({
           </div>
 
           <div className="surface-card p-5">
-            <h3 className="text-sm font-semibold text-ink">전문가 Q&A</h3>
-            {expertPosts.length === 0 ? (
-              <p className="mt-3 text-sm text-muted">등록된 Q&A가 없습니다.</p>
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-sm font-semibold text-ink">질문하기</h3>
+              {questionBoard ? (
+                <Link href={`/community/${questionBoard.id}`} className="text-xs text-primary">
+                  더 보기
+                </Link>
+              ) : null}
+            </div>
+            {questionPosts.length === 0 ? (
+              <p className="mt-3 text-sm text-muted">등록된 질문이 없습니다.</p>
             ) : (
               <ul className="mt-4 space-y-3">
-                {expertPosts.slice(0, 4).map((post) => (
+                {questionPosts.slice(0, 4).map((post) => (
                   <li key={post.id}>
                     <Link
                       href={`/community/posts/${post.id}`}

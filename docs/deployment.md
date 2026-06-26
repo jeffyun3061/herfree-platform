@@ -128,6 +128,8 @@
 | `S3_PUBLIC_BASE_URL` | CloudFront URL (선택) |
 | `ADMIN_BOOTSTRAP_ENABLED` | **`false`** (운영 필수) |
 
+> **운영 보안 체크리스트:** [`ops-security-checklist.md`](ops-security-checklist.md) — env 10항 + 스모크 8항
+
 > **비밀 관리:** JWT·DB·S3 키는 `.env.prod`·VPS 환경 변수만. git·YAML·프론트 env에 넣지 않는다.  
 > IAM 정책 예시: `infra/aws/s3-iam-policy.json`
 

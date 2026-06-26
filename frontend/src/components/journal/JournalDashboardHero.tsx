@@ -40,7 +40,7 @@ export function JournalDashboardHero({
         className="object-cover object-center"
       />
       <div
-        className="absolute inset-0 bg-gradient-to-b from-[#092a2a]/25 via-transparent to-[#092a2a]/55"
+        className="absolute inset-0 bg-gradient-to-b from-herfree-bg-dark/25 via-transparent to-herfree-bg-dark/55"
         aria-hidden
       />
 

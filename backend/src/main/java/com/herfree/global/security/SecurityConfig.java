@@ -87,7 +87,8 @@ public class SecurityConfig {
                                 "/api/products",
                                 "/api/products/*",
                                 "/api/reactions/summary",
-                                "/api/journal/insights"
+                                "/api/journal/insights",
+                                "/api/journal/public/home-stats"
                         ).permitAll()
                         // 권한별 관리 API — 구체 경로를 먼저 매칭한다
                         .requestMatchers(HttpMethod.PATCH, "/api/admin/users/*/role").hasRole("SUPER_ADMIN")
@@ -98,6 +99,8 @@ public class SecurityConfig {
                         .hasAnyRole("MODERATOR", "ADMIN", "SUPER_ADMIN")
                         .requestMatchers("/api/admin/posts/**", "/api/admin/comments/**")
                         .hasAnyRole("MODERATOR", "ADMIN", "SUPER_ADMIN")
+                        .requestMatchers("/api/admin/contents/**")
+                        .hasAnyRole("MODERATOR", "ADMIN", "SUPER_ADMIN", "DOCTOR", "CREATOR")
                         .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                         // 나머지 모든 요청은 인증 필요 — /api/auth/logout 포함
                         .anyRequest().authenticated())

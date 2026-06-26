@@ -10,6 +10,8 @@ export type Post = {
   contentPreview: string;
   authorNickname: string;
   viewCount: number;
+  commentCount: number;
+  reactionCount?: number;
   createdAt: string;
   isMyPost: boolean;
   readable: boolean;
@@ -28,6 +30,7 @@ export type PostDetail = {
   visibility: PostVisibility;
   isAnonymous: boolean;
   isMyPost: boolean;
+  readable: boolean;
   imageUrl: string | null;
   staffReplied: boolean;
   createdAt: string;

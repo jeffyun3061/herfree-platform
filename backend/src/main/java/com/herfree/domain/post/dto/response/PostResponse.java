@@ -16,6 +16,8 @@ public record PostResponse(
         String contentPreview,
         String authorNickname,
         int viewCount,
+        int commentCount,
+        int reactionCount,
         LocalDateTime createdAt,
         boolean isMyPost,
         boolean readable,
@@ -31,6 +33,17 @@ public record PostResponse(
             Long currentUserId,
             UserRole viewerRole,
             boolean staffReplied
+    ) {
+        return of(post, authorNickname, currentUserId, viewerRole, staffReplied, 0);
+    }
+
+    public static PostResponse of(
+            Post post,
+            String authorNickname,
+            Long currentUserId,
+            UserRole viewerRole,
+            boolean staffReplied,
+            int reactionCount
     ) {
         boolean isMyPost = currentUserId != null && post.getUser().getId().equals(currentUserId);
         boolean readable = PrivateBoardPolicy.canViewerReadPost(post, currentUserId, viewerRole);
@@ -51,6 +64,8 @@ public record PostResponse(
                 preview,
                 displayNickname,
                 post.getViewCount(),
+                post.getCommentCount(),
+                reactionCount,
                 post.getCreatedAt(),
                 isMyPost,
                 readable,

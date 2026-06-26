@@ -71,6 +71,9 @@ app:
     access-key: ${S3_ACCESS_KEY:${AWS_ACCESS_KEY_ID:}}
     secret-key: ${S3_SECRET_KEY:${AWS_SECRET_ACCESS_KEY:}}
     public-base-url: ${S3_PUBLIC_BASE_URL:}
+  # 운영(prod)에서는 반드시 false — local 전용 데모 시드 (DemoDataSeedRunner)
+  demo-seed:
+    enabled: false
 
 ---
 spring:
@@ -108,3 +111,9 @@ springdoc:
     enabled: false
   swagger-ui:
     enabled: false
+
+app:
+  demo-seed:
+    enabled: false
+  bootstrap:
+    enabled: ${ADMIN_BOOTSTRAP_ENABLED:false}

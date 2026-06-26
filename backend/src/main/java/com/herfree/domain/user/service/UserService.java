@@ -1,17 +1,13 @@
 package com.herfree.domain.user.service;
 
 import com.herfree.domain.comment.entity.CommentStatus;
+import com.herfree.domain.comment.entity.Comment;
 import com.herfree.domain.comment.repository.CommentRepository;
-import com.herfree.domain.board.repository.BoardRepository;
-import com.herfree.domain.board.entity.Board;
 import com.herfree.domain.board.repository.BoardRepository;
 import com.herfree.domain.post.dto.response.PostResponse;
 import com.herfree.domain.post.entity.Post;
 import com.herfree.domain.post.entity.PostStatus;
 import com.herfree.domain.post.repository.PostRepository;
-import com.herfree.domain.reaction.repository.ReactionRepository;
-import com.herfree.domain.user.dto.response.UserActivityResponse;
-import com.herfree.domain.comment.entity.Comment;
 import com.herfree.domain.reaction.repository.ReactionRepository;
 import com.herfree.domain.user.dto.request.UpdateProfileRequest;
 import com.herfree.domain.user.dto.response.UserActivityResponse;
@@ -119,8 +115,11 @@ public class UserService {
                 .findFirstByUserIdAndStatusOrderByCreatedAtDesc(userId, PostStatus.ACTIVE)
                 .map(Post::getCreatedAt)
                 .orElse(null);
+        LocalDateTime memberSince = userRepository.findById(userId)
+                .map(User::getCreatedAt)
+                .orElse(null);
 
-        return new UserActivityResponse(totalPosts, symptomPosts, receivedReactions, lastPostAt);
+        return new UserActivityResponse(totalPosts, symptomPosts, receivedReactions, lastPostAt, memberSince);
     }
 
     // 내가 작성한 게시글 목록 — 삭제된 글은 제외하고 ACTIVE 상태만 반환한다.

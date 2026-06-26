@@ -39,7 +39,7 @@ export default function VideoDetailPage() {
   return (
     <>
       <PageHeader title="영상" showBack backHref="/videos" mobileOnly />
-      <div className="page-container mx-auto max-w-content pb-28 lg:pb-10">
+      <div className="page-container mx-auto max-w-content pb-20 lg:pb-8">
         <VideoPlayerSection youtubeVideoId={video.youtubeVideoId} title={video.title} />
 
         <article className="surface-card mt-6 p-5 lg:mt-8 lg:p-7">

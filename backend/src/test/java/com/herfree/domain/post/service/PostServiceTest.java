@@ -2,6 +2,7 @@ package com.herfree.domain.post.service;
 
 import com.herfree.domain.board.entity.Board;
 import com.herfree.domain.board.repository.BoardRepository;
+import com.herfree.domain.comment.repository.CommentRepository;
 import com.herfree.domain.post.dto.request.PostCreateRequest;
 import com.herfree.domain.post.dto.response.PostDetailResponse;
 import com.herfree.domain.post.entity.Post;
@@ -9,6 +10,7 @@ import com.herfree.domain.post.entity.PostStatus;
 import com.herfree.domain.post.entity.PostVisibility;
 import com.herfree.domain.post.exception.PostAccessDeniedException;
 import com.herfree.domain.post.exception.PostNotFoundException;
+import com.herfree.domain.post.repository.PostFulltextSearchRepository;
 import com.herfree.domain.post.repository.PostImageRepository;
 import com.herfree.domain.post.repository.PostRepository;
 import com.herfree.domain.user.entity.User;
@@ -17,6 +19,9 @@ import com.herfree.domain.user.entity.UserRole;
 import com.herfree.domain.user.entity.UserStatus;
 import com.herfree.domain.user.repository.UserProfileRepository;
 import com.herfree.domain.user.repository.UserRepository;
+import com.herfree.global.exception.BusinessException;
+import com.herfree.global.util.PostListPeriod;
+import com.herfree.global.util.PostListSort;
 import com.herfree.global.storage.PostImageStorageService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -48,7 +53,13 @@ class PostServiceTest {
     private PostRepository postRepository;
 
     @Mock
+    private PostFulltextSearchRepository postFulltextSearchRepository;
+
+    @Mock
     private BoardRepository boardRepository;
+
+    @Mock
+    private CommentRepository commentRepository;
 
     @Mock
     private UserRepository userRepository;
@@ -155,7 +166,7 @@ class PostServiceTest {
         User mockUser = org.mockito.Mockito.mock(User.class);
         given(mockUser.getId()).willReturn(postOwnerId);
 
-        Board board = buildTestBoard();
+        Board board = org.mockito.Mockito.mock(Board.class);
 
         Post post = Post.builder()
                 .board(board)
@@ -250,18 +261,28 @@ class PostServiceTest {
     }
 
     @Test
-    @DisplayName("게시글 목록 조회 시 keyword는 trim 후 searchActivePosts에 전달된다")
-    void getPosts_withKeyword_delegatesToSearchActivePosts() {
+    @DisplayName("게시글 목록 조회 시 keyword는 trim 후 FULLTEXT 검색에 전달된다")
+    void getPosts_withKeyword_delegatesToFulltextSearch() {
         Pageable pageable = PageRequest.of(0, 15);
         Page<Post> emptyPage = new PageImpl<>(List.of(), pageable, 0);
-        given(postRepository.searchActivePosts(
-                        eq(PostStatus.ACTIVE), eq(1L), eq("검색어"), eq(null), eq(pageable)))
+        Board board = buildWritableBoard();
+        given(boardRepository.findById(1L)).willReturn(Optional.of(board));
+        given(postFulltextSearchRepository.searchBoardPosts(eq(1L), eq("검색어"), any(), any(), eq(pageable)))
                 .willReturn(emptyPage);
 
-        postService.getPosts(1L, "  검색어  ", pageable, null);
+        postService.getPosts(1L, "  검색어  ", pageable, null, "week");
 
-        verify(postRepository)
-                .searchActivePosts(PostStatus.ACTIVE, 1L, "검색어", null, pageable);
+        verify(postFulltextSearchRepository).searchBoardPosts(
+                1L, "검색어", PostListSort.LATEST, PostListPeriod.WEEK, pageable);
+    }
+
+    @Test
+    @DisplayName("검색어가 한 글자이면 BusinessException이 발생한다")
+    void getPosts_withSingleCharKeyword_throws() {
+        Pageable pageable = PageRequest.of(0, 15);
+
+        assertThatThrownBy(() -> postService.getPosts(null, "재", pageable, null, "week"))
+                .isInstanceOf(BusinessException.class);
     }
 
     @Test
@@ -322,7 +343,9 @@ class PostServiceTest {
 
     // 테스트용 Board 객체를 생성하는 헬퍼 메서드 — 여러 테스트에서 공통으로 사용한다
     private Board buildTestBoard() {
-        return org.mockito.Mockito.mock(Board.class);
+        Board board = org.mockito.Mockito.mock(Board.class);
+        given(board.getBoardType()).willReturn("FREE");
+        return board;
     }
 
     private Board buildWritableBoard() {

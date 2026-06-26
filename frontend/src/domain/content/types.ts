@@ -45,3 +45,17 @@ export function getContentPreview(content: string, maxLength = 80): string {
   const plain = content.replace(/\s+/g, ' ').trim();
   return plain.length > maxLength ? `${plain.slice(0, maxLength)}…` : plain;
 }
+
+/** 칼럼 카드 — 분량 기준 예상 읽기 시간 (한글 400자/분) */
+export function estimateReadMinutes(content: string): number {
+  const length = content.replace(/\s+/g, '').length;
+  return Math.max(1, Math.min(30, Math.round(length / 400) || 1));
+}
+
+export const CONTENT_THUMB_GRADIENTS = [
+  'bg-[#04342C]',
+  'bg-[#0B3B36]',
+  'bg-[#1D9E75]',
+  'bg-[#3C443E]',
+  'bg-[#0F6E56]',
+] as const;

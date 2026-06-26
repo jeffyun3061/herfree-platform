@@ -12,6 +12,7 @@ import com.herfree.domain.content.repository.ContentRepository;
 import com.herfree.domain.user.entity.User;
 import com.herfree.domain.user.exception.UserNotFoundException;
 import com.herfree.domain.user.repository.UserRepository;
+import com.herfree.global.util.ContentWritePolicy;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -71,6 +72,7 @@ public class ContentService {
     public ContentResponse createContent(Long authorId, ContentCreateRequest request) {
         User author = userRepository.findById(authorId)
                 .orElseThrow(UserNotFoundException::new);
+        ContentWritePolicy.assertCanWrite(author.getRole());
 
         Content content = Content.builder()
                 .author(author)

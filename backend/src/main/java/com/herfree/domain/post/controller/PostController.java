@@ -51,10 +51,12 @@ public class PostController {
     public ResponseEntity<ApiResponse<Page<PostResponse>>> getPosts(
             @RequestParam(required = false) Long boardId,
             @RequestParam(required = false) String keyword,
+            @RequestParam(required = false, defaultValue = "week") String period,
             @AuthenticationPrincipal Long userId,
             @PageableDefault(size = 20) Pageable pageable
     ) {
-        return ResponseEntity.ok(ApiResponse.success(postService.getPosts(boardId, keyword, pageable, userId)));
+        return ResponseEntity.ok(ApiResponse.success(
+                postService.getPosts(boardId, keyword, pageable, userId, period)));
     }
 
     @PostMapping(value = "/images/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

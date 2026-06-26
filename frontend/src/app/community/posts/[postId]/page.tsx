@@ -19,10 +19,18 @@ import { Textarea } from '@/components/ui/Textarea';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { buildCommentTree, validateCommentInput } from '@/domain/comment/types';
 import { isStaffOnlyBoardType } from '@/domain/board/types';
-import { isPrivateBoardType } from '@/domain/board/privateBoard';
+import {
+  getMaskedBoardBackHref,
+  getPrivatePostWriteHref,
+  getPrivateBoardMetaByType,
+  isMaskedBoardType,
+  isSecretStoryBoardType,
+  SECRET_STORY_BOARD_COPY,
+} from '@/domain/board/privateBoard';
 import { displayAuthorNickname } from '@/domain/post/types';
 import { isAdmin, isStaff } from '@/domain/user/types';
 import { getErrorMessage } from '@/lib/api/client';
+import { cn } from '@/lib/cn';
 import * as adminApi from '@/lib/api/admin';
 
 type PendingConfirm =
@@ -91,12 +99,9 @@ export default function PostDetailPage() {
         const ok = await deletePost(postId);
         if (ok) {
           const board = boards.find((item) => item.id === post?.boardId);
-          const href =
-            board && isPrivateBoardType(board.boardType)
-              ? board.boardType === 'INQUIRY'
-                ? '/inquiry'
-                : '/consult'
-              : `/community/${post?.boardId}`;
+          const href = board
+            ? getMaskedBoardBackHref(board.boardType, board.id)
+            : '/community';
           router.replace(href);
         }
       } else if (pendingConfirm.type === 'delete-comment') {
@@ -105,12 +110,9 @@ export default function PostDetailPage() {
         setIsHiding(true);
         await adminApi.hidePost(postId);
         const board = boards.find((item) => item.id === post?.boardId);
-        const href =
-          board && isPrivateBoardType(board.boardType)
-            ? board.boardType === 'INQUIRY'
-              ? '/inquiry'
-              : '/consult'
-            : `/community/${post?.boardId}`;
+        const href = board
+          ? getMaskedBoardBackHref(board.boardType, board.id)
+          : '/community';
         router.replace(href);
       } else if (pendingConfirm.type === 'hide-comment') {
         setIsHiding(true);
@@ -163,16 +165,15 @@ export default function PostDetailPage() {
   const commentTree = buildCommentTree(commentPage.content);
   const postBoard = boards.find((board) => board.id === post.boardId);
   const isStaffOnlyPost = postBoard != null && isStaffOnlyBoardType(postBoard.boardType);
-  const isPrivatePost = postBoard != null && isPrivateBoardType(postBoard.boardType);
-  const backHref =
-    isPrivatePost && postBoard?.boardType === 'INQUIRY'
-      ? '/inquiry'
-      : isPrivatePost
-        ? '/consult'
-        : `/community/${post.boardId}`;
-  const showComments = !isPrivatePost || post.isMyPost || staffUser;
-  const canWriteComments = isPrivatePost ? staffUser && isLoggedIn : isLoggedIn;
-  const privateCommentHint = isPrivatePost && post.isMyPost && !staffUser;
+  const isMaskedPost = postBoard != null && isMaskedBoardType(postBoard.boardType);
+  const isSecretStory = postBoard != null && isSecretStoryBoardType(postBoard.boardType);
+  const isContentMasked = post.readable === false;
+  const backHref = postBoard
+    ? getMaskedBoardBackHref(postBoard.boardType, postBoard.id)
+    : `/community/${post.boardId}`;
+  const showComments = (!isMaskedPost || post.isMyPost || staffUser) && !isContentMasked;
+  const canWriteComments = isMaskedPost ? staffUser && isLoggedIn : isLoggedIn;
+  const privateCommentHint = isMaskedPost && post.isMyPost && !staffUser;
 
   return (
     <>
@@ -182,12 +183,12 @@ export default function PostDetailPage() {
         backHref={backHref}
         rightSlot={
           <div className="flex gap-2">
-            {isLoggedIn && !isPrivatePost && (
+            {isLoggedIn && !isMaskedPost && (
               <Button variant="ghost" size="sm" onClick={() => setReportOpen(true)}>
                 신고
               </Button>
             )}
-            {staffUser && isPrivatePost && (
+            {staffUser && isMaskedPost && (
               <Button
                 variant="secondary"
                 size="sm"
@@ -196,7 +197,7 @@ export default function PostDetailPage() {
                 숨김 처리
               </Button>
             )}
-            {staffUser && !isStaffOnlyPost && !isPrivatePost && (
+            {staffUser && !isStaffOnlyPost && !isMaskedPost && (
               <>
                 <Link href={`/community/write?postId=${post.id}&admin=1`}>
                   <Button variant="secondary" size="sm">
@@ -219,9 +220,15 @@ export default function PostDetailPage() {
                 </Button>
               </Link>
             )}
-            {post.isMyPost && !isStaffOnlyPost && (
+            {post.isMyPost && !isStaffOnlyPost && post.readable !== false && (
               <>
-                <Link href={`/community/write?postId=${post.id}`}>
+                <Link
+                  href={
+                    postBoard && getPrivatePostWriteHref(postBoard.boardType, post.id)
+                      ? getPrivatePostWriteHref(postBoard.boardType, post.id)!
+                      : `/community/write?postId=${post.id}`
+                  }
+                >
                   <Button variant="secondary" size="sm">
                     수정
                   </Button>
@@ -241,7 +248,7 @@ export default function PostDetailPage() {
       <article className="px-4 py-5">
         <div className="flex flex-wrap items-center gap-2">
           <h1 className="text-lg font-semibold text-cream-foreground">{post.title}</h1>
-          {isPrivatePost && (
+          {isMaskedPost && (
             <span
               className={`inline-flex items-center rounded-pill px-2.5 py-0.5 text-[11px] font-medium ${
                 post.staffReplied
@@ -266,11 +273,16 @@ export default function PostDetailPage() {
             />
           </div>
         )}
-        <p className="mt-5 whitespace-pre-wrap text-sm leading-relaxed text-cream-foreground">
+        <p
+          className={cn(
+            'mt-5 whitespace-pre-wrap text-sm leading-relaxed',
+            isContentMasked ? 'text-center text-muted' : 'text-cream-foreground',
+          )}
+        >
           {post.content}
         </p>
 
-        {!isPrivatePost && (
+        {!isMaskedPost && !isContentMasked && (
           <div className="mt-6 border-t border-border pt-5">
             <ReactionBar targetType="POST" targetId={post.id} />
           </div>
@@ -279,7 +291,7 @@ export default function PostDetailPage() {
         {showComments && (
         <section className="mt-8">
           <h2 className="mb-4 font-medium text-cream-foreground">
-            {isPrivatePost ? '운영자 답변' : '댓글'} {commentPage.totalElements}
+            {isMaskedPost ? '운영자 답변' : '댓글'} {commentPage.totalElements}
           </h2>
           {privateCommentHint && (
             <p className="mb-4 text-xs leading-relaxed text-muted">
@@ -295,7 +307,7 @@ export default function PostDetailPage() {
                   key={comment.id}
                   comment={comment}
                   isLoggedIn={isLoggedIn}
-                  isStaff={staffUser && (!isStaffOnlyPost || isPrivatePost)}
+                  isStaff={staffUser && (!isStaffOnlyPost || isMaskedPost)}
                   onDelete={(commentId) =>
                     setPendingConfirm({ type: 'delete-comment', commentId })
                   }
@@ -332,11 +344,11 @@ export default function PostDetailPage() {
                 </p>
               )}
               <Textarea
-                placeholder={isPrivatePost ? '운영자 답변을 작성해 주세요.' : '댓글을 남겨 주세요.'}
+                placeholder={isMaskedPost ? '운영자 답변을 작성해 주세요.' : '댓글을 남겨 주세요.'}
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
               />
-              {!isPrivatePost && (
+              {!isMaskedPost && (
                 <label className="flex items-center gap-2 text-sm text-muted">
                   <input
                     type="checkbox"
@@ -349,7 +361,7 @@ export default function PostDetailPage() {
               {commentError && <ErrorMessage message={commentError} />}
               {mutationError && <ErrorMessage message={mutationError} />}
               <Button disabled={isSubmitting} onClick={() => void handleComment()}>
-                {isSubmitting ? '등록 중…' : replyParentId ? '답글 등록' : isPrivatePost ? '답변 등록' : '댓글 등록'}
+                {isSubmitting ? '등록 중…' : replyParentId ? '답글 등록' : isMaskedPost ? '답변 등록' : '댓글 등록'}
               </Button>
             </div>
           ) : !isLoggedIn ? (

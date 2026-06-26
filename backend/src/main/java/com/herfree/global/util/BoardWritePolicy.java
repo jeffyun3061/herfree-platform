@@ -22,7 +22,7 @@ public final class BoardWritePolicy {
             throw new PostAccessDeniedException();
         }
         if (board != null
-                && PrivateBoardPolicy.isPrivateBoard(board.getBoardType())
+                && PrivateBoardPolicy.isAdminMaskedBoard(board.getBoardType())
                 && StaffRolePolicy.isStaff(authorRole)) {
             throw new PostAccessDeniedException();
         }

@@ -1,129 +1,64 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import type { Post } from '@/domain/post/types';
 import { formatRelativeTime } from '@/domain/common/format';
-import { isPrivateBoardType } from '@/domain/board/privateBoard';
+import { getBoardTagClass } from '@/domain/board/types';
+import { isMaskedBoardType, isSecretStoryBoardType } from '@/domain/board/privateBoard';
+import { cn } from '@/lib/cn';
 
 type PostCardProps = {
   post: Post;
   boardName?: string;
 };
 
-const BOOKMARK_KEY = 'herfree-bookmarks';
-
-function loadBookmarks(): Set<number> {
-  if (typeof window === 'undefined') return new Set();
-  try {
-    const raw = localStorage.getItem(BOOKMARK_KEY);
-    return raw ? new Set(JSON.parse(raw) as number[]) : new Set();
-  } catch {
-    return new Set();
-  }
-}
-
-function saveBookmarks(ids: Set<number>) {
-  localStorage.setItem(BOOKMARK_KEY, JSON.stringify(Array.from(ids)));
+function MetaDot() {
+  return <span className="h-0.5 w-0.5 shrink-0 rounded-full bg-[#C7CECB]" aria-hidden />;
 }
 
 export function PostCard({ post, boardName }: PostCardProps) {
-  const [bookmarked, setBookmarked] = useState(false);
-
-  useEffect(() => {
-    setBookmarked(loadBookmarks().has(post.id));
-  }, [post.id]);
-
-  const toggleBookmark = (event: React.MouseEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-    const next = loadBookmarks();
-    if (next.has(post.id)) {
-      next.delete(post.id);
-      setBookmarked(false);
-    } else {
-      next.add(post.id);
-      setBookmarked(true);
-    }
-    saveBookmarks(next);
-  };
-
-  const displayBoard = boardName ?? post.boardName;
-  const canOpen = post.readable !== false;
-  const showReplyStatus = isPrivateBoardType(post.boardType) && canOpen;
+  const displayBoard = (boardName ?? post.boardName).replace(/방$/, '');
+  const isSecretStory = isSecretStoryBoardType(post.boardType);
+  const canOpen = post.readable !== false || isSecretStory;
+  const showReplyStatus = isMaskedBoardType(post.boardType) && (post.readable !== false || isSecretStory);
+  const tagClass = getBoardTagClass(post.boardType);
 
   if (!canOpen) {
     return (
-      <article className="post-card opacity-70">
-        <div className="mb-2.5 flex items-center justify-between gap-2">
-          <span className="inline-flex items-center rounded-pill bg-cream-dark px-2.5 py-0.5 text-[11px] font-medium text-muted">
-            {displayBoard.replace(/방$/, '')}
-          </span>
+      <article className="community-feed-row opacity-70">
+        <div className="community-feed-row__title-line">
+          <span className={cn('community-feed-tag', tagClass)}>{displayBoard}</span>
+          <span className="community-feed-row__title text-muted">{post.title}</span>
         </div>
-        <h3 className="text-[15px] font-semibold tracking-wide text-muted">{post.title}</h3>
-        <p className="mt-2 text-xs text-muted">다른 회원의 비공개 글입니다. 내용을 열람할 수 없습니다.</p>
+        <p className="mt-1.5 text-[11px] text-muted">다른 회원의 비공개 글입니다.</p>
       </article>
     );
   }
 
   return (
     <Link href={`/community/posts/${post.id}`} className="block">
-      <article className="post-card">
-        <div className="mb-2.5 flex items-center justify-between gap-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center rounded-pill bg-primary/10 px-2.5 py-0.5 text-[11px] font-medium text-primary">
-              {displayBoard.replace(/방$/, '')}
-            </span>
-            {showReplyStatus && (
-              <span
-                className={`inline-flex items-center rounded-pill px-2.5 py-0.5 text-[11px] font-medium ${
-                  post.staffReplied
-                    ? 'bg-primary/15 text-primary'
-                    : 'bg-canvas-dark text-muted'
-                }`}
-              >
-                {post.staffReplied ? '답변완료' : '답변 대기'}
-              </span>
-            )}
-          </div>
-          <button
-            type="button"
-            onClick={toggleBookmark}
-            aria-label={bookmarked ? '북마크 해제' : '북마크'}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-muted transition-colors hover:bg-canvas-dark hover:text-primary"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              className="h-4 w-4"
-              fill={bookmarked ? 'currentColor' : 'none'}
-              stroke="currentColor"
-              strokeWidth="2"
+      <article className="community-feed-row transition-colors hover:bg-[#FAF6F2]/60">
+        <div className="community-feed-row__title-line">
+          <span className={cn('community-feed-tag', tagClass)}>{displayBoard}</span>
+          {showReplyStatus && (
+            <span
+              className={cn(
+                'shrink-0 rounded-md px-2 py-0.5 text-[10px] font-semibold',
+                post.staffReplied ? 'bg-primary/15 text-primary' : 'bg-[#F4F6F5] text-[#8B9590]',
+              )}
             >
-              <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" strokeLinejoin="round" />
-            </svg>
-          </button>
+              {post.staffReplied ? '답변완료' : '답변대기'}
+            </span>
+          )}
+          <span className="community-feed-row__title">{post.title}</span>
         </div>
-
-        <div className="mb-2 flex items-center gap-1.5 text-xs text-muted">
+        <div className="community-feed-row__meta">
           <span>{post.authorNickname}</span>
-          <span>·</span>
+          <MetaDot />
           <span>{formatRelativeTime(post.createdAt)}</span>
-        </div>
-
-        <h3 className="line-clamp-2 text-[15px] font-semibold leading-snug text-ink">{post.title}</h3>
-
-        {post.contentPreview && (
-          <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-muted">{post.contentPreview}</p>
-        )}
-
-        <div className="mt-3 flex items-center gap-4 text-xs text-muted">
-          <span className="inline-flex items-center gap-1">
-            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-              <circle cx="12" cy="12" r="3" />
-            </svg>
-            {post.viewCount}
-          </span>
+          <MetaDot />
+          <span>❤️ {post.reactionCount ?? 0}</span>
+          <span>💬 {post.commentCount ?? 0}</span>
         </div>
       </article>
     </Link>
@@ -132,11 +67,12 @@ export function PostCard({ post, boardName }: PostCardProps) {
 
 export function PostCardSkeleton() {
   return (
-    <div className="post-card animate-pulse">
-      <div className="mb-3 h-5 w-16 rounded-pill bg-canvas-dark" />
-      <div className="mb-2 h-3 w-24 rounded bg-canvas-dark" />
-      <div className="mb-1.5 h-5 w-full rounded bg-canvas-dark" />
-      <div className="h-4 w-3/4 rounded bg-canvas-dark" />
+    <div className="community-feed-row animate-pulse">
+      <div className="mb-2 flex gap-2">
+        <div className="h-5 w-14 rounded-md bg-[#E3E6E4]" />
+        <div className="h-5 flex-1 rounded bg-[#E3E6E4]" />
+      </div>
+      <div className="h-3 w-40 rounded bg-[#E3E6E4]" />
     </div>
   );
 }

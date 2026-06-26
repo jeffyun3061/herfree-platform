@@ -392,6 +392,17 @@
 
 
 
+## ADR-016: 커뮤니티 검색 — MySQL FULLTEXT ngram
+
+- **상태:** 승인
+- **날짜:** 2026-06-10
+- **배경:** 일 방문 ~600 규모 MVP에 Elasticsearch는 과함. 한글 2글자 이상 검색이 필요하다.
+- **결정:** MySQL 8 **FULLTEXT + ngram** 인덱스, API·UI **최소 2글자** 검증. 검색어 있을 때만 FULLTEXT, 없으면 기존 목록 쿼리.
+- **대안:** Elasticsearch(폐기), Meilisearch(성장 후), LIKE 유지(품질·성능 한계).
+- **영향:** `V18__add_posts_fulltext_ngram.sql`, `PostFulltextSearchRepository`, `PostSearchKeywordPolicy`.
+
+---
+
 ## 변경 이력
 
 

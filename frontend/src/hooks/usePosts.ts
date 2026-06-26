@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { emptyPage } from '@/domain/common/types';
 import type { Post } from '@/domain/post/types';
 import type { PostCreateInput, PostUpdateInput } from '@/domain/post/types';
@@ -14,12 +14,13 @@ export function usePostList(
   size = 15,
   keyword = '',
   sort = 'createdAt,desc',
+  period?: 'week' | 'all',
 ) {
   const [page, setPage] = useState(0);
   const normalizedBoardId = boardId ?? undefined;
   const { data, isLoading, error, refetch } = useApiQuery(
-    () => postsApi.fetchPosts(normalizedBoardId, page, size, keyword, sort),
-    [normalizedBoardId, page, size, keyword, sort],
+    () => postsApi.fetchPosts(normalizedBoardId, page, size, keyword, sort, period),
+    [normalizedBoardId, page, size, keyword, sort, period],
   );
   return { postPage: data ?? emptyPage<Post>(), page, setPage, isLoading, error, refetch };
 }
@@ -37,8 +38,11 @@ export function usePostDetail(postId: number) {
 export function usePostMutation() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const inFlightRef = useRef(false);
 
   const run = async <T,>(action: () => Promise<T>): Promise<T | null> => {
+    if (inFlightRef.current) return null;
+    inFlightRef.current = true;
     setIsSubmitting(true);
     setError(null);
     try {
@@ -47,6 +51,7 @@ export function usePostMutation() {
       setError(getErrorMessage(err));
       return null;
     } finally {
+      inFlightRef.current = false;
       setIsSubmitting(false);
     }
   };

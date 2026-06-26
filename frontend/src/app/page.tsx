@@ -45,28 +45,31 @@ function LoggedInHomePage() {
   const hasTodayRecord = Boolean(dashboard?.todayRecord);
 
   return (
-    <div className="bg-[#e9ebea] pb-10 lg:pb-14">
-      <div className="page-container space-y-4">
-        <JournalPersonalDashboard
-          dashboard={dashboard ?? null}
-          isLoading={dashboardLoading}
-          onRecordDaily={() => openDailyWizard()}
-          onRecordRelapse={openRelapseWizard}
-          onRoutineItemClick={handleRoutineItemClick}
-          communityPosts={communityPosts.content}
-          communityLoading={communityLoading}
-          routinePulse={routinePulse}
-          hasTodayRecord={hasTodayRecord}
-          afterCommunity={
-            <QuickAccessSection layout="home" onChecklistClick={() => openDailyWizard()} />
-          }
-        />
+    <div className="bg-wrtn-bg lg:pb-10">
+      <div className="page-container max-lg:pb-4">
+        <div className="space-y-3">
+          <JournalPersonalDashboard
+            dashboard={dashboard ?? null}
+            isLoading={dashboardLoading}
+            onRecordDaily={() => openDailyWizard()}
+            onRecordRelapse={openRelapseWizard}
+            onRoutineItemClick={handleRoutineItemClick}
+            communityPosts={communityPosts.content}
+            communityLoading={communityLoading}
+            routinePulse={routinePulse}
+            hasTodayRecord={hasTodayRecord}
+            afterCommunity={
+              <div className="flex flex-col gap-2">
+                <QuickAccessSection layout="home" onChecklistClick={() => openDailyWizard()} />
+                <MedicalDisclaimer compact />
+              </div>
+            }
+          />
 
-        {(dashboardError || saveError) && (
-          <ErrorMessage message={dashboardError ?? saveError ?? ''} />
-        )}
-
-        <MedicalDisclaimer />
+          {(dashboardError || saveError) && (
+            <ErrorMessage message={dashboardError ?? saveError ?? ''} />
+          )}
+        </div>
       </div>
 
       <JournalRecordSheet {...wizardProps} />

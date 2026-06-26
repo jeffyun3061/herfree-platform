@@ -42,11 +42,13 @@ export function JournalHomeTab({
 
       <JournalTodayStatusStrip dashboard={dashboard} isLoading={isLoading} />
 
-      <JournalTodayRecordSummary
-        record={dashboard?.todayRecord}
-        isLoading={isLoading}
-        onEdit={onRecordDaily}
-      />
+      {dashboard?.todayRecord?.hadSymptoms && (
+        <JournalTodayRecordSummary
+          record={dashboard.todayRecord}
+          isLoading={isLoading}
+          onEdit={onRecordDaily}
+        />
+      )}
 
       <JournalRoutineCard
         dashboard={dashboard}

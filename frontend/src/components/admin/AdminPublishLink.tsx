@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
-import { isAdmin } from '@/domain/user/types';
+import { canWriteContent, isAdmin } from '@/domain/user/types';
 import { CommunityFab } from '@/components/community/CommunityFab';
 
 type AdminPublishProps = {
@@ -10,10 +10,15 @@ type AdminPublishProps = {
   label: string;
 };
 
+function canPublishTab(tab: AdminPublishProps['tab'], role: Parameters<typeof canWriteContent>[0]): boolean {
+  if (tab === 'contents') return canWriteContent(role);
+  return isAdmin(role);
+}
+
 export function AdminPublishLink({ tab, label }: AdminPublishProps) {
   const { user } = useAuth();
 
-  if (!isAdmin(user?.role)) return null;
+  if (!canPublishTab(tab, user?.role)) return null;
 
   return (
     <Link
@@ -29,7 +34,7 @@ export function AdminPublishLink({ tab, label }: AdminPublishProps) {
 export function AdminPublishFab({ tab, label }: AdminPublishProps) {
   const { user } = useAuth();
 
-  if (!isAdmin(user?.role)) return null;
+  if (!canPublishTab(tab, user?.role)) return null;
 
   return <CommunityFab href={`/admin?tab=${tab}`} ariaLabel={label} />;
 }

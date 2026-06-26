@@ -7,6 +7,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
+import java.util.List;
+
 public interface ReactionRepository extends JpaRepository<Reaction, Long> {
 
     // 동일 사용자가 동일 대상에 동일 반응을 이미 등록했는지 확인한다 — toggle 로직에 사용
@@ -34,4 +37,12 @@ public interface ReactionRepository extends JpaRepository<Reaction, Long> {
             )
             """)
     long countReactionsOnUserPosts(@Param("userId") Long userId);
+
+    @Query("""
+            SELECT r.targetId, COUNT(r) FROM Reaction r
+            WHERE r.targetType = com.herfree.domain.reaction.entity.ReactionTargetType.POST
+            AND r.targetId IN :postIds
+            GROUP BY r.targetId
+            """)
+    List<Object[]> countReactionsByPostIds(@Param("postIds") Collection<Long> postIds);
 }

@@ -51,6 +51,9 @@ class AuthServiceTest {
     @Mock
     private JwtProperties jwtProperties;
 
+    @Mock
+    private LoginLockoutService loginLockoutService;
+
     @InjectMocks
     private AuthService authService;
 
@@ -104,6 +107,7 @@ class AuthServiceTest {
                 .role(UserRole.USER)
                 .status(UserStatus.ACTIVE)
                 .build();
+        org.springframework.test.util.ReflectionTestUtils.setField(activeUser, "id", 1L);
 
         UserProfile profile = UserProfile.builder()
                 .user(activeUser)
@@ -113,7 +117,7 @@ class AuthServiceTest {
 
         given(userRepository.findByEmail(request.email())).willReturn(Optional.of(activeUser));
         given(passwordEncoder.matches(request.password(), activeUser.getPassword())).willReturn(true);
-        given(userProfileRepository.findByUserId(any())).willReturn(Optional.of(profile));
+        given(userProfileRepository.findByUserId(1L)).willReturn(Optional.of(profile));
         given(jwtTokenProvider.createAccessToken(any(), any())).willReturn("mock.jwt.token");
         given(jwtProperties.accessExpirationSeconds()).willReturn(3600L);
 
@@ -123,6 +127,7 @@ class AuthServiceTest {
         // then — AccessToken이 정상적으로 반환되었는지 확인한다
         assertThat(response.accessToken()).isEqualTo("mock.jwt.token");
         assertThat(response.tokenType()).isEqualTo("Bearer");
+        verify(loginLockoutService).clearFailures(request.email());
     }
 
     @Test
@@ -139,12 +144,13 @@ class AuthServiceTest {
                 .build();
 
         given(userRepository.findByEmail(request.email())).willReturn(Optional.of(activeUser));
-        // 비밀번호 불일치 — 인증 자격증명 자체가 틀린 경우이므로 401 반환
         given(passwordEncoder.matches(anyString(), anyString())).willReturn(false);
+        given(loginLockoutService.isLocked(request.email())).willReturn(false);
 
         // when & then
         assertThatThrownBy(() -> authService.login(request))
                 .isInstanceOf(InvalidLoginCredentialsException.class);
+        verify(loginLockoutService).recordFailure(request.email());
     }
 
     @Test

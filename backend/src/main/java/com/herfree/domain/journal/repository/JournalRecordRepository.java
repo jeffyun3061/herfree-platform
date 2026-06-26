@@ -44,4 +44,7 @@ public interface JournalRecordRepository extends JpaRepository<JournalRecord, Lo
 
     @Query("SELECT COUNT(DISTINCT r.user.id) FROM JournalRecord r")
     long countDistinctUsers();
+
+    @Query("SELECT COUNT(DISTINCT r.user.id) FROM JournalRecord r WHERE r.recordDate = :date")
+    long countDistinctUsersByRecordDate(@Param("date") LocalDate date);
 }

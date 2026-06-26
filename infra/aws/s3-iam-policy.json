@@ -2,19 +2,13 @@
   "Version": "2012-10-17",
   "Statement": [
     {
-      "Sid": "PresignPutOnly",
+      "Sid": "ObjectAccessPostsPrefix",
       "Effect": "Allow",
       "Action": ["s3:PutObject", "s3:GetObject"],
       "Resource": "arn:aws:s3:::HERFREE_BUCKET_NAME/posts/*"
     },
     {
-      "Sid": "HeadBucketForStartupCheck",
-      "Effect": "Allow",
-      "Action": ["s3:HeadBucket"],
-      "Resource": "arn:aws:s3:::HERFREE_BUCKET_NAME"
-    },
-    {
-      "Sid": "ListPostsPrefix",
+      "Sid": "ListPostsPrefixForStartupCheck",
       "Effect": "Allow",
       "Action": ["s3:ListBucket"],
       "Resource": "arn:aws:s3:::HERFREE_BUCKET_NAME",
