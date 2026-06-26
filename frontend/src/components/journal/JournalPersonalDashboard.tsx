@@ -23,7 +23,6 @@ type JournalPersonalDashboardProps = {
   afterCommunity?: React.ReactNode;
 };
 
-/** 목업 기준 홈 스택: 헤더 → 히어로(300:280) → CTA → 루틴 → 커뮤니티 */
 export function JournalPersonalDashboard({
   dashboard,
   isLoading,
@@ -40,7 +39,7 @@ export function JournalPersonalDashboard({
   const showFirstRecordHint = !isLoading && hasTodayRecord === false;
 
   return (
-    <div className="journal-home-stack mx-auto w-full max-w-app">
+    <div className="journal-home-stack mx-auto w-full max-w-app gap-3">
       <JournalDashboardHero
         dashboard={dashboard}
         isLoading={isLoading}

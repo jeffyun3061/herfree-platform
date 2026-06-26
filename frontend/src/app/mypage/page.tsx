@@ -24,6 +24,61 @@ import { getErrorMessage } from '@/lib/api/client';
 
 const BOOKMARK_KEY = 'herfree-bookmarks';
 
+function LoggedOutMyPagePrompt() {
+  return (
+    <div className="px-4 pb-36 pt-5">
+      <section className="overflow-hidden rounded-[24px] border border-[#E7DFD2] bg-white shadow-[0_18px_42px_-30px_rgba(24,34,28,.45)]">
+        <div className="bg-[#07251F] px-5 pb-6 pt-7 text-white">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/48">
+            My page
+          </p>
+          <h1 className="hf-display mt-2 text-[26px] font-extrabold leading-[1.32]">
+            내 기록과 활동을
+            <br />
+            한곳에서 확인해요
+          </h1>
+          <p className="mt-3 text-[13px] leading-[1.7] text-white/72">
+            로그인하면 내가 쓴 글, 받은 공감, 개인일지 요약과 상담 흐름을 이어서 볼 수 있어요.
+          </p>
+        </div>
+
+        <div className="px-5 py-5">
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              ['0', '작성 글'],
+              ['0', '받은 공감'],
+              ['0', '평온 일수'],
+            ].map(([value, label]) => (
+              <div key={label} className="rounded-[16px] bg-[#F7F3EC] px-3 py-3 text-center">
+                <p className="text-[18px] font-extrabold text-[#0B3B36]">{value}</p>
+                <p className="mt-1 text-[11px] text-[#65706B]">{label}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-4 rounded-[18px] border border-[#ECE5D8] bg-[#FFFCF7] p-4">
+            <p className="text-[13px] font-semibold text-[#1E2621]">
+              익명 기반으로 안전하게 관리돼요
+            </p>
+            <p className="mt-1.5 text-[12px] leading-[1.65] text-[#65706B]">
+              공개 커뮤니티와 개인 기록은 분리해서 관리하고, 필요한 정보만 마이페이지에서 확인할 수 있어요.
+            </p>
+          </div>
+
+          <Link href="/login?from=%2Fmypage">
+            <Button fullWidth size="lg" className="mt-4 rounded-[14px]">
+              로그인
+            </Button>
+          </Link>
+          <Link href="/signup?from=/mypage" className="mt-3 block text-center text-[12.5px] text-[#54614F]">
+            아직 계정이 없나요? 회원가입
+          </Link>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 function loadBookmarkCount(): number {
   if (typeof window === 'undefined') return 0;
   try {
@@ -112,6 +167,8 @@ export default function MyPage() {
   }, []);
 
   if (!isReady) return <LoadingSpinner />;
+
+  if (!isLoggedIn) return <LoggedOutMyPagePrompt />;
 
   if (!isLoggedIn) {
     return (
@@ -231,7 +288,7 @@ export default function MyPage() {
         <div className="mx-4 mt-[18px]">
           <p className="mb-2 px-0.5 text-xs text-[#8B9590]">고객지원</p>
           <div className="mypage-menu-card">
-            <MenuRow icon="❓" label="자주 묻는 질문" href="/community" />
+            <MenuRow icon="❓" label="자주 묻는 질문" href="/qna" />
             <MenuRow icon="🔒" label="1:1 비밀상담" href="/consult" />
             <MenuRow
               icon="💬"

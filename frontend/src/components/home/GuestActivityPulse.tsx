@@ -4,7 +4,6 @@ import Link from 'next/link';
 import type { Post } from '@/domain/post/types';
 import { formatRelativeTime } from '@/domain/common/format';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { cn } from '@/lib/cn';
 
 type GuestActivityPulseProps = {
   posts: Post[];
@@ -12,20 +11,6 @@ type GuestActivityPulseProps = {
   usersRecordingToday: number | null;
   statsLoading: boolean;
 };
-
-function formatRecordingCount(count: number): string {
-  return count.toLocaleString('ko-KR');
-}
-
-function PostAvatar({ nickname }: { nickname: string }) {
-  const initial = nickname === '익명' ? '?' : nickname.trim().charAt(0) || '?';
-
-  return (
-    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/[0.08] text-sm font-medium text-white/80">
-      {initial}
-    </span>
-  );
-}
 
 function postSnippet(post: Post): string {
   const preview = post.contentPreview?.trim();
@@ -36,79 +21,94 @@ function postSnippet(post: Post): string {
 export function GuestActivityPulse({
   posts,
   isLoading,
-  usersRecordingToday,
-  statsLoading,
 }: GuestActivityPulseProps) {
   const previewPosts = posts.slice(0, 3);
-  const hasCount = usersRecordingToday !== null && usersRecordingToday > 0;
 
   return (
-    <section className="journal-community-panel">
-      <p className="mb-4 text-[13px] leading-relaxed text-white/75">
-        {statsLoading ? (
-          '지금 함께 기록하는 회원 수를 불러오는 중…'
-        ) : hasCount ? (
-          <>
-            지금{' '}
-            <span className="font-semibold text-herfree-yellow">
-              {formatRecordingCount(usersRecordingToday)}명
-            </span>
-            이 평온한 하루를 기록하고 있어요
-          </>
-        ) : (
-          <>
-            지금{' '}
-            <span className="font-semibold text-herfree-yellow">많은 회원</span>이 평온한 하루를
-            기록하고 있어요
-          </>
-        )}
-      </p>
-
-      <div className="mb-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-white" aria-hidden>
-            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
-              <path
-                d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5Z"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </span>
-          <h2 className="font-display text-base font-bold text-white">지금 올라온 이야기</h2>
-        </div>
-        <Link
-          href="/community"
-          className="text-[11px] font-medium text-white/50 transition-colors hover:text-white/70"
-        >
-          더보기 &gt;
-        </Link>
+    <section className="px-5">
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="hf-display text-[19px] font-extrabold tracking-[-0.01em] text-[#1E2621]">
+          방금 올라온 이야기
+        </h2>
+        <span className="inline-flex items-center gap-1 text-[10.5px] font-medium text-[#A6ABA0]">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="5" y="11" width="14" height="9" rx="2" />
+            <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+          </svg>
+          회원 전용
+        </span>
       </div>
 
-      {isLoading ? (
-        <LoadingSpinner label="최근 이야기 불러오는 중…" />
-      ) : previewPosts.length === 0 ? (
-        <p className="text-sm text-white/50">아직 올라온 이야기가 없어요. 첫 글을 남겨 보세요.</p>
-      ) : (
-        <ul>
-          {previewPosts.map((post, index) => (
-            <li key={post.id} className={cn(index > 0 && 'border-t border-white/[0.08]')}>
-              <Link href={`/community/posts/${post.id}`} className="flex items-center gap-3 py-3 group">
-                <PostAvatar nickname={post.authorNickname} />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-xs font-semibold text-white">{post.authorNickname}</span>
-                    <span className="text-[10px] text-white/40">{formatRelativeTime(post.createdAt)}</span>
-                  </div>
-                  <p className="mt-0.5 line-clamp-2 text-[13px] leading-snug text-white/[0.65] group-hover:text-white/80">
-                    {postSnippet(post)}
-                  </p>
+      <div className="relative">
+        <div
+          className="flex select-none flex-col gap-[11px] blur-[5px] opacity-50"
+          aria-hidden
+        >
+          {isLoading ? (
+            <div className="rounded-[16px] bg-white px-4 py-8 shadow-[0_12px_28px_-24px_rgba(20,30,25,.3)]">
+              <LoadingSpinner label="이야기를 불러오는 중..." />
+            </div>
+          ) : previewPosts.length > 0 ? (
+            previewPosts.map((post) => (
+              <article
+                key={post.id}
+                className="rounded-[16px] bg-white px-4 py-[15px] shadow-[0_1px_2px_rgba(20,30,25,.04),0_12px_28px_-24px_rgba(20,30,25,.3)]"
+              >
+                <div className="mb-2.5 flex items-center gap-2.5">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#EDF2EC] text-[13px] font-semibold text-[#0B3B36]">
+                    {post.authorNickname?.charAt(0) || '?'}
+                  </span>
+                  <span className="truncate text-[13px] font-semibold text-[#2C342E]">
+                    {post.authorNickname}
+                  </span>
+                  <span className="ml-auto shrink-0 text-[10.5px] text-[#B4B2A6]">
+                    {formatRelativeTime(post.createdAt)}
+                  </span>
                 </div>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
+                <p className="line-clamp-2 text-[13.5px] leading-[1.6] text-[#2C342E]">
+                  {postSnippet(post)}
+                </p>
+              </article>
+            ))
+          ) : (
+            [1, 2, 3].map((item) => (
+              <article
+                key={item}
+                className="rounded-[16px] bg-white px-4 py-[15px] shadow-[0_1px_2px_rgba(20,30,25,.04),0_12px_28px_-24px_rgba(20,30,25,.3)]"
+              >
+                <div className="mb-2.5 flex items-center gap-2.5">
+                  <span className="h-7 w-7 rounded-full bg-[#EDF2EC]" />
+                  <span className="h-3 w-20 rounded-full bg-[#EDF2EC]" />
+                </div>
+                <span className="block h-3 w-full rounded-full bg-[#EDF2EC]" />
+              </article>
+            ))
+          )}
+        </div>
+
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-[linear-gradient(180deg,rgba(243,237,227,.15)_0%,rgba(243,237,227,.82)_36%,#F3EDE3_72%)] px-7 text-center">
+          <div className="mb-3.5 flex h-[46px] w-[46px] items-center justify-center rounded-full bg-[#0B3B36] shadow-[0_10px_22px_-10px_rgba(11,59,54,.6)]">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F0C778" strokeWidth="2">
+              <rect x="5" y="11" width="14" height="9" rx="2" />
+              <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+            </svg>
+          </div>
+          <p className="mb-1.5 text-[15px] font-bold text-[#1E2621]">
+            회원만 볼 수 있는 공간이에요
+          </p>
+          <p className="mb-[18px] text-[12.5px] leading-[1.6] text-[#5C645A]">
+            가입하면 익명으로 올라온 이야기를
+            <br />
+            바로 확인할 수 있어요
+          </p>
+          <Link
+            href="/signup?from=/community"
+            className="rounded-[12px] bg-[#0B3B36] px-6 py-3 text-[13.5px] font-bold text-white"
+          >
+            가입하고 둘러보기
+          </Link>
+        </div>
+      </div>
     </section>
   );
 }

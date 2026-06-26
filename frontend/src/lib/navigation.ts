@@ -14,12 +14,19 @@ export const DESKTOP_NAV_ITEMS = [
   { href: '/videos', label: '영상' },
 ] as const;
 
-export const HIDE_NAV_PATHS = ['/login', '/signup', '/admin'] as const;
+export const HIDE_NAV_PATHS = [
+  '/login',
+  '/signup',
+  '/admin',
+  '/consult',
+  '/consult/write',
+] as const;
 
 export const HIDE_SHELL_HEADER_PATHS = [
   '/login',
   '/signup',
   '/admin',
+  '/qna',
   '/community/write',
   '/inquiry/write',
   '/consult',
@@ -41,7 +48,6 @@ export function shouldShowShellHeader(pathname: string): boolean {
   return true;
 }
 
-/** 하단 탭 루트 — MobileHeader에 로고 옆 제목만 표시 (뒤로가기 없음) */
 const MOBILE_TAB_ROOT_TITLES: Record<string, string> = {
   '/contents': '칼럼',
   '/videos': '영상',
@@ -50,6 +56,7 @@ const MOBILE_TAB_ROOT_TITLES: Record<string, string> = {
   '/community': '커뮤니티',
   '/inquiry': '운영 문의',
   '/inquiry/write': '문의하기',
+  '/qna': '자주 묻는 질문',
   '/consult': '1:1 비밀 상담',
   '/consult/write': '상담 글쓰기',
 };

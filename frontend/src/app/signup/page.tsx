@@ -58,11 +58,13 @@ function SignupForm() {
   };
 
   return (
-    <div className="auth-screen">
+    <div className="auth-screen bg-[#F3EDE3]">
       <div className="flex flex-col items-center text-center">
         <BrandMark variant="auth" size="lg" />
-        <h1 className="mt-8 text-2xl font-bold text-ink">함께 시작해요</h1>
-        <p className="mt-2 text-sm text-wrtn-muted">이메일로 간단히 가입할 수 있어요.</p>
+        <h1 className="hf-display mt-8 text-[26px] font-extrabold leading-tight text-[#1E2621]">
+          함께 시작해요
+        </h1>
+        <p className="mt-2 text-sm text-[#5C645A]">익명 커뮤니티와 개인 기록을 한 곳에서 관리할 수 있어요.</p>
       </div>
 
       <form onSubmit={(e) => void handleSubmit(e)} className="mt-8 flex flex-1 flex-col gap-4">
@@ -105,46 +107,46 @@ function SignupForm() {
           error={fieldErrors.nickname}
         />
 
-        <div className="mt-2 space-y-3 rounded-xl border border-wrtn-border bg-wrtn-bg p-4">
-          <label className="flex items-start gap-3 text-sm text-ink">
+        <div className="mt-2 space-y-3 rounded-[18px] border border-[#ECE5D8] bg-white p-4 shadow-card">
+          <label className="flex items-start gap-3 text-sm text-[#1E2621]">
             <input
               type="checkbox"
               checked={agreeTerms}
               onChange={(e) => setAgreeTerms(e.target.checked)}
-              className="mt-0.5 h-4 w-4 rounded border-wrtn-border text-primary focus:ring-primary"
+              className="mt-0.5 h-4 w-4 rounded border-[#ECE5D8] text-[#0B3B36] focus:ring-[#0B3B36]"
             />
             <span>
-              <span className="font-medium text-primary">[필수]</span>{' '}
+              <span className="font-medium text-[#0B3B36]">[필수]</span>{' '}
               <Link href="/terms" className="underline underline-offset-2">
                 이용약관
               </Link>
-              에 동의합니다
+              에 동의합니다.
             </span>
           </label>
-          <label className="flex items-start gap-3 text-sm text-ink">
+          <label className="flex items-start gap-3 text-sm text-[#1E2621]">
             <input
               type="checkbox"
               checked={agreePrivacy}
               onChange={(e) => setAgreePrivacy(e.target.checked)}
-              className="mt-0.5 h-4 w-4 rounded border-wrtn-border text-primary focus:ring-primary"
+              className="mt-0.5 h-4 w-4 rounded border-[#ECE5D8] text-[#0B3B36] focus:ring-[#0B3B36]"
             />
             <span>
-              <span className="font-medium text-primary">[필수]</span>{' '}
+              <span className="font-medium text-[#0B3B36]">[필수]</span>{' '}
               <Link href="/privacy" className="underline underline-offset-2">
                 개인정보처리방침
               </Link>
-              에 동의합니다
+              에 동의합니다.
             </span>
           </label>
         </div>
 
         {error && <ErrorMessage message={error} />}
         <Button type="submit" fullWidth size="lg" disabled={isSubmitting || !allRequiredAgreed}>
-          {isSubmitting ? '가입 중…' : '가입 완료'}
+          {isSubmitting ? '가입 중...' : '가입 완료'}
         </Button>
-        <p className="text-center text-sm text-wrtn-muted">
-          이미 계정이 있으신가요?{' '}
-          <Link href="/login" className="font-semibold text-primary">
+        <p className="text-center text-sm text-[#5C645A]">
+          이미 계정이 있나요?{' '}
+          <Link href="/login" className="font-semibold text-[#0B3B36]">
             로그인
           </Link>
         </p>

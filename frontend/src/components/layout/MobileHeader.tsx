@@ -22,7 +22,7 @@ function HeaderIconButton({
   onClick?: () => void;
 }) {
   const className =
-    'flex h-8 w-8 items-center justify-center rounded-full text-herfree-green transition-colors hover:bg-herfree-icon-bg';
+    'flex h-9 w-9 items-center justify-center rounded-full text-[#0B3B36] transition-colors hover:bg-[#F6F1E8]';
 
   if (onClick) {
     return (
@@ -61,35 +61,33 @@ export function MobileHeader() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 flex h-11 items-center justify-between gap-2 border-b border-[var(--color-border-tertiary)]/60 bg-white px-3 lg:hidden">
-        <div className="flex min-w-0 flex-1 items-center gap-1">
+      <header className="sticky top-0 z-40 flex h-[54px] items-center justify-between gap-2 bg-[#F3EDE3]/92 px-4 backdrop-blur-md lg:hidden">
+        <div className="flex min-w-0 flex-1 items-center gap-2">
           {showBack ? (
             <>
               <button
                 type="button"
                 aria-label="뒤로 가기"
                 onClick={handleBack}
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-ink transition-colors hover:bg-herfree-icon-bg"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#1E2621] transition-colors hover:bg-[#F6F1E8]"
               >
                 <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M15 6l-6 6 6 6" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </button>
               {title ? (
-                <h1 className="min-w-0 truncate text-base font-semibold text-ink">{title}</h1>
+                <h1 className="min-w-0 truncate text-[15px] font-semibold text-[#1E2621]">{title}</h1>
               ) : null}
             </>
-          ) : title ? (
+          ) : (
             <>
               <Link href="/" className="shrink-0" aria-label="홈">
                 <BrandMark size="sm" showText={false} />
               </Link>
-              <h1 className="min-w-0 truncate text-base font-semibold text-ink">{title}</h1>
+              <span className="truncate text-[13px] font-medium text-[#5C645A]">
+                {title ?? '헤르프리'}
+              </span>
             </>
-          ) : (
-            <Link href="/" className="shrink-0">
-              <BrandMark size="sm" showText={false} />
-            </Link>
           )}
         </div>
         <div className="flex shrink-0 items-center gap-0.5">
@@ -109,8 +107,8 @@ export function MobileHeader() {
             <Link
               href="/login"
               className={cn(
-                'px-1.5 text-[10px] font-semibold text-herfree-green',
-                'transition-opacity hover:opacity-70',
+                'rounded-full px-2 py-1 text-[11px] font-semibold text-[#0B3B36]',
+                'transition-colors hover:bg-[#F6F1E8]',
               )}
             >
               로그인

@@ -1,33 +1,64 @@
 'use client';
 
+import Link from 'next/link';
 import { PUBLIC_IMAGES } from '@/domain/assets/static';
 import { PublicStaticImage } from '@/components/ui/PublicStaticImage';
 
 export function GuestHomeHero() {
   return (
-    <section className="journal-hero-card relative overflow-hidden shadow-card">
+    <section className="relative h-[330px] overflow-hidden">
       <PublicStaticImage
         src={PUBLIC_IMAGES.homeHero}
         alt=""
         fill
         priority
-        sizes="100vw"
-        className="object-cover object-[70%_center]"
+        sizes="390px"
+        className="object-cover object-[50%_38%]"
       />
       <div
-        className="absolute inset-0 bg-gradient-to-b from-[rgba(4,30,26,0.4)] via-[rgba(4,30,26,0.2)] to-[#0B3B36]"
+        className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,37,31,.5)_0%,rgba(7,37,31,.14)_30%,rgba(7,37,31,.32)_66%,rgba(7,37,31,.5)_86%,rgba(243,237,227,.55)_97%,#F3EDE3_100%)]"
         aria-hidden
       />
 
-      <div className="relative z-10 flex h-full min-h-0 flex-col justify-end p-4 sm:p-5">
-        <p className="text-[11px] font-medium tracking-wide text-white/70">Herfree Health Community</p>
-        <h1 className="font-display mt-2 text-[1.5rem] font-extrabold leading-[1.32] text-white sm:text-[1.75rem]">
-          혼자 견디지 않아도 됩니다
-        </h1>
-        <p className="mt-2 text-[13px] leading-relaxed text-white/80">
-          헤르프리는 같은 경험을 가진 이들이 담담하게
+      <div className="absolute left-0 right-0 top-[52px] flex items-center justify-between px-[22px] py-1.5">
+        <Link href="/" className="flex items-center gap-2" aria-label="헤르프리 홈">
+          <span className="flex h-[30px] w-[30px] items-center justify-center rounded-full bg-white/16 text-[16px] font-bold text-white backdrop-blur-md">
+            h.
+          </span>
+          <span className="text-[15px] font-semibold tracking-[-0.01em] text-white">
+            헤르프리
+          </span>
+        </Link>
+        <div className="flex items-center gap-4">
+          <Link href="/login" className="text-[13.5px] font-medium text-white/90">
+            로그인
+          </Link>
+          <Link href="/community" aria-label="커뮤니티 둘러보기" className="text-white/90">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+            >
+              <line x1="4" y1="7" x2="20" y2="7" />
+              <line x1="4" y1="12" x2="20" y2="12" />
+              <line x1="4" y1="17" x2="20" y2="17" />
+            </svg>
+          </Link>
+        </div>
+      </div>
+
+      <div className="absolute bottom-[42px] left-0 right-0 px-[26px]">
+        <h1 className="hf-display m-0 text-[30px] font-extrabold leading-[1.4] tracking-[-0.01em] text-white [text-shadow:0_2px_18px_rgba(7,37,31,.4)]">
+          편하게
           <br />
-          잘 살아가는 이야기가 모이는 곳입니다
+          들어오세요
+        </h1>
+        <p className="mt-3 max-w-[300px] text-[13.5px] leading-[1.7] text-white/90">
+          우리들의 이야기가 모이는 공간입니다.
         </p>
       </div>
     </section>

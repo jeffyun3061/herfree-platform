@@ -45,8 +45,8 @@ function LoggedInHomePage() {
   const hasTodayRecord = Boolean(dashboard?.todayRecord);
 
   return (
-    <div className="bg-wrtn-bg lg:pb-10">
-      <div className="page-container max-lg:pb-4">
+    <div className="min-h-screen bg-[#F3EDE3] lg:pb-10">
+      <div className="page-container max-lg:pb-28">
         <div className="space-y-3">
           <JournalPersonalDashboard
             dashboard={dashboard ?? null}
@@ -83,7 +83,7 @@ export default function HomePage() {
   if (!isReady) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center bg-canvas">
-        <LoadingSpinner label="불러오는 중…" />
+        <LoadingSpinner label="불러오는 중..." />
       </div>
     );
   }

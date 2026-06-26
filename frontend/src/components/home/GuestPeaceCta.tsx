@@ -1,23 +1,30 @@
 'use client';
 
-import { ButtonLink } from '@/components/ui/Button';
+import Link from 'next/link';
 
 export function GuestPeaceCta() {
   return (
-    <section className="journal-summary-card">
-      <p className="text-sm leading-relaxed text-herfree-gray">
-        당신의 평온한 일상은,
+    <section className="mx-[18px] mt-[26px] rounded-[20px] border border-[#DCE6DC] bg-[#EDF2EC] px-[22px] py-[22px]">
+      <h2 className="hf-display text-[17px] font-bold leading-[1.5] text-[#1E2621]">
+        막막하게 느껴지나요?
+      </h2>
+      <p className="mt-2 text-[13px] leading-[1.75] text-[#54614F]">
+        관리의 시작은 기록부터.
         <br />
-        오늘부터 며칠째인가요?
+        오늘부터 개인 일지를 작성해보세요.
       </p>
-      <ButtonLink
+      <Link
         href="/signup?from=/journal"
-        fullWidth
-        size="md"
-        className="mt-3 journal-record-cta shadow-sm"
+        className="mt-[18px] flex min-h-[46px] items-center justify-center rounded-[12px] bg-[#0B3B36] text-[14px] font-bold text-white"
       >
         오늘부터 시작하기
-      </ButtonLink>
+      </Link>
+      <Link
+        href="/community"
+        className="mt-[13px] block text-center text-[12.5px] text-[#54614F]"
+      >
+        먼저 둘러볼게요
+      </Link>
     </section>
   );
 }

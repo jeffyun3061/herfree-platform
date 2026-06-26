@@ -139,7 +139,7 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
   const listError = boardsError ?? error;
 
   return (
-    <div className="page-container mx-auto max-w-app pb-20 lg:max-w-content lg:pb-8">
+    <div className="page-container mx-auto max-w-app pb-36 lg:max-w-content lg:pb-12">
       <div className="mb-4 lg:hidden">
         <h2 className="text-[19px] font-semibold text-[#15201D]">커뮤니티</h2>
         <p className="mt-1 text-[12.5px] leading-relaxed text-[#8B9590]">

@@ -39,7 +39,7 @@ export function ContentCard({ content }: ContentCardProps) {
 export function ContentCardSkeleton() {
   return (
     <div className="column-feed-card animate-pulse overflow-hidden">
-      <div className="h-[90px] bg-[#E3E6E4]" />
+      <div className="bg-[#0B3B36]/15" />
       <div className="space-y-2 p-4">
         <div className="h-4 w-16 rounded-md bg-[#E3E6E4]" />
         <div className="h-4 w-full rounded bg-[#E3E6E4]" />

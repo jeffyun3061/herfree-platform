@@ -58,7 +58,7 @@ export function JournalDashboardHero({
               <p className="text-[13px] leading-relaxed text-white/80">
                 첫 기록을 남기면
                 <br />
-                여기에 나만의 일수가 쌓여요
+                나만의 평온 일수가 쌓여요
               </p>
               <p className="mt-2 font-display text-[1.75rem] font-bold leading-tight text-white">
                 오늘부터 시작해요
@@ -67,10 +67,11 @@ export function JournalDashboardHero({
           ) : (
             <>
               <p className="text-[13px] leading-relaxed text-white/80">
-                작은 기록이 쌓여
+                작은 기록을 쌓아
                 <br />
                 지금의{' '}
-                <span className="font-semibold text-herfree-yellow">{relapseFreeDays}일</span>이 됐어요
+                <span className="font-semibold text-herfree-yellow">{relapseFreeDays}일</span>을
+                지켜냈어요
               </p>
               <p className="mt-2 font-display font-extrabold leading-none tracking-tight text-white">
                 <span className="text-[2.75rem] text-herfree-yellow sm:text-[3rem]">

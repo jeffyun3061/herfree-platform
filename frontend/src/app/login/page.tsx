@@ -68,11 +68,13 @@ function LoginForm() {
   };
 
   return (
-    <div className="auth-screen">
+    <div className="auth-screen bg-[#F3EDE3]">
       <div className="flex flex-col items-center text-center">
         <BrandMark variant="auth" size="lg" />
-        <h1 className="mt-8 text-2xl font-bold text-ink">다시 만나서 반가워요</h1>
-        <p className="mt-2 text-sm text-wrtn-muted">이메일로 로그인해 주세요.</p>
+        <h1 className="hf-display mt-8 text-[26px] font-extrabold leading-tight text-[#1E2621]">
+          다시 만나서 반가워요
+        </h1>
+        <p className="mt-2 text-sm text-[#5C645A]">기록과 커뮤니티를 이어서 확인해 주세요.</p>
       </div>
 
       <form onSubmit={(e) => void handleSubmit(e)} className="mt-10 flex flex-1 flex-col">
@@ -96,16 +98,16 @@ function LoginForm() {
             error={fieldErrors.password}
           />
         </div>
-        <label className="mt-3 flex items-center gap-2 text-sm text-wrtn-muted">
+        <label className="mt-3 flex items-center gap-2 text-sm text-[#5C645A]">
           <input
             type="checkbox"
             checked={rememberEmail}
             onChange={(e) => setRememberEmail(e.target.checked)}
           />
-          아이디 저장
+          이메일 저장
         </label>
         <div className="mt-3 text-right">
-          <Link href="/forgot-password" className="text-sm font-medium text-primary">
+          <Link href="/forgot-password" className="text-sm font-medium text-[#0B3B36]">
             비밀번호를 잊으셨나요?
           </Link>
         </div>
@@ -115,16 +117,16 @@ function LoginForm() {
           </div>
         )}
         <Button type="submit" fullWidth size="lg" className="mt-6" disabled={isSubmitting}>
-          {isSubmitting ? '로그인 중…' : '로그인'}
+          {isSubmitting ? '로그인 중...' : '로그인'}
         </Button>
-        <p className="mt-6 text-center text-sm text-wrtn-muted">
-          계정이 없으신가요?{' '}
-          <Link href="/signup" className="font-semibold text-primary">
+        <p className="mt-6 text-center text-sm text-[#5C645A]">
+          아직 계정이 없나요?{' '}
+          <Link href="/signup" className="font-semibold text-[#0B3B36]">
             회원가입
           </Link>
         </p>
-        <p className="mt-auto pt-8 text-center text-xs leading-relaxed text-wrtn-muted">
-          로그인 시{' '}
+        <p className="mt-auto pt-8 text-center text-xs leading-relaxed text-[#8A9089]">
+          로그인하면{' '}
           <Link href="/terms" className="underline underline-offset-2">
             이용약관
           </Link>
@@ -141,7 +143,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<LoadingSpinner label="불러오는 중…" />}>
+    <Suspense fallback={<LoadingSpinner label="불러오는 중..." />}>
       <LoginForm />
     </Suspense>
   );

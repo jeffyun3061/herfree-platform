@@ -50,7 +50,7 @@ export function JournalRoutineCard({
             오늘의 루틴
           </h2>
           <p className="text-[10px] text-[var(--color-text-primary)]/70">
-            {showEmptyHint ? '기록하기를 누르면 1분이면 채울 수 있어요' : '하루 세 가지만 체크해요'}
+            {showEmptyHint ? '기록하기를 누르면 1분이면 채울 수 있어요' : '하루 한 가지만 체크해도 충분해요'}
           </p>
         </div>
       </div>

@@ -32,11 +32,17 @@ export function JournalCommunityCard({ posts, isLoading, maxPosts = 5 }: Journal
   const previewPosts = posts.slice(0, maxPosts);
 
   return (
-    <section className="journal-community-panel">
+    <section className="journal-community-panel shadow-[0_18px_42px_-30px_rgba(7,37,31,.75)]">
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-white" aria-hidden>
-            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
+            <svg
+              viewBox="0 0 24 24"
+              className="h-5 w-5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+            >
               <path
                 d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5Z"
                 strokeLinecap="round"
@@ -55,19 +61,21 @@ export function JournalCommunityCard({ posts, isLoading, maxPosts = 5 }: Journal
       </div>
 
       {isLoading ? (
-        <LoadingSpinner label="커뮤니티 불러오는 중…" />
+        <LoadingSpinner label="커뮤니티 불러오는 중..." />
       ) : previewPosts.length === 0 ? (
-        <p className="text-sm text-white/50">아직 글이 없습니다. 첫 이야기를 남겨 보세요.</p>
+        <p className="text-sm text-white/50">아직 글이 없습니다. 첫 이야기를 남겨보세요.</p>
       ) : (
         <ul>
           {previewPosts.map((post, index) => (
             <li key={post.id} className={cn(index > 0 && 'border-t border-white/[0.08]')}>
-              <Link href={`/community/posts/${post.id}`} className="flex items-center gap-3 py-3 group">
+              <Link href={`/community/posts/${post.id}`} className="group flex items-center gap-3 py-3">
                 <PostAvatar nickname={post.authorNickname} />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-baseline gap-2">
                     <span className="text-xs font-semibold text-white">{post.authorNickname}</span>
-                    <span className="text-[10px] text-white/40">{formatRelativeTime(post.createdAt)}</span>
+                    <span className="text-[10px] text-white/40">
+                      {formatRelativeTime(post.createdAt)}
+                    </span>
                   </div>
                   <p className="mt-0.5 line-clamp-2 text-[13px] leading-snug text-white/[0.65] group-hover:text-white/80">
                     {postSnippet(post)}

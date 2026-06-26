@@ -17,25 +17,25 @@ const config: Config = {
           foreground: '#F8FAFC',
         },
         wrtn: {
-          bg: '#EFF1F0',
+          bg: '#F3EDE3',
           surface: '#FFFFFF',
-          border: '#DDE3E1',
+          border: '#E5DDCF',
           muted: '#5B6864',
         },
         herfree: {
           green: '#0B3B36',
           gray: '#5B6864',
-          yellow: '#FFD566',
-          'bg-muted': '#EFF1F0',
-          'bg-dark': '#1A1A1A',
-          'icon-bg': '#F4F6F5',
+          yellow: '#F0C778',
+          'bg-muted': '#F3EDE3',
+          'bg-dark': '#07251F',
+          'icon-bg': '#F6F1E8',
         },
         canvas: {
           DEFAULT: '#F5F5F7',
           dark: '#EBEBEF',
         },
         hero: {
-          DEFAULT: '#F2EFE9',
+          DEFAULT: '#F3EDE3',
           foreground: '#1A1C1E',
         },
         sage: {
@@ -48,8 +48,8 @@ const config: Config = {
           dark: '#D4C4A8',
         },
         cream: {
-          DEFAULT: '#F5F5F7',
-          dark: '#EBEBEF',
+          DEFAULT: '#F3EDE3',
+          dark: '#DED4C2',
           foreground: '#1A1A1A',
         },
         gold: {
@@ -69,7 +69,7 @@ const config: Config = {
           DEFAULT: '#8E8E93',
           foreground: '#8E8E93',
         },
-        border: '#E8E8ED',
+        border: '#E5DDCF',
         ink: {
           DEFAULT: '#1A1C1E',
           soft: '#5C5F66',
@@ -83,7 +83,7 @@ const config: Config = {
       },
       fontFamily: {
         sans: ['SUIT', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
-        display: ['SUIT', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+        display: ['Nanum Myeongjo', 'SUIT', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'serif'],
       },
       maxWidth: {
         app: '430px',
@@ -96,8 +96,8 @@ const config: Config = {
         pill: '9999px',
       },
       boxShadow: {
-        card: '0 2px 12px rgba(47, 143, 131, 0.06)',
-        'card-hover': '0 4px 20px rgba(47, 143, 131, 0.1)',
+        card: '0 1px 2px rgba(20, 30, 25, 0.04), 0 14px 32px -22px rgba(20, 30, 25, 0.22)',
+        'card-hover': '0 8px 28px -18px rgba(20, 30, 25, 0.34)',
         product: '0 4px 20px rgba(30, 41, 59, 0.08)',
         fab: '0 4px 16px rgba(47, 143, 131, 0.28)',
       },
