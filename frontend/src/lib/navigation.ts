@@ -2,7 +2,7 @@ export const NAV_ITEMS = [
   { href: '/', label: '홈' },
   { href: '/community', label: '커뮤니티' },
   { href: '/journal', label: '개인일지' },
-  { href: '__question__', label: 'Q&A' },
+  { href: '/qna', label: 'Q&A' },
   { href: '/mypage', label: '마이페이지' },
 ] as const;
 

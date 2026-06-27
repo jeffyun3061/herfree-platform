@@ -1,12 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo } from 'react';
 import { usePathname } from 'next/navigation';
 import { NAV_ITEMS } from '@/lib/navigation';
-import { useAuth } from '@/hooks/useAuth';
-import { useBoards } from '@/hooks/useBoards';
-import { findBoardByType } from '@/domain/board/types';
 import { cn } from '@/lib/cn';
 
 function NavIcon({ href }: { href: string }) {
@@ -59,20 +55,6 @@ function NavIcon({ href }: { href: string }) {
 
 export function BottomNav() {
   const pathname = usePathname();
-  const { boards } = useBoards();
-
-  const questionHref = useMemo(() => {
-    const board = findBoardByType(boards, 'QUESTION');
-    return board ? `/community/${board.id}` : '/community';
-  }, [boards]);
-
-  const navItems = useMemo(
-    () =>
-      NAV_ITEMS.map((item) =>
-        item.href === '__question__' ? { ...item, href: questionHref } : item,
-      ),
-    [questionHref],
-  );
 
   return (
     <nav
@@ -80,7 +62,7 @@ export function BottomNav() {
       aria-label="하단 메뉴"
     >
       <ul className="flex items-center justify-around">
-        {navItems.map((item) => {
+        {NAV_ITEMS.map((item) => {
           const active =
             item.href === '/'
               ? pathname === '/'
