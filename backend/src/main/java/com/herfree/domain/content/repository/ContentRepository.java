@@ -2,6 +2,7 @@ package com.herfree.domain.content.repository;
 
 import com.herfree.domain.content.entity.Content;
 import com.herfree.domain.content.entity.ContentStatus;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
@@ -21,6 +22,8 @@ public interface ContentRepository extends JpaRepository<Content, Long> {
     Optional<Content> findByIdAndStatus(Long id, ContentStatus status);
 
     Optional<Content> findTopByOrderBySortOrderDesc();
+
+    long countByCreatedAtAfter(LocalDateTime since);
 
     @Query("""
             SELECT c FROM Content c

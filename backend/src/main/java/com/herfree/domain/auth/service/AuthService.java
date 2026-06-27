@@ -6,6 +6,7 @@ import com.herfree.domain.auth.dto.response.LoginResponse;
 import com.herfree.domain.auth.exception.InvalidLoginCredentialsException;
 import com.herfree.domain.auth.exception.LoginLockedException;
 import com.herfree.domain.auth.exception.SuspendedAccountException;
+import com.herfree.domain.analytics.service.AnalyticsService;
 import com.herfree.domain.user.entity.User;
 import com.herfree.domain.user.entity.UserProfile;
 import com.herfree.domain.user.entity.UserStatus;
@@ -33,6 +34,7 @@ public class AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final JwtProperties jwtProperties;
     private final LoginLockoutService loginLockoutService;
+    private final AnalyticsService analyticsService;
 
     // 회원가입 — User와 UserProfile을 같은 트랜잭션에서 함께 저장한다.
     // 프로필 저장이 실패하면 User도 롤백되어 孤立된 인증 레코드가 생기지 않는다.
@@ -75,6 +77,7 @@ public class AuthService {
                 .build();
 
         userProfileRepository.save(profile);
+        recordAnalyticsEvent("signup_completed", user.getId());
     }
 
     // 로그인 — 이메일로 사용자를 찾고, 비밀번호를 검증한 뒤 JWT를 발급한다.
@@ -109,6 +112,7 @@ public class AuthService {
         }
 
         loginLockoutService.clearFailures(request.email());
+        recordAnalyticsEvent("login_completed", user.getId());
 
         UserProfile profile = userProfileRepository.findByUserId(user.getId())
                 .orElseThrow(UserNotFoundException::new);
@@ -136,5 +140,10 @@ public class AuthService {
         }
         return new InvalidLoginCredentialsException();
     }
-}
 
+    private void recordAnalyticsEvent(String eventName, Long userId) {
+        if (analyticsService != null) {
+            analyticsService.recordBackendEvent(eventName, userId);
+        }
+    }
+}

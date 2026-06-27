@@ -74,6 +74,8 @@ app:
   # 운영(prod)에서는 반드시 false — local 전용 데모 시드 (DemoDataSeedRunner)
   demo-seed:
     enabled: false
+  analytics:
+    hash-salt: ${ANALYTICS_HASH_SALT:${JWT_SECRET:local-analytics-salt}}
 
 ---
 spring:

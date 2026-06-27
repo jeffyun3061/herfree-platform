@@ -6,6 +6,7 @@ const API_TARGET = (
   'http://127.0.0.1:8080'
 ).replace(/\/$/, '');
 
+// 프록시가 그대로 넘기면 안 되는 전송 계층 헤더들이다.
 const HOP_BY_HOP = new Set([
   'connection',
   'keep-alive',

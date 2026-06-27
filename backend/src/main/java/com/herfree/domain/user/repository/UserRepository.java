@@ -2,6 +2,7 @@ package com.herfree.domain.user.repository;
 
 import com.herfree.domain.user.entity.User;
 import com.herfree.domain.user.entity.UserStatus;
+import java.time.LocalDateTime;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -20,4 +21,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     org.springframework.data.domain.Page<User> findByStatusNotOrderByCreatedAtDesc(
             UserStatus status, org.springframework.data.domain.Pageable pageable);
+
+    long countByCreatedAtAfter(LocalDateTime since);
 }

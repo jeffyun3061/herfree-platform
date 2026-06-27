@@ -8,6 +8,34 @@ import type { Report, ReportProcessInput, ReportStatus } from '@/domain/report/t
 import type { Video } from '@/domain/video/types';
 import { request } from '@/lib/api/client';
 
+// 관리자 화면은 여러 도메인을 한 화면에서 다루므로 API 호출을 이 파일에 모아둔다.
+// 새 운영 기능을 추가할 때는 권한 정책(SecurityConfig)과 docs/api-spec.md도 같이 갱신한다.
+export type AdminEventCount = {
+  eventName: string;
+  count: number;
+};
+
+export type AdminStatsOverview = {
+  totalUsers: number;
+  newUsers7d: number;
+  activePosts: number;
+  newPosts7d: number;
+  activeComments: number;
+  pendingReports: number;
+  journalRecords: number;
+  journalRecords7d: number;
+  contents: number;
+  videos: number;
+  eventsToday: number;
+  events7d: number;
+  topEvents7d: AdminEventCount[];
+};
+
+// 개인별 건강 기록이 아니라 운영 판단에 필요한 집계값만 내려받는다.
+export function fetchAdminStatsOverview(): Promise<AdminStatsOverview> {
+  return request<AdminStatsOverview>('/api/admin/stats/overview');
+}
+
 export function fetchReports(
   status: ReportStatus,
   page: number,

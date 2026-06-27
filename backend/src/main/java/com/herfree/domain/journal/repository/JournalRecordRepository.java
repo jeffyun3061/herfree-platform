@@ -2,6 +2,7 @@ package com.herfree.domain.journal.repository;
 
 import com.herfree.domain.journal.entity.JournalRecord;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
@@ -35,6 +36,8 @@ public interface JournalRecordRepository extends JpaRepository<JournalRecord, Lo
             Long userId, LocalDate from, LocalDate to);
 
     long countByHadSymptomsTrue();
+
+    long countByCreatedAtAfter(LocalDateTime since);
 
     long countByRecordDateBetween(LocalDate from, LocalDate to);
 

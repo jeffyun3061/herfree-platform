@@ -7,6 +7,7 @@ import { TopBar } from '@/components/layout/TopBar';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { Button } from '@/components/ui/Button';
+import { AdminDashboardSection } from '@/components/admin/AdminDashboardSection';
 import { AdminModerationSection } from '@/components/admin/AdminModerationSection';
 import { AdminReportsSection } from '@/components/admin/AdminReportsSection';
 import { AdminContentsSection } from '@/components/admin/AdminContentsSection';
@@ -19,9 +20,10 @@ import { FEATURE_PRODUCTS_ENABLED } from '@/domain/featureFlags';
 import { isAdmin, isStaff, isSuperAdmin, canWriteContent, USER_ROLE_LABELS, type UserRole } from '@/domain/user/types';
 import { cn } from '@/lib/cn';
 
-type AdminTab = 'reports' | 'moderation' | 'users' | 'notices' | 'contents' | 'videos' | 'products' | 'journal';
+type AdminTab = 'dashboard' | 'reports' | 'moderation' | 'users' | 'notices' | 'contents' | 'videos' | 'products' | 'journal';
 
 const ALL_TABS: { id: AdminTab; label: string; minRole: 'moderator' | 'admin' | 'super' }[] = [
+  { id: 'dashboard', label: '대시보드', minRole: 'admin' },
   { id: 'reports', label: '신고', minRole: 'moderator' },
   { id: 'moderation', label: '숨김 관리', minRole: 'moderator' },
   { id: 'journal', label: '일지 통계', minRole: 'admin' },
@@ -63,7 +65,7 @@ function AdminPageContent() {
       }),
     [user?.role],
   );
-  const [tab, setTab] = useState<AdminTab>('reports');
+  const [tab, setTab] = useState<AdminTab>('dashboard');
 
   useEffect(() => {
     const fromQuery = searchParams.get('tab');
@@ -133,6 +135,7 @@ function AdminPageContent() {
           ))}
         </div>
 
+        {tab === 'dashboard' && <AdminDashboardSection />}
         {tab === 'reports' && <AdminReportsSection />}
         {tab === 'moderation' && <AdminModerationSection />}
         {tab === 'journal' && <AdminJournalStatsSection />}
