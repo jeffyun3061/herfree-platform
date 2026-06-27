@@ -82,8 +82,26 @@ const config: Config = {
         },
       },
       fontFamily: {
-        sans: ['SUIT', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
-        display: ['Nanum Myeongjo', 'SUIT', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'serif'],
+        sans: [
+          'SUIT Variable',
+          'SUIT',
+          'Apple SD Gothic Neo',
+          'Malgun Gothic',
+          '-apple-system',
+          'BlinkMacSystemFont',
+          'Segoe UI',
+          'sans-serif',
+        ],
+        display: [
+          'SUIT Variable',
+          'SUIT',
+          'Apple SD Gothic Neo',
+          'Malgun Gothic',
+          '-apple-system',
+          'BlinkMacSystemFont',
+          'Segoe UI',
+          'sans-serif',
+        ],
       },
       maxWidth: {
         app: '430px',
