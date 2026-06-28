@@ -3,7 +3,6 @@
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
-import { TopBar } from '@/components/layout/TopBar';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { Button } from '@/components/ui/Button';
@@ -33,6 +32,18 @@ const ALL_TABS: { id: AdminTab; label: string; minRole: 'moderator' | 'admin' | 
   { id: 'products', label: '제품', minRole: 'admin' },
   { id: 'users', label: '회원', minRole: 'admin' },
 ];
+
+const TAB_HELP_TEXT: Record<AdminTab, string> = {
+  dashboard: '오늘 확인할 지표',
+  reports: '신고 접수 확인',
+  moderation: '숨김 콘텐츠 복구',
+  users: '회원 상태 관리',
+  notices: '공지 등록',
+  contents: '칼럼 관리',
+  videos: '영상 관리',
+  products: '제품 관리',
+  journal: '기록 사용 흐름',
+};
 
 function canSeeTab(
   tab: (typeof ALL_TABS)[number],
@@ -94,57 +105,120 @@ function AdminPageContent() {
 
   if (!isLoggedIn) return null;
 
+  const roleLabel = user?.role ? USER_ROLE_LABELS[user.role] : '권한 확인 중';
+
   if (!isStaff(user?.role) && !canWriteContent(user?.role)) {
     return (
-      <>
-        <TopBar title="운영 관리" showBack />
-        <div className="px-4 py-6">
-          <ErrorMessage message="운영 권한이 있는 계정만 접근할 수 있습니다." />
+      <main className="min-h-screen bg-[#F3EDE3] px-4 py-6">
+        <section className="mx-auto max-w-[720px] rounded-[26px] border border-[#E8DDCC] bg-[#FBF7EF] p-5 shadow-[0_18px_45px_-34px_rgba(26,31,27,.45)]">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="mb-5 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#123D37] shadow-[0_10px_24px_-20px_rgba(18,61,55,.65)]"
+            aria-label="뒤로 가기"
+          >
+            <span className="text-xl leading-none">‹</span>
+          </button>
+          <p className="text-[12px] font-semibold text-[#79817C]">현재 권한: {roleLabel}</p>
+          <h1 className="hf-display mt-2 text-[28px] font-extrabold text-[#111816]">운영 권한이 필요합니다</h1>
+          <div className="mt-5">
+            <ErrorMessage message="운영 권한이 있는 계정만 접근할 수 있습니다." />
+          </div>
           <Button className="mt-4" onClick={() => router.replace('/')}>
             홈으로
           </Button>
-        </div>
-      </>
+        </section>
+      </main>
     );
   }
 
   return (
-    <>
-      <TopBar title="운영 관리" showBack />
-      <div className="px-4 py-4">
-        <p className="mb-3 text-xs text-muted">
-          현재 권한: {user?.role ? USER_ROLE_LABELS[user.role] : '—'}
-          {isSuperAdmin(user?.role) && ' · 권한 부여/회수 가능'}
-        </p>
-
-        <div className="scrollbar-hide -mx-1 mb-4 flex gap-2 overflow-x-auto px-1">
-          {tabs.map((item) => (
+    <main className="min-h-screen bg-[#F3EDE3] pb-10 text-[#121816]">
+      <section className="relative overflow-hidden bg-[#07251F] px-4 pb-8 pt-4 text-white shadow-[0_22px_60px_-36px_rgba(7,37,31,.7)]">
+        <div className="mx-auto max-w-[980px]">
+          <div className="flex items-center justify-between gap-3">
             <button
-              key={item.id}
               type="button"
-              onClick={() => setTab(item.id)}
-              className={cn(
-                'shrink-0 rounded-full px-4 py-2 text-sm',
-                tab === item.id
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-cream-dark text-muted',
-              )}
+              onClick={() => router.back()}
+              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/16"
+              aria-label="뒤로 가기"
             >
-              {item.label}
+              <span className="text-xl leading-none">‹</span>
             </button>
-          ))}
-        </div>
+            <span className="rounded-full bg-white/10 px-3 py-1.5 text-[12px] font-semibold text-white/80">
+              {roleLabel}
+            </span>
+          </div>
 
-        {tab === 'dashboard' && <AdminDashboardSection />}
-        {tab === 'reports' && <AdminReportsSection />}
-        {tab === 'moderation' && <AdminModerationSection />}
-        {tab === 'journal' && <AdminJournalStatsSection />}
-        {tab === 'notices' && <AdminNoticesSection />}
-        {tab === 'contents' && <AdminContentsSection />}
-        {tab === 'videos' && <AdminVideosSection />}
-        {FEATURE_PRODUCTS_ENABLED && tab === 'products' && <AdminProductsSection />}
-        {tab === 'users' && <AdminUsersSection />}
+          <div className="mt-7 max-w-[680px]">
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#D8C691]/70">Herfree Admin</p>
+            <h1 className="hf-display mt-2 text-[32px] font-extrabold leading-tight sm:text-[38px]">
+              운영 관리
+            </h1>
+            <p className="mt-3 max-w-[560px] text-[14px] leading-[1.75] text-white/72">
+              신고, 콘텐츠, 회원 상태와 개인정보에 민감한 운영 지표를 한 흐름에서 확인합니다.
+            </p>
+          </div>
+
+          <div className="mt-6 grid grid-cols-3 gap-2">
+            <div className="rounded-[18px] bg-white/8 p-3">
+              <p className="text-[11px] text-white/52">사용 가능 메뉴</p>
+              <p className="mt-1 text-[22px] font-extrabold">{tabs.length}</p>
+            </div>
+            <div className="rounded-[18px] bg-white/8 p-3">
+              <p className="text-[11px] text-white/52">현재 화면</p>
+              <p className="mt-1 truncate text-[16px] font-extrabold">{ALL_TABS.find((item) => item.id === tab)?.label}</p>
+            </div>
+            <div className="rounded-[18px] bg-white/8 p-3">
+              <p className="text-[11px] text-white/52">권한 관리</p>
+              <p className="mt-1 text-[13px] font-extrabold">{isSuperAdmin(user?.role) ? '가능' : '제한'}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div className="mx-auto -mt-5 max-w-[980px] px-4">
+        <section className="rounded-[24px] border border-[#E8DDCC] bg-[#FBF7EF] p-3 shadow-[0_18px_48px_-38px_rgba(26,31,27,.5)]">
+          <div className="mb-2 flex items-center justify-between px-1">
+            <p className="text-[12px] font-bold text-[#26322E]">운영 메뉴</p>
+            <p className="text-[11px] font-medium text-[#7C847E]">
+              {isSuperAdmin(user?.role) ? '권한 부여/회수 가능' : '권한에 맞는 메뉴만 표시'}
+            </p>
+          </div>
+          <div className="scrollbar-hide flex gap-2 overflow-x-auto pb-1">
+            {tabs.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setTab(item.id)}
+                className={cn(
+                  'min-w-[112px] shrink-0 rounded-[16px] border px-3 py-3 text-left transition-colors',
+                  tab === item.id
+                    ? 'border-[#0B3B36] bg-[#0B3B36] text-white shadow-[0_12px_24px_-18px_rgba(11,59,54,.75)]'
+                    : 'border-[#E7DFD2] bg-white text-[#1F2A25] hover:border-[#CFC5B5]',
+                )}
+              >
+                <span className="block text-[13px] font-extrabold">{item.label}</span>
+                <span className={cn('mt-1 block text-[11px]', tab === item.id ? 'text-white/62' : 'text-[#858C87]')}>
+                  {TAB_HELP_TEXT[item.id]}
+                </span>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section className="mt-4">
+          {tab === 'dashboard' && <AdminDashboardSection />}
+          {tab === 'reports' && <AdminReportsSection />}
+          {tab === 'moderation' && <AdminModerationSection />}
+          {tab === 'journal' && <AdminJournalStatsSection />}
+          {tab === 'notices' && <AdminNoticesSection />}
+          {tab === 'contents' && <AdminContentsSection />}
+          {tab === 'videos' && <AdminVideosSection />}
+          {FEATURE_PRODUCTS_ENABLED && tab === 'products' && <AdminProductsSection />}
+          {tab === 'users' && <AdminUsersSection />}
+        </section>
       </div>
-    </>
+    </main>
   );
 }

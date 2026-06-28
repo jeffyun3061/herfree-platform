@@ -25,10 +25,10 @@ function formatNumber(value: number): string {
 
 function StatCard({ label, value, helper }: { label: string; value: number; helper: string }) {
   return (
-    <div className="rounded-[18px] border border-[#E7DFD2] bg-white p-4 shadow-[0_14px_30px_-24px_rgba(20,31,26,.38)]">
-      <p className="text-[12px] font-medium text-[#6F7772]">{label}</p>
-      <p className="mt-2 text-[26px] font-extrabold text-[#0B3B36]">{formatNumber(value)}</p>
-      <p className="mt-1 text-[11.5px] leading-relaxed text-[#8A918C]">{helper}</p>
+    <div className="rounded-[18px] border border-[#E7DFD2] bg-[#FFFCF7] p-4 shadow-[0_14px_30px_-24px_rgba(20,31,26,.38)]">
+      <p className="text-[12px] font-bold text-[#5E6761]">{label}</p>
+      <p className="mt-2 text-[28px] font-extrabold leading-none text-[#0B3B36]">{formatNumber(value)}</p>
+      <p className="mt-2 text-[11.5px] leading-relaxed text-[#8A918C]">{helper}</p>
     </div>
   );
 }
@@ -40,22 +40,53 @@ export function AdminDashboardSection() {
   if (error) return <ErrorMessage message={error} />;
   if (!data) return null;
 
+  const pendingReportState = data.pendingReports > 0 ? '확인 필요' : '정상';
+  const eventState = data.eventsToday > 0 ? '수집 중' : '대기';
+  const journalState = data.journalRecords7d > 0 ? '기록 발생' : '최근 기록 없음';
+
   return (
     <section className="space-y-4">
-      <div className="rounded-[22px] bg-[#082B25] p-5 text-white shadow-[0_18px_38px_-26px_rgba(6,26,22,.55)]">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45">Operations</p>
-        <h2 className="mt-2 text-[22px] font-extrabold">운영 대시보드</h2>
-        <p className="mt-2 text-[13px] leading-[1.7] text-white/68">
-          민감정보를 제외한 행동 이벤트와 핵심 운영 지표만 모아 봅니다.
-        </p>
-        <div className="mt-4 grid grid-cols-2 gap-3">
-          <div className="rounded-[16px] bg-white/8 p-3">
-            <p className="text-[11px] text-white/55">오늘 이벤트</p>
-            <p className="mt-1 text-[22px] font-bold">{formatNumber(data.eventsToday)}</p>
+      <div className="grid gap-4 lg:grid-cols-[1.15fr_.85fr]">
+        <div className="rounded-[24px] bg-[#082B25] p-5 text-white shadow-[0_18px_38px_-26px_rgba(6,26,22,.55)]">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#D8C691]/70">Operations</p>
+          <h2 className="hf-display mt-2 text-[27px] font-extrabold leading-tight">오늘의 운영 흐름</h2>
+          <p className="mt-2 text-[13px] leading-[1.75] text-white/68">
+            민감정보는 제외하고, 서비스 유지보수에 필요한 행동 이벤트와 운영 지표만 확인합니다.
+          </p>
+          <div className="mt-5 grid grid-cols-2 gap-3">
+            <div className="rounded-[16px] bg-white/8 p-3">
+              <p className="text-[11px] text-white/55">오늘 이벤트</p>
+              <p className="mt-1 text-[24px] font-extrabold">{formatNumber(data.eventsToday)}</p>
+              <p className="mt-1 text-[11px] text-white/44">{eventState}</p>
+            </div>
+            <div className="rounded-[16px] bg-white/8 p-3">
+              <p className="text-[11px] text-white/55">7일 이벤트</p>
+              <p className="mt-1 text-[24px] font-extrabold">{formatNumber(data.events7d)}</p>
+              <p className="mt-1 text-[11px] text-white/44">최근 흐름 기준</p>
+            </div>
           </div>
-          <div className="rounded-[16px] bg-white/8 p-3">
-            <p className="text-[11px] text-white/55">7일 이벤트</p>
-            <p className="mt-1 text-[22px] font-bold">{formatNumber(data.events7d)}</p>
+        </div>
+
+        <div className="rounded-[24px] border border-[#E7DFD2] bg-[#FFFCF7] p-5 shadow-[0_14px_34px_-28px_rgba(20,31,26,.42)]">
+          <div className="flex items-center justify-between">
+            <h3 className="text-[15px] font-extrabold text-[#1E2621]">운영 체크</h3>
+            <span className="rounded-full bg-[#EFF7F4] px-2.5 py-1 text-[11px] font-bold text-[#0B3B36]">
+              Privacy-safe
+            </span>
+          </div>
+          <div className="mt-4 space-y-3">
+            <div className="rounded-[16px] bg-[#F7F1E7] px-4 py-3">
+              <p className="text-[12px] font-bold text-[#1F2A25]">신고 대기</p>
+              <p className="mt-1 text-[12px] text-[#7D857F]">{pendingReportState} · {formatNumber(data.pendingReports)}건</p>
+            </div>
+            <div className="rounded-[16px] bg-[#F7F1E7] px-4 py-3">
+              <p className="text-[12px] font-bold text-[#1F2A25]">일지 사용</p>
+              <p className="mt-1 text-[12px] text-[#7D857F]">{journalState} · 7일 {formatNumber(data.journalRecords7d)}건</p>
+            </div>
+            <div className="rounded-[16px] bg-[#F7F1E7] px-4 py-3">
+              <p className="text-[12px] font-bold text-[#1F2A25]">콘텐츠 운영</p>
+              <p className="mt-1 text-[12px] text-[#7D857F]">칼럼 {formatNumber(data.contents)}개 · 영상 {formatNumber(data.videos)}개</p>
+            </div>
           </div>
         </div>
       </div>
@@ -71,11 +102,11 @@ export function AdminDashboardSection() {
         <StatCard label="수집 이벤트" value={data.events7d} helper="최근 7일 기준" />
       </div>
 
-      <div className="rounded-[20px] border border-[#E7DFD2] bg-white p-4">
+      <div className="rounded-[22px] border border-[#E7DFD2] bg-[#FFFCF7] p-4 shadow-[0_14px_34px_-28px_rgba(20,31,26,.42)]">
         <div className="flex items-center justify-between">
           <h3 className="text-[15px] font-bold text-[#1E2621]">최근 7일 주요 이벤트</h3>
           <span className="rounded-full bg-[#EFF7F4] px-2.5 py-1 text-[11px] font-semibold text-[#0B3B36]">
-            Privacy-safe
+            집계 데이터
           </span>
         </div>
         <div className="mt-4 space-y-3">
