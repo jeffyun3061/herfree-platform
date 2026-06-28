@@ -134,7 +134,7 @@ function AdminPageContent() {
 
   return (
     <main className="min-h-screen bg-[#F3EDE3] pb-10 text-[#121816]">
-      <section className="relative overflow-hidden bg-[#07251F] px-4 pb-8 pt-4 text-white shadow-[0_22px_60px_-36px_rgba(7,37,31,.7)]">
+      <section className="relative overflow-hidden bg-[#07251F] px-4 pb-7 pt-4 text-white shadow-[0_22px_60px_-36px_rgba(7,37,31,.7)]">
         <div className="mx-auto max-w-[980px]">
           <div className="flex items-center justify-between gap-3">
             <button
@@ -150,9 +150,9 @@ function AdminPageContent() {
             </span>
           </div>
 
-          <div className="mt-7 max-w-[680px]">
+          <div className="mt-6 max-w-[680px]">
             <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#D8C691]/70">Herfree Admin</p>
-            <h1 className="hf-display mt-2 text-[32px] font-extrabold leading-tight sm:text-[38px]">
+            <h1 className="hf-display mt-2 text-[29px] font-extrabold leading-[1.12] sm:text-[38px]">
               운영 관리
             </h1>
             <p className="mt-3 max-w-[560px] text-[14px] leading-[1.75] text-white/72">
@@ -160,25 +160,25 @@ function AdminPageContent() {
             </p>
           </div>
 
-          <div className="mt-6 grid grid-cols-3 gap-2">
-            <div className="rounded-[18px] bg-white/8 p-3">
-              <p className="text-[11px] text-white/52">사용 가능 메뉴</p>
-              <p className="mt-1 text-[22px] font-extrabold">{tabs.length}</p>
+          <div className="mt-5 grid grid-cols-3 gap-2">
+            <div className="min-w-0 rounded-[16px] bg-white/8 p-2.5 sm:p-3">
+              <p className="truncate text-[10px] text-white/52 sm:text-[11px]">사용 가능 메뉴</p>
+              <p className="mt-1 text-[18px] font-extrabold sm:text-[22px]">{tabs.length}</p>
             </div>
-            <div className="rounded-[18px] bg-white/8 p-3">
-              <p className="text-[11px] text-white/52">현재 화면</p>
-              <p className="mt-1 truncate text-[16px] font-extrabold">{ALL_TABS.find((item) => item.id === tab)?.label}</p>
+            <div className="min-w-0 rounded-[16px] bg-white/8 p-2.5 sm:p-3">
+              <p className="truncate text-[10px] text-white/52 sm:text-[11px]">현재 화면</p>
+              <p className="mt-1 truncate text-[13px] font-extrabold sm:text-[16px]">{ALL_TABS.find((item) => item.id === tab)?.label}</p>
             </div>
-            <div className="rounded-[18px] bg-white/8 p-3">
-              <p className="text-[11px] text-white/52">권한 관리</p>
+            <div className="min-w-0 rounded-[16px] bg-white/8 p-2.5 sm:p-3">
+              <p className="truncate text-[10px] text-white/52 sm:text-[11px]">권한 관리</p>
               <p className="mt-1 text-[13px] font-extrabold">{isSuperAdmin(user?.role) ? '가능' : '제한'}</p>
             </div>
           </div>
         </div>
       </section>
 
-      <div className="mx-auto -mt-5 max-w-[980px] px-4">
-        <section className="rounded-[24px] border border-[#E8DDCC] bg-[#FBF7EF] p-3 shadow-[0_18px_48px_-38px_rgba(26,31,27,.5)]">
+      <div className="mx-auto -mt-4 max-w-[980px] px-4">
+        <section className="rounded-[22px] border border-[#E8DDCC] bg-[#FBF7EF] p-2.5 shadow-[0_18px_48px_-38px_rgba(26,31,27,.5)] sm:p-3">
           <div className="mb-2 flex items-center justify-between px-1">
             <p className="text-[12px] font-bold text-[#26322E]">운영 메뉴</p>
             <p className="text-[11px] font-medium text-[#7C847E]">
@@ -192,7 +192,7 @@ function AdminPageContent() {
                 type="button"
                 onClick={() => setTab(item.id)}
                 className={cn(
-                  'min-w-[112px] shrink-0 rounded-[16px] border px-3 py-3 text-left transition-colors',
+                  'min-w-[98px] shrink-0 rounded-[15px] border px-3 py-2.5 text-left transition-colors sm:min-w-[112px] sm:py-3',
                   tab === item.id
                     ? 'border-[#0B3B36] bg-[#0B3B36] text-white shadow-[0_12px_24px_-18px_rgba(11,59,54,.75)]'
                     : 'border-[#E7DFD2] bg-white text-[#1F2A25] hover:border-[#CFC5B5]',

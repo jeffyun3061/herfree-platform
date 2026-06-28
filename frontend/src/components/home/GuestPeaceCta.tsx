@@ -4,7 +4,7 @@ import Link from 'next/link';
 
 export function GuestPeaceCta() {
   return (
-    <section className="mx-[18px] mt-[26px] overflow-hidden rounded-[22px] bg-[#07251F] px-[22px] py-[22px] text-white shadow-[0_18px_40px_-24px_rgba(7,37,31,.7)]">
+    <section className="mx-2 mt-[26px] overflow-hidden rounded-[22px] bg-[#07251F] px-4 py-5 text-white shadow-[0_18px_40px_-24px_rgba(7,37,31,.7)]">
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/45">Day 1</p>

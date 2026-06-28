@@ -39,6 +39,9 @@ public class Content extends BaseTimeEntity {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
+    @Column(name = "image_url", length = 500)
+    private String imageUrl;
+
     // 카테고리로 콘텐츠를 분류해 사용자가 원하는 정보를 빠르게 찾을 수 있도록 한다
     @Column(nullable = false, length = 50)
     private String category;
@@ -58,10 +61,11 @@ public class Content extends BaseTimeEntity {
     private boolean isPinned;
 
     @Builder
-    private Content(User author, String title, String content, String category, String contentType) {
+    private Content(User author, String title, String content, String category, String contentType, String imageUrl) {
         this.author = author;
         this.title = title;
         this.content = content;
+        this.imageUrl = imageUrl;
         this.category = category;
         this.contentType = contentType;
         this.status = ContentStatus.ACTIVE;
@@ -71,10 +75,11 @@ public class Content extends BaseTimeEntity {
 
     // --- 도메인 메서드 ---
 
-    public void update(String title, String content, String category) {
+    public void update(String title, String content, String category, String imageUrl) {
         this.title = title;
         this.content = content;
         this.category = category;
+        this.imageUrl = imageUrl;
     }
 
     // 관리자에 의한 숨김 처리

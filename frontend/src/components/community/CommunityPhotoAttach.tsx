@@ -13,12 +13,18 @@ type CommunityPhotoAttachProps = {
   imageUrl: string | null;
   onChange: (imageUrl: string | null) => void;
   disabled?: boolean;
+  label?: string;
+  helperText?: string;
+  emptyText?: string;
 };
 
 export function CommunityPhotoAttach({
   imageUrl,
   onChange,
   disabled = false,
+  label = '사진 첨부 (선택)',
+  helperText = '사진 1장, 10MB 이하 (JPEG, PNG, WEBP)',
+  emptyText = '사진 추가',
 }: CommunityPhotoAttachProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -58,9 +64,9 @@ export function CommunityPhotoAttach({
 
   return (
     <div className="wrtn-field">
-      <p className="wrtn-label">사진 첨부 (선택)</p>
+      <p className="wrtn-label">{label}</p>
       <p className="mt-1 text-xs text-wrtn-muted">
-        사진 1장, 10MB 이하 (JPEG, PNG, WEBP)
+        {helperText}
       </p>
 
       <input
@@ -107,7 +113,7 @@ export function CommunityPhotoAttach({
             <path d="M3 16l4.5-4.5a1 1 0 0 1 1.4 0L14 16l2.3-2.3a1 1 0 0 1 1.4 0L21 18" />
             <path d="M16 8h4M18 6v4" strokeLinecap="round" />
           </svg>
-          <span className="text-sm font-medium">{isUploading ? '업로드 중…' : '사진 추가'}</span>
+          <span className="text-sm font-medium">{isUploading ? '업로드 중…' : emptyText}</span>
         </button>
       )}
 

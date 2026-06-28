@@ -23,7 +23,7 @@ function ContentsPageContent() {
 
   return (
     <>
-      <div className="page-container mx-auto max-w-app pb-36 lg:max-w-content lg:pb-12">
+      <div className="page-container content-screen mx-auto max-w-app pb-36 lg:max-w-content lg:pb-12">
         <div className="mb-4 lg:hidden">
           <p className="text-[22px] font-bold text-[#15201D]">칼럼</p>
           <p className="mt-1 text-[12.5px] text-[#8B9590]">경험과 전문가 정보에서 고른 이야기</p>
@@ -37,8 +37,8 @@ function ContentsPageContent() {
           <AdminPublishLink tab="contents" label="칼럼 올리기" />
         </div>
 
-        <div className="relative -mx-4 mb-5">
-          <div className="hf-chip-rail flex gap-2 overflow-x-auto px-4 pb-1">
+        <div className="relative -mx-1 mb-5">
+          <div className="hf-chip-rail gap-2 px-1 pb-1 pr-8">
             <button
               type="button"
               onClick={() => {
@@ -68,7 +68,7 @@ function ContentsPageContent() {
                 {cat}
               </button>
             ))}
-            <span className="w-2 shrink-0" aria-hidden />
+            <span className="w-4 shrink-0" aria-hidden />
           </div>
           <div
             className="pointer-events-none absolute bottom-1 right-0 top-0 w-10 bg-gradient-to-l from-[#F3EDE3] via-[#F3EDE3]/88 to-transparent"

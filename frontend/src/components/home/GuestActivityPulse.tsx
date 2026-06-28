@@ -22,7 +22,7 @@ export function GuestActivityPulse({ posts, isLoading }: GuestActivityPulseProps
   const previewPosts = posts.slice(0, 3);
 
   return (
-    <section className="px-5">
+    <section className="px-2">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="hf-display text-[19px] font-extrabold tracking-[-0.01em] text-[#1E2621]">
           방금 올라온 이야기

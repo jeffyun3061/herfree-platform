@@ -33,6 +33,11 @@ export default function ContentDetailPage() {
           <span className="text-xs text-muted">{getContentTypeLabel(content.contentType)}</span>
         </div>
         <h1 className="text-lg font-semibold text-cream-foreground">{content.title}</h1>
+        {content.imageUrl && (
+          <div className="mt-4 overflow-hidden rounded-[20px] border border-[#E7DFD2] bg-white shadow-[0_16px_34px_-28px_rgba(20,31,26,.45)]">
+            <img src={content.imageUrl} alt="" className="aspect-[16/9] w-full object-cover" />
+          </div>
+        )}
         <MedicalDisclaimer />
         <div className="mt-6 whitespace-pre-wrap text-sm leading-relaxed text-cream-foreground">
           {content.content}

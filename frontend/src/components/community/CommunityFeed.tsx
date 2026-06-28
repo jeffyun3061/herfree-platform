@@ -35,7 +35,7 @@ function LockedCommunityFeed() {
   ];
 
   return (
-    <div className="page-container mx-auto max-w-app pb-36 lg:max-w-content lg:pb-12">
+    <div className="page-container community-screen mx-auto max-w-app pb-36 lg:max-w-content lg:pb-12">
       <div className="mb-5">
         <h1 className="hf-display text-[24px] font-extrabold text-[#15201D]">커뮤니티</h1>
         <p className="mt-2 text-[13px] leading-relaxed text-[#8B9590]">
@@ -106,7 +106,7 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
   const [searchHint, setSearchHint] = useState<string | null>(null);
   const [sort, setSort] = useState<PostSortOption>('latest');
   const [period, setPeriod] = useState<PostListPeriod>('week');
-  const [pageSize, setPageSize] = useState<CommunityPageSize>(20);
+  const [pageSize, setPageSize] = useState<CommunityPageSize>(10);
 
   const { postPage, page, setPage, isLoading, error } = usePostList(
     selectedBoardId,
@@ -210,7 +210,7 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
   }
 
   return (
-    <div className="page-container mx-auto max-w-app pb-36 lg:max-w-content lg:pb-12">
+    <div className="page-container community-screen mx-auto max-w-app pb-36 lg:max-w-content lg:pb-12">
       <div className="mb-4 lg:hidden">
         <h2 className="text-[19px] font-semibold text-[#15201D]">커뮤니티</h2>
         <p className="mt-1 text-[12.5px] leading-relaxed text-[#8B9590]">

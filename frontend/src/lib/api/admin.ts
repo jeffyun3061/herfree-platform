@@ -173,6 +173,7 @@ export function fetchAdminCommunityComments(
 export type ContentCreateInput = {
   title: string;
   content: string;
+  imageUrl?: string;
   category: string;
   contentType: string;
 };
@@ -180,6 +181,7 @@ export type ContentCreateInput = {
 export type ContentUpdateInput = {
   title: string;
   content: string;
+  imageUrl?: string;
   category: string;
 };
 

@@ -22,7 +22,7 @@ function toVisibleFilter(status: AdminModerationStatus | '' | undefined): boolea
 export function useAdminVideos(query: AdminVideosQuery) {
   const params: AdminListQuery = {
     page: query.page,
-    size: query.size ?? 20,
+    size: query.size ?? 6,
     keyword: query.keyword || undefined,
     visible: toVisibleFilter(query.status),
   };

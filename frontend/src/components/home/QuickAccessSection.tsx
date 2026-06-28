@@ -41,7 +41,7 @@ export function QuickAccessSection({ layout = 'row', onChecklistClick }: QuickAc
   return (
     <section
       className={cn(
-        isHome && 'px-6 pb-2 pt-[30px]',
+        isHome && 'px-2 pb-2 pt-[30px]',
         isPanel && !isHome && 'quick-access-panel',
       )}
     >

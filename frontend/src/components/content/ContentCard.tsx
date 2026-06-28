@@ -21,7 +21,11 @@ export function ContentCard({ content }: ContentCardProps) {
   return (
     <Link href={`/contents/${content.id}`} className="block">
       <article className="column-feed-card">
-        <div className={cn('column-feed-card__thumb', thumbClass)} />
+        {content.imageUrl ? (
+          <img src={content.imageUrl} alt="" className="column-feed-card__thumb object-cover" />
+        ) : (
+          <div className={cn('column-feed-card__thumb', thumbClass)} />
+        )}
         <div className="column-feed-card__body">
           <span className="column-feed-card__tag">{content.category}</span>
           <h2 className="column-feed-card__title">{content.title}</h2>

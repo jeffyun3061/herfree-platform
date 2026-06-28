@@ -9,6 +9,7 @@ export type Content = {
   authorId: number;
   title: string;
   content: string;
+  imageUrl: string | null;
   category: string;
   contentType: string;
   status?: ContentStatus;

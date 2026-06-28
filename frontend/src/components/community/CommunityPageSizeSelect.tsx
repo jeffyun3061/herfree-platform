@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/cn';
 
-const PAGE_SIZE_OPTIONS = [20, 30, 50] as const;
+const PAGE_SIZE_OPTIONS = [10, 20, 30, 50] as const;
 export type CommunityPageSize = (typeof PAGE_SIZE_OPTIONS)[number];
 
 type CommunityPageSizeSelectProps = {

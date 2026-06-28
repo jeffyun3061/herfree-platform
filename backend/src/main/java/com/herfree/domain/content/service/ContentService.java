@@ -78,6 +78,7 @@ public class ContentService {
                 .author(author)
                 .title(request.title())
                 .content(request.content())
+                .imageUrl(normalizeImageUrl(request.imageUrl()))
                 .category(request.category())
                 .contentType(request.contentType())
                 .build();
@@ -92,7 +93,7 @@ public class ContentService {
     @Transactional
     public ContentResponse updateContent(Long contentId, ContentUpdateRequest request) {
         Content content = findContentForAdmin(contentId);
-        content.update(request.title(), request.content(), request.category());
+        content.update(request.title(), request.content(), request.category(), normalizeImageUrl(request.imageUrl()));
         return ContentResponse.from(content);
     }
 
@@ -135,5 +136,9 @@ public class ContentService {
         return contentRepository.findById(contentId)
                 .filter(content -> content.getStatus() != ContentStatus.DELETED)
                 .orElseThrow(ContentNotFoundException::new);
+    }
+
+    private String normalizeImageUrl(String imageUrl) {
+        return StringUtils.hasText(imageUrl) ? imageUrl.trim() : null;
     }
 }

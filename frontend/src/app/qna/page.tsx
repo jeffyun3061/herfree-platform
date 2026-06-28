@@ -66,7 +66,7 @@ const faqGroups = [
 export default function QnaPage() {
   return (
     <main className="min-h-screen bg-[#F3EDE3] pb-28">
-      <section className="px-5 pt-[62px]">
+      <section className="px-2 pt-[62px]">
         <h1 className="hf-display m-0 text-[24px] font-extrabold leading-tight tracking-[-0.01em] text-[#1E2621]">
           자주 묻는 질문
         </h1>
@@ -75,7 +75,7 @@ export default function QnaPage() {
         </p>
       </section>
 
-      <section className="flex flex-col gap-[22px] px-5 pt-[18px]">
+      <section className="flex flex-col gap-[22px] px-2 pt-[18px]">
         {faqGroups.map((group) => (
           <section key={group.category}>
             <h2 className="px-0.5 pb-2.5 text-[12.5px] font-bold tracking-[0.01em] text-[#15695E]">
@@ -110,7 +110,7 @@ export default function QnaPage() {
 
       <Link
         href="/consult"
-        className="mx-5 mt-6 flex rounded-2xl bg-[#0B3B36] p-[17px_19px] shadow-[0_14px_30px_-18px_rgba(11,59,54,.6)]"
+        className="mx-2 mt-6 flex rounded-2xl bg-[#0B3B36] p-[17px_19px] shadow-[0_14px_30px_-18px_rgba(11,59,54,.6)]"
       >
         <span className="flex-1">
           <span className="block text-[13.5px] font-bold text-white">원하는 답을 못 찾으셨나요?</span>

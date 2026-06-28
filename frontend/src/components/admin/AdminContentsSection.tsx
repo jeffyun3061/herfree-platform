@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/Textarea';
 import { Card } from '@/components/ui/Card';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { Badge } from '@/components/ui/Badge';
+import { CommunityPhotoAttach } from '@/components/community/CommunityPhotoAttach';
 import {
   AdminChipGroup,
   AdminListToolbar,
@@ -34,6 +35,7 @@ import * as adminApi from '@/lib/api/admin';
 const EMPTY_FORM = {
   title: '',
   content: '',
+  imageUrl: null as string | null,
   category: CONTENT_CATEGORIES[0],
   contentType: 'ADMIN' as ContentAuthorType,
 };
@@ -85,12 +87,14 @@ export function AdminContentsSection() {
         await adminApi.updateContent(editingId, {
           title: form.title.trim(),
           content: form.content.trim(),
+          imageUrl: form.imageUrl?.trim() || undefined,
           category: form.category,
         });
       } else {
         await adminApi.createContent({
           title: form.title.trim(),
           content: form.content.trim(),
+          imageUrl: form.imageUrl?.trim() || undefined,
           category: form.category,
           contentType: form.contentType,
         });
@@ -151,6 +155,7 @@ export function AdminContentsSection() {
     setForm({
       title: item.title,
       content: item.content,
+      imageUrl: item.imageUrl ?? null,
       category: item.category,
       contentType: (item.contentType as ContentAuthorType) ?? 'ADMIN',
     });
@@ -159,7 +164,7 @@ export function AdminContentsSection() {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <AdminPublishHeader
         title="칼럼 올리기"
         description="커뮤니티 게시판이 아니라, 사용자 ‘칼럼’ 메뉴에 노출되는 큐레이션 글을 등록합니다."
@@ -236,7 +241,7 @@ export function AdminContentsSection() {
           <Pagination page={page} totalPages={contentPage.totalPages} onPageChange={setPage} />
         </>
       ) : (
-        <Card className="space-y-4">
+        <Card className="mx-auto max-w-[720px] space-y-4">
           <div className="flex items-center justify-between gap-2">
             <h3 className="text-[14px] font-semibold text-cream-foreground">
               {editingId ? '칼럼 수정' : '새 칼럼 작성'}
@@ -276,19 +281,35 @@ export function AdminContentsSection() {
             />
           )}
 
+          <CommunityPhotoAttach
+            imageUrl={form.imageUrl}
+            onChange={(imageUrl) => setForm((prev) => ({ ...prev, imageUrl }))}
+            disabled={isSubmitting}
+            label="대표 이미지 (선택)"
+            helperText="칼럼 목록과 상세 상단에 노출됩니다. 10MB 이하 JPEG, PNG, WEBP"
+            emptyText="대표 이미지 추가"
+          />
+
           <Textarea
             label="본문"
             required
-            rows={14}
+            rows={9}
             placeholder="칼럼 본문을 입력하세요. 줄바꿈이 그대로 반영됩니다."
             value={form.content}
             onChange={(e) => setForm((prev) => ({ ...prev, content: e.target.value }))}
-            className="min-h-[280px]"
+            className="min-h-[190px]"
           />
 
           {form.title.trim() && form.content.trim() && (
             <div className="rounded-xl border border-dashed border-border bg-cream-dark/40 p-3">
               <p className="text-[10px] font-medium text-muted">미리보기 (칼럼 목록)</p>
+              {form.imageUrl && (
+                <img
+                  src={form.imageUrl}
+                  alt=""
+                  className="mt-2 aspect-[16/9] w-full rounded-lg object-cover"
+                />
+              )}
               <div className="mt-2 flex items-center gap-2">
                 <Badge variant="gold">{form.category}</Badge>
                 <span className="text-[10px] text-muted">

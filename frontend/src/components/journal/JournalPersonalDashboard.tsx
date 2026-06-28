@@ -40,12 +40,14 @@ export function JournalPersonalDashboard({
 
   return (
     <div className="journal-home-stack mx-auto w-full max-w-app gap-3">
-      <JournalDashboardHero
-        dashboard={dashboard}
-        isLoading={isLoading}
-        showFirstRecordHint={showFirstRecordHint}
-        onRecordRelapse={onRecordRelapse}
-      />
+      <div className="home-bleed-card">
+        <JournalDashboardHero
+          dashboard={dashboard}
+          isLoading={isLoading}
+          showFirstRecordHint={showFirstRecordHint}
+          onRecordRelapse={onRecordRelapse}
+        />
+      </div>
 
       <Button
         type="button"

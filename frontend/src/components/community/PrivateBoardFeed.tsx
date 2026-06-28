@@ -54,7 +54,7 @@ export function PrivateBoardFeed({ boardType }: PrivateBoardFeedProps) {
   }
 
   return (
-      <div className="page-container pb-20 lg:pb-8">
+    <div className="page-container community-screen mx-auto max-w-app pb-20 lg:max-w-content lg:pb-8">
       <div className="mb-4">
         <h1 className="section-heading">{meta.title}</h1>
         <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted">{meta.description}</p>
@@ -69,7 +69,7 @@ export function PrivateBoardFeed({ boardType }: PrivateBoardFeedProps) {
       )}
 
       {isLoadingAll && (
-        <div className="space-y-2">
+        <div className="community-feed-list">
           {[1, 2, 3].map((i) => (
             <PostCardSkeleton key={i} />
           ))}
@@ -129,4 +129,3 @@ export function PrivateBoardFeed({ boardType }: PrivateBoardFeedProps) {
     </div>
   );
 }
-

@@ -38,7 +38,7 @@ export function ConsultIntroPage() {
         <h1 className="text-[15px] font-bold text-[#1E2621]">1:1 비밀 상담</h1>
       </header>
 
-      <section className="relative overflow-hidden bg-[#04342C] px-6 py-[30px] text-white">
+      <section className="relative overflow-hidden bg-[#04342C] px-4 py-[30px] text-white">
         <div className="absolute right-[-30px] top-[-30px] h-[140px] w-[140px] rounded-full bg-[radial-gradient(circle,rgba(240,199,120,.16)_0%,rgba(240,199,120,0)_70%)]" />
         <h2 className="hf-display relative text-[20px] font-semibold leading-[1.5] text-white">
           말 꺼내기 어려운 이야기,
@@ -51,7 +51,7 @@ export function ConsultIntroPage() {
         </p>
       </section>
 
-      <section className="mx-5 mt-[18px] flex items-start gap-2.5 rounded-xl bg-[#E3F1EA] px-4 py-3.5">
+      <section className="mx-2 mt-[18px] flex items-start gap-2.5 rounded-xl bg-[#E3F1EA] px-4 py-3.5">
         <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#0B3B36] text-[11px] font-bold text-white">
           i
         </span>
@@ -61,7 +61,7 @@ export function ConsultIntroPage() {
         </p>
       </section>
 
-      <section className="mx-5 mt-[18px] rounded-2xl border border-[#ECE5D8] px-[18px] py-1.5">
+      <section className="mx-2 mt-[18px] rounded-2xl border border-[#ECE5D8] px-4 py-1.5">
         {consultInfo.map(([label, value]) => (
           <div
             key={label}
@@ -73,9 +73,9 @@ export function ConsultIntroPage() {
         ))}
       </section>
 
-      <p className="mx-5 mt-2 text-[10.5px] text-[#C7826B]">* 초기 운영 기간 동안은 무료로 진행돼요.</p>
+      <p className="mx-2 mt-2 text-[10.5px] text-[#C7826B]">* 초기 운영 기간 동안은 무료로 진행돼요.</p>
 
-      <section className="mx-5 mt-5 flex items-center gap-3">
+      <section className="mx-2 mt-5 flex items-center gap-3">
         <div className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-full bg-[#E3F1EA] text-[20px] font-bold text-[#0B3B36]">
           h.
         </div>
@@ -85,7 +85,7 @@ export function ConsultIntroPage() {
         </div>
       </section>
 
-      <section className="mx-5 mt-6">
+      <section className="mx-2 mt-6">
         <p className="mb-1.5 text-[12px] font-semibold text-[#9A9F94]">자주 묻는 질문</p>
         <div>
           {consultFaqs.map((faq) => (
@@ -97,7 +97,7 @@ export function ConsultIntroPage() {
         </div>
       </section>
 
-      <section className="px-5 pt-6">
+      <section className="px-2 pt-6">
         <a
           href={KAKAO_CONSULT_URL}
           target="_blank"

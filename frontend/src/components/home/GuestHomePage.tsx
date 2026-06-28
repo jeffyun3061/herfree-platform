@@ -23,7 +23,7 @@ export function GuestHomePage() {
     <div className="min-h-screen bg-[#F3EDE3] pb-8">
       <GuestHomeHero activeUsersLabel={activeUsersLabel} />
 
-      <section className="relative z-10 mx-[18px] -mt-[56px] rounded-[18px] bg-[#07251F] px-[18px] py-[15px] shadow-[0_18px_40px_-24px_rgba(7,37,31,.7)]">
+      <section className="relative z-10 mx-2 -mt-[56px] rounded-[18px] bg-[#07251F] px-4 py-[15px] shadow-[0_18px_40px_-24px_rgba(7,37,31,.7)]">
         <div className="flex items-center gap-[13px]">
           <div className="flex items-center">
             {['h', '+', '3', ''].map((label, index) => (
@@ -66,7 +66,7 @@ export function GuestHomePage() {
 
       <QuickAccessSection layout="home" />
 
-      <div className="px-6 pt-6 text-center">
+      <div className="px-4 pt-6 text-center">
         <p className="hf-display text-[14px] leading-[1.7] text-[#8A9089]">
           오늘은 담담하게
         </p>
@@ -75,7 +75,7 @@ export function GuestHomePage() {
         </p>
       </div>
 
-      <div className="mx-[18px] mt-5">
+      <div className="mx-2 mt-5">
         <MedicalDisclaimer compact />
       </div>
     </div>

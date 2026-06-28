@@ -46,7 +46,7 @@ function LoggedInHomePage() {
 
   return (
     <div className="min-h-screen bg-[#F3EDE3] lg:pb-10">
-      <div className="page-container max-lg:pb-28">
+      <div className="page-container home-dashboard-screen max-lg:pb-28">
         <div className="space-y-3">
           <JournalPersonalDashboard
             dashboard={dashboard ?? null}

@@ -144,7 +144,7 @@ export function AdminVideosSection() {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <AdminPublishHeader
         title="영상 링크 등록"
         description="유튜브 URL만 등록하면 됩니다. 파일 업로드 없이 /videos 에 노출됩니다."
@@ -208,7 +208,7 @@ export function AdminVideosSection() {
                   <img
                     src={`https://img.youtube.com/vi/${video.youtubeVideoId}/mqdefault.jpg`}
                     alt=""
-                    className="h-16 w-28 shrink-0 rounded-lg object-cover"
+                    className="aspect-video w-full object-cover sm:h-16 sm:w-28"
                   />
                 }
               />
@@ -223,7 +223,7 @@ export function AdminVideosSection() {
           <Pagination page={page} totalPages={videoPage.totalPages} onPageChange={setPage} />
         </>
       ) : (
-        <Card className="space-y-4">
+        <Card className="mx-auto max-w-[640px] space-y-4">
           <div className="flex items-center justify-between gap-2">
             <h3 className="text-[14px] font-semibold text-cream-foreground">
               {editingId ? '영상 수정' : '새 영상 등록'}
@@ -259,7 +259,7 @@ export function AdminVideosSection() {
           )}
 
           {previewVideoId && (
-            <div className="overflow-hidden rounded-xl border border-border">
+            <div className="mx-auto w-full max-w-[420px] overflow-hidden rounded-xl border border-border">
               <img
                 src={getYoutubeThumbnailUrl(previewVideoId)}
                 alt="유튜브 썸네일 미리보기"
