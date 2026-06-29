@@ -12,6 +12,7 @@ import { Card } from '@/components/ui/Card';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import {
   AdminListToolbar,
+  AdminListSummary,
   AdminManageRow,
   AdminPublishHeader,
   AdminSectionModeTabs,
@@ -167,6 +168,16 @@ export function AdminVideosSection() {
           {actionError && <ErrorMessage message={actionError} />}
           {isLoading && <LoadingSpinner />}
           {error && <ErrorMessage message={getErrorMessage(error)} />}
+
+          {!isLoading && !error && (
+            <AdminListSummary
+              totalElements={videoPage.totalElements}
+              page={page}
+              totalPages={videoPage.totalPages}
+              currentCount={videoPage.content.length}
+              label="영상"
+            />
+          )}
 
           <div className="space-y-2">
             {videoPage.content.map((video, index) => (

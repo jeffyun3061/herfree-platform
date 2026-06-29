@@ -38,7 +38,7 @@ export default function ContentDetailPage() {
             <img src={content.imageUrl} alt="" className="aspect-[16/9] w-full object-cover" />
           </div>
         )}
-        <MedicalDisclaimer />
+        <MedicalDisclaimer className="mt-4" />
         <div className="mt-6 whitespace-pre-wrap text-sm leading-relaxed text-cream-foreground">
           {content.content}
         </div>

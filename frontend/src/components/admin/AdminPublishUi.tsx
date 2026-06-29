@@ -66,7 +66,7 @@ export function AdminListToolbar({
   categoryOptions,
 }: AdminListToolbarProps) {
   return (
-    <div className="rounded-[18px] border border-[#E7DFD2] bg-[#FBF7EF] p-3 shadow-[0_14px_30px_-26px_rgba(20,31,26,.28)]">
+    <div className="sticky top-2 z-10 rounded-[18px] border border-[#E7DFD2] bg-[#FBF7EF]/95 p-3 shadow-[0_14px_30px_-26px_rgba(20,31,26,.28)] backdrop-blur">
       <form
         className="flex gap-2"
         onSubmit={(e) => {
@@ -117,6 +117,36 @@ export function AdminListToolbar({
   );
 }
 
+type AdminListSummaryProps = {
+  totalElements: number;
+  page: number;
+  totalPages: number;
+  currentCount: number;
+  label: string;
+};
+
+export function AdminListSummary({
+  totalElements,
+  page,
+  totalPages,
+  currentCount,
+  label,
+}: AdminListSummaryProps) {
+  const safeTotalPages = Math.max(totalPages, 1);
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-2 rounded-[14px] border border-[#E7DFD2] bg-white/70 px-3 py-2 text-[11.5px] text-[#6F766F]">
+      <span>
+        전체 <strong className="font-extrabold text-[#1E2621]">{totalElements.toLocaleString('ko-KR')}</strong>
+        개 {label}
+      </span>
+      <span>
+        현재 <strong className="font-extrabold text-[#1E2621]">{currentCount.toLocaleString('ko-KR')}</strong>
+        개 · {page + 1}/{safeTotalPages}페이지
+      </span>
+    </div>
+  );
+}
+
 type AdminPublishHeaderProps = {
   title: string;
   description: string;
@@ -125,11 +155,11 @@ type AdminPublishHeaderProps = {
 
 export function AdminPublishHeader({ title, description, note }: AdminPublishHeaderProps) {
   return (
-    <div className="rounded-[20px] border border-[#CBD4CA] bg-[#EEF2EC] px-4 py-3.5">
+    <div className="rounded-[18px] border border-[#DDE4D9] bg-[#F7F5ED] px-3.5 py-3">
       <h2 className="text-[15px] font-extrabold text-[#1E2621]">{title}</h2>
-      <p className="mt-1 text-[12px] leading-relaxed text-[#67706A]">{description}</p>
+      <p className="mt-1 text-[12px] leading-[1.65] text-[#67706A]">{description}</p>
       {note && (
-        <p className="mt-2 rounded-[12px] bg-white/86 px-3 py-2 text-[11px] leading-relaxed text-[#737A75]">
+        <p className="mt-2 rounded-[12px] bg-white/80 px-3 py-2 text-[11px] leading-[1.6] text-[#737A75]">
           {note}
         </p>
       )}
@@ -229,10 +259,10 @@ export function AdminManageRow({
     onToggleFeatured !== undefined;
 
   return (
-    <div className="flex flex-col gap-3 rounded-[18px] border border-[#E7DFD2] bg-[#FFFCF7] p-3 shadow-[0_12px_26px_-24px_rgba(20,31,26,.35)] sm:flex-row">
-      {preview ? <div className="shrink-0 overflow-hidden rounded-[12px]">{preview}</div> : null}
+    <div className="flex gap-2.5 rounded-[16px] border border-[#E7DFD2] bg-[#FFFCF7] p-2.5 shadow-[0_10px_22px_-24px_rgba(20,31,26,.35)]">
+      {preview ? <div className="w-20 shrink-0 overflow-hidden rounded-[11px] sm:w-28">{preview}</div> : null}
       <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5">
           <span
             className={cn(
               'rounded-full px-2 py-0.5 text-[10px] font-medium',
@@ -256,11 +286,11 @@ export function AdminManageRow({
           {sortOrder !== undefined && (
             <span className="text-[10px] text-muted">순서 {sortOrder}</span>
           )}
-          <span className="min-w-0 break-words text-[10px] text-muted">{meta}</span>
+          <span className="min-w-0 break-words text-[10.5px] text-muted">{meta}</span>
         </div>
-        <p className="mt-1 line-clamp-2 text-[13px] font-medium text-cream-foreground">{title}</p>
+        <p className="mt-1 line-clamp-2 text-[13px] font-semibold leading-[1.45] text-cream-foreground">{title}</p>
         {showCuration && (
-          <div className="mt-2 grid grid-cols-2 gap-1.5 sm:flex sm:flex-wrap">
+          <div className="mt-2 flex flex-wrap gap-1.5">
             {onMoveUp && (
               <button
                 type="button"
@@ -303,7 +333,7 @@ export function AdminManageRow({
             )}
           </div>
         )}
-        <div className="mt-2.5 flex flex-wrap gap-1.5">
+        <div className="mt-2 flex flex-wrap gap-1.5">
           <button
             type="button"
             onClick={onEdit}

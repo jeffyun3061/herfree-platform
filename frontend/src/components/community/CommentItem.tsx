@@ -43,7 +43,7 @@ export function CommentItem({
     <article
       className={cn(
         'border-b border-border py-4 last:border-b-0',
-        depth > 0 && 'ml-4 border-l border-border/60 pl-4',
+        depth > 0 && 'ml-3 rounded-2xl bg-[#F8F4EC] px-3',
       )}
     >
       <div className="mb-1 flex items-center justify-between gap-2 text-xs text-muted">

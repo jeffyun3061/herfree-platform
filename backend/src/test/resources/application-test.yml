@@ -36,6 +36,14 @@ jwt:
 app:
   cors:
     allowed-origin-patterns: http://localhost:*,http://127.0.0.1:*
+  auth-rate-limit:
+    enabled: false
+  password-reset:
+    token-expiration-minutes: 30
+    frontend-base-url: http://localhost:3000
+  mail:
+    mode: console
+    from: noreply@test.herfree.local
   s3:
     bucket: herfree-test-uploads
     region: ap-northeast-2

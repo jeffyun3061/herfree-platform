@@ -12,6 +12,7 @@ import { Card } from '@/components/ui/Card';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import {
   AdminListToolbar,
+  AdminListSummary,
   AdminManageRow,
   AdminPublishHeader,
   AdminSectionModeTabs,
@@ -155,6 +156,16 @@ export function AdminNoticesSection() {
           {actionError && <ErrorMessage message={actionError} />}
           {isLoading && <LoadingSpinner />}
           {error && <ErrorMessage message={getErrorMessage(error)} />}
+
+          {!isLoading && !error && (
+            <AdminListSummary
+              totalElements={noticePage.totalElements}
+              page={page}
+              totalPages={noticePage.totalPages}
+              currentCount={noticePage.content.length}
+              label="공지"
+            />
+          )}
 
           <div className="space-y-2">
             {noticePage.content.map((item, index) => {

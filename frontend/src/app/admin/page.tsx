@@ -17,7 +17,6 @@ import { AdminJournalStatsSection } from '@/components/admin/AdminJournalStatsSe
 import { AdminUsersSection } from '@/components/admin/AdminUsersSection';
 import { FEATURE_PRODUCTS_ENABLED } from '@/domain/featureFlags';
 import { isAdmin, isStaff, isSuperAdmin, canWriteContent, USER_ROLE_LABELS, type UserRole } from '@/domain/user/types';
-import { cn } from '@/lib/cn';
 
 type AdminTab = 'dashboard' | 'reports' | 'moderation' | 'users' | 'notices' | 'contents' | 'videos' | 'products' | 'journal';
 
@@ -132,9 +131,11 @@ function AdminPageContent() {
     );
   }
 
+  const activeTab = ALL_TABS.find((item) => item.id === tab);
+
   return (
     <main className="min-h-screen bg-[#F3EDE3] pb-10 text-[#121816]">
-      <section className="relative overflow-hidden bg-[#07251F] px-4 pb-7 pt-4 text-white shadow-[0_22px_60px_-36px_rgba(7,37,31,.7)]">
+      <section className="hidden">
         <div className="mx-auto max-w-[980px]">
           <div className="flex items-center justify-between gap-3">
             <button
@@ -177,33 +178,47 @@ function AdminPageContent() {
         </div>
       </section>
 
-      <div className="mx-auto -mt-4 max-w-[980px] px-4">
-        <section className="rounded-[22px] border border-[#E8DDCC] bg-[#FBF7EF] p-2.5 shadow-[0_18px_48px_-38px_rgba(26,31,27,.5)] sm:p-3">
-          <div className="mb-2 flex items-center justify-between px-1">
-            <p className="text-[12px] font-bold text-[#26322E]">운영 메뉴</p>
-            <p className="text-[11px] font-medium text-[#7C847E]">
-              {isSuperAdmin(user?.role) ? '권한 부여/회수 가능' : '권한에 맞는 메뉴만 표시'}
-            </p>
+      <div className="mx-auto max-w-[1180px] px-4 py-4 lg:px-6 lg:py-6">
+        <header className="mb-3 flex items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-[#123D37] shadow-[0_10px_24px_-20px_rgba(18,61,55,.65)]"
+            aria-label="뒤로 가기"
+          >
+            <span className="text-xl leading-none">‹</span>
+          </button>
+          <div className="min-w-0 flex-1">
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#958B78]">Herfree Admin</p>
+            <h1 className="mt-0.5 truncate text-[20px] font-extrabold text-[#1E2621]">
+              {activeTab?.label ?? '운영 관리'}
+            </h1>
           </div>
-          <div className="scrollbar-hide flex gap-2 overflow-x-auto pb-1">
-            {tabs.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => setTab(item.id)}
-                className={cn(
-                  'min-w-[98px] shrink-0 rounded-[15px] border px-3 py-2.5 text-left transition-colors sm:min-w-[112px] sm:py-3',
-                  tab === item.id
-                    ? 'border-[#0B3B36] bg-[#0B3B36] text-white shadow-[0_12px_24px_-18px_rgba(11,59,54,.75)]'
-                    : 'border-[#E7DFD2] bg-white text-[#1F2A25] hover:border-[#CFC5B5]',
-                )}
-              >
-                <span className="block text-[13px] font-extrabold">{item.label}</span>
-                <span className={cn('mt-1 block text-[11px]', tab === item.id ? 'text-white/62' : 'text-[#858C87]')}>
-                  {TAB_HELP_TEXT[item.id]}
-                </span>
-              </button>
-            ))}
+          <span className="shrink-0 rounded-full bg-[#0B3B36] px-3 py-1.5 text-[11px] font-bold text-white">
+            {roleLabel}
+          </span>
+        </header>
+
+        <section className="rounded-[18px] border border-[#E8DDCC] bg-[#FBF7EF] p-3 shadow-[0_14px_38px_-34px_rgba(26,31,27,.45)]">
+          <div className="flex items-center gap-2">
+            <label htmlFor="admin-tab-select" className="sr-only">
+              관리 메뉴
+            </label>
+            <select
+              id="admin-tab-select"
+              value={tab}
+              onChange={(event) => setTab(event.target.value as AdminTab)}
+              className="h-11 min-w-0 flex-1 rounded-[14px] border border-[#E4D8C8] bg-white px-3 text-[13px] font-bold text-[#1E2621] outline-none focus:border-[#0B3B36]"
+            >
+              {tabs.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
+            <span className="shrink-0 rounded-full bg-[#EEF4EF] px-2.5 py-1 text-[10.5px] font-bold text-[#0B3B36]">
+              {activeTab ? TAB_HELP_TEXT[activeTab.id] : '관리'}
+            </span>
           </div>
         </section>
 

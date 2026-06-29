@@ -30,6 +30,8 @@ public enum ErrorCode {
     LOGIN_LOCKED(HttpStatus.TOO_MANY_REQUESTS, "로그인 시도 횟수를 초과했습니다. 30분 후 다시 시도해 주세요."),
     // JWT 위조·만료 모두 401로 통일 — 클라이언트는 재로그인 유도
     INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "유효하지 않은 토큰입니다."),
+    // 비밀번호 재설정 토큰 만료·사용 완료·위조
+    INVALID_PASSWORD_RESET_TOKEN(HttpStatus.BAD_REQUEST, "유효하지 않거나 만료된 재설정 링크입니다."),
     // 정지된 계정은 401이 아닌 403으로 처리한다.
     // 자격증명 자체는 유효하지만 서비스 접근이 금지된 상태이기 때문이다.
     // 클라이언트는 이 코드를 받으면 "계정이 정지됐습니다" 안내를 표시한다.

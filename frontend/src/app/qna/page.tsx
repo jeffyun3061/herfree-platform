@@ -110,7 +110,7 @@ export default function QnaPage() {
 
       <Link
         href="/consult"
-        className="mx-2 mt-6 flex rounded-2xl bg-[#0B3B36] p-[17px_19px] shadow-[0_14px_30px_-18px_rgba(11,59,54,.6)]"
+        className="mx-2 mt-6 flex rounded-2xl bg-[#0B3B36] p-[17px_19px] leading-normal shadow-[0_14px_30px_-18px_rgba(11,59,54,.6)]"
       >
         <span className="flex-1">
           <span className="block text-[13.5px] font-bold text-white">원하는 답을 못 찾으셨나요?</span>

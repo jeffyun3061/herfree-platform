@@ -8,42 +8,32 @@ import { GuestPeaceCta } from '@/components/home/GuestPeaceCta';
 import { QuickAccessSection } from '@/components/home/QuickAccessSection';
 import { MedicalDisclaimer } from '@/components/layout/MedicalDisclaimer';
 
-function formatActiveUsers(value: number | null | undefined, loading: boolean): string {
-  if (loading || !value) return '1,532명';
-  return `${value.toLocaleString('ko-KR')}명`;
+function formatMemberStatus(value: number | null | undefined, loading: boolean): string {
+  if (loading) return '회원 수를 확인하고 있어요';
+  if (!value) return '첫 회원을 기다리고 있어요';
+  return `${value.toLocaleString('ko-KR')}명이 함께하고 있어요`;
 }
 
 export function GuestHomePage() {
   const { postPage: recentPosts, isLoading: recentLoading } = usePostList(undefined, 6);
   const { data: homeStats, isLoading: statsLoading } = useJournalPublicHomeStats();
-  const activeUsersLabel = formatActiveUsers(homeStats?.usersRecordingToday, statsLoading);
+  const activeUsersLabel = formatMemberStatus(homeStats?.totalUsers, statsLoading);
   const todayStories = recentPosts.totalElements > 0 ? recentPosts.totalElements : 32;
 
   return (
     <div className="min-h-screen bg-[#F3EDE3] pb-8">
-      <GuestHomeHero activeUsersLabel={activeUsersLabel} />
+      <GuestHomeHero />
 
       <section className="relative z-10 mx-2 -mt-[56px] rounded-[18px] bg-[#07251F] px-4 py-[15px] shadow-[0_18px_40px_-24px_rgba(7,37,31,.7)]">
-        <div className="flex items-center gap-[13px]">
-          <div className="flex items-center">
-            {['h', '+', '3', ''].map((label, index) => (
-              <span
-                key={index}
-                className="flex h-[30px] w-[30px] items-center justify-center rounded-full border-2 border-[#07251F] text-[12px] font-bold text-white first:ml-0"
-                style={{
-                  marginLeft: index === 0 ? 0 : -9,
-                  background: ['#2E5A4E', '#3A6B4B', '#4C5E3A', '#2C5247'][index],
-                }}
-              >
-                {label}
-              </span>
-            ))}
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-[15px] font-extrabold text-white">
+            h.
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
               <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#6FE0B0] shadow-[0_0_8px_#6FE0B0]" />
-              <span className="truncate text-[13px] font-semibold text-white">
-                {activeUsersLabel}이 함께하고 있어요
+              <span className="text-[13px] font-semibold leading-snug text-white">
+                {activeUsersLabel}
               </span>
             </div>
             <p className="mt-[3px] text-[11px] text-white/55">

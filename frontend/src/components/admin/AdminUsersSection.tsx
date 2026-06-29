@@ -25,16 +25,25 @@ import { isAdmin, isSuperAdmin } from '@/domain/user/types';
 export function AdminUsersSection() {
   const { user: session } = useAuth();
   const [page, setPage] = useState(0);
+  const [searchInput, setSearchInput] = useState('');
+  const [keyword, setKeyword] = useState('');
   const [actionError, setActionError] = useState<string | null>(null);
   const [pendingId, setPendingId] = useState<number | null>(null);
+  const hasKeyword = keyword.trim().length > 0;
 
   const { data, isLoading, error, refetch } = useApiQuery(
-    () => fetchAdminUsers(page),
-    [page],
+    () => fetchAdminUsers(page, 10, keyword.trim()),
+    [page, keyword],
+    { enabled: hasKeyword },
   );
 
   const canChangeStatus = isAdmin(session?.role);
   const canChangeRole = isSuperAdmin(session?.role);
+
+  const handleSearch = () => {
+    setKeyword(searchInput.trim());
+    setPage(0);
+  };
 
   const handleRoleChange = async (userId: number, role: UserRole) => {
     setPendingId(userId);
@@ -62,22 +71,57 @@ export function AdminUsersSection() {
     }
   };
 
-  if (isLoading) return <LoadingSpinner label="회원 목록 불러오는 중…" />;
   if (error) return <ErrorMessage message={getErrorMessage(error)} />;
 
   const members = data?.content ?? [];
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-muted">
-        권한 변경은 최고 관리자(SUPER_ADMIN)만 가능합니다. 변경 내역은 서버 감사 로그에
-        기록됩니다.
+      <div className="rounded-[18px] border border-[#E7DFD2] bg-[#FBF7EF] p-3 shadow-[0_14px_30px_-26px_rgba(20,31,26,.28)]">
+        <p className="text-[13px] font-extrabold text-[#1E2621]">회원 검색</p>
+        <p className="mt-1 text-[11.5px] leading-[1.6] text-[#7C847E]">
+          이메일, 닉네임, 회원 ID를 입력해서 필요한 계정만 조회합니다.
+        </p>
+        <form
+          className="mt-3 flex gap-2"
+          onSubmit={(event) => {
+            event.preventDefault();
+            handleSearch();
+          }}
+        >
+          <input
+            type="search"
+            value={searchInput}
+            onChange={(event) => setSearchInput(event.target.value)}
+            placeholder="예: user@email.com, 닉네임, #15"
+            className="min-w-0 flex-1 rounded-[13px] border border-[#E4D8C8] bg-white px-3 py-2.5 text-[13px] outline-none focus:border-primary"
+          />
+          <button
+            type="submit"
+            disabled={searchInput.trim().length === 0}
+            className="shrink-0 rounded-[13px] bg-[#0B3B36] px-4 py-2.5 text-[12px] font-bold text-white disabled:opacity-45"
+          >
+            검색
+          </button>
+        </form>
+      </div>
+
+      <p className="text-[12px] leading-[1.6] text-muted">
+        권한 변경은 최고 관리자만 가능하며, 변경 이력은 서버 감사 로그에 기록됩니다.
       </p>
 
       {actionError && <ErrorMessage message={actionError} />}
 
-      {members.length === 0 ? (
-        <p className="text-sm text-muted">표시할 회원이 없습니다.</p>
+      {!hasKeyword ? (
+        <p className="rounded-[16px] border border-dashed border-[#D9CEBC] bg-white/50 px-4 py-8 text-center text-[12.5px] text-muted">
+          계정을 검색하면 권한과 상태를 변경할 회원이 표시됩니다.
+        </p>
+      ) : isLoading ? (
+        <LoadingSpinner label="회원 검색 중…" />
+      ) : members.length === 0 ? (
+        <p className="rounded-[16px] border border-dashed border-[#D9CEBC] bg-white/50 px-4 py-8 text-center text-[12.5px] text-muted">
+          검색 결과가 없습니다.
+        </p>
       ) : (
         <ul className="space-y-3">
           {members.map((member) => (
@@ -142,13 +186,15 @@ export function AdminUsersSection() {
         </ul>
       )}
 
-      {(data?.totalPages ?? 0) > 1 && (
+      {hasKeyword && (data?.totalPages ?? 0) > 1 && (
         <Pagination page={page} totalPages={data?.totalPages ?? 1} onPageChange={setPage} />
       )}
 
-      <Button variant="secondary" size="sm" onClick={() => void refetch()}>
-        새로고침
-      </Button>
+      {hasKeyword && (
+        <Button variant="secondary" size="sm" onClick={() => void refetch()}>
+          검색 결과 새로고침
+        </Button>
+      )}
     </div>
   );
 }

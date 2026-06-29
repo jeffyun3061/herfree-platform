@@ -4,7 +4,11 @@ import com.herfree.domain.user.entity.User;
 import com.herfree.domain.user.entity.UserStatus;
 import java.time.LocalDateTime;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface UserRepository extends JpaRepository<User, Long> {
 
@@ -21,6 +25,24 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     org.springframework.data.domain.Page<User> findByStatusNotOrderByCreatedAtDesc(
             UserStatus status, org.springframework.data.domain.Pageable pageable);
+
+    @Query("""
+            select u
+            from User u
+            left join UserProfile p on p.user = u
+            where u.status <> :deletedStatus
+              and (
+                (:userId is not null and u.id = :userId)
+                or lower(u.email) like lower(concat('%', :keyword, '%'))
+                or lower(p.nickname) like lower(concat('%', :keyword, '%'))
+              )
+            order by u.createdAt desc
+            """)
+    Page<User> searchAdminUsers(
+            @Param("userId") Long userId,
+            @Param("keyword") String keyword,
+            @Param("deletedStatus") UserStatus deletedStatus,
+            Pageable pageable);
 
     long countByCreatedAtAfter(LocalDateTime since);
 }

@@ -17,7 +17,6 @@ function buildRequestHeaders(path: string, tokenAtRequest: string | null): Recor
   const headers: Record<string, string> = {};
   const attachAuth = Boolean(tokenAtRequest) && !isPublicAuthPath(path);
 
-  // 회원가입·로그인에는 오래된 토큰을 붙이지 않는다. 인증 API가 토큰 상태에 끌려가면 UX가 꼬인다.
   if (attachAuth) {
     headers.Authorization = `Bearer ${tokenAtRequest}`;
   }
@@ -101,18 +100,22 @@ function handleUnauthorized(hadToken: boolean, tokenAtRequest: string | null): v
   if (!hadToken || typeof window === 'undefined') return;
   if (tokenAtRequest && getAccessToken() !== tokenAtRequest) return;
 
-  // 이미 새 토큰으로 갱신된 상태라면 이전 요청의 401로 세션을 지우지 않는다.
   const path = window.location.pathname;
   if (path.startsWith('/login') || path.startsWith('/signup')) return;
 
   clearAuth();
   if (!path.startsWith('/login')) {
-    window.location.href = '/login';
+    const from = encodeURIComponent(path + window.location.search);
+    window.location.href = `/login?reason=session_expired&from=${from}`;
   }
 }
 
 function isPublicAuthPath(path: string): boolean {
-  return path.startsWith('/api/auth/signup') || path.startsWith('/api/auth/login');
+  return (
+    path.startsWith('/api/auth/signup') ||
+    path.startsWith('/api/auth/login') ||
+    path.startsWith('/api/auth/password-reset')
+  );
 }
 
 export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {

@@ -18,8 +18,6 @@ export function Pagination({ page, totalPages, onPageChange }: PaginationProps) 
   if (totalPages <= 1) return null;
 
   const visiblePages = getVisiblePages(page, totalPages);
-  const progress = ((page + 1) / totalPages) * 100;
-
   const changePage = (nextPage: number) => {
     if (nextPage < 0 || nextPage >= totalPages || nextPage === page) return;
     onPageChange(nextPage);
@@ -31,14 +29,7 @@ export function Pagination({ page, totalPages, onPageChange }: PaginationProps) 
   };
 
   return (
-    <nav className="mt-5 rounded-[20px] border border-[#ECE5D8] bg-white/82 px-3 py-3 shadow-card" aria-label="페이지 이동">
-      <div className="mb-3 h-1 overflow-hidden rounded-full bg-[#EFE8DC]">
-        <div
-          className="h-full rounded-full bg-[#0B3B36] transition-all duration-300"
-          style={{ width: `${progress}%` }}
-        />
-      </div>
-
+    <nav className="mt-5 rounded-[18px] border border-[#ECE5D8] bg-white/72 px-3 py-3 shadow-sm" aria-label="페이지 이동">
       <div className="flex items-center justify-between gap-2">
         <button
           type="button"

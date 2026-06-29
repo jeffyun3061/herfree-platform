@@ -18,6 +18,7 @@ export function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
   const { isLoggedIn } = useAuth();
   const publicNavPaths = ['/community', '/contents', '/videos', '/qna'];
+  const isAdminPage = pathname.startsWith('/admin');
   const showNav =
     shouldShowBottomNav(pathname) &&
     (isLoggedIn || publicNavPaths.some((path) => pathname === path || pathname.startsWith(`${path}/`)));
@@ -27,7 +28,7 @@ export function AppShell({ children }: AppShellProps) {
     <PageHeaderProvider>
       <div className="app-canvas">
         {showHeader && <DesktopHeader />}
-        <div className="app-phone-shell">
+        <div className={cn('app-phone-shell', isAdminPage && 'admin-shell')}>
           {showHeader && <MobileHeader />}
           <main className={cn('min-h-screen bg-[#F3EDE3]', showNav && 'pb-[5.5rem]')}>{children}</main>
           {showHeader && <SiteFooter />}

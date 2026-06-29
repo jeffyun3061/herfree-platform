@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/Badge';
 import { CommunityPhotoAttach } from '@/components/community/CommunityPhotoAttach';
 import {
   AdminChipGroup,
+  AdminListSummary,
   AdminListToolbar,
   AdminManageRow,
   AdminPublishHeader,
@@ -189,6 +190,16 @@ export function AdminContentsSection() {
           {actionError && <ErrorMessage message={actionError} />}
           {isLoading && <LoadingSpinner />}
           {error && <ErrorMessage message={getErrorMessage(error)} />}
+
+          {!isLoading && !error && (
+            <AdminListSummary
+              totalElements={contentPage.totalElements}
+              page={page}
+              totalPages={contentPage.totalPages}
+              currentCount={contentPage.content.length}
+              label="칼럼"
+            />
+          )}
 
           <div className="space-y-2">
             {contentPage.content.map((item, index) => {

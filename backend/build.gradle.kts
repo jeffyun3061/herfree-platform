@@ -23,6 +23,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
+    implementation("org.springframework.boot:spring-boot-starter-mail")
     implementation("com.mysql:mysql-connector-j")
 
     implementation("org.flywaydb:flyway-core")
@@ -48,6 +49,12 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+    // Windows + 한글/OneDrive 경로에서 forked test worker ClassNotFound 방지
+    maxParallelForks = 1
+    jvmArgs(
+        "-Dfile.encoding=UTF-8",
+        "-Dsun.jnu.encoding=UTF-8",
+    )
 }
 
 tasks.named<org.springframework.boot.gradle.tasks.run.BootRun>("bootRun") {

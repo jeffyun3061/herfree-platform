@@ -4,11 +4,7 @@ import Link from 'next/link';
 import { PUBLIC_IMAGES } from '@/domain/assets/static';
 import { PublicStaticImage } from '@/components/ui/PublicStaticImage';
 
-type GuestHomeHeroProps = {
-  activeUsersLabel: string;
-};
-
-export function GuestHomeHero({ activeUsersLabel }: GuestHomeHeroProps) {
+export function GuestHomeHero() {
   return (
     <section className="relative h-[472px] overflow-hidden">
       <PublicStaticImage
@@ -54,10 +50,7 @@ export function GuestHomeHero({ activeUsersLabel }: GuestHomeHeroProps) {
       </div>
 
       <div className="absolute bottom-[86px] left-0 right-0 px-[26px]">
-        <span className="inline-flex items-center rounded-full bg-white/16 px-3 py-1.5 text-[11.5px] font-semibold text-white shadow-sm backdrop-blur-md">
-          · {activeUsersLabel}이 함께하고 있어요
-        </span>
-        <h1 className="hf-display mt-5 text-[33px] font-extrabold leading-[1.4] tracking-[-0.01em] text-white [text-shadow:0_2px_18px_rgba(7,37,31,.4)]">
+        <h1 className="hf-display text-[33px] font-extrabold leading-[1.4] tracking-[-0.01em] text-white [text-shadow:0_2px_18px_rgba(7,37,31,.4)]">
           편하게
           <br />
           들어오세요

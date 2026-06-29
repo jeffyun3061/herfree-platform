@@ -330,7 +330,8 @@ public class JournalService {
     @Transactional(readOnly = true)
     public JournalPublicHomeStatsResponse getPublicHomeStats() {
         long usersToday = journalRecordRepository.countDistinctUsersByRecordDate(LocalDate.now());
-        return new JournalPublicHomeStatsResponse(usersToday);
+        long totalUsers = userRepository.count();
+        return new JournalPublicHomeStatsResponse(usersToday, totalUsers);
     }
 
     public JournalInsightsResponse getCommunityInsights() {

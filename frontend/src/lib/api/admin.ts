@@ -339,9 +339,14 @@ export function fetchAdminJournalStats(): Promise<AdminJournalStats> {
   return request<AdminJournalStats>('/api/admin/journal/stats');
 }
 
-export function fetchAdminUsers(page: number, size = 20): Promise<PageData<AdminUser>> {
+export function fetchAdminUsers(page: number, size = 20, keyword?: string): Promise<PageData<AdminUser>> {
   return request<PageData<AdminUser>>('/api/admin/users', {
-    query: { page, size, sort: 'createdAt,desc' },
+    query: {
+      page,
+      size,
+      sort: 'createdAt,desc',
+      ...(keyword ? { keyword } : {}),
+    },
   });
 }
 

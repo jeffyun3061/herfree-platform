@@ -8,7 +8,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { AdminListToolbar } from '@/components/admin/AdminPublishUi';
+import { AdminListSummary, AdminListToolbar } from '@/components/admin/AdminPublishUi';
 import type { AdminModerationStatus } from '@/lib/api/admin';
 import { getErrorMessage } from '@/lib/api/client';
 import { cn } from '@/lib/cn';
@@ -100,10 +100,20 @@ export function AdminModerationSection() {
       {error && <ErrorMessage message={getErrorMessage(error)} />}
       {actionError && <ErrorMessage message={actionError} className="mb-2" />}
 
+      {!isLoading && !error && (
+        <AdminListSummary
+          totalElements={activePage.totalElements}
+          page={pageIndex}
+          totalPages={activePage.totalPages}
+          currentCount={activePage.content.length}
+          label={target === 'posts' ? '게시글' : '댓글'}
+        />
+      )}
+
       <div className="space-y-2">
         {target === 'posts'
           ? postPage.content.map((item) => (
-              <Card key={item.id} className="space-y-2">
+              <Card key={item.id} className="space-y-2 rounded-[16px] p-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <span
                     className={cn(
@@ -119,7 +129,7 @@ export function AdminModerationSection() {
                     {item.boardName} · {item.authorNickname} · {formatDate(item.createdAt)}
                   </span>
                 </div>
-                <p className="text-[13px] font-medium text-cream-foreground">{item.title}</p>
+                <p className="line-clamp-2 text-[13px] font-semibold leading-[1.45] text-cream-foreground">{item.title}</p>
                 <div className="flex flex-wrap gap-2">
                   <Link href={`/community/posts/${item.id}`}>
                     <Button size="sm" variant="secondary">
@@ -148,7 +158,7 @@ export function AdminModerationSection() {
               </Card>
             ))
           : commentPage.content.map((item) => (
-              <Card key={item.id} className="space-y-2">
+              <Card key={item.id} className="space-y-2 rounded-[16px] p-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <span
                     className={cn(
@@ -164,8 +174,8 @@ export function AdminModerationSection() {
                     {item.authorNickname} · {formatDate(item.createdAt)}
                   </span>
                 </div>
-                <p className="text-[11px] text-muted">원글: {item.postTitle}</p>
-                <p className="text-[13px] text-cream-foreground">{item.contentPreview}</p>
+                <p className="line-clamp-1 text-[11px] text-muted">원글: {item.postTitle}</p>
+                <p className="line-clamp-2 text-[13px] leading-[1.45] text-cream-foreground">{item.contentPreview}</p>
                 <div className="flex flex-wrap gap-2">
                   <Link href={`/community/posts/${item.postId}`}>
                     <Button size="sm" variant="secondary">

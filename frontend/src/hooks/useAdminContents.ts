@@ -17,7 +17,7 @@ export type AdminContentsQuery = {
 export function useAdminContents(query: AdminContentsQuery) {
   const params: AdminListQuery = {
     page: query.page,
-    size: query.size ?? 6,
+    size: query.size ?? 10,
     keyword: query.keyword || undefined,
     status: query.status || undefined,
     category: query.category || undefined,

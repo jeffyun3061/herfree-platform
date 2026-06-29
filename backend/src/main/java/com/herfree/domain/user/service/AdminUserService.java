@@ -31,8 +31,11 @@ public class AdminUserService {
     private final RoleAuditService roleAuditService;
 
     @Transactional(readOnly = true)
-    public Page<AdminUserResponse> getUsers(Pageable pageable) {
-        Page<User> users = userRepository.findByStatusNotOrderByCreatedAtDesc(UserStatus.DELETED, pageable);
+    public Page<AdminUserResponse> getUsers(String keyword, Pageable pageable) {
+        String trimmedKeyword = keyword == null ? "" : keyword.trim();
+        Page<User> users = trimmedKeyword.isBlank()
+                ? userRepository.findByStatusNotOrderByCreatedAtDesc(UserStatus.DELETED, pageable)
+                : userRepository.searchAdminUsers(parseUserId(trimmedKeyword), trimmedKeyword, UserStatus.DELETED, pageable);
         Map<Long, UserProfile> profiles = loadProfiles(users.getContent());
         return users.map(user -> AdminUserResponse.of(user, profiles.get(user.getId())));
     }
@@ -108,6 +111,14 @@ public class AdminUserService {
         return userRepository.findByIdAndStatus(userId, UserStatus.ACTIVE)
                 .or(() -> userRepository.findByIdAndStatus(userId, UserStatus.SUSPENDED))
                 .orElseThrow(UserNotFoundException::new);
+    }
+
+    private Long parseUserId(String keyword) {
+        try {
+            return Long.parseLong(keyword.replaceFirst("^#", ""));
+        } catch (NumberFormatException ignored) {
+            return null;
+        }
     }
 
     private AdminUserResponse toResponse(User user) {

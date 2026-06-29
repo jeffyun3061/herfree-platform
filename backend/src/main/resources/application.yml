@@ -74,8 +74,14 @@ app:
   # 운영(prod)에서는 반드시 false — local 전용 데모 시드 (DemoDataSeedRunner)
   demo-seed:
     enabled: false
-  analytics:
-    hash-salt: ${ANALYTICS_HASH_SALT:${JWT_SECRET:local-analytics-salt}}
+  password-reset:
+    token-expiration-minutes: 30
+    frontend-base-url: ${PASSWORD_RESET_FRONTEND_BASE_URL:http://localhost:3000}
+  mail:
+    mode: ${APP_MAIL_MODE:console}
+    from: ${APP_MAIL_FROM:noreply@herfree.kr}
+  auth-rate-limit:
+    enabled: ${APP_AUTH_RATE_LIMIT_ENABLED:true}
 
 ---
 spring:
@@ -113,6 +119,11 @@ springdoc:
     enabled: false
   swagger-ui:
     enabled: false
+
+logging:
+  level:
+    root: INFO
+    com.herfree: INFO
 
 app:
   demo-seed:

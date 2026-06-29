@@ -11,6 +11,15 @@ export type LoginRequest = {
   password: string;
 };
 
+export type PasswordResetRequest = {
+  email: string;
+};
+
+export type PasswordResetConfirmRequest = {
+  token: string;
+  newPassword: string;
+};
+
 // POST /api/auth/login 응답 (LoginResponse)
 export type LoginResult = {
   accessToken: string;
