@@ -22,7 +22,7 @@ export default function VideosPage() {
 
   return (
     <>
-      <div className="page-container mx-auto max-w-app pb-36 lg:max-w-content lg:pb-12">
+      <div className="page-container media-screen mx-auto max-w-app pb-36 lg:max-w-content lg:pb-12">
         <div className="mb-4 lg:hidden">
           <p className="text-[22px] font-bold text-[#15201D]">영상</p>
           <p className="mt-1 text-[12.5px] text-[#8B9590]">헤르프리 채널에서 엄선한 이야기</p>
@@ -41,7 +41,7 @@ export default function VideosPage() {
         </div>
 
         {isLoading ? (
-          <div className="flex flex-col gap-3.5">
+          <div className="flex flex-col gap-3">
             {[1, 2, 3].map((i) => (
               <VideoFeedCardSkeleton key={i} />
             ))}
@@ -55,7 +55,7 @@ export default function VideosPage() {
           />
         ) : (
           <>
-            <div className="flex flex-col gap-3.5">
+            <div className="flex flex-col gap-3">
               {videoPage.content.map((video) => (
                 <VideoFeedCard
                   key={video.id}

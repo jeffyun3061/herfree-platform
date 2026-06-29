@@ -109,6 +109,10 @@ body {
     @apply px-4 pb-36 pt-7 lg:px-4 lg:pb-12 lg:pt-7;
   }
 
+  .app-phone-shell .media-screen {
+    @apply px-4 pb-36 pt-8 lg:px-4 lg:pb-12 lg:pt-8;
+  }
+
   .hf-display {
     font-family: 'Nanum Myeongjo', 'AppleMyungjo', 'Batang', Georgia, serif;
   }
@@ -210,12 +214,12 @@ body {
   /* 히어로 SVG 원본 비율 300×280 */
   .journal-hero-card {
     @apply relative w-full overflow-hidden rounded-[22px] shadow-[0_18px_40px_-22px_rgba(20,30,25,.4)];
-    aspect-ratio: 360 / 205;
+    aspect-ratio: 390 / 196;
   }
 
   .home-bleed-card .journal-hero-card {
-    aspect-ratio: 430 / 236;
-    border-radius: 38px 38px 22px 22px;
+    aspect-ratio: 430 / 214;
+    border-radius: 0 0 22px 22px;
   }
 
   .journal-summary-card {
@@ -372,11 +376,11 @@ body {
   }
 
   .video-feed-card {
-    @apply block;
+    @apply block overflow-hidden rounded-[20px] border border-[#ECE5D8] bg-white shadow-card;
   }
 
   .video-feed-card__thumb {
-    @apply flex h-40 items-center justify-center rounded-[14px];
+    @apply flex aspect-[16/9] items-center justify-center;
   }
 
   .video-feed-card__play {
@@ -384,7 +388,7 @@ body {
   }
 
   .video-feed-card__body {
-    @apply px-0.5 pt-2.5;
+    @apply px-3.5 pb-3.5 pt-3;
   }
 
   .video-feed-card__tag {

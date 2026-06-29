@@ -53,8 +53,8 @@ export function VideoFeedCard({ video, categoryLabel }: VideoFeedCardProps) {
 export function VideoFeedCardSkeleton() {
   return (
     <div className="video-feed-card animate-pulse">
-      <div className="h-40 rounded-[14px] bg-[#E3E6E4]" />
-      <div className="space-y-2 px-0.5 pt-2.5">
+      <div className="aspect-[16/9] bg-[#E3E6E4]" />
+      <div className="space-y-2 px-3.5 pb-3.5 pt-3">
         <div className="h-4 w-16 rounded-md bg-[#E3E6E4]" />
         <div className="h-4 w-full rounded bg-[#E3E6E4]" />
         <div className="h-3 w-32 rounded bg-[#E3E6E4]" />
