@@ -7,6 +7,7 @@ import { MobileHeader } from '@/components/layout/MobileHeader';
 import { SiteFooter } from '@/components/layout/SiteFooter';
 import { PageHeaderProvider } from '@/contexts/PageHeaderContext';
 import { useAuth } from '@/hooks/useAuth';
+import { useBackNavigationGuard } from '@/hooks/useBackNavigationGuard';
 import { shouldShowBottomNav, shouldShowShellHeader } from '@/lib/navigation';
 import { cn } from '@/lib/cn';
 
@@ -17,6 +18,7 @@ type AppShellProps = {
 export function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
   const { isLoggedIn } = useAuth();
+  useBackNavigationGuard();
   const isAdminPage = pathname.startsWith('/admin');
   const showNav = shouldShowBottomNav(pathname);
   const showHeader = shouldShowShellHeader(pathname) && (pathname !== '/' || isLoggedIn);

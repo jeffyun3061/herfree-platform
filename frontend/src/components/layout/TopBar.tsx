@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { BackButton } from '@/components/ui/BackButton';
 import { cn } from '@/lib/cn';
 
 type TopBarProps = {
@@ -22,16 +22,6 @@ export function TopBar({
   className,
   brand = false,
 }: TopBarProps) {
-  const router = useRouter();
-
-  const handleBack = () => {
-    if (backHref) {
-      router.push(backHref);
-      return;
-    }
-    router.back();
-  };
-
   return (
     <header
       className={cn(
@@ -40,16 +30,7 @@ export function TopBar({
       )}
     >
       {showBack ? (
-        <button
-          type="button"
-          aria-label="뒤로 가기"
-          onClick={handleBack}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink transition-colors hover:bg-wrtn-bg"
-        >
-          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M15 6l-6 6 6 6" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
+        <BackButton backHref={backHref} className="text-ink hover:bg-wrtn-bg" />
       ) : (
         <span className="w-1 shrink-0" aria-hidden />
       )}

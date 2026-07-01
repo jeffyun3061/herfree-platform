@@ -9,27 +9,33 @@ import { cn } from '@/lib/cn';
 type VideoFeedCardProps = {
   video: Video;
   categoryLabel?: string | null;
+  featured?: boolean;
 };
 
 function MetaDot() {
   return <span className="h-0.5 w-0.5 shrink-0 rounded-full bg-[#C7CECB]" aria-hidden />;
 }
 
-export function VideoFeedCard({ video, categoryLabel }: VideoFeedCardProps) {
+export function VideoFeedCard({ video, categoryLabel, featured }: VideoFeedCardProps) {
   const thumbnail = getVideoThumbnail(video);
   const gradient = getVideoThumbGradient(video.id);
 
   return (
     <Link href={`/videos/${video.id}`} className="block">
-      <article className="video-feed-card">
+      <article className={cn('video-feed-card', featured && 'video-feed-card--featured')}>
         <div className={cn('video-feed-card__thumb relative overflow-hidden', gradient)}>
           <img
             src={thumbnail}
             alt=""
             className="absolute inset-0 h-full w-full object-cover"
-            loading="lazy"
+            loading={featured ? 'eager' : 'lazy'}
           />
           <div className="absolute inset-0 bg-black/25" />
+          {featured && (
+            <span className="absolute left-3 top-3 z-10 rounded-full bg-[#F0C778] px-2.5 py-1 text-[11px] font-extrabold text-[#07251F] shadow-[0_8px_18px_-12px_rgba(0,0,0,.7)]">
+              최신 영상
+            </span>
+          )}
           <span className="video-feed-card__play" aria-hidden>
             ▶
           </span>
@@ -40,7 +46,7 @@ export function VideoFeedCard({ video, categoryLabel }: VideoFeedCardProps) {
           ) : null}
           <h2 className="video-feed-card__title">{video.title}</h2>
           <div className="video-feed-card__meta">
-            <span className="text-[#8B9590]">▶ YouTube</span>
+            <span className="text-[#8B9590]">YouTube</span>
             <MetaDot />
             <span>{formatRelativeTimeMedia(video.createdAt)}</span>
           </div>

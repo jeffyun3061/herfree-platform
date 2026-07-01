@@ -6,8 +6,6 @@ import type { RoutineItemId } from '@/domain/journal/routine';
 import { JournalDashboardHero } from '@/components/journal/JournalDashboardHero';
 import { JournalRoutineCard } from '@/components/journal/JournalRoutineCard';
 import { JournalCommunityCard } from '@/components/journal/JournalCommunityCard';
-import { JournalIcon } from '@/components/journal/JournalIcon';
-import { Button } from '@/components/ui/Button';
 
 type JournalPersonalDashboardProps = {
   dashboard: JournalDashboard | null;
@@ -40,7 +38,7 @@ export function JournalPersonalDashboard({
 
   return (
     <div className="journal-home-stack mx-auto w-full max-w-app gap-3">
-      <div className="home-bleed-card">
+      <div>
         <JournalDashboardHero
           dashboard={dashboard}
           isLoading={isLoading}
@@ -49,18 +47,14 @@ export function JournalPersonalDashboard({
         />
       </div>
 
-      <Button
+      <button
         type="button"
         onClick={onRecordDaily}
-        disabled={isLoading}
-        fullWidth
-        size="md"
-        variant="secondary"
-        className="journal-record-cta gap-2 shadow-sm"
+        className="flex min-h-[46px] w-full items-center justify-center gap-2 rounded-[12px] border border-[var(--color-border-tertiary)] bg-white text-[14px] font-extrabold text-[#1E2621] shadow-card transition-colors hover:bg-[#FBFAF6]"
       >
-        <JournalIcon name="pencil" size={18} />
+        <span aria-hidden>✎</span>
         오늘 기록하기
-      </Button>
+      </button>
 
       <JournalRoutineCard
         dashboard={dashboard}

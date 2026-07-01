@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { Suspense, useEffect, useMemo } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -10,8 +10,7 @@ type RequireAuthProps = {
   redirectTo?: string;
 };
 
-// 보호 라우트 — 세션 복원이 끝난 뒤에만 리다이렉트해 깜빡임을 줄인다
-export function RequireAuth({ children, redirectTo = '/login' }: RequireAuthProps) {
+function RequireAuthInner({ children, redirectTo = '/login' }: RequireAuthProps) {
   const { isReady, isLoggedIn } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
@@ -33,4 +32,13 @@ export function RequireAuth({ children, redirectTo = '/login' }: RequireAuthProp
   if (!isReady) return <LoadingSpinner />;
   if (!isLoggedIn) return null;
   return <>{children}</>;
+}
+
+// 보호 라우트 — 세션 복원이 끝난 뒤에만 리다이렉트해 깜빡임을 줄인다
+export function RequireAuth(props: RequireAuthProps) {
+  return (
+    <Suspense fallback={<LoadingSpinner />}>
+      <RequireAuthInner {...props} />
+    </Suspense>
+  );
 }

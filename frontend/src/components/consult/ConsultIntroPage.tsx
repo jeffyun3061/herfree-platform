@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { KAKAO_CONSULT_URL } from '@/domain/consult/constants';
+import { BackButton } from '@/components/ui/BackButton';
 
 const consultFaqs = [
   {
@@ -28,13 +29,7 @@ export function ConsultIntroPage() {
   return (
     <main className="min-h-screen bg-white pb-12">
       <header className="flex items-center gap-2.5 border-b border-[#EFE9DD] px-[18px] pb-3.5 pt-14">
-        <Link
-          href="/"
-          aria-label="홈으로 돌아가기"
-          className="flex h-7 w-7 items-center justify-center text-[22px] leading-none text-[#5C645A]"
-        >
-          ‹
-        </Link>
+        <BackButton size="sm" className="text-[#5C645A] hover:text-[#0B3B36]" />
         <h1 className="text-[15px] font-bold text-[#1E2621]">1:1 비밀 상담</h1>
       </header>
 

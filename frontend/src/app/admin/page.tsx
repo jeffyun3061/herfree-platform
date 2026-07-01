@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { BackButton } from '@/components/ui/BackButton';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { Button } from '@/components/ui/Button';
@@ -110,14 +111,9 @@ function AdminPageContent() {
     return (
       <main className="min-h-screen bg-[#F3EDE3] px-4 py-6">
         <section className="mx-auto max-w-[720px] rounded-[26px] border border-[#E8DDCC] bg-[#FBF7EF] p-5 shadow-[0_18px_45px_-34px_rgba(26,31,27,.45)]">
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="mb-5 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#123D37] shadow-[0_10px_24px_-20px_rgba(18,61,55,.65)]"
-            aria-label="뒤로 가기"
-          >
-            <span className="text-xl leading-none">‹</span>
-          </button>
+          <BackButton
+            className="mb-5 bg-white text-[#123D37] shadow-[0_10px_24px_-20px_rgba(18,61,55,.65)] hover:bg-white"
+          />
           <p className="text-[12px] font-semibold text-[#79817C]">현재 권한: {roleLabel}</p>
           <h1 className="hf-display mt-2 text-[28px] font-extrabold text-[#111816]">운영 권한이 필요합니다</h1>
           <div className="mt-5">
@@ -138,21 +134,16 @@ function AdminPageContent() {
       <section className="hidden">
         <div className="mx-auto max-w-[980px]">
           <div className="flex items-center justify-between gap-3">
-            <button
-              type="button"
-              onClick={() => router.back()}
-              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/16"
-              aria-label="뒤로 가기"
-            >
-              <span className="text-xl leading-none">‹</span>
-            </button>
+            <BackButton
+              className="bg-white/10 text-white hover:bg-white/16 hover:text-white"
+            />
             <span className="rounded-full bg-white/10 px-3 py-1.5 text-[12px] font-semibold text-white/80">
               {roleLabel}
             </span>
           </div>
 
           <div className="mt-6 max-w-[680px]">
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#D8C691]/70">Herfree Admin</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#D8C691]/70">Herpfree Admin</p>
             <h1 className="hf-display mt-2 text-[29px] font-extrabold leading-[1.12] sm:text-[38px]">
               운영 관리
             </h1>
@@ -180,16 +171,9 @@ function AdminPageContent() {
 
       <div className="mx-auto max-w-[1180px] px-4 py-4 lg:px-6 lg:py-6">
         <header className="mb-3 flex items-center justify-between gap-3">
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-[#123D37] shadow-[0_10px_24px_-20px_rgba(18,61,55,.65)]"
-            aria-label="뒤로 가기"
-          >
-            <span className="text-xl leading-none">‹</span>
-          </button>
+          <BackButton className="bg-white text-[#123D37] shadow-[0_10px_24px_-20px_rgba(18,61,55,.65)] hover:bg-white" />
           <div className="min-w-0 flex-1">
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#958B78]">Herfree Admin</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#958B78]">Herpfree Admin</p>
             <h1 className="mt-0.5 truncate text-[20px] font-extrabold text-[#1E2621]">
               {activeTab?.label ?? '운영 관리'}
             </h1>

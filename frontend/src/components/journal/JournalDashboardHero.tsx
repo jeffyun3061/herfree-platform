@@ -10,6 +10,7 @@ type JournalDashboardHeroProps = {
   dashboard: JournalDashboard | null;
   isLoading?: boolean;
   showFirstRecordHint?: boolean;
+  onRecordDaily?: () => void;
   onRecordRelapse?: () => void;
 };
 
@@ -67,13 +68,12 @@ export function JournalDashboardHero({
           ) : (
             <>
               <p className="text-[13px] leading-relaxed text-white/80">
-                작은 기록을 쌓아
+                작은 기록이 쌓아
                 <br />
-                지금의{' '}
-                <span className="font-semibold text-herfree-yellow">{relapseFreeDays}일</span>을
+                지금의 <span className="font-semibold text-herfree-yellow">{relapseFreeDays}일</span>을
                 지켜냈어요
               </p>
-              <p className="mt-2 font-display font-extrabold leading-none tracking-tight text-white">
+              <p className="mt-2 font-display font-extrabold leading-none text-white">
                 <span className="text-[2.75rem] text-herfree-yellow sm:text-[3rem]">
                   {relapseFreeDays}
                 </span>

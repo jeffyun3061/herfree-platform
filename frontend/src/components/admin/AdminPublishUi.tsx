@@ -229,6 +229,8 @@ type AdminManageRowProps = {
   onToggleFeatured?: () => void;
   canMoveUp?: boolean;
   canMoveDown?: boolean;
+  highlight?: boolean;
+  className?: string;
 };
 
 export function AdminManageRow({
@@ -251,6 +253,8 @@ export function AdminManageRow({
   onToggleFeatured,
   canMoveUp,
   canMoveDown,
+  highlight,
+  className,
 }: AdminManageRowProps) {
   const showCuration =
     sortOrder !== undefined ||
@@ -259,10 +263,32 @@ export function AdminManageRow({
     onToggleFeatured !== undefined;
 
   return (
-    <div className="flex gap-2.5 rounded-[16px] border border-[#E7DFD2] bg-[#FFFCF7] p-2.5 shadow-[0_10px_22px_-24px_rgba(20,31,26,.35)]">
-      {preview ? <div className="w-20 shrink-0 overflow-hidden rounded-[11px] sm:w-28">{preview}</div> : null}
+    <div
+      className={cn(
+        'h-full rounded-[16px] border border-[#E7DFD2] bg-[#FFFCF7] shadow-[0_10px_22px_-24px_rgba(20,31,26,.35)]',
+        highlight
+          ? 'flex flex-col gap-3 border-[#D8C69E] bg-[#FFF9EE] p-3 shadow-[0_18px_36px_-28px_rgba(7,37,31,.45)]'
+          : 'flex gap-2.5 p-2.5',
+        className,
+      )}
+    >
+      {preview ? (
+        <div
+          className={cn(
+            'shrink-0 overflow-hidden rounded-[11px] bg-[#E9DFD1]',
+            highlight ? 'w-full rounded-[15px]' : 'w-20 sm:w-28',
+          )}
+        >
+          {preview}
+        </div>
+      ) : null}
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-1.5">
+          {highlight && (
+            <span className="rounded-full bg-[#0B3B36] px-2 py-0.5 text-[10px] font-bold text-white">
+              최신
+            </span>
+          )}
           <span
             className={cn(
               'rounded-full px-2 py-0.5 text-[10px] font-medium',
@@ -288,7 +314,14 @@ export function AdminManageRow({
           )}
           <span className="min-w-0 break-words text-[10.5px] text-muted">{meta}</span>
         </div>
-        <p className="mt-1 line-clamp-2 text-[13px] font-semibold leading-[1.45] text-cream-foreground">{title}</p>
+        <p
+          className={cn(
+            'mt-1 line-clamp-2 font-semibold leading-[1.45] text-cream-foreground',
+            highlight ? 'text-[16px]' : 'text-[13px]',
+          )}
+        >
+          {title}
+        </p>
         {showCuration && (
           <div className="mt-2 flex flex-wrap gap-1.5">
             {onMoveUp && (

@@ -183,6 +183,7 @@ export function JournalRecordSheet({
       return { ...prev, triggers: next };
     });
   };
+  const currentRecordDate = form.recordDate || targetDate;
 
   return (
     <div className="journal-record-screen">
@@ -201,17 +202,43 @@ export function JournalRecordSheet({
           <div className="flex items-center gap-2 text-center">
             <JournalIcon name="pencil" size={22} />
             <div>
-              <p className="text-base font-semibold text-ink">오늘 기록하기</p>
-              <p className="text-xs text-ink-soft">{formatRecordSheetDate(targetDate)}</p>
+              <p className="text-base font-semibold text-ink">기록하기</p>
+              <p className="text-xs text-ink-soft">{formatRecordSheetDate(currentRecordDate)}</p>
             </div>
           </div>
           <div className="w-8" />
         </div>
 
+        <div className="grid grid-cols-5 gap-1 rounded-[14px] border border-border/70 bg-white/80 p-1.5">
+          {['날짜', '컨디션', '전조', '증상', '메모'].map((label, index) => (
+            <div
+              key={label}
+              className={cn(
+                'rounded-[10px] px-1 py-1.5 text-center text-[10.5px] font-semibold',
+                index === 0 ? 'bg-herfree-green text-white' : 'bg-[#F4F1EA] text-ink-soft',
+              )}
+            >
+              {index + 1}. {label}
+            </div>
+          ))}
+        </div>
+
         {timelineDays.length > 0 && <JournalRecordFlowChart days={timelineDays} />}
 
         <section className="journal-record-card">
-          <h3 className="journal-record-card__title">오늘 기본 컨디션</h3>
+          <h3 className="journal-record-card__title">1. 기록 날짜</h3>
+          <p className="journal-record-card__sub">오늘 기록도, 지난 날짜 기록도 남길 수 있어요.</p>
+          <input
+            type="date"
+            value={currentRecordDate}
+            onChange={(event) => setForm((prev) => ({ ...prev, recordDate: event.target.value }))}
+            className="journal-select"
+            aria-label="기록 날짜 선택"
+          />
+        </section>
+
+        <section className="journal-record-card">
+          <h3 className="journal-record-card__title">2. 기본 컨디션</h3>
           <p className="journal-record-card__sub">수면 · 영양제 · 스트레스</p>
 
           <div className="mb-4">
@@ -278,7 +305,7 @@ export function JournalRecordSheet({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-sm font-medium text-ink">
               <JournalIcon name="speech" size={20} />
-              전조증상이 있었어요
+              3. 전조증상이 있었어요
             </div>
             <ToggleSwitch
               on={prodromalOpen}
@@ -311,7 +338,7 @@ export function JournalRecordSheet({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-sm font-medium text-ink">
               <JournalIcon name="pill" size={20} />
-              오늘 증상이 있었어요
+              4. 오늘 증상이 있었어요
             </div>
             <ToggleSwitch
               on={Boolean(form.hadSymptoms)}
@@ -384,7 +411,7 @@ export function JournalRecordSheet({
         <section className="journal-record-card">
           <div className="mb-2.5 flex items-center gap-2">
             <JournalIcon name="pencil" size={18} />
-            <h3 className="text-sm font-semibold text-ink">오늘 메모</h3>
+            <h3 className="text-sm font-semibold text-ink">5. 메모</h3>
           </div>
           <textarea
             rows={3}

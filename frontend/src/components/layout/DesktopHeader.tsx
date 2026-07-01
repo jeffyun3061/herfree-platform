@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { BrandMark } from '@/components/brand/BrandMark';
 import { Button } from '@/components/ui/Button';
+import { SearchIcon } from '@/components/ui/ShellIcons';
 import { DESKTOP_NAV_ITEMS } from '@/lib/navigation';
 import { cn } from '@/lib/cn';
 
@@ -47,10 +48,7 @@ export function DesktopHeader() {
             aria-label="커뮤니티 검색"
             title="커뮤니티 검색"
           >
-            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="7" />
-              <path d="M20 20l-3-3" strokeLinecap="round" />
-            </svg>
+            <SearchIcon />
           </Link>
           {isLoggedIn ? (
             <Link href="/mypage" className="text-sm font-medium text-[#5C645A] hover:text-[#0B3B36]">

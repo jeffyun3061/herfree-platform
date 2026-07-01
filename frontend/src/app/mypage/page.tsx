@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { LoggedOutMyPagePromptCard } from '@/components/mypage/LoggedOutMyPagePrompt';
 import { isAdmin, isStaff } from '@/domain/user/types';
 import { formatDate } from '@/domain/common/format';
 import { KAKAO_CONSULT_URL } from '@/domain/consult/constants';
@@ -168,7 +169,7 @@ export default function MyPage() {
 
   if (!isReady) return <LoadingSpinner />;
 
-  if (!isLoggedIn) return <LoggedOutMyPagePrompt />;
+  if (!isLoggedIn) return <LoggedOutMyPagePromptCard />;
 
   if (!isLoggedIn) {
     return (
@@ -262,14 +263,21 @@ export default function MyPage() {
           <div className="mypage-menu-card">
             <div className="border-b border-[#EAEDEC] px-4 py-3.5">
               <p className="mb-2 text-[13.5px] font-medium text-[#15201D]">닉네임 변경</p>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="새 닉네임"
-                  value={nickname}
-                  onChange={(e) => setNickname(e.target.value)}
-                  maxLength={20}
-                />
-                <Button size="sm" disabled={isUpdating} onClick={() => void handleNicknameUpdate()}>
+              <div className="flex items-center gap-2">
+                <div className="min-w-0 flex-1 [&_.wrtn-input]:mt-0">
+                  <Input
+                    placeholder="새 닉네임"
+                    value={nickname}
+                    onChange={(e) => setNickname(e.target.value)}
+                    maxLength={20}
+                  />
+                </div>
+                <Button
+                  size="sm"
+                  disabled={isUpdating}
+                  className="h-11 shrink-0 px-4"
+                  onClick={() => void handleNicknameUpdate()}
+                >
                   저장
                 </Button>
               </div>
@@ -288,7 +296,7 @@ export default function MyPage() {
         <div className="mx-4 mt-[18px]">
           <p className="mb-2 px-0.5 text-xs text-[#8B9590]">고객지원</p>
           <div className="mypage-menu-card">
-            <MenuRow icon="❓" label="자주 묻는 질문" href="/qna" />
+            <MenuRow icon="❓" label="FAQ" href="/qna" />
             <MenuRow icon="🔒" label="1:1 비밀상담" href="/consult" />
             <MenuRow
               icon="💬"

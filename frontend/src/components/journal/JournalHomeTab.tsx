@@ -50,6 +50,21 @@ export function JournalHomeTab({
         />
       )}
 
+      <button
+        type="button"
+        onClick={onRecordDaily}
+        disabled={isLoading}
+        className={cn(
+          'journal-record-cta flex w-full items-center justify-center gap-2',
+          'rounded-[1rem] border border-[#0B3B36] bg-[#0B3B36] px-4 py-3.5',
+          'text-[13px] font-bold text-white shadow-[0_16px_34px_-24px_rgba(11,59,54,.72)]',
+          'transition-colors hover:bg-[#0F4F48] disabled:opacity-60',
+        )}
+      >
+        <JournalIcon name="pencil" size={18} />
+        {hasTodayRecord ? '오늘 기록 수정하기' : '오늘 기록 시작하기'}
+      </button>
+
       <JournalRoutineCard
         dashboard={dashboard}
         isLoading={isLoading}
@@ -57,23 +72,6 @@ export function JournalHomeTab({
         pulse={routinePulse}
         showEmptyHint={showFirstRecordHint}
       />
-
-      <button
-        type="button"
-        onClick={onRecordDaily}
-        disabled={isLoading}
-        className={cn(
-          'journal-record-cta flex w-full items-center justify-center gap-2',
-          'rounded-[1rem] border border-[var(--color-border-tertiary)]',
-          'bg-[var(--color-background-primary)] px-4 py-3',
-          'text-[12px] font-semibold text-[var(--color-text-primary)] shadow-sm',
-          'transition-colors hover:border-primary/25 hover:bg-[var(--color-background-secondary)]/80',
-          'disabled:opacity-60',
-        )}
-      >
-        <JournalIcon name="pencil" size={18} />
-        {hasTodayRecord ? '오늘 기록 수정' : '오늘 기록하기'}
-      </button>
 
       <JournalPrivacyBanner compact />
     </div>

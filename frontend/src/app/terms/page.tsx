@@ -13,7 +13,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-base font-semibold text-ink">제1조 (목적)</h2>
             <p className="mt-2">
-              본 약관은 Herfree(헤르프리, 이하 &quot;서비스&quot;)가 제공하는 익명 건강 커뮤니티 및
+              본 약관은 Herpfree(헤르프리, 이하 &quot;서비스&quot;)가 제공하는 익명 건강 커뮤니티 및
               개인 기록 서비스의 이용 조건과 절차, 회사와 회원 간의 권리·의무를 규정함을 목적으로
               합니다.
             </p>

@@ -1,0 +1,46 @@
+/**
+ * Source Han Serif KR (본명조) — `public/fonts/source-han-serif/`
+ * SIL OFL 1.1 · Adobe Source Han Serif Korean Subset
+ *
+ * Weight 매핑 (Tailwind class → 파일)
+ *   font-light      300  SourceHanSerifKR-Light
+ *   (default)       400  SourceHanSerifKR-Regular   본문·입력
+ *   font-medium     500  SourceHanSerifKR-Medium    라벨·칩
+ *   font-semibold   600  SourceHanSerifKR-SemiBold  카드 제목·탭·버튼
+ *   font-bold       700  SourceHanSerifKR-Bold      페이지 제목
+ */
+@font-face {
+  font-family: 'Source Han Serif KR';
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  src: url('/fonts/source-han-serif/SourceHanSerifKR-Light.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Source Han Serif KR';
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url('/fonts/source-han-serif/SourceHanSerifKR-Regular.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Source Han Serif KR';
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  src: url('/fonts/source-han-serif/SourceHanSerifKR-Medium.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Source Han Serif KR';
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  src: url('/fonts/source-han-serif/SourceHanSerifKR-SemiBold.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Source Han Serif KR';
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  src: url('/fonts/source-han-serif/SourceHanSerifKR-Bold.woff2') format('woff2');
+}

@@ -4,22 +4,13 @@
 
 import { Suspense, useEffect, useRef, useState } from 'react';
 
-import { GuestJournalPromo } from '@/components/home/GuestJournalPromo';
+import { GuestPeaceCta } from '@/components/home/GuestPeaceCta';
 import { JournalHomeTab } from '@/components/journal/JournalHomeTab';
 
 import { JournalRecordFromQuery } from '@/components/journal/JournalRecordFromQuery';
 
-import { JournalReviewDashboard } from '@/components/journal/JournalReviewDashboard';
-
 import { JournalRecordSheet } from '@/components/journal/JournalRecordSheet';
-
-import { JournalTimeline14Days } from '@/components/journal/JournalTimeline14Days';
-
-import { JournalPatternLine } from '@/components/journal/JournalPatternLine';
-
-import { JournalRecentRelapses } from '@/components/journal/JournalRecentRelapses';
-
-import { JournalInsightLines } from '@/components/journal/JournalInsightLines';
+import { JournalInsightsCarousel } from '@/components/journal/JournalInsightsCarousel';
 
 import { JournalTabBar, type JournalTabId } from '@/components/journal/JournalTabBar';
 
@@ -331,57 +322,14 @@ export default function JournalPage() {
 
             {activeTab === 'insights' && (
 
-              <div className="mx-auto max-w-app space-y-4">
-
-                <JournalTimeline14Days
-
-                  days={dashboard?.timelineDays ?? []}
-
-                  isLoading={dashboardLoading}
-
-                  onDaySelect={(date) => void handleTimelineDaySelect(date)}
-
-                />
-
-                <JournalPatternLine
-
-                  line={dashboard?.personalPatternLine}
-
-                  isLoading={dashboardLoading}
-
-                />
-
-                <JournalReviewDashboard
-
-                  summary={reviewSummary}
-
-                  isLoading={reviewSummaryLoading}
-
-                />
-
-                <JournalRecentRelapses
-
-                  relapses={dashboard?.recentRelapses ?? []}
-
-                  isLoading={dashboardLoading}
-
-                />
-
-                {insights && insights.insightLines.length > 0 && (
-
-                  <JournalInsightLines
-
-                    lines={insights.insightLines}
-
-                    sufficientData={insights.sufficientData}
-
-                    insightMessage={insights.insightMessage}
-
-                  />
-
-                )}
-
-              </div>
+              <JournalInsightsCarousel
+                dashboard={dashboard ?? null}
+                dashboardLoading={dashboardLoading}
+                reviewSummary={reviewSummary}
+                reviewSummaryLoading={reviewSummaryLoading}
+                insights={insights}
+                onDaySelect={(date) => void handleTimelineDaySelect(date)}
+              />
 
             )}
 
@@ -393,7 +341,7 @@ export default function JournalPage() {
 
         ) : (
           <div className="mx-auto max-w-app">
-            <GuestJournalPromo />
+            <GuestPeaceCta />
           </div>
         )}
 

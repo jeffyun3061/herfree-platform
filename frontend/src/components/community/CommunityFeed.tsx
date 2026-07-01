@@ -163,15 +163,15 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
 
   if (!isReady) {
     return (
-      <div className="page-container community-screen mx-auto flex min-h-[40vh] max-w-app items-center justify-center pb-20 lg:max-w-none lg:pb-8">
+      <div className="page-container community-screen mx-auto flex min-h-[40vh] max-w-app items-center justify-center lg:max-w-none">
         <LoadingSpinner label="불러오는 중…" />
       </div>
     );
   }
 
   return (
-    <div className="page-container community-screen mx-auto max-w-app pb-20 lg:max-w-none lg:pb-8">
-      <div className="mb-4 px-4 lg:hidden lg:px-0">
+    <div className="page-container community-screen mx-auto max-w-app lg:max-w-none">
+      <div className="mb-4 lg:hidden">
         <h2 className="text-[19px] font-semibold text-[#15201D]">커뮤니티</h2>
         <p className="mt-1 text-[12.5px] leading-relaxed text-[#8B9590]">
           같은 경험을 가진 사람들의 이야기가 모이는 곳
@@ -185,7 +185,7 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
         </p>
       </div>
 
-      <div className="mb-4 hidden lg:block">
+      <div className="mb-4">
         <div className="flex gap-2">
           <div className="relative min-w-0 flex-1">
           <svg
@@ -223,7 +223,7 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
       </div>
 
       {!boardsLoading && communityBoards.length > 0 && selectedBoardId !== null && (
-        <div className="mb-4 min-w-0 overflow-hidden px-4 lg:px-0">
+        <div className="mb-4 min-w-0 overflow-hidden">
           <BoardTabBar
             boards={communityBoards}
             selectedBoardId={selectedBoardId}
@@ -233,7 +233,7 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
       )}
 
       {!isLoggedIn ? (
-        <div className="px-4 lg:px-0">
+        <div>
           <CommunityGuestPostPanel boardLabel={selectedBoardLabel} />
         </div>
       ) : (
@@ -251,7 +251,7 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
         <p className="mb-3 text-xs text-[#8B9590]">총 {postPage.totalElements.toLocaleString('ko-KR')}개</p>
       )}
 
-      <div className="mb-4 hidden lg:block">
+      <div className="mb-4">
         <CommunitySortTabs value={sort} onChange={handleSortChange} />
         {needsPostListPeriod(sort) && (
           <div className="flex flex-wrap items-center justify-between gap-2">

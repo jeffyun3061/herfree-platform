@@ -23,7 +23,7 @@ export function buildJournalShareText(
     includeSiteLink = true,
   } = options;
 
-  const lines: string[] = ['[Herfree] 나의 건강 기록'];
+  const lines: string[] = ['[Herpfree] 나의 건강 기록'];
 
   if (includeStreak && dashboard) {
     lines.push(`무재발 연속 ${dashboard.relapseFreeDays}일 관리 중`);
@@ -37,7 +37,7 @@ export function buildJournalShareText(
   lines.push('※ 개인 메모·상세 증상 내용은 공유되지 않습니다.');
 
   if (includeSiteLink) {
-    lines.push(`Herfree에서 함께 관리해요 → ${resolveSiteUrl()}`);
+    lines.push(`Herpfree에서 함께 관리해요 → ${resolveSiteUrl()}`);
   }
 
   return lines.join('\n');
@@ -49,7 +49,7 @@ export async function shareJournalText(text: string): Promise<'shared' | 'copied
   if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
     try {
       await navigator.share({
-        title: 'Herfree 건강 기록',
+        title: 'Herpfree 건강 기록',
         text,
         url,
       });

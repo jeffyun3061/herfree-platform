@@ -2,7 +2,7 @@ export const NAV_ITEMS = [
   { href: '/', label: '홈' },
   { href: '/community', label: '커뮤니티' },
   { href: '/journal', label: '개인일지' },
-  { href: '/qna', label: 'Q&A' },
+  { href: '/qna', label: 'FAQ' },
   { href: '/mypage', label: '마이페이지' },
 ] as const;
 
@@ -14,21 +14,14 @@ export const DESKTOP_NAV_ITEMS = [
   { href: '/videos', label: '영상' },
 ] as const;
 
-export const HIDE_NAV_PATHS = [
-  '/login',
-  '/signup',
-  '/admin',
-  '/consult',
-  '/consult/write',
-  '/forgot-password',
-] as const;
+export const HIDE_NAV_PATHS = ['/login', '/signup', '/admin'] as const;
 
 export const HIDE_SHELL_HEADER_PATHS = [
   '/login',
   '/signup',
   '/admin',
-  '/qna',
   '/community/write',
+  '/community/search',
   '/inquiry/write',
   '/consult',
   '/consult/write',
@@ -52,21 +45,21 @@ export function shouldShowShellHeader(pathname: string): boolean {
   return true;
 }
 
-/** 커뮤니티 목록 — 헤더에 로고만 (제목은 피드 영역) */
+/** 커뮤니티 목록 — 게시판 탭 라우트 여부 */
 export function isCommunityListRoute(pathname: string): boolean {
   if (pathname === '/community') return true;
   return /^\/community\/\d+$/.test(pathname);
 }
 
+/** 하단 탭 루트 — MobileHeader에 로고 옆 제목만 표시 (뒤로가기 없음) */
 const MOBILE_TAB_ROOT_TITLES: Record<string, string> = {
   '/contents': '칼럼',
   '/videos': '영상',
   '/mypage': '마이페이지',
   '/journal': '개인일지',
-  '/community': '커뮤니티',
+  '/qna': 'FAQ',
   '/inquiry': '운영 문의',
   '/inquiry/write': '문의하기',
-  '/qna': '자주 묻는 질문',
   '/consult': '1:1 비밀 상담',
   '/consult/write': '상담 글쓰기',
 };

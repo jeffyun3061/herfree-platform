@@ -57,6 +57,20 @@ export function AdminVideosSection() {
 
   const previewVideoId = useMemo(() => extractYoutubeVideoId(form.youtubeUrl), [form.youtubeUrl]);
   const canSubmit = form.title.trim().length > 0 && previewVideoId !== null;
+  const latestVideoId = useMemo(() => {
+    if (videoPage.content.length === 0) return null;
+    return videoPage.content.reduce((latest, video) => {
+      const latestTime = new Date(latest.createdAt).getTime();
+      const videoTime = new Date(video.createdAt).getTime();
+      return videoTime > latestTime ? video : latest;
+    }, videoPage.content[0]).id;
+  }, [videoPage.content]);
+  const displayVideos = useMemo(() => {
+    if (latestVideoId == null) return videoPage.content;
+    const latest = videoPage.content.find((video) => video.id === latestVideoId);
+    if (!latest) return videoPage.content;
+    return [latest, ...videoPage.content.filter((video) => video.id !== latestVideoId)];
+  }, [latestVideoId, videoPage.content]);
 
   useEffect(() => {
     setPage(0);
@@ -179,10 +193,15 @@ export function AdminVideosSection() {
             />
           )}
 
-          <div className="space-y-2">
-            {videoPage.content.map((video, index) => (
+          <div className="grid gap-2.5 sm:grid-cols-2">
+            {displayVideos.map((video) => {
+              const originalIndex = videoPage.content.findIndex((item) => item.id === video.id);
+              const isLatest = video.id === latestVideoId;
+              return (
               <AdminManageRow
                 key={video.id}
+                highlight={isLatest}
+                className={isLatest ? 'sm:col-span-2' : undefined}
                 title={video.title}
                 meta={formatVideoDate(video.createdAt)}
                 statusLabel={video.isVisible ? '노출 중' : '숨김'}
@@ -191,12 +210,12 @@ export function AdminVideosSection() {
                 isSubmitting={isSubmitting}
                 sortOrder={video.sortOrder}
                 isFeatured={video.isFeatured}
-                canMoveUp={index > 0}
-                canMoveDown={index < videoPage.content.length - 1}
+                canMoveUp={originalIndex > 0}
+                canMoveDown={originalIndex >= 0 && originalIndex < videoPage.content.length - 1}
                 onMoveUp={() =>
                   void swapSortOrderWithNeighbor(
                     videoPage.content,
-                    index,
+                    originalIndex,
                     'up',
                     (id, sortOrder) => applyVideoCuration(id, { sortOrder }),
                   )
@@ -204,7 +223,7 @@ export function AdminVideosSection() {
                 onMoveDown={() =>
                   void swapSortOrderWithNeighbor(
                     videoPage.content,
-                    index,
+                    originalIndex,
                     'down',
                     (id, sortOrder) => applyVideoCuration(id, { sortOrder }),
                   )
@@ -219,11 +238,16 @@ export function AdminVideosSection() {
                   <img
                     src={`https://img.youtube.com/vi/${video.youtubeVideoId}/mqdefault.jpg`}
                     alt=""
-                    className="aspect-video w-full object-cover sm:h-16 sm:w-28"
+                    className={
+                      isLatest
+                        ? 'aspect-video w-full object-cover'
+                        : 'aspect-video w-full object-cover sm:h-16 sm:w-28'
+                    }
                   />
                 }
               />
-            ))}
+              );
+            })}
             {!isLoading && videoPage.content.length === 0 && (
               <p className="rounded-xl border border-dashed border-border px-4 py-8 text-center text-[12px] text-muted">
                 조건에 맞는 영상이 없습니다.

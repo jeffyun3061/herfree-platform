@@ -1,12 +1,15 @@
 'use client';
 
+import { useMemo } from 'react';
 import { usePostList } from '@/hooks/usePosts';
 import { useJournalPublicHomeStats } from '@/hooks/useJournal';
+import { useVideos } from '@/hooks/useVideos';
 import { GuestHomeHero } from '@/components/home/GuestHomeHero';
 import { GuestActivityPulse } from '@/components/home/GuestActivityPulse';
-import { GuestPeaceCta } from '@/components/home/GuestPeaceCta';
 import { QuickAccessSection } from '@/components/home/QuickAccessSection';
 import { MedicalDisclaimer } from '@/components/layout/MedicalDisclaimer';
+import { VideoFeedCard, VideoFeedCardSkeleton } from '@/components/video/VideoFeedCard';
+import Link from 'next/link';
 
 function formatMemberStatus(value: number | null | undefined, loading: boolean): string {
   if (loading) return '회원 수를 확인하고 있어요';
@@ -15,10 +18,25 @@ function formatMemberStatus(value: number | null | undefined, loading: boolean):
 }
 
 export function GuestHomePage() {
-  const { postPage: recentPosts, isLoading: recentLoading } = usePostList(undefined, 6);
+  const { postPage: recentPosts, isLoading: recentLoading } = usePostList(
+    undefined,
+    5,
+    '',
+    'createdAt,desc',
+  );
   const { data: homeStats, isLoading: statsLoading } = useJournalPublicHomeStats();
+  const { videoPage, isLoading: videosLoading } = useVideos(6);
+
   const activeUsersLabel = formatMemberStatus(homeStats?.totalUsers, statsLoading);
   const todayStories = recentPosts.totalElements > 0 ? recentPosts.totalElements : 32;
+  const latestVideo = useMemo(() => {
+    if (videoPage.content.length === 0) return null;
+    return videoPage.content.reduce((latest, video) => {
+      const latestTime = new Date(latest.createdAt).getTime();
+      const videoTime = new Date(video.createdAt).getTime();
+      return videoTime > latestTime ? video : latest;
+    }, videoPage.content[0]);
+  }, [videoPage.content]);
 
   return (
     <div className="min-h-screen bg-[#F3EDE3] pb-8">
@@ -52,17 +70,27 @@ export function GuestHomePage() {
         />
       </div>
 
-      <GuestPeaceCta />
+      <section className="mx-2 mt-6">
+        <div className="mb-3 flex items-end justify-between gap-3">
+          <div>
+            <p className="text-[11px] font-extrabold uppercase text-[#0B3B36]/55">YouTube</p>
+            <h2 className="hf-display mt-1 text-[19px] font-extrabold text-[#1E2621]">
+              최신 영상
+            </h2>
+          </div>
+          <Link href="/videos" className="text-[11px] font-bold text-[#0B3B36]">
+            더보기
+          </Link>
+        </div>
+        {videosLoading ? (
+          <VideoFeedCardSkeleton />
+        ) : latestVideo ? (
+          <VideoFeedCard video={latestVideo} featured categoryLabel="최신 영상" />
+        ) : null}
+      </section>
 
-      <QuickAccessSection layout="home" />
-
-      <div className="px-4 pt-6 text-center">
-        <p className="hf-display text-[14px] leading-[1.7] text-[#8A9089]">
-          오늘은 담담하게
-        </p>
-        <p className="mt-2 text-[10.5px] text-[#B4B2A6]">
-          헤르프리 · 익명 기반 비공개 커뮤니티
-        </p>
+      <div className="mt-5">
+        <QuickAccessSection layout="home" />
       </div>
 
       <div className="mx-2 mt-5">

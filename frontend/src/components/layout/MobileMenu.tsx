@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { NAV_ITEMS } from '@/lib/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/cn';
+import { CloseIcon } from '@/components/ui/ShellIcons';
 
 type MobileMenuProps = {
   open: boolean;
@@ -42,7 +43,7 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
             className="flex h-8 w-8 items-center justify-center rounded-full text-muted hover:bg-canvas-dark"
             aria-label="닫기"
           >
-            ✕
+            <CloseIcon />
           </button>
         </div>
         <nav className="flex flex-1 flex-col gap-1 p-4">

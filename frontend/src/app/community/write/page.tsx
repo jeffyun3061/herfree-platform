@@ -259,7 +259,11 @@ function WritePostForm() {
 
   return (
     <div className="min-h-screen bg-wrtn-bg">
-      <TopBar title={writeTitle} showBack />
+      <TopBar
+        title={writeTitle}
+        showBack
+        backHref={boardId > 0 ? `/community/${boardId}` : '/community'}
+      />
       <form onSubmit={(e) => void handleSubmit(e)} className="space-y-6 px-4 py-5">
         {isSymptomBoard && !isEditMode && <SymptomBoardRedirectBanner />}
 

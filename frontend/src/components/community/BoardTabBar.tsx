@@ -84,7 +84,7 @@ export function BoardTabBar({ boards, selectedBoardId, onSelect }: BoardTabBarPr
         role="tablist"
         aria-label="게시판 카테고리"
       >
-        <div className="flex w-max gap-2 px-4 pb-1">
+        <div className="flex w-max gap-2 px-4 pb-1 pr-12">
           {boards.map((board) => {
             const active = selectedBoardId === board.id;
             const label = getCommunityBoardTabLabel(board.boardType) ?? board.name.replace(/방$/, '');

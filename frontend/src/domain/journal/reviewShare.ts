@@ -13,12 +13,12 @@ function resolveSiteUrl(): string {
 
 export function buildAnonymousReviewShareText(summary: JournalReviewSummary): string {
   const lines = [
-    '[Herfree] 최근 30일 기록 요약',
+    '[Herpfree] 최근 30일 기록 요약',
     `증상 기록 ${summary.symptomDays}일`,
     `전조: ${formatLabelList(summary.topProdromalLabels)}`,
     `함께 기록된 요인: ${formatLabelList(summary.topTriggerLabels)}`,
     '※ 메모·닉네임·상세 개인 정보는 포함되지 않습니다.',
-    `Herfree에서 함께 관리해요 → ${resolveSiteUrl()}`,
+    `Herpfree에서 함께 관리해요 → ${resolveSiteUrl()}`,
   ];
   return lines.join('\n');
 }
@@ -26,7 +26,7 @@ export function buildAnonymousReviewShareText(summary: JournalReviewSummary): st
 export function buildConsultationReportShareText(summary: JournalReviewSummary): string {
   const { severityBreakdown } = summary;
   const lines = [
-    '[Herfree] 기록 요약 리포트',
+    '[Herpfree] 기록 요약 리포트',
     formatReviewDateRange(summary.periodStart, summary.periodEnd, summary.periodDays),
     `증상 기록 ${summary.symptomDays}일 / ${summary.periodDays}일`,
     `심각도 · 낮음 ${severityBreakdown.lowDays}일 · 보통 ${severityBreakdown.mediumDays}일 · 높음 ${severityBreakdown.highDays}일`,

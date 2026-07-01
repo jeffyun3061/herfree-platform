@@ -201,12 +201,14 @@ export function AdminContentsSection() {
             />
           )}
 
-          <div className="space-y-2">
+          <div className="grid gap-2.5 sm:grid-cols-2">
             {contentPage.content.map((item, index) => {
               const isVisible = item.status !== 'HIDDEN';
               return (
                 <AdminManageRow
                   key={item.id}
+                  highlight={index === 0}
+                  className={index === 0 ? 'sm:col-span-2' : undefined}
                   title={item.title}
                   meta={`${item.category} · ${formatContentDate(item.createdAt)}`}
                   statusLabel={isVisible ? '노출 중' : '숨김'}
@@ -239,6 +241,23 @@ export function AdminContentsSection() {
                   onEdit={() => startEdit(item)}
                   onToggleVisibility={() => void toggleVisibility(item.id, isVisible)}
                   onDelete={() => setDeleteTargetId(item.id)}
+                  preview={
+                    item.imageUrl ? (
+                      <img
+                        src={item.imageUrl}
+                        alt=""
+                        className={
+                          index === 0
+                            ? 'aspect-[16/9] w-full object-cover'
+                            : 'aspect-[4/3] w-full object-cover sm:h-20 sm:w-28'
+                        }
+                      />
+                    ) : index === 0 ? (
+                      <div className="flex aspect-[16/9] w-full items-end bg-[linear-gradient(135deg,#0B3B36,#1D746C)] p-4 text-[12px] font-bold text-white/80">
+                        최신 칼럼
+                      </div>
+                    ) : undefined
+                  }
                 />
               );
             })}

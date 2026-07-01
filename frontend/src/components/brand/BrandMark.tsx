@@ -96,7 +96,7 @@ export function BrandMark({
           size === 'sm' ? 'text-base' : size === 'lg' ? 'text-xl' : 'text-lg',
         )}
       >
-        herfree
+        herpfree
       </span>
     </div>
   );

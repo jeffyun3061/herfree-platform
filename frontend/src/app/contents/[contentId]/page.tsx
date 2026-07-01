@@ -26,7 +26,7 @@ export default function ContentDetailPage() {
 
   return (
     <>
-      <PageHeader title="칼럼" showBack />
+      <PageHeader title="칼럼" showBack backHref="/contents" />
       <article className="px-4 py-5">
         <div className="mb-4 flex items-center gap-2">
           <Badge variant="gold">{content.category}</Badge>

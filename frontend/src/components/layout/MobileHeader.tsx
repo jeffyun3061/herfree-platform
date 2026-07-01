@@ -7,8 +7,8 @@ import { MobileMenu } from '@/components/layout/MobileMenu';
 import { BrandMark } from '@/components/brand/BrandMark';
 import { usePageHeaderContext } from '@/contexts/PageHeaderContext';
 import { useAuth } from '@/hooks/useAuth';
-import { getMobileTabRootTitle, isCommunityListRoute } from '@/lib/navigation';
-import { cn } from '@/lib/cn';
+import { navigateBack } from '@/lib/navigateBack';
+import { getMobileTabRootTitle } from '@/lib/navigation';
 
 function HeaderIconLink({
   href,
@@ -22,11 +22,46 @@ function HeaderIconLink({
   return (
     <Link
       href={href}
-      className="flex h-8 w-8 items-center justify-center text-base text-[#15201D]"
+      className="flex h-8 w-8 items-center justify-center text-[#15201D]"
       aria-label={label}
+      title={label}
     >
       {children}
     </Link>
+  );
+}
+
+function SearchIcon() {
+  return (
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <circle cx="11" cy="11" r="7" />
+      <path d="M20 20l-3.4-3.4" />
+    </svg>
+  );
+}
+
+function UserIcon() {
+  return (
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M20 21a8 8 0 0 0-16 0" />
+      <circle cx="12" cy="8" r="4" />
+    </svg>
+  );
+}
+
+function MenuIcon() {
+  return (
+    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" aria-hidden>
+      <path d="M4 7h16M4 12h16M4 17h16" />
+    </svg>
+  );
+}
+
+function BackIcon() {
+  return (
+    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M15 18l-6-6 6-6" />
+    </svg>
   );
 }
 
@@ -37,17 +72,12 @@ export function MobileHeader() {
   const router = useRouter();
   const { header } = usePageHeaderContext() ?? {};
 
-  const communityList = isCommunityListRoute(pathname);
   const tabTitle = getMobileTabRootTitle(pathname);
   const title = header?.title ?? tabTitle;
   const showBack = header?.showBack ?? false;
 
   const handleBack = () => {
-    if (header?.backHref) {
-      router.push(header.backHref);
-      return;
-    }
-    router.back();
+    navigateBack(router, { pathname, backHref: header?.backHref });
   };
 
   return (
@@ -60,9 +90,9 @@ export function MobileHeader() {
                 type="button"
                 aria-label="뒤로 가기"
                 onClick={handleBack}
-                className="flex h-8 w-8 shrink-0 items-center justify-center text-xl text-[#5B6864]"
+                className="flex h-8 w-8 shrink-0 items-center justify-center text-[#5B6864]"
               >
-                ‹
+                <BackIcon />
               </button>
               {title ? (
                 <h1 className="min-w-0 truncate text-[14.5px] font-semibold text-[#15201D]">{title}</h1>
@@ -78,29 +108,25 @@ export function MobileHeader() {
         <div className="flex shrink-0 items-center gap-4">
           {!showBack ? (
             <>
-              <HeaderIconLink href="/community/search" label="검색">
-                🔍
+              <HeaderIconLink href="/community?focus=search" label="검색">
+                <SearchIcon />
               </HeaderIconLink>
-              {!communityList && isLoggedIn ? (
+              {isLoggedIn ? (
                 <HeaderIconLink href="/mypage" label="마이페이지">
-                  👤
+                  <UserIcon />
                 </HeaderIconLink>
-              ) : null}
-              {!communityList && !isLoggedIn ? (
-                <Link
-                  href="/login"
-                  className={cn('text-[13px] font-medium text-[#15201D]')}
-                >
+              ) : (
+                <Link href="/login" className="text-[13px] font-medium text-[#15201D]">
                   로그인
                 </Link>
-              ) : null}
+              )}
               <button
                 type="button"
                 onClick={() => setMenuOpen(true)}
-                className="flex h-8 w-8 items-center justify-center text-base text-[#15201D]"
+                className="flex h-8 w-8 items-center justify-center text-[#15201D]"
                 aria-label="메뉴"
               >
-                ☰
+                <MenuIcon />
               </button>
             </>
           ) : null}

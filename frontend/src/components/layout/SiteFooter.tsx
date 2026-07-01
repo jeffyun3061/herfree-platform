@@ -8,7 +8,7 @@ export function SiteFooter() {
       <div className="mx-auto max-w-app">
         <BrandMark size="sm" />
         <p className="mt-2 text-xs leading-relaxed text-[#5C645A]">
-          Herfree는 익명 기반 건강 커뮤니티입니다. 의료 진단이나 처방을 대신하지 않습니다.
+          Herpfree는 익명 기반 건강 커뮤니티입니다. 의료 진단이나 처방을 대신하지 않습니다.
         </p>
         <nav className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-xs">
           <Link href="/terms" className="text-[#5C645A] hover:text-[#0B3B36]">
@@ -24,7 +24,7 @@ export function SiteFooter() {
             문의하기
           </Link>
         </nav>
-        <p className="mt-4 text-[10px] text-[#8A9089]">© {new Date().getFullYear()} Herfree. All rights reserved.</p>
+        <p className="mt-4 text-[10px] text-[#8A9089]">© {new Date().getFullYear()} Herpfree. All rights reserved.</p>
       </div>
     </footer>
   );
