@@ -1,91 +1,134 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Board } from '@/domain/board/types';
+import { getCommunityBoardTabLabel } from '@/domain/board/privateBoard';
 import { cn } from '@/lib/cn';
 
 type BoardTabBarProps = {
   boards: Board[];
-  selectedBoardId: number | null;
-  onSelect: (boardId: number | null) => void;
+  selectedBoardId: number;
+  onSelect: (boardId: number) => void;
 };
 
-function cleanBoardName(name: string) {
-  return name.replace(/방$/, '');
+const SCROLL_EPSILON = 4;
+const SCROLL_STEP = 132;
+
+function ChevronIcon({ direction }: { direction: 'left' | 'right' }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="h-4 w-4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      {direction === 'left' ? <path d="M15 6l-6 6 6 6" /> : <path d="M9 6l6 6-6 6" />}
+    </svg>
+  );
 }
 
 export function BoardTabBar({ boards, selectedBoardId, onSelect }: BoardTabBarProps) {
-  const [moreOpen, setMoreOpen] = useState(false);
-  const visibleBoards = useMemo(() => boards.slice(0, 2), [boards]);
-  const hiddenBoards = useMemo(() => boards.slice(2), [boards]);
-  const hiddenActive = hiddenBoards.some((board) => board.id === selectedBoardId);
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const [edge, setEdge] = useState({ left: false, right: false });
 
-  const handleSelect = (boardId: number | null) => {
-    setMoreOpen(false);
-    onSelect(boardId);
-  };
+  const updateEdges = useCallback(() => {
+    const el = scrollerRef.current;
+    if (!el) return;
+
+    const maxScroll = el.scrollWidth - el.clientWidth;
+    if (maxScroll <= SCROLL_EPSILON) {
+      setEdge({ left: false, right: false });
+      return;
+    }
+
+    setEdge({
+      left: el.scrollLeft > SCROLL_EPSILON,
+      right: el.scrollLeft < maxScroll - SCROLL_EPSILON,
+    });
+  }, []);
+
+  const scrollByStep = useCallback((direction: -1 | 1) => {
+    scrollerRef.current?.scrollBy({ left: direction * SCROLL_STEP, behavior: 'smooth' });
+  }, []);
+
+  useEffect(() => {
+    const el = scrollerRef.current;
+    if (!el) return;
+
+    updateEdges();
+
+    const observer = new ResizeObserver(updateEdges);
+    observer.observe(el);
+    window.addEventListener('resize', updateEdges);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', updateEdges);
+    };
+  }, [boards, updateEdges]);
 
   return (
-    <div className="relative">
-      <div className="flex flex-nowrap items-center gap-2 overflow-visible pb-1">
+    <div className="community-tabs relative -mx-4 w-[calc(100%+2rem)] min-w-0">
+      <div
+        ref={scrollerRef}
+        onScroll={updateEdges}
+        className={cn(
+          'community-tabs-scroller scrollbar-hide w-full min-w-0 touch-pan-x overflow-x-auto overflow-y-hidden overscroll-x-contain',
+          edge.right && 'community-tabs-scroller--peek-right',
+          edge.left && 'community-tabs-scroller--peek-left',
+        )}
+        role="tablist"
+        aria-label="게시판 카테고리"
+      >
+        <div className="flex w-max gap-2 px-4 pb-1">
+          {boards.map((board) => {
+            const active = selectedBoardId === board.id;
+            const label = getCommunityBoardTabLabel(board.boardType) ?? board.name.replace(/방$/, '');
+
+            return (
+              <button
+                key={board.id}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => onSelect(board.id)}
+                className={cn(
+                  'community-chip shrink-0 whitespace-nowrap',
+                  active ? 'community-chip-active' : 'community-chip-inactive',
+                )}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {edge.left && (
         <button
           type="button"
-          onClick={() => handleSelect(null)}
-          className={cn(
-            'community-chip',
-            selectedBoardId === null ? 'community-chip-active' : 'community-chip-inactive',
-          )}
+          onClick={() => scrollByStep(-1)}
+          className="community-tabs-nav community-tabs-nav-left"
+          aria-label="이전 카테고리 보기"
         >
-          전체
+          <ChevronIcon direction="left" />
         </button>
+      )}
 
-        {visibleBoards.map((board) => {
-          const active = selectedBoardId === board.id;
-          return (
-            <button
-              key={board.id}
-              type="button"
-              onClick={() => handleSelect(board.id)}
-              className={cn('community-chip', active ? 'community-chip-active' : 'community-chip-inactive')}
-            >
-              {cleanBoardName(board.name)}
-            </button>
-          );
-        })}
-
-        {hiddenBoards.length > 0 && (
-          <div className="relative shrink-0">
-            <button
-              type="button"
-              onClick={() => setMoreOpen((open) => !open)}
-              className={cn('community-chip', hiddenActive ? 'community-chip-active' : 'community-chip-inactive')}
-              aria-expanded={moreOpen}
-            >
-              더보기
-            </button>
-            {moreOpen && (
-              <div className="absolute right-0 top-[calc(100%+8px)] z-30 min-w-[10rem] overflow-hidden rounded-[16px] border border-[#ECE5D8] bg-white p-1.5 shadow-[0_18px_40px_-26px_rgba(20,30,25,.35)]">
-                {hiddenBoards.map((board) => {
-                  const active = selectedBoardId === board.id;
-                  return (
-                    <button
-                      key={board.id}
-                      type="button"
-                      onClick={() => handleSelect(board.id)}
-                      className={cn(
-                        'block w-full rounded-[12px] px-3 py-2.5 text-left text-[12.5px] font-semibold',
-                        active ? 'bg-[#0B3B36] text-white' : 'text-[#5B6864] hover:bg-[#F6F1E8]',
-                      )}
-                    >
-                      {cleanBoardName(board.name)}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+      {edge.right && (
+        <button
+          type="button"
+          onClick={() => scrollByStep(1)}
+          className="community-tabs-nav community-tabs-nav-right"
+          aria-label="다음 카테고리 보기"
+        >
+          <ChevronIcon direction="right" />
+        </button>
+      )}
     </div>
   );
 }

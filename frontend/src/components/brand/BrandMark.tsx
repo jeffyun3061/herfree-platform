@@ -1,17 +1,23 @@
 import Image from 'next/image';
-import { BRAND_LOGO } from '@/domain/brand/assets';
+import { BRAND_LOGO, pickBrandLogo } from '@/domain/brand/assets';
 import { cn } from '@/lib/cn';
 
 type BrandMarkProps = {
   size?: 'sm' | 'md' | 'lg';
   className?: string;
   showText?: boolean;
-  /** auth: 로그인 h.free | default: 헤더 아이콘 | onDark: 어두운 배경 | onPrimary·light: 밝은/네이비 배경 */
+  /** auth: 로그인 h.free | default·light: 밝은 헤더 h. | onDark: 어두운 배경 | onPrimary: primary 바 */
   variant?: 'default' | 'auth' | 'onPrimary' | 'onDark' | 'light' | 'wrtn';
 };
 
 const ICON_SIZE = { sm: 28, md: 32, lg: 40 } as const;
 const AUTH_SIZE = { sm: 96, md: 120, lg: 140 } as const;
+const AUTH_LOGO_FRAME = {
+  sm: 'h-[4.5rem] w-[min(70vw,10.5rem)]',
+  md: 'h-[5.25rem] w-[min(74vw,12rem)]',
+  lg: 'h-[6.5rem] w-[min(78vw,14.5rem)]',
+} as const;
+const AUTH_LOGO_SCALE = { sm: 'scale-[1.55]', md: 'scale-[1.65]', lg: 'scale-[1.75]' } as const;
 
 export function BrandMark({
   size = 'md',
@@ -22,21 +28,29 @@ export function BrandMark({
   const resolvedVariant = variant === 'wrtn' ? 'auth' : variant;
 
   if (resolvedVariant === 'auth') {
-    const dim = AUTH_SIZE[size];
     return (
-      <Image
-        src={BRAND_LOGO.hfreeOnPrimary}
-        alt="h.free"
-        width={dim}
-        height={dim}
-        priority
-        className={cn('h-auto w-auto max-w-[min(100%,10rem)]', className)}
-      />
+      <div
+        className={cn(
+          'relative flex shrink-0 items-center justify-center overflow-hidden',
+          AUTH_LOGO_FRAME[size],
+          className,
+        )}
+      >
+        <Image
+          src={BRAND_LOGO.hfreeWordmark}
+          alt="h.free"
+          fill
+          priority
+          unoptimized
+          sizes="(max-width: 430px) 78vw, 232px"
+          className={cn('object-contain object-center', AUTH_LOGO_SCALE[size])}
+        />
+      </div>
     );
   }
 
   if (resolvedVariant === 'onDark') {
-    const src = showText ? BRAND_LOGO.hfreeOnDark : BRAND_LOGO.hMarkOnDark;
+    const src = pickBrandLogo(showText ? 'hfree' : 'hMark', 'dark');
     const dim = showText ? AUTH_SIZE[size] : ICON_SIZE[size];
     return (
       <Image
@@ -49,7 +63,7 @@ export function BrandMark({
     );
   }
 
-  const iconSrc = BRAND_LOGO.hMarkOnPrimary;
+  const iconSrc = pickBrandLogo('hMark', 'light');
   const iconDim = ICON_SIZE[size];
 
   if (!showText) {

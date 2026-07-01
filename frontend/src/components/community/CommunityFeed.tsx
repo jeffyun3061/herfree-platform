@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
@@ -13,12 +13,14 @@ import { CommunitySortTabs, CommunityPeriodToggle, postSortToQuery, type PostLis
 import { needsPostListPeriod, postListPeriodHint, postListPeriodQuery } from '@/domain/post/sort';
 import { PostCard, PostCardSkeleton } from '@/components/community/PostCard';
 import { Pagination } from '@/components/common/Pagination';
+import { CommunityGuestPostPanel } from '@/components/community/CommunityGuestPostPanel';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { Button } from '@/components/ui/Button';
 import { AdminPublishFab, AdminPublishLink } from '@/components/admin/AdminPublishLink';
 import { getWritableBoards, isStaffOnlyBoardType } from '@/domain/board/types';
-import { getCommunityBoards, isSecretStoryBoardType, SECRET_STORY_BOARD_COPY } from '@/domain/board/privateBoard';
+import { getCommunityBoards, getCommunityBoardTabLabel, isSecretStoryBoardType, SECRET_STORY_BOARD_COPY } from '@/domain/board/privateBoard';
 import { validatePostSearchKeyword } from '@/domain/post/search';
 import { isStaff } from '@/domain/user/types';
 import { getErrorMessage } from '@/lib/api/client';
@@ -31,7 +33,7 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const { isLoggedIn, user } = useAuth();
+  const { isLoggedIn, isReady, user } = useAuth();
   const { boards, isLoading: boardsLoading, error: boardsError } = useBoards();
   const [selectedBoardId, setSelectedBoardId] = useState<number | null>(initialBoardId);
   const [keyword, setKeyword] = useState('');
@@ -47,7 +49,24 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
     keyword,
     postSortToQuery(sort),
     postListPeriodQuery(sort, period),
+    { enabled: isReady && isLoggedIn },
   );
+
+  const communityBoards = useMemo(() => getCommunityBoards(boards), [boards]);
+
+  useEffect(() => {
+    if (boardsLoading || communityBoards.length === 0) return;
+
+    const isValidSelection =
+      selectedBoardId !== null && communityBoards.some((board) => board.id === selectedBoardId);
+
+    if (isValidSelection) return;
+
+    const defaultBoard = communityBoards[0];
+    setSelectedBoardId(defaultBoard.id);
+    setPage(0);
+    router.replace(`/community/${defaultBoard.id}`);
+  }, [boardsLoading, communityBoards, selectedBoardId, router, setPage]);
 
   useEffect(() => {
     setSelectedBoardId(initialBoardId);
@@ -78,13 +97,14 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
     return undefined;
   }, [searchParams, setPage]);
 
-  const handleBoardSelect = (boardId: number | null) => {
+  const handleBoardSelect = (boardId: number) => {
     setSelectedBoardId(boardId);
     setPage(0);
-    router.push(boardId === null ? '/community' : `/community/${boardId}`);
+    router.push(`/community/${boardId}`);
   };
 
   const handleSearch = () => {
+    if (!isLoggedIn) return;
     const hint = validatePostSearchKeyword(searchInput);
     if (hint) {
       setSearchHint(hint);
@@ -135,12 +155,23 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
 
   const loginHref = `/login?from=${encodeURIComponent(writeHref)}`;
 
-  const isLoadingAll = boardsLoading || isLoading;
-  const listError = boardsError ?? error;
+  const isLoadingAll = isLoggedIn && (boardsLoading || isLoading);
+  const listError = isLoggedIn ? (boardsError ?? error) : null;
+  const selectedBoardLabel = selectedBoard
+    ? getCommunityBoardTabLabel(selectedBoard.boardType) ?? selectedBoard.name
+    : undefined;
+
+  if (!isReady) {
+    return (
+      <div className="page-container community-screen mx-auto flex min-h-[40vh] max-w-app items-center justify-center pb-20 lg:max-w-none lg:pb-8">
+        <LoadingSpinner label="불러오는 중…" />
+      </div>
+    );
+  }
 
   return (
     <div className="page-container community-screen mx-auto max-w-app pb-20 lg:max-w-none lg:pb-8">
-      <div className="mb-4 lg:hidden">
+      <div className="mb-4 px-4 lg:hidden lg:px-0">
         <h2 className="text-[19px] font-semibold text-[#15201D]">커뮤니티</h2>
         <p className="mt-1 text-[12.5px] leading-relaxed text-[#8B9590]">
           같은 경험을 가진 사람들의 이야기가 모이는 곳
@@ -191,16 +222,22 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
         )}
       </div>
 
-      {!boardsLoading && boards.length > 0 && (
-        <div className="mb-4">
+      {!boardsLoading && communityBoards.length > 0 && selectedBoardId !== null && (
+        <div className="mb-4 min-w-0 overflow-hidden px-4 lg:px-0">
           <BoardTabBar
-            boards={getCommunityBoards(boards)}
+            boards={communityBoards}
             selectedBoardId={selectedBoardId}
             onSelect={handleBoardSelect}
           />
         </div>
       )}
 
+      {!isLoggedIn ? (
+        <div className="px-4 lg:px-0">
+          <CommunityGuestPostPanel boardLabel={selectedBoardLabel} />
+        </div>
+      ) : (
+        <>
       {isSecretStoryBoard && (
         <div className="mb-4 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3">
           <p className="text-sm font-semibold text-ink">{SECRET_STORY_BOARD_COPY.bannerTitle}</p>
@@ -234,12 +271,6 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
         ) : canCommunityWrite ? (
           <Link href={writeHref}>
             <Button size="sm">글쓰기</Button>
-          </Link>
-        ) : !isLoggedIn ? (
-          <Link href={loginHref}>
-            <Button size="sm" variant="secondary">
-              로그인 후 글쓰기
-            </Button>
           </Link>
         ) : null}
       </div>
@@ -299,10 +330,9 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
       )}
 
       {canCommunityWrite && <CommunityFab href={writeHref} />}
-      {!canCommunityWrite && !isLoggedIn && !isStaffOnlyBoard && (
-        <CommunityFab href={loginHref} className="opacity-90" />
-      )}
       {isNoticeBoard && <AdminPublishFab tab="notices" label="공지 올리기" />}
+        </>
+      )}
     </div>
   );
 }

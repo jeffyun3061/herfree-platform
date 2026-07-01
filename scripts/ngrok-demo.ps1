@@ -1,75 +1,123 @@
-# Herfree 모바일 데모용 ngrok 안내 스크립트
-# 사용법: PowerShell에서 .\scripts\ngrok-demo.ps1
+# Herfree ngrok demo — prints public URL clearly
+# Usage: .\scripts\ngrok-demo.ps1
 
 $ErrorActionPreference = "Stop"
 
+try {
+    chcp 65001 | Out-Null
+    [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+    $OutputEncoding = [System.Text.Encoding]::UTF8
+} catch {
+    # ignore encoding setup failures
+}
+
 Write-Host ""
-Write-Host "=== Herfree ngrok 데모 ===" -ForegroundColor Cyan
+Write-Host "=== Herfree ngrok demo ===" -ForegroundColor Cyan
 Write-Host ""
 
 function Test-PortListening([int]$Port) {
-    $conn = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
-    return [bool]$conn
+    return [bool](Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue)
+}
+
+function Resolve-NgrokExe {
+    $candidates = @(
+        (Get-Command ngrok -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source),
+        "$env:LOCALAPPDATA\Microsoft\WinGet\Links\ngrok.exe",
+        "$env:USERPROFILE\scoop\shims\ngrok.exe",
+        "C:\Program Files\ngrok\ngrok.exe",
+        "$env:LOCALAPPDATA\ngrok\ngrok.exe",
+        "$env:USERPROFILE\Downloads\ngrok.exe",
+        "$env:USERPROFILE\Downloads\ngrok-v3-stable-windows-amd64\ngrok.exe"
+    ) | Where-Object { $_ -and (Test-Path $_) }
+
+    return $candidates | Select-Object -First 1
+}
+
+function Get-NgrokPublicUrl {
+    try {
+        $tunnels = (Invoke-RestMethod -Uri "http://127.0.0.1:4040/api/tunnels" -TimeoutSec 3).tunnels
+        return ($tunnels | Where-Object { $_.public_url -match '^https://' } | Select-Object -First 1).public_url
+    } catch {
+        return $null
+    }
+}
+
+function Show-NgrokUrl([string]$Url) {
+    Write-Host ""
+    Write-Host "========================================" -ForegroundColor Green
+    Write-Host " NGROK URL (share this):" -ForegroundColor Green
+    Write-Host " $Url" -ForegroundColor Yellow
+    Write-Host "========================================" -ForegroundColor Green
+    Write-Host ""
+    Write-Host "Local dashboard: http://127.0.0.1:4040" -ForegroundColor DarkGray
+    Write-Host "Stop ngrok: close its window or Ctrl+C in that terminal" -ForegroundColor DarkGray
+    Write-Host ""
 }
 
 $checks = @(
-    @{ Name = "MySQL (Docker)"; Ok = (docker ps --format "{{.Names}}" 2>$null | Select-String "herfree-mysql") }
-    @{ Name = "백엔드 :8080"; Ok = (Test-PortListening 8080) }
-    @{ Name = "프론트 :3000"; Ok = (Test-PortListening 3000) }
+    @{ Name = "MySQL (Docker)"; Ok = [bool](docker ps --format "{{.Names}}" 2>$null | Select-String "herfree-mysql") }
+    @{ Name = "Backend :8080"; Ok = (Test-PortListening 8080) }
+    @{ Name = "Frontend :3000"; Ok = (Test-PortListening 3000) }
 )
+
+if ((Test-PortListening 3001) -and -not (Test-PortListening 3000)) {
+    Write-Host "  [!!] Frontend is on 3001 only. Run: cd frontend; npm run dev" -ForegroundColor Red
+}
 
 foreach ($c in $checks) {
     if ($c.Ok) {
         Write-Host ("  [OK] " + $c.Name) -ForegroundColor Green
     } else {
-        Write-Host ("  [!!] " + $c.Name + " — 먼저 실행 필요") -ForegroundColor Red
+        Write-Host ("  [!!] " + $c.Name + " — start this first") -ForegroundColor Red
     }
 }
 
-$allOk = ($checks | Where-Object { -not $_.Ok }).Count -eq 0
-
-Write-Host ""
-if (-not $allOk) {
-    Write-Host "아래를 각각 다른 터미널에서 실행하세요:" -ForegroundColor Yellow
+if (($checks | Where-Object { -not $_.Ok }).Count -gt 0) {
     Write-Host ""
-    Write-Host "  cd C:\dev\herfree-platform"
-    Write-Host "  docker compose -f docker-compose.local.yml up -d"
-    Write-Host ""
-    Write-Host "  cd C:\dev\herfree-platform\backend"
-    Write-Host "  .\gradlew bootRun"
-    Write-Host ""
-    Write-Host "  cd C:\dev\herfree-platform\frontend"
-    Write-Host "  npm run dev"
-    Write-Host ""
-    Write-Host "준비되면 이 스크립트를 다시 실행하세요."
+    Write-Host "Start services first, then run this script again." -ForegroundColor Yellow
+    Write-Host "  docker compose -f docker-compose.local.yml up -d" -ForegroundColor DarkGray
+    Write-Host "  cd backend; .\gradlew bootRun" -ForegroundColor DarkGray
+    Write-Host "  cd frontend; npm run dev" -ForegroundColor DarkGray
     exit 1
 }
 
-Write-Host "로컬 서비스 준비 완료!" -ForegroundColor Green
 Write-Host ""
-Write-Host "이제 ngrok 터미널에서 딱 이 명령만 실행:" -ForegroundColor Cyan
-Write-Host ""
-Write-Host "ngrok http 3000" -ForegroundColor White
-Write-Host ""
-Write-Host "폰에서 ngrok https 주소로 접속 (localhost 말고!)" -ForegroundColor Yellow
-Write-Host "백엔드+프론트 둘 다 PC에서 실행 중이어야 합니다." -ForegroundColor Yellow
-Write-Host "주의: ngrok http 80  (X) — 502 에러 남" -ForegroundColor Red
-Write-Host "      ngrok http 3000 (O) — 이게 맞음" -ForegroundColor Green
-Write-Host ""
-Write-Host "나오는 https://....ngrok-free.dev 주소를" -ForegroundColor Yellow
-Write-Host "클라이언트/폰에 그대로내면 됩니다." -ForegroundColor Yellow
-Write-Host ""
-Write-Host "API는 따로 안 열어도 됨 (Next.js가 /api 를 백엔드로 연결)" -ForegroundColor DarkGray
-Write-Host ""
-Write-Host "브라우저에서 로컬 확인:" -ForegroundColor DarkGray
-Write-Host "  http://localhost:3000"
-Write-Host ""
+Write-Host "Local stack ready." -ForegroundColor Green
 
-if (Get-Command ngrok -ErrorAction SilentlyContinue) {
-    Write-Host "ngrok을 지금 이 창에서 실행합니다... (종료: Ctrl+C)" -ForegroundColor Cyan
-    Write-Host ""
-    ngrok http 3000
-} else {
-    Write-Host "이 PowerShell에는 ngrok이 PATH에 없습니다." -ForegroundColor Yellow
-    Write-Host "ngrok 되는 터미널에서 위 명령을 직접 실행하세요." -ForegroundColor Yellow
+$existingUrl = Get-NgrokPublicUrl
+if ($existingUrl) {
+    Write-Host "ngrok is already running." -ForegroundColor Cyan
+    Show-NgrokUrl $existingUrl
+    exit 0
 }
+
+$ngrokExe = Resolve-NgrokExe
+if (-not $ngrokExe) {
+    Write-Host ""
+    Write-Host "ngrok.exe not found." -ForegroundColor Red
+    Write-Host "Download: https://ngrok.com/download" -ForegroundColor Yellow
+    Write-Host "Or place ngrok.exe in Downloads folder." -ForegroundColor Yellow
+    exit 1
+}
+
+Write-Host ""
+Write-Host "Starting ngrok -> http://localhost:3000" -ForegroundColor Cyan
+Write-Host "Using: $ngrokExe" -ForegroundColor DarkGray
+
+Start-Process -FilePath $ngrokExe -ArgumentList @("http", "3000") -WindowStyle Normal
+
+$publicUrl = $null
+for ($i = 0; $i -lt 15; $i++) {
+    Start-Sleep -Seconds 1
+    $publicUrl = Get-NgrokPublicUrl
+    if ($publicUrl) { break }
+}
+
+if (-not $publicUrl) {
+    Write-Host ""
+    Write-Host "ngrok started but URL not ready yet." -ForegroundColor Yellow
+    Write-Host "Open http://127.0.0.1:4040 in browser to see the URL." -ForegroundColor Yellow
+    exit 1
+}
+
+Show-NgrokUrl $publicUrl

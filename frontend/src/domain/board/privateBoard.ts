@@ -46,9 +46,28 @@ export function isOffCommunityTabBoardType(boardType: string): boolean {
   return isInquiryBoardType(boardType) || boardType === 'EXPERT';
 }
 
-/** 커뮤니티 탭 — 문의·전문가 정보방 제외 (1:1 상담은 커뮤니티 카테고리로 노출) */
+/** 커뮤니티 상단 탭 — 고정 7개 (순서·표시명) */
+export const COMMUNITY_TAB_BOARD_TYPES = [
+  { boardType: 'NOTICE', label: '공지사항' },
+  { boardType: 'FREE', label: '자유게시판' },
+  { boardType: 'SYMPTOM', label: '증상기록' },
+  { boardType: 'RELATIONSHIP', label: '연애/고지' },
+  { boardType: 'PHOBIA', label: '포비아/검사대기' },
+  { boardType: 'SUPPORT', label: '위로응원' },
+  { boardType: 'PRODUCT_REVIEW', label: '제품후기' },
+] as const;
+
+const COMMUNITY_TAB_TYPE_ORDER = COMMUNITY_TAB_BOARD_TYPES.map((tab) => tab.boardType);
+
+export function getCommunityBoardTabLabel(boardType: string): string | undefined {
+  return COMMUNITY_TAB_BOARD_TYPES.find((tab) => tab.boardType === boardType)?.label;
+}
+
+/** 커뮤니티 탭 — 고정 7개만, 지정 순서 */
 export function getCommunityBoards<T extends { boardType: string }>(boards: T[]): T[] {
-  return boards.filter((board) => !isOffCommunityTabBoardType(board.boardType));
+  return COMMUNITY_TAB_TYPE_ORDER.map((boardType) =>
+    boards.find((board) => board.boardType === boardType),
+  ).filter((board): board is T => board !== undefined);
 }
 
 export function getPrivateBoardMetaByType(boardType: string) {

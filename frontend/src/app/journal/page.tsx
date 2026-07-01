@@ -101,7 +101,7 @@ export default function JournalPage() {
 
   } = useJournalReviewSummary(isLoggedIn && isReady);
 
-  const { data: insights } = useJournalInsights();
+  const { data: insights } = useJournalInsights(isLoggedIn && isReady);
 
   const { data: historyPageData, isLoading: historyLoading, refetch: refetchHistory } =
 

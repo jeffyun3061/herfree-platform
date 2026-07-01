@@ -15,12 +15,15 @@ export function usePostList(
   keyword = '',
   sort = 'createdAt,desc',
   period?: 'week' | 'all',
+  options: { enabled?: boolean } = {},
 ) {
   const [page, setPage] = useState(0);
   const normalizedBoardId = boardId ?? undefined;
+  const enabled = options.enabled ?? true;
   const { data, isLoading, error, refetch } = useApiQuery(
     () => postsApi.fetchPosts(normalizedBoardId, page, size, keyword, sort, period),
     [normalizedBoardId, page, size, keyword, sort, period],
+    { enabled },
   );
   return { postPage: data ?? emptyPage<Post>(), page, setPage, isLoading, error, refetch };
 }

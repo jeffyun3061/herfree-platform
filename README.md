@@ -94,6 +94,7 @@ cd frontend && npm ci && npm run dev
 | API | http://localhost:8080 |
 | Web | http://localhost:3000 |
 | 운영 화면 | http://localhost:3000/admin |
+| 포트폴리오·화면 캡처 | [docs/portfolio.md](docs/portfolio.md) |
 
 Windows에서 한 번에 안내만 보려면: `.\scripts\start-local.ps1`
 

@@ -28,12 +28,12 @@ export function HomeHero() {
             Herfree Health Community
           </p>
           <h1 className="font-display mt-2 text-[1.35rem] font-extrabold leading-[1.3] text-ink lg:mt-3 lg:text-[2.75rem] lg:leading-[1.2] xl:text-5xl">
-            헤르프리
+            herfree
           </h1>
           <p className="mt-2.5 text-sm leading-relaxed text-ink-soft lg:mt-5 lg:text-base lg:leading-relaxed">
             당신의 새로운 건강한 일상을
             <br className="lg:hidden" />
-            헤르프리와 함께 만들어가세요.
+            herfree와 함께 만들어가세요.
           </p>
 
           {/* 모바일: 개인 일지 우선 CTA (Wrtn식 단일 흐름) */}

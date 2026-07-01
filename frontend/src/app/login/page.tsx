@@ -78,7 +78,7 @@ function LoginForm() {
     <div className="auth-screen">
       <div className="flex flex-col items-center text-center">
         <BrandMark variant="auth" size="lg" />
-        <h1 className="mt-8 text-2xl font-bold text-ink">다시 만나서 반가워요</h1>
+        <h1 className="mt-8 text-2xl font-bold text-ink">어서오세요</h1>
         <p className="mt-2 text-sm text-wrtn-muted">이메일로 로그인해 주세요.</p>
       </div>
 

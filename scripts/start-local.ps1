@@ -18,7 +18,7 @@ Write-Host "  .\gradlew bootRun"
 Write-Host ""
 Write-Host "터미널 3 — Frontend (:3000)" -ForegroundColor Yellow
 Write-Host "  cd $RepoRoot\frontend"
-Write-Host "  npm run dev"
+Write-Host "  npm run dev    # 3000 고정, 기존 Next 중복 자동 종료"
 Write-Host ""
 Write-Host "데모/검수용 안정 실행:" -ForegroundColor DarkGray
 Write-Host "  cd $RepoRoot"

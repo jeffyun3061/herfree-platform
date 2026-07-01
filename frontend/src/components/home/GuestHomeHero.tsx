@@ -1,7 +1,9 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { PUBLIC_IMAGES } from '@/domain/assets/static';
+import { BRAND_LOGO } from '@/domain/brand/assets';
 import { PublicStaticImage } from '@/components/ui/PublicStaticImage';
 
 export function GuestHomeHero() {
@@ -21,11 +23,16 @@ export function GuestHomeHero() {
       />
 
       <div className="absolute left-0 right-0 top-[52px] flex items-center justify-between px-[22px] py-1.5">
-        <Link href="/" className="flex items-center gap-2" aria-label="헤르프리 홈">
-          <span className="flex h-[30px] w-[30px] items-center justify-center rounded-full bg-white/16 text-[16px] font-bold text-white backdrop-blur-md">
-            h.
-          </span>
-          <span className="text-[15px] font-semibold text-white">헤르프리</span>
+        <Link href="/" className="flex items-center" aria-label="herfree home">
+          <Image
+            src={BRAND_LOGO.hfreeWordmark}
+            alt="h.free"
+            width={120}
+            height={44}
+            priority
+            unoptimized
+            className="h-10 w-auto"
+          />
         </Link>
         <div className="flex items-center gap-4">
           <Link href="/login" className="text-[13.5px] font-medium text-white/90">

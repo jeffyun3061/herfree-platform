@@ -7,6 +7,7 @@ import { usePostDetail, usePostMutation } from '@/hooks/usePosts';
 import { useComments } from '@/hooks/useComments';
 import { useAuth } from '@/hooks/useAuth';
 import { useBoards } from '@/hooks/useBoards';
+import { CommunityGuestPostPanel } from '@/components/community/CommunityGuestPostPanel';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { ReactionBar } from '@/components/community/ReactionBar';
 import { CommentItem } from '@/components/community/CommentItem';
@@ -43,7 +44,7 @@ export default function PostDetailPage() {
   const params = useParams();
   const router = useRouter();
   const postId = Number(params.postId);
-  const { isLoggedIn, user } = useAuth();
+  const { isLoggedIn, isReady, user } = useAuth();
   const { boards } = useBoards();
   const { post, isLoading, error, refetch: refetchPost } = usePostDetail(postId);
   const { deletePost, isSubmitting: isDeletingPost } = usePostMutation();
@@ -127,6 +128,15 @@ export default function PostDetailPage() {
       setIsHiding(false);
     }
   };
+
+  if (!isReady) return <LoadingSpinner />;
+  if (!isLoggedIn) {
+    return (
+      <div className="page-container mx-auto max-w-app px-4 pb-20 lg:pb-8">
+        <CommunityGuestPostPanel loginFrom={encodeURIComponent(`/community/posts/${postId}`)} />
+      </div>
+    );
+  }
 
   if (isLoading) return <LoadingSpinner />;
   if (error || !post) {

@@ -17,11 +17,8 @@ type AppShellProps = {
 export function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
   const { isLoggedIn } = useAuth();
-  const publicNavPaths = ['/community', '/contents', '/videos', '/qna'];
   const isAdminPage = pathname.startsWith('/admin');
-  const showNav =
-    shouldShowBottomNav(pathname) &&
-    (isLoggedIn || publicNavPaths.some((path) => pathname === path || pathname.startsWith(`${path}/`)));
+  const showNav = shouldShowBottomNav(pathname);
   const showHeader = shouldShowShellHeader(pathname) && (pathname !== '/' || isLoggedIn);
 
   return (

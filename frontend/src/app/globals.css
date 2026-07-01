@@ -33,7 +33,7 @@
   --color-text-secondary: #5b6864;
   --color-text-tertiary: #8b9590;
   --color-text-heading: #15201d;
-  /* Brand — mockup tokens */
+  /* Brand ??mockup tokens */
   --herfree-green: #0b3b36;
   --herfree-gray: #5b6864;
   --herfree-yellow: #f0c778;
@@ -165,7 +165,7 @@ body {
     @apply rounded-[20px] border border-[#ECE5D8] bg-white shadow-card;
   }
 
-  /* Hero — 베이지 카드, 텍스트 좌 / 이미지 우 */
+  /* Hero ????? ??, ?�???�?/ ?��?? ??*/
   .hero-card {
     @apply overflow-hidden rounded-[22px] bg-[#F3EDE3] shadow-card;
   }
@@ -215,7 +215,7 @@ body {
     @apply flex flex-col gap-2.5;
   }
 
-  /* 히어로 SVG 원본 비율 300×280 */
+  /* ?�?�?SVG ?�? ?? 300�280 */
   .journal-hero-card {
     @apply relative w-full overflow-hidden rounded-[22px] shadow-[0_18px_40px_-22px_rgba(20,30,25,.4)];
     aspect-ratio: 390 / 196;
@@ -349,6 +349,41 @@ body {
 
   .community-chip-inactive {
     @apply bg-white text-[#5B6864] hover:bg-[#F4F6F5];
+  }
+
+  .community-tabs-scroller {
+    -webkit-overflow-scrolling: touch;
+    scroll-padding-inline: 1rem;
+  }
+
+  .community-tabs-scroller--peek-right {
+    mask-image: linear-gradient(to right, #000 0%, #000 calc(100% - 2.75rem), transparent 100%);
+  }
+
+  .community-tabs-scroller--peek-left {
+    mask-image: linear-gradient(to left, #000 0%, #000 calc(100% - 2.75rem), transparent 100%);
+  }
+
+  .community-tabs-scroller--peek-left.community-tabs-scroller--peek-right {
+    mask-image: linear-gradient(
+      to right,
+      transparent 0%,
+      #000 2.75rem,
+      #000 calc(100% - 2.75rem),
+      transparent 100%
+    );
+  }
+
+  .community-tabs-nav {
+    @apply absolute top-1/2 z-20 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-[#DDE3E1] bg-white text-[#3C524C] shadow-[0_4px_14px_-6px_rgba(20,30,25,.35)];
+  }
+
+  .community-tabs-nav-left {
+    @apply left-1;
+  }
+
+  .community-tabs-nav-right {
+    @apply right-1;
   }
 
   .post-card {

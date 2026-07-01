@@ -22,8 +22,8 @@ export function useJournalReviewSummary(enabled = true) {
   );
 }
 
-export function useJournalInsights() {
-  return useApiQuery(() => journalApi.fetchJournalInsights(), []);
+export function useJournalInsights(enabled = true) {
+  return useApiQuery(() => journalApi.fetchJournalInsights(), [], { enabled });
 }
 
 export function useJournalPublicHomeStats() {

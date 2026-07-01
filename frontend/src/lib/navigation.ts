@@ -20,6 +20,7 @@ export const HIDE_NAV_PATHS = [
   '/admin',
   '/consult',
   '/consult/write',
+  '/forgot-password',
 ] as const;
 
 export const HIDE_SHELL_HEADER_PATHS = [
@@ -38,6 +39,9 @@ export function shouldShowBottomNav(pathname: string): boolean {
   if (HIDE_NAV_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
     return false;
   }
+  if (pathname === '/community/search') {
+    return false;
+  }
   return true;
 }
 
@@ -46,6 +50,12 @@ export function shouldShowShellHeader(pathname: string): boolean {
     return false;
   }
   return true;
+}
+
+/** 커뮤니티 목록 — 헤더에 로고만 (제목은 피드 영역) */
+export function isCommunityListRoute(pathname: string): boolean {
+  if (pathname === '/community') return true;
+  return /^\/community\/\d+$/.test(pathname);
 }
 
 const MOBILE_TAB_ROOT_TITLES: Record<string, string> = {
@@ -62,13 +72,10 @@ const MOBILE_TAB_ROOT_TITLES: Record<string, string> = {
 };
 
 export function getMobileTabRootTitle(pathname: string): string | null {
-  if (pathname === '/community' || pathname.startsWith('/community/')) {
-    if (
-      pathname.startsWith('/community/posts/') ||
-      pathname.startsWith('/community/write')
-    ) {
-      return null;
-    }
+  if (isCommunityListRoute(pathname)) {
+    return null;
+  }
+  if (pathname.startsWith('/community/posts/') || pathname.startsWith('/community/write')) {
     return null;
   }
   return MOBILE_TAB_ROOT_TITLES[pathname] ?? null;
