@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { BrandMark } from '@/components/brand/BrandMark';
+import { TopBar } from '@/components/layout/TopBar';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
@@ -36,7 +37,7 @@ function LoginForm() {
 
   const sessionNotice =
     searchParams.get('reason') === 'session_expired'
-      ? '로그인이 만료되었습니다. 다시 로그인해 주세요.'
+      ? '로그인이 만료됐어요. 다시 로그인해 주세요.'
       : searchParams.get('reason') === 'password_reset'
         ? '비밀번호가 변경되었습니다. 새 비밀번호로 로그인해 주세요.'
         : null;
@@ -75,7 +76,9 @@ function LoginForm() {
   };
 
   return (
-    <div className="auth-screen">
+    <div className="min-h-screen bg-cream">
+      <TopBar title="로그인" showBack />
+      <div className="auth-screen !min-h-0 pt-6">
       <div className="flex flex-col items-center text-center">
         <BrandMark variant="auth" size="lg" />
         <h1 className="mt-8 text-2xl font-bold text-ink">어서오세요</h1>
@@ -139,18 +142,19 @@ function LoginForm() {
             회원가입
           </Link>
         </p>
-        <p className="mt-auto pt-8 text-center text-xs leading-relaxed text-wrtn-muted">
-          로그인 시{' '}
+        <p className="mt-auto pt-6 text-center text-[11.5px] leading-relaxed text-wrtn-muted">
+          로그인하면{' '}
           <Link href="/terms" className="underline underline-offset-2">
             이용약관
           </Link>
-          {' 및 '}
+          {'·'}
           <Link href="/privacy" className="underline underline-offset-2">
             개인정보처리방침
           </Link>
-          에 동의하게 됩니다.
+          에 동의한 것으로 안내돼요.
         </p>
       </form>
+      </div>
     </div>
   );
 }

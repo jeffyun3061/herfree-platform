@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { BrandMark } from '@/components/brand/BrandMark';
+import { TopBar } from '@/components/layout/TopBar';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
@@ -58,7 +59,9 @@ function SignupForm() {
   };
 
   return (
-    <div className="auth-screen bg-[#F3EDE3]">
+    <div className="min-h-screen bg-[#F3EDE3]">
+      <TopBar title="회원가입" showBack />
+      <div className="auth-screen !min-h-0 bg-transparent pt-6">
       <div className="flex flex-col items-center text-center">
         <BrandMark variant="auth" size="lg" />
         <h1 className="hf-display mt-8 text-[26px] font-extrabold leading-tight text-[#1E2621]">
@@ -151,6 +154,7 @@ function SignupForm() {
           </Link>
         </p>
       </form>
+      </div>
     </div>
   );
 }

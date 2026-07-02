@@ -45,13 +45,11 @@ export function shouldShowShellHeader(pathname: string): boolean {
   return true;
 }
 
-/** 커뮤니티 목록 — 게시판 탭 라우트 여부 */
 export function isCommunityListRoute(pathname: string): boolean {
   if (pathname === '/community') return true;
   return /^\/community\/\d+$/.test(pathname);
 }
 
-/** 하단 탭 루트 — MobileHeader에 로고 옆 제목만 표시 (뒤로가기 없음) */
 const MOBILE_TAB_ROOT_TITLES: Record<string, string> = {
   '/contents': '칼럼',
   '/videos': '영상',
@@ -60,13 +58,13 @@ const MOBILE_TAB_ROOT_TITLES: Record<string, string> = {
   '/qna': 'FAQ',
   '/inquiry': '운영 문의',
   '/inquiry/write': '문의하기',
-  '/consult': '1:1 비밀 상담',
+  '/consult': '1:1 비밀상담',
   '/consult/write': '상담 글쓰기',
 };
 
 export function getMobileTabRootTitle(pathname: string): string | null {
   if (isCommunityListRoute(pathname)) {
-    return null;
+    return '커뮤니티';
   }
   if (pathname.startsWith('/community/posts/') || pathname.startsWith('/community/write')) {
     return null;
