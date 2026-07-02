@@ -217,7 +217,7 @@ export default function MyPage() {
 
   return (
     <>
-      <div className="pb-24 lg:pb-10">
+      <div className="pb-8 lg:pb-10">
         <section className="mypage-profile-card">
           <span className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full bg-white/10 text-[22px]">
             🌿

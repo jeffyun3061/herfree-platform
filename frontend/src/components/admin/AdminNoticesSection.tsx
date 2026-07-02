@@ -199,6 +199,9 @@ export function AdminNoticesSection() {
                       (id, sortOrder) => applyNoticeCuration(id, { sortOrder }),
                     )
                   }
+                  onSetSortOrder={(sortOrder) =>
+                    void applyNoticeCuration(item.id, { sortOrder })
+                  }
                   onTogglePin={() =>
                     void applyNoticeCuration(item.id, { isPinned: !item.isPinned })
                   }

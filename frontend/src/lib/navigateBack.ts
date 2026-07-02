@@ -1,6 +1,6 @@
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 
-const NAV_STACK_KEY = 'herpfree_nav_stack';
+const NAV_STACK_KEY = 'herfree_nav_stack';
 
 function readStack(): string[] {
   if (typeof window === 'undefined') return [];

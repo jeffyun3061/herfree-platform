@@ -1,4 +1,4 @@
-// 백엔드 UserRole enum과 동기화
+// 백엔드 UserRole enum과 동기화한다.
 export type UserRole =
   | 'USER'
   | 'CREATOR'
@@ -7,7 +7,7 @@ export type UserRole =
   | 'ADMIN'
   | 'SUPER_ADMIN';
 
-// GET /api/users/me 응답 (UserResponse)
+// GET /api/users/me 응답
 export type User = {
   id: number;
   nickname: string;
@@ -43,7 +43,7 @@ export const USER_ROLE_LABELS: Record<UserRole, string> = {
 };
 
 export const USER_STATUS_LABELS: Record<UserStatus, string> = {
-  ACTIVE: '활성',
+  ACTIVE: '정상',
   SUSPENDED: '정지',
   DELETED: '탈퇴',
 };

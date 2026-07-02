@@ -169,7 +169,7 @@ export const FAQ_GROUPS: FaqGroup[] = [
     category: '서비스 이용',
     items: [
       {
-        question: 'Herpfree는 어떤 서비스인가요?',
+        question: 'Herfree는 어떤 서비스인가요?',
         answer:
           '헤르페스와 감염 불안을 겪는 분들이 익명으로 기록하고, 묻고, 검증된 정보를 확인할 수 있는 건강 커뮤니티입니다.',
       },

@@ -17,12 +17,15 @@ type ModerationTarget = 'posts' | 'comments';
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleString('ko-KR', {
-    year: 'numeric',
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
   });
+}
+
+function statusLabel(status: AdminModerationStatus) {
+  return status === 'ACTIVE' ? '노출 중' : '숨김';
 }
 
 export function AdminModerationSection() {
@@ -59,15 +62,18 @@ export function AdminModerationSection() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl border border-primary/15 bg-primary/5 px-4 py-3.5">
-        <h2 className="text-[15px] font-semibold text-cream-foreground">숨김 관리</h2>
-        <p className="mt-1 text-[12px] leading-relaxed text-muted">
-          커뮤니티 게시글·댓글을 숨기거나 다시 노출합니다. 완전 삭제가 아니라 상태 변경으로
-          처리됩니다.
+      <section className="rounded-[20px] border border-[#E7DFD2] bg-white px-4 py-4 shadow-[0_16px_34px_-30px_rgba(20,31,26,.35)]">
+        <p className="text-[12px] font-extrabold uppercase tracking-[0.12em] text-[#8B9590]">
+          Moderation
         </p>
-      </div>
+        <h2 className="mt-1 text-[18px] font-extrabold text-[#1E2621]">게시글·댓글 관리</h2>
+        <p className="mt-2 text-[12.5px] leading-[1.6] text-[#65706B]">
+          광고, 개인정보 노출, 공격적인 댓글은 숨김 처리하고 필요할 때 다시 복구합니다. 삭제보다
+          기록이 남는 숨김 처리가 운영 추적에 안전합니다.
+        </p>
+      </section>
 
-      <div className="flex gap-2">
+      <div className="grid grid-cols-2 gap-2 rounded-[16px] bg-[#E5D9C7] p-1">
         {(
           [
             { id: 'posts' as const, label: '게시글' },
@@ -79,8 +85,8 @@ export function AdminModerationSection() {
             type="button"
             onClick={() => setTarget(item.id)}
             className={cn(
-              'rounded-full px-4 py-1.5 text-sm',
-              target === item.id ? 'bg-primary text-primary-foreground' : 'bg-cream-dark text-muted',
+              'min-h-10 rounded-[12px] px-3 py-2 text-[12px] font-extrabold transition-colors',
+              target === item.id ? 'bg-[#0B3B36] text-white shadow-sm' : 'text-[#81786A]',
             )}
           >
             {item.label}
@@ -94,9 +100,10 @@ export function AdminModerationSection() {
         onSearchSubmit={handleSearch}
         statusFilter={statusFilter}
         onStatusFilterChange={setStatusFilter}
+        searchPlaceholder={target === 'posts' ? '제목·작성자 검색' : '댓글·작성자 검색'}
       />
 
-      {isLoading && <LoadingSpinner />}
+      {isLoading && <LoadingSpinner label="운영 목록을 불러오는 중..." />}
       {error && <ErrorMessage message={getErrorMessage(error)} />}
       {actionError && <ErrorMessage message={actionError} className="mb-2" />}
 
@@ -110,29 +117,31 @@ export function AdminModerationSection() {
         />
       )}
 
-      <div className="space-y-2">
+      <div className="space-y-2.5">
         {target === 'posts'
           ? postPage.content.map((item) => (
-              <Card key={item.id} className="space-y-2 rounded-[16px] p-3">
+              <Card key={item.id} className="space-y-3 rounded-[16px] p-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <span
                     className={cn(
-                      'rounded-full px-2 py-0.5 text-[10px] font-medium',
+                      'rounded-full px-2 py-0.5 text-[10px] font-bold',
                       item.status === 'ACTIVE'
-                        ? 'bg-primary/10 text-primary'
-                        : 'bg-cream-dark text-muted',
+                        ? 'bg-[#E7F1EC] text-[#0B3B36]'
+                        : 'bg-[#F4E9E2] text-[#B6402D]',
                     )}
                   >
-                    {item.status === 'ACTIVE' ? '노출 중' : '숨김'}
+                    {statusLabel(item.status)}
                   </span>
-                  <span className="text-[10px] text-muted">
+                  <span className="text-[10.5px] text-[#8B9590]">
                     {item.boardName} · {item.authorNickname} · {formatDate(item.createdAt)}
                   </span>
                 </div>
-                <p className="line-clamp-2 text-[13px] font-semibold leading-[1.45] text-cream-foreground">{item.title}</p>
-                <div className="flex flex-wrap gap-2">
-                  <Link href={`/community/posts/${item.id}`}>
-                    <Button size="sm" variant="secondary">
+                <p className="line-clamp-2 text-[13.5px] font-extrabold leading-[1.45] text-[#1E2621]">
+                  {item.title}
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  <Link href={`/community/posts/${item.id}`} className="min-w-0">
+                    <Button size="sm" variant="secondary" fullWidth>
                       글 보기
                     </Button>
                   </Link>
@@ -158,28 +167,28 @@ export function AdminModerationSection() {
               </Card>
             ))
           : commentPage.content.map((item) => (
-              <Card key={item.id} className="space-y-2 rounded-[16px] p-3">
+              <Card key={item.id} className="space-y-3 rounded-[16px] p-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <span
                     className={cn(
-                      'rounded-full px-2 py-0.5 text-[10px] font-medium',
+                      'rounded-full px-2 py-0.5 text-[10px] font-bold',
                       item.status === 'ACTIVE'
-                        ? 'bg-primary/10 text-primary'
-                        : 'bg-cream-dark text-muted',
+                        ? 'bg-[#E7F1EC] text-[#0B3B36]'
+                        : 'bg-[#F4E9E2] text-[#B6402D]',
                     )}
                   >
-                    {item.status === 'ACTIVE' ? '노출 중' : '숨김'}
+                    {statusLabel(item.status)}
                   </span>
-                  <span className="text-[10px] text-muted">
+                  <span className="text-[10.5px] text-[#8B9590]">
                     {item.authorNickname} · {formatDate(item.createdAt)}
                   </span>
                 </div>
-                <p className="line-clamp-1 text-[11px] text-muted">원글: {item.postTitle}</p>
-                <p className="line-clamp-2 text-[13px] leading-[1.45] text-cream-foreground">{item.contentPreview}</p>
-                <div className="flex flex-wrap gap-2">
-                  <Link href={`/community/posts/${item.postId}`}>
-                    <Button size="sm" variant="secondary">
-                      글 보기
+                <p className="line-clamp-1 text-[11.5px] text-[#8B9590]">원글: {item.postTitle}</p>
+                <p className="line-clamp-3 text-[13px] leading-[1.5] text-[#1E2621]">{item.contentPreview}</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <Link href={`/community/posts/${item.postId}`} className="min-w-0">
+                    <Button size="sm" variant="secondary" fullWidth>
+                      원글 보기
                     </Button>
                   </Link>
                   {item.status === 'ACTIVE' ? (
@@ -205,7 +214,7 @@ export function AdminModerationSection() {
             ))}
 
         {!isLoading && activePage.content.length === 0 && (
-          <p className="rounded-xl border border-dashed border-border px-4 py-8 text-center text-[12px] text-muted">
+          <p className="rounded-xl border border-dashed border-[#D9CEBC] bg-white/60 px-4 py-8 text-center text-[12.5px] text-[#65706B]">
             조건에 맞는 {target === 'posts' ? '게시글' : '댓글'}이 없습니다.
           </p>
         )}

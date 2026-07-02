@@ -99,11 +99,7 @@ export function JournalHistoryList({
                   className="rounded-2xl border border-border/70 bg-white px-4 py-3 text-sm"
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <button
-                      type="button"
-                      className="min-w-0 flex-1 text-left"
-                      onClick={() => onEdit(record)}
-                    >
+                    <div className="min-w-0 flex-1 text-left">
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="font-medium text-ink">
                           {formatJournalDateLabel(record.recordDate)}
@@ -130,14 +126,23 @@ export function JournalHistoryList({
                       {record.memo && (
                         <p className="mt-2 line-clamp-2 text-xs text-muted">{record.memo}</p>
                       )}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onDelete(record.id)}
-                      className="shrink-0 rounded-lg border border-red-200 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50"
-                    >
-                      삭제
-                    </button>
+                    </div>
+                    <div className="flex shrink-0 gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => onEdit(record)}
+                        className="rounded-lg border border-border px-2 py-1 text-xs font-medium text-ink-soft hover:bg-canvas"
+                      >
+                        수정
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onDelete(record.id)}
+                        className="rounded-lg border border-red-200 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50"
+                      >
+                        삭제
+                      </button>
+                    </div>
                   </div>
                 </li>
               );

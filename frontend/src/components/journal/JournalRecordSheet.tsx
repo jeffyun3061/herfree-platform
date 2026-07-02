@@ -2,22 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import {
-  PRODROMAL_OPTIONS,
-  RECORD_SYMPTOM_TRIGGER_OPTIONS,
+  toDateInputValue,
   type JournalRecord,
   type JournalRecordInput,
   type JournalTimelineDay,
   type StressLevel,
 } from '@/domain/journal/types';
-import {
-  formatRecordSheetDate,
-  recordToSheetForm,
-  SEVERITY_LEVEL_STYLES,
-  sheetFormToInput,
-  STRESS_BUTTONS,
-} from '@/domain/journal/recordForm';
+import { recordToSheetForm, sheetFormToInput } from '@/domain/journal/recordForm';
 import type { WizardEntryMode } from '@/domain/journal/wizard';
-import { JournalRecordFlowChart } from '@/components/journal/JournalRecordFlowChart';
 import { JournalIcon } from '@/components/journal/JournalIcon';
 import { cn } from '@/lib/cn';
 
@@ -32,38 +24,44 @@ type JournalRecordSheetProps = {
   onSave: (input: JournalRecordInput) => Promise<void>;
 };
 
-function ToggleSwitch({
-  on,
-  onChange,
-  label,
-}: {
-  on: boolean;
-  onChange: (value: boolean) => void;
+type StressOption = {
+  value: StressLevel;
   label: string;
+};
+
+const STRESS_OPTIONS: StressOption[] = [
+  { value: 'LOW', label: '낮음' },
+  { value: 'MEDIUM', label: '보통' },
+  { value: 'HIGH', label: '높음' },
+];
+
+const PRODROMAL_OPTIONS = [
+  { value: 'NUMBNESS', label: '저림' },
+  { value: 'ITCHING', label: '가려움' },
+  { value: 'HEAVINESS', label: '묵직함' },
+  { value: 'WARMTH', label: '열감' },
+];
+
+function FieldCard({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
 }) {
   return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={on}
-      aria-label={label}
-      onClick={() => onChange(!on)}
+    <section
       className={cn(
-        'relative h-[22px] w-[38px] shrink-0 rounded-full transition-colors',
-        on ? 'bg-primary' : 'bg-canvas-dark',
+        'rounded-[20px] border border-[#ECE5D8] bg-white p-5 shadow-[0_14px_32px_-24px_rgba(20,30,25,.2)]',
+        className,
       )}
     >
-      <span
-        className={cn(
-          'absolute top-0.5 h-[18px] w-[18px] rounded-full bg-white transition-all',
-          on ? 'right-0.5' : 'left-0.5',
-        )}
-      />
-    </button>
+      {children}
+    </section>
   );
 }
 
-function ChoiceButton({
+function SegmentButton({
   selected,
   onClick,
   children,
@@ -77,10 +75,10 @@ function ChoiceButton({
       type="button"
       onClick={onClick}
       className={cn(
-        'flex-1 rounded-[10px] border px-0 py-2.5 text-center text-[12.5px] text-ink transition-colors',
+        'flex min-h-11 flex-1 items-center justify-center rounded-[11px] border px-3 text-[13px] transition-colors',
         selected
-          ? 'border-[1.5px] border-primary bg-primary/10 font-medium text-herfree-green'
-          : 'border-border/80 bg-canvas',
+          ? 'border-[1.5px] border-[#1D9E75] bg-[#E3F1EA] font-semibold text-[#04342C]'
+          : 'border-[#ECE5D8] bg-[#F6F1E8] text-[#5C645A]',
       )}
     >
       {children}
@@ -102,10 +100,10 @@ function ChipButton({
       type="button"
       onClick={onClick}
       className={cn(
-        'rounded-lg border px-[11px] py-1.5 text-[11.5px] transition-colors',
+        'rounded-[9px] border px-3 py-2 text-[12px] transition-colors',
         selected
-          ? 'border-primary bg-primary/10 text-herfree-green'
-          : 'border-border/80 bg-canvas text-ink-soft',
+          ? 'border-[#1D9E75] bg-[#E3F1EA] font-medium text-[#04342C]'
+          : 'border-[#ECE5D8] bg-[#F6F1E8] text-[#5C645A]',
       )}
     >
       {children}
@@ -113,16 +111,39 @@ function ChipButton({
   );
 }
 
-const PRODROMAL_CHIP_OPTIONS = PRODROMAL_OPTIONS.filter(
-  (option) => option.value !== 'FATIGUE' && option.value !== 'NONE',
-);
+function ToggleSwitch({
+  on,
+  onClick,
+}: {
+  on: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={on}
+      onClick={onClick}
+      className={cn(
+        'relative h-[23px] w-10 rounded-full transition-colors',
+        on ? 'bg-[#1D9E75]' : 'bg-[#E8E0D2]',
+      )}
+    >
+      <span
+        className={cn(
+          'absolute top-0.5 h-[19px] w-[19px] rounded-full bg-white transition-all',
+          on ? 'right-0.5' : 'left-0.5',
+        )}
+      />
+    </button>
+  );
+}
 
 export function JournalRecordSheet({
   open,
   targetDate,
   initialRecord,
   entryMode = 'edit',
-  timelineDays = [],
   isSubmitting,
   onClose,
   onSave,
@@ -131,14 +152,12 @@ export function JournalRecordSheet({
     recordToSheetForm(initialRecord, targetDate, entryMode),
   );
   const [sleepHours, setSleepHours] = useState(7);
-  const [prodromalOpen, setProdromalOpen] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     const nextForm = recordToSheetForm(initialRecord, targetDate, entryMode);
     setForm(nextForm);
     setSleepHours(nextForm.sleepHours ?? 7);
-    setProdromalOpen((nextForm.prodromalSymptoms ?? []).length > 0);
   }, [open, initialRecord, targetDate, entryMode]);
 
   useEffect(() => {
@@ -152,19 +171,18 @@ export function JournalRecordSheet({
 
   if (!open) return null;
 
-  const handleSave = async () => {
-    const payload = sheetFormToInput(
-      {
-        ...form,
-        prodromalSymptoms: prodromalOpen ? form.prodromalSymptoms ?? [] : [],
-      },
-      sleepHours,
-    );
-    await onSave(payload);
-    onClose();
+  const currentRecordDate = form.recordDate || targetDate || toDateInputValue();
+  const isEditMode = entryMode === 'edit' && Boolean(initialRecord);
+  const hasProdromal = (form.prodromalSymptoms ?? []).length > 0;
+
+  const toggleProdromal = () => {
+    setForm((prev) => ({
+      ...prev,
+      prodromalSymptoms: hasProdromal ? [] : ['NUMBNESS'],
+    }));
   };
 
-  const toggleProdromal = (value: string) => {
+  const toggleProdromalChip = (value: string) => {
     setForm((prev) => {
       const current = prev.prodromalSymptoms ?? [];
       const next = current.includes(value)
@@ -174,79 +192,49 @@ export function JournalRecordSheet({
     });
   };
 
-  const toggleTrigger = (value: string) => {
-    setForm((prev) => {
-      const current = prev.triggers ?? [];
-      const next = current.includes(value)
-        ? current.filter((item) => item !== value)
-        : [...current, value];
-      return { ...prev, triggers: next };
-    });
+  const handleSave = async () => {
+    const payload = sheetFormToInput({ ...form, recordDate: currentRecordDate }, sleepHours);
+    await onSave(payload);
+    onClose();
   };
-  const currentRecordDate = form.recordDate || targetDate;
 
   return (
-    <div className="journal-record-screen">
-      <div className="mx-auto flex w-full max-w-app flex-col gap-3.5 px-3.5 pb-8 pt-[18px]">
-        <div className="flex items-center justify-between px-0.5">
+    <div className="journal-record-screen bg-[#F3F6F4]">
+      <div className="mx-auto flex min-h-screen w-full max-w-app flex-col gap-3.5 px-4 pb-10 pt-14">
+        <header className="flex items-center justify-between px-1">
           <button
             type="button"
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-ink-soft hover:bg-white/80"
+            className="flex items-center gap-2 text-[#5C645A]"
             aria-label="닫기"
           >
-            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" />
-            </svg>
+            <span className="text-[28px] leading-none">‹</span>
+            <span className="text-[16px] font-bold text-[#1E2621]">
+              {isEditMode ? '기록 수정하기' : '오늘 기록하기'}
+            </span>
           </button>
-          <div className="flex items-center gap-2 text-center">
-            <JournalIcon name="pencil" size={22} />
-            <div>
-              <p className="text-base font-semibold text-ink">기록하기</p>
-              <p className="text-xs text-ink-soft">{formatRecordSheetDate(currentRecordDate)}</p>
-            </div>
-          </div>
-          <div className="w-8" />
-        </div>
 
-        <div className="grid grid-cols-5 gap-1 rounded-[14px] border border-border/70 bg-white/80 p-1.5">
-          {['날짜', '컨디션', '전조', '증상', '메모'].map((label, index) => (
-            <div
-              key={label}
-              className={cn(
-                'rounded-[10px] px-1 py-1.5 text-center text-[10.5px] font-semibold',
-                index === 0 ? 'bg-herfree-green text-white' : 'bg-[#F4F1EA] text-ink-soft',
-              )}
-            >
-              {index + 1}. {label}
-            </div>
-          ))}
-        </div>
+          <label className="relative flex shrink-0 items-center gap-1.5 rounded-full border border-[#E1D8C8] bg-white px-3 py-2 shadow-[0_8px_20px_-18px_rgba(20,30,25,.35)]">
+            <span className="text-[10px] font-semibold text-[#9A9F94]">날짜</span>
+            <input
+              type="date"
+              value={currentRecordDate}
+              onChange={(event) => setForm((prev) => ({ ...prev, recordDate: event.target.value }))}
+              className="w-[116px] border-0 bg-transparent text-right text-[12px] font-semibold text-[#5C645A] outline-none"
+              aria-label="기록 날짜 선택"
+            />
+          </label>
+        </header>
 
-        {timelineDays.length > 0 && <JournalRecordFlowChart days={timelineDays} />}
+        <FieldCard>
+          <h2 className="text-[14px] font-bold text-[#1E2621]">오늘 기본 컨디션</h2>
+          <p className="mb-[18px] mt-1 text-[11.5px] text-[#9A9F94]">수면 · 영양제 · 스트레스</p>
 
-        <section className="journal-record-card">
-          <h3 className="journal-record-card__title">1. 기록 날짜</h3>
-          <p className="journal-record-card__sub">오늘 기록도, 지난 날짜 기록도 남길 수 있어요.</p>
-          <input
-            type="date"
-            value={currentRecordDate}
-            onChange={(event) => setForm((prev) => ({ ...prev, recordDate: event.target.value }))}
-            className="journal-select"
-            aria-label="기록 날짜 선택"
-          />
-        </section>
-
-        <section className="journal-record-card">
-          <h3 className="journal-record-card__title">2. 기본 컨디션</h3>
-          <p className="journal-record-card__sub">수면 · 영양제 · 스트레스</p>
-
-          <div className="mb-4">
-            <div className="journal-record-field-label">
+          <div className="mb-[18px]">
+            <div className="mb-2.5 flex items-center gap-2 text-[13px] text-[#5C645A]">
               <JournalIcon name="moon" size={20} />
               <span>
-                수면 시간 —{' '}
-                <strong className="font-semibold text-ink">{sleepHours}시간</strong>
+                수면 시간 - <strong className="font-bold text-[#1E2621]">{sleepHours}시간</strong>
               </span>
             </div>
             <input
@@ -255,76 +243,69 @@ export function JournalRecordSheet({
               max={12}
               value={sleepHours}
               onChange={(event) => setSleepHours(Number(event.target.value))}
-              className="journal-record-range mt-2 w-full"
+              className="h-2 w-full accent-[#15695E]"
+              aria-label="수면 시간"
             />
           </div>
 
-          <div className="mb-4">
-            <div className="journal-record-field-label">
+          <div className="mb-[18px]">
+            <div className="mb-2.5 flex items-center gap-2 text-[13px] text-[#5C645A]">
               <JournalIcon name="pill" size={20} />
               <span>영양제 복용</span>
             </div>
-            <div className="mt-2 flex gap-2">
-              <ChoiceButton
+            <div className="flex gap-2">
+              <SegmentButton
                 selected={form.supplementTaken === true}
                 onClick={() => setForm((prev) => ({ ...prev, supplementTaken: true }))}
               >
                 복용
-              </ChoiceButton>
-              <ChoiceButton
+              </SegmentButton>
+              <SegmentButton
                 selected={form.supplementTaken === false}
                 onClick={() => setForm((prev) => ({ ...prev, supplementTaken: false }))}
               >
                 빠뜨림
-              </ChoiceButton>
+              </SegmentButton>
             </div>
           </div>
 
           <div>
-            <div className="journal-record-field-label">
+            <div className="mb-2.5 flex items-center gap-2 text-[13px] text-[#5C645A]">
               <JournalIcon name="brain" size={20} />
               <span>스트레스</span>
             </div>
-            <div className="mt-2 flex gap-2">
-              {STRESS_BUTTONS.map((option) => (
-                <ChoiceButton
+            <div className="flex gap-2">
+              {STRESS_OPTIONS.map((option) => (
+                <SegmentButton
                   key={option.value}
                   selected={form.stressLevel === option.value}
-                  onClick={() =>
-                    setForm((prev) => ({ ...prev, stressLevel: option.value as StressLevel }))
-                  }
+                  onClick={() => setForm((prev) => ({ ...prev, stressLevel: option.value }))}
                 >
                   {option.label}
-                </ChoiceButton>
+                </SegmentButton>
               ))}
             </div>
           </div>
-        </section>
+        </FieldCard>
 
-        <section className="journal-record-card">
+        <FieldCard>
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-sm font-medium text-ink">
-              <JournalIcon name="speech" size={20} />
-              3. 전조증상이 있었어요
+            <div className="flex items-center gap-2 text-[14px] font-semibold text-[#1E2621]">
+              <span className="h-[9px] w-[9px] rounded-full bg-[#E0936B]" />
+              전조증상이 있었어요
             </div>
-            <ToggleSwitch
-              on={prodromalOpen}
-              label="전조증상 토글"
-              onChange={(value) => {
-                setProdromalOpen(value);
-                if (!value) setForm((prev) => ({ ...prev, prodromalSymptoms: [] }));
-              }}
-            />
+            <ToggleSwitch on={hasProdromal} onClick={toggleProdromal} />
           </div>
-          {prodromalOpen && (
-            <div className="mt-3.5 border-t border-border/60 pt-3.5">
-              <p className="journal-record-field-label mb-2">어떤 느낌이었나요</p>
-              <div className="flex flex-wrap gap-1.5">
-                {PRODROMAL_CHIP_OPTIONS.map((option) => (
+
+          {hasProdromal && (
+            <div className="mt-4 border-t border-[#F2ECE1] pt-4">
+              <p className="mb-2.5 text-[12.5px] text-[#5C645A]">어떤 느낌이었나요</p>
+              <div className="flex flex-wrap gap-2">
+                {PRODROMAL_OPTIONS.map((option) => (
                   <ChipButton
                     key={option.value}
                     selected={(form.prodromalSymptoms ?? []).includes(option.value)}
-                    onClick={() => toggleProdromal(option.value)}
+                    onClick={() => toggleProdromalChip(option.value)}
                   >
                     {option.label}
                   </ChipButton>
@@ -332,104 +313,27 @@ export function JournalRecordSheet({
               </div>
             </div>
           )}
-        </section>
+        </FieldCard>
 
-        <section className="journal-record-card">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-sm font-medium text-ink">
-              <JournalIcon name="pill" size={20} />
-              4. 오늘 증상이 있었어요
-            </div>
-            <ToggleSwitch
-              on={Boolean(form.hadSymptoms)}
-              label="증상 토글"
-              onChange={(value) => {
-                setForm((prev) => ({
-                  ...prev,
-                  hadSymptoms: value,
-                  severity: value ? prev.severity ?? 3 : null,
-                  triggers: value ? prev.triggers ?? [] : [],
-                }));
-              }}
-            />
-          </div>
-          <div className={cn('mt-3.5 border-t border-border/60 pt-3.5', !form.hadSymptoms && 'opacity-40')}>
-            <div className="mb-3.5">
-              <p className="journal-record-field-label mb-2">심각도</p>
-              <div className="flex gap-1.5">
-                {[1, 2, 3, 4, 5].map((level) => (
-                  <button
-                    key={level}
-                    type="button"
-                    disabled={!form.hadSymptoms}
-                    onClick={() => setForm((prev) => ({ ...prev, severity: level }))}
-                    className={cn(
-                      'flex h-[30px] flex-1 items-center justify-center rounded-lg text-[11.5px] transition-all',
-                      SEVERITY_LEVEL_STYLES[level],
-                      form.severity === level && 'ring-2 ring-primary ring-offset-1',
-                    )}
-                  >
-                    {level}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="mb-3.5">
-              <p className="journal-record-field-label mb-2">트리거로 의심되는 것 (운동 포함)</p>
-              <div className="flex flex-wrap gap-1.5">
-                {RECORD_SYMPTOM_TRIGGER_OPTIONS.map((option) => (
-                  <ChipButton
-                    key={option.value}
-                    selected={(form.triggers ?? []).includes(option.value)}
-                    onClick={() => toggleTrigger(option.value)}
-                  >
-                    {option.label}
-                  </ChipButton>
-                ))}
-              </div>
-            </div>
-
-            <div className="mb-3.5">
-              <p className="journal-record-field-label mb-2">사진 첨부 (선택)</p>
-              <div className="flex flex-col items-center gap-1 rounded-[10px] border border-dashed border-border px-3.5 py-3.5 text-muted">
-                <span className="text-lg">＋</span>
-                <span className="text-[11px]">나만 볼 수 있어요 (준비 중)</span>
-              </div>
-            </div>
-
-            <div>
-              <p className="journal-record-field-label mb-2">오늘 날씨</p>
-              <div className="flex items-center gap-2 rounded-lg bg-canvas px-2.5 py-2">
-                <span className="text-[11.5px] text-ink-soft">날씨 정보 준비 중</span>
-                <span className="ml-auto text-[10.5px] text-muted">자동 연동 예정</span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="journal-record-card">
-          <div className="mb-2.5 flex items-center gap-2">
-            <JournalIcon name="pencil" size={18} />
-            <h3 className="text-sm font-semibold text-ink">5. 메모</h3>
-          </div>
+        <FieldCard>
+          <h2 className="mb-3 text-[14px] font-bold text-[#1E2621]">오늘 메모</h2>
           <textarea
-            rows={3}
+            rows={4}
             maxLength={200}
             value={form.memo ?? ''}
             onChange={(event) => setForm((prev) => ({ ...prev, memo: event.target.value }))}
             placeholder="오늘 특이사항이 있다면 적어주세요"
-            className="journal-record-textarea"
+            className="min-h-[74px] w-full resize-none rounded-[12px] border border-[#ECE5D8] bg-[#F8F4EC] px-3.5 py-3 text-[13px] text-[#1E2621] outline-none placeholder:text-[#B4B2A6] focus:border-[#1D9E75]"
           />
-        </section>
+        </FieldCard>
 
         <button
           type="button"
           disabled={isSubmitting}
           onClick={() => void handleSave()}
-          className="w-full rounded-xl bg-herfree-green py-3.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+          className="mt-0.5 rounded-[14px] bg-[#0B3B36] px-4 py-[15px] text-center text-[14.5px] font-bold text-white transition-opacity hover:opacity-95 disabled:opacity-60"
         >
-          {isSubmitting ? '저장 중…' : '기록 저장하기'}
+          {isSubmitting ? '저장 중...' : isEditMode ? '수정 저장하기' : '기록 저장하기'}
         </button>
       </div>
     </div>

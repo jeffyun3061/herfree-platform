@@ -19,9 +19,10 @@ import com.herfree.domain.user.entity.UserRole;
 import com.herfree.domain.user.entity.UserStatus;
 import com.herfree.domain.user.repository.UserProfileRepository;
 import com.herfree.domain.user.repository.UserRepository;
-import com.herfree.global.exception.BusinessException;
+import com.herfree.domain.reaction.repository.ReactionRepository;
 import com.herfree.global.util.PostListPeriod;
 import com.herfree.global.util.PostListSort;
+import com.herfree.global.exception.BusinessException;
 import com.herfree.global.storage.PostImageStorageService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,6 +34,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 import java.util.List;
 import java.util.Optional;
@@ -40,7 +42,9 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
@@ -72,6 +76,9 @@ class PostServiceTest {
 
     @Mock
     private PostImageStorageService postImageStorageService;
+
+    @Mock
+    private ReactionRepository reactionRepository;
 
     @InjectMocks
     private PostService postService;
@@ -258,6 +265,43 @@ class PostServiceTest {
         assertThat(response.authorNickname()).isEqualTo("익명");
         assertThat(response.isAnonymous()).isTrue();
         assertThat(response.isMyPost()).isFalse();
+    }
+
+    @Test
+    @DisplayName("인기순(engagementScore) 조회 시 repository에는 sort 없는 Pageable만 전달한다")
+    void getPosts_popularSort_passesUnsortedPageableToRepository() {
+        Long userId = 1L;
+        Pageable pageable = PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "engagementScore"));
+        Page<Post> emptyPage = new PageImpl<>(List.of(), pageable, 0);
+        Board noticeBoard = org.mockito.Mockito.mock(Board.class);
+        User user = User.builder()
+                .email("user@test.com")
+                .password("pw")
+                .role(UserRole.USER)
+                .status(UserStatus.ACTIVE)
+                .build();
+
+        given(boardRepository.findById(1L)).willReturn(Optional.of(noticeBoard));
+        given(noticeBoard.getBoardType()).willReturn("NOTICE");
+        given(userRepository.findById(userId)).willReturn(Optional.of(user));
+        given(postRepository.searchActivePostsByEngagementScoreThisWeek(
+                        eq(PostStatus.ACTIVE),
+                        eq(1L),
+                        isNull(),
+                        eq(userId),
+                        any(),
+                        argThat(p -> p.getPageNumber() == 0 && p.getPageSize() == 20 && p.getSort().isEmpty())))
+                .willReturn(emptyPage);
+
+        postService.getPosts(1L, null, pageable, userId, "week");
+
+        verify(postRepository).searchActivePostsByEngagementScoreThisWeek(
+                eq(PostStatus.ACTIVE),
+                eq(1L),
+                isNull(),
+                eq(userId),
+                any(),
+                argThat(p -> p.getSort().isEmpty()));
     }
 
     @Test

@@ -3,7 +3,7 @@ import { FAQ_GROUPS } from '@/domain/faq/content';
 
 export default function QnaPage() {
   return (
-    <div className="page-container content-screen mx-auto max-w-app pb-36 lg:max-w-content lg:pb-12">
+    <div className="page-container content-screen mx-auto max-w-app pb-8 lg:max-w-content lg:pb-12">
       <div className="mb-4 lg:hidden">
         <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[#8B9590]">FAQ</p>
         <h1 className="hf-display m-0 mt-2 text-[22px] font-bold leading-tight text-[#15201D]">
@@ -57,7 +57,7 @@ export default function QnaPage() {
 
       <Link
         href="/consult"
-        className="mt-6 flex rounded-2xl bg-[#0B3B36] p-[17px_19px] leading-normal shadow-[0_14px_30px_-18px_rgba(11,59,54,.6)]"
+        className="mt-6 flex rounded-2xl bg-[#0B3B36] p-[16px_18px] leading-normal shadow-[0_14px_30px_-18px_rgba(11,59,54,.6)]"
       >
         <span className="flex-1">
           <span className="block text-[13.5px] font-bold text-white">원하는 답을 못 찾으셨나요?</span>

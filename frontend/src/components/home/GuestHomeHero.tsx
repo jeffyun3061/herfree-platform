@@ -21,12 +21,12 @@ export function GuestHomeHero() {
       />
 
       <div className="absolute left-0 right-0 top-[52px] flex items-center justify-between px-[22px] py-1.5">
-        <Link href="/" className="flex items-center gap-2" aria-label="herpfree 홈">
+        <Link href="/" className="flex items-center gap-2" aria-label="herfree 홈">
           <span className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-[#0B3B36] text-[14px] font-bold text-white shadow-[0_2px_8px_rgba(0,0,0,.25)]">
             h.
           </span>
           <span className="text-[15px] font-semibold text-white drop-shadow-[0_1px_6px_rgba(7,37,31,.45)]">
-            herpfree
+            herfree
           </span>
         </Link>
         <div className="flex items-center gap-3">

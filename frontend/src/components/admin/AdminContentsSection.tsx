@@ -201,14 +201,14 @@ export function AdminContentsSection() {
             />
           )}
 
-          <div className="grid gap-2.5 sm:grid-cols-2">
+          <div className="space-y-2.5">
             {contentPage.content.map((item, index) => {
               const isVisible = item.status !== 'HIDDEN';
+              const isLatestContent = categoryFilter === '' && page === 0 && index === 0;
               return (
                 <AdminManageRow
                   key={item.id}
-                  highlight={index === 0}
-                  className={index === 0 ? 'sm:col-span-2' : undefined}
+                  highlight={isLatestContent}
                   title={item.title}
                   meta={`${item.category} · ${formatContentDate(item.createdAt)}`}
                   statusLabel={isVisible ? '노출 중' : '숨김'}
@@ -235,6 +235,9 @@ export function AdminContentsSection() {
                       (id, sortOrder) => applyContentCuration(id, { sortOrder }),
                     )
                   }
+                  onSetSortOrder={(sortOrder) =>
+                    void applyContentCuration(item.id, { sortOrder })
+                  }
                   onTogglePin={() =>
                     void applyContentCuration(item.id, { isPinned: !item.isPinned })
                   }
@@ -246,14 +249,10 @@ export function AdminContentsSection() {
                       <img
                         src={item.imageUrl}
                         alt=""
-                        className={
-                          index === 0
-                            ? 'aspect-[16/9] w-full object-cover'
-                            : 'aspect-[4/3] w-full object-cover sm:h-20 sm:w-28'
-                        }
+                        className="h-full w-full object-cover"
                       />
-                    ) : index === 0 ? (
-                      <div className="flex aspect-[16/9] w-full items-end bg-[linear-gradient(135deg,#0B3B36,#1D746C)] p-4 text-[12px] font-bold text-white/80">
+                    ) : isLatestContent ? (
+                      <div className="flex h-full w-full items-end bg-[linear-gradient(135deg,#0B3B36,#1D746C)] p-2 text-[11px] font-bold text-white/80">
                         최신 칼럼
                       </div>
                     ) : undefined

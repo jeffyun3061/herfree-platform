@@ -360,19 +360,19 @@ body {
     position: absolute;
     top: 0;
     bottom: 0;
-    width: 2.25rem;
+    width: 0.9rem;
     pointer-events: none;
     z-index: 1;
   }
 
   .community-tabs-scroller--peek-left::before {
     left: 0;
-    background: linear-gradient(90deg, #f3ede3 0%, rgba(243, 237, 227, 0) 100%);
+    background: linear-gradient(90deg, rgba(243, 237, 227, 0.88) 0%, rgba(243, 237, 227, 0) 100%);
   }
 
   .community-tabs-scroller--peek-right::after {
     right: 0;
-    background: linear-gradient(270deg, #f3ede3 0%, rgba(243, 237, 227, 0) 100%);
+    background: linear-gradient(270deg, rgba(243, 237, 227, 0.88) 0%, rgba(243, 237, 227, 0) 100%);
   }
 
   .community-tabs-nav {

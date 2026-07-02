@@ -136,6 +136,13 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
     selectedBoardId !== null ? boards.find((board) => board.id === selectedBoardId) : null;
   const isNoticeBoard = selectedBoard?.boardType === 'NOTICE';
   const isSecretStoryBoard = selectedBoard != null && isSecretStoryBoardType(selectedBoard.boardType);
+
+  useEffect(() => {
+    if (isNoticeBoard && sort !== 'latest') {
+      setSort('latest');
+      setPage(0);
+    }
+  }, [isNoticeBoard, sort, setPage]);
   const staffUser = isStaff(user?.role);
   const isStaffOnlyBoard =
     selectedBoard !== null && selectedBoard !== undefined && isStaffOnlyBoardType(selectedBoard.boardType);
@@ -251,19 +258,21 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
         <p className="mb-3 text-xs text-[#8B9590]">총 {postPage.totalElements.toLocaleString('ko-KR')}개</p>
       )}
 
-      <div className="mb-4">
-        <CommunitySortTabs value={sort} onChange={handleSortChange} />
-        {needsPostListPeriod(sort) && (
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            {periodHint && (
-              <p className="text-xs text-muted" role="status">
-                {periodHint}
-              </p>
-            )}
-            <CommunityPeriodToggle value={period} onChange={handlePeriodChange} />
-          </div>
-        )}
-      </div>
+      {!isNoticeBoard && (
+        <div className="mb-4">
+          <CommunitySortTabs value={sort} onChange={handleSortChange} />
+          {needsPostListPeriod(sort) && (
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              {periodHint && (
+                <p className="text-xs text-muted" role="status">
+                  {periodHint}
+                </p>
+              )}
+              <CommunityPeriodToggle value={period} onChange={handlePeriodChange} />
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="mb-4 hidden items-center justify-end gap-2 lg:flex">
         {isNoticeBoard ? (

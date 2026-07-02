@@ -40,56 +40,48 @@ export function CommunityGuestPostPanel({
     loginFromProp ??
     encodeURIComponent(pathname + (searchParams.toString() ? `?${searchParams.toString()}` : ''));
 
+  const boardPhrase = boardLabel ? `${boardLabel}은` : '커뮤니티 글은';
+
   return (
     <section
-      className={cn('relative overflow-hidden rounded-[20px] border border-[#E7DFD2] bg-white', className)}
+      className={cn(
+        'rounded-[20px] border border-[#E7DFD2] bg-[#FAF8F4] px-4 py-8 sm:px-6 sm:py-10',
+        className,
+      )}
       aria-labelledby="community-guest-post-lock-title"
     >
-      <div className="pointer-events-none select-none px-4 py-4 blur-[5px]" aria-hidden>
-        <div className="space-y-2.5">
-          {[1, 2, 3].map((key) => (
-            <div key={key} className="rounded-[16px] border border-[#ECE5D8] bg-[#FAF8F4] px-4 py-3.5">
-              <div className="h-5 w-16 rounded-full bg-[#E2D9CA]" />
-              <div className="mt-2.5 h-4 w-3/4 rounded bg-[#ECE5D8]" />
-              <div className="mt-2 h-3 w-28 rounded bg-[#E2D9CA]" />
-            </div>
-          ))}
+      <div className="mx-auto flex w-full max-w-[20rem] flex-col items-center text-center">
+        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/10">
+          <LockIcon />
         </div>
-      </div>
 
-      <div className="absolute inset-0 flex items-center justify-center px-4 py-6">
-        <div className="w-full max-w-[18.5rem] rounded-[18px] border border-[#E7DFD2] bg-white/95 px-5 py-5 text-center shadow-[0_16px_40px_-28px_rgba(20,30,25,.42)] backdrop-blur-sm">
-          <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-primary/10">
-            <LockIcon />
-          </div>
-          <p
-            id="community-guest-post-lock-title"
-            className="mt-3.5 text-[14.5px] font-bold leading-snug text-[#15201D]"
-          >
-            {boardLabel ? `${boardLabel} 글은` : '커뮤니티 글은'}
-            <br />
-            로그인 후 볼 수 있어요
-          </p>
-          <p className="mt-2 text-[12px] leading-[1.65] text-[#65706B]">
-            익명으로 안전하게 이야기를 나눌 수 있어요.
-            <br />
-            가입 후 게시판을 둘러보세요.
-          </p>
-          <ButtonLink
-            href={`/login?from=${loginFrom}`}
-            fullWidth
-            size="lg"
-            className="mt-4 rounded-[14px]"
-          >
-            로그인하고 보기
-          </ButtonLink>
-          <Link
-            href={`/signup?from=${loginFrom}`}
-            className="mt-2.5 block text-[12px] font-semibold text-primary"
-          >
-            아직 계정이 없다면 회원가입
-          </Link>
+        <h2
+          id="community-guest-post-lock-title"
+          className="mt-4 text-[15px] font-bold leading-snug text-[#15201D] break-keep"
+        >
+          {boardPhrase} 로그인한 회원만 볼 수 있어요
+        </h2>
+
+        <div className="mt-3 space-y-1.5 break-keep text-[13px] leading-relaxed text-[#65706B]">
+          <p>익명으로 안전하게 이야기를 나눌 수 있어요.</p>
+          <p>로그인 후 게시판을 둘러보세요.</p>
         </div>
+
+        <ButtonLink
+          href={`/login?from=${loginFrom}`}
+          fullWidth
+          size="lg"
+          className="mt-5 rounded-[14px]"
+        >
+          로그인하고 보기
+        </ButtonLink>
+
+        <Link
+          href={`/signup?from=${loginFrom}`}
+          className="mt-3.5 text-[13px] font-semibold leading-snug text-primary"
+        >
+          아직 계정이 없다면 회원가입
+        </Link>
       </div>
     </section>
   );

@@ -23,19 +23,23 @@ function ContentsPageContent() {
   }, [searchParams]);
 
   const latestContentId = useMemo(() => {
+    if (category !== undefined || page !== 0) return null;
     if (contentPage.content.length === 0) return null;
     return contentPage.content.reduce((latest, content) => {
       const latestTime = new Date(latest.createdAt).getTime();
       const contentTime = new Date(content.createdAt).getTime();
       return contentTime > latestTime ? content : latest;
     }, contentPage.content[0]).id;
-  }, [contentPage.content]);
+  }, [category, page, contentPage.content]);
   const latestContent = useMemo(
     () => contentPage.content.find((content) => content.id === latestContentId) ?? null,
     [latestContentId, contentPage.content],
   );
   const restContents = useMemo(
-    () => contentPage.content.filter((content) => content.id !== latestContentId),
+    () =>
+      latestContentId == null
+        ? contentPage.content
+        : contentPage.content.filter((content) => content.id !== latestContentId),
     [latestContentId, contentPage.content],
   );
 

@@ -8,7 +8,6 @@ import { BrandMark } from '@/components/brand/BrandMark';
 import { usePageHeaderContext } from '@/contexts/PageHeaderContext';
 import { useAuth } from '@/hooks/useAuth';
 import { navigateBack } from '@/lib/navigateBack';
-import { getMobileTabRootTitle } from '@/lib/navigation';
 
 function HeaderIconLink({
   href,
@@ -59,7 +58,7 @@ function MenuIcon() {
 
 function BackIcon() {
   return (
-    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       <path d="M15 18l-6-6 6-6" />
     </svg>
   );
@@ -72,9 +71,8 @@ export function MobileHeader() {
   const router = useRouter();
   const { header } = usePageHeaderContext() ?? {};
 
-  const tabTitle = getMobileTabRootTitle(pathname);
-  const title = header?.title ?? tabTitle;
-  const showBack = header?.showBack ?? false;
+  const shouldShowBack = Boolean(header?.showBack) || pathname !== '/';
+  const showHeaderActions = !header?.showBack;
 
   const handleBack = () => {
     navigateBack(router, { pathname, backHref: header?.backHref });
@@ -84,29 +82,23 @@ export function MobileHeader() {
     <>
       <header className="sticky top-0 z-40 flex h-11 items-center justify-between gap-2 border-b border-[#E3E6E4]/80 bg-white px-[18px] lg:hidden">
         <div className="flex min-w-0 flex-1 items-center gap-2">
-          {showBack ? (
-            <>
-              <button
-                type="button"
-                aria-label="뒤로 가기"
-                onClick={handleBack}
-                className="flex h-8 w-8 shrink-0 items-center justify-center text-[#5B6864]"
-              >
-                <BackIcon />
-              </button>
-              {title ? (
-                <h1 className="min-w-0 truncate text-[14.5px] font-semibold text-[#15201D]">{title}</h1>
-              ) : null}
-            </>
-          ) : (
-            <Link href="/" className="shrink-0" aria-label="홈">
-              <BrandMark size="sm" showText={false} />
-            </Link>
-          )}
+          {shouldShowBack ? (
+            <button
+              type="button"
+              aria-label="뒤로 가기"
+              onClick={handleBack}
+              className="-ml-1 flex h-10 w-10 shrink-0 items-center justify-center text-[#15201D]"
+            >
+              <BackIcon />
+            </button>
+          ) : null}
+          <Link href="/" className="shrink-0" aria-label="홈">
+            <BrandMark size="sm" showText={false} />
+          </Link>
         </div>
 
         <div className="flex shrink-0 items-center gap-4">
-          {!showBack ? (
+          {showHeaderActions ? (
             <>
               <HeaderIconLink href="/community?focus=search" label="검색">
                 <SearchIcon />

@@ -1,4 +1,4 @@
-// 백엔드 ReportTargetType·ReportStatus enum과 동기화
+// 백엔드 ReportTargetType·ReportStatus enum과 동기화한다.
 export type ReportTargetType = 'POST' | 'COMMENT' | 'USER';
 export type ReportStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED';
 
@@ -9,7 +9,7 @@ export type ReportCreateInput = {
   detail?: string;
 };
 
-// 관리자 신고 목록 항목 (ReportResponse)
+// 관리자 신고 목록 항목
 export type Report = {
   id: number;
   reporterId: number;
@@ -28,7 +28,7 @@ export type ReportProcessInput = {
   processNote?: string;
 };
 
-// 운영 정책(requirements.md §14)에 맞춘 신고 사유 선택지 — 서버는 자유 문자열(100자)을 받는다
+// 운영 정책에 맞춘 신고 사유. 서버는 자유 문자를 받지만 클라이언트에서 선택지를 제공한다.
 export const REPORT_REASONS: string[] = [
   '욕설/비방/혐오 표현',
   '허위 의료 정보',

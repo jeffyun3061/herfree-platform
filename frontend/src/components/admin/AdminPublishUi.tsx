@@ -225,6 +225,7 @@ type AdminManageRowProps = {
   isFeatured?: boolean;
   onMoveUp?: () => void;
   onMoveDown?: () => void;
+  onSetSortOrder?: (sortOrder: number) => void;
   onTogglePin?: () => void;
   onToggleFeatured?: () => void;
   canMoveUp?: boolean;
@@ -249,6 +250,7 @@ export function AdminManageRow({
   isFeatured,
   onMoveUp,
   onMoveDown,
+  onSetSortOrder,
   onTogglePin,
   onToggleFeatured,
   canMoveUp,
@@ -259,16 +261,26 @@ export function AdminManageRow({
   const showCuration =
     sortOrder !== undefined ||
     onMoveUp !== undefined ||
+    onSetSortOrder !== undefined ||
     onTogglePin !== undefined ||
     onToggleFeatured !== undefined;
+
+  const commitSortOrder = (value: string) => {
+    if (!onSetSortOrder || sortOrder === undefined) return;
+    const next = Number(value);
+    if (!Number.isFinite(next) || next < 0) return;
+    const normalized = Math.round(next);
+    if (normalized === sortOrder) return;
+    onSetSortOrder(normalized);
+  };
 
   return (
     <div
       className={cn(
-        'h-full rounded-[16px] border border-[#E7DFD2] bg-[#FFFCF7] shadow-[0_10px_22px_-24px_rgba(20,31,26,.35)]',
+        'flex h-full gap-3 rounded-[16px] border border-[#E7DFD2] bg-[#FFFCF7] p-3 shadow-[0_10px_22px_-24px_rgba(20,31,26,.35)]',
         highlight
-          ? 'flex flex-col gap-3 border-[#D8C69E] bg-[#FFF9EE] p-3 shadow-[0_18px_36px_-28px_rgba(7,37,31,.45)]'
-          : 'flex gap-2.5 p-2.5',
+          ? 'border-[#D8C69E] bg-[#FFF9EE] shadow-[0_18px_36px_-28px_rgba(7,37,31,.45)]'
+          : undefined,
         className,
       )}
     >
@@ -276,7 +288,7 @@ export function AdminManageRow({
         <div
           className={cn(
             'shrink-0 overflow-hidden rounded-[11px] bg-[#E9DFD1]',
-            highlight ? 'w-full rounded-[15px]' : 'w-20 sm:w-28',
+            'h-20 w-28',
           )}
         >
           {preview}
@@ -317,13 +329,29 @@ export function AdminManageRow({
         <p
           className={cn(
             'mt-1 line-clamp-2 font-semibold leading-[1.45] text-cream-foreground',
-            highlight ? 'text-[16px]' : 'text-[13px]',
+            'text-[13.5px]',
           )}
         >
           {title}
         </p>
         {showCuration && (
           <div className="mt-2 flex flex-wrap gap-1.5">
+            {sortOrder !== undefined && onSetSortOrder && (
+              <label className="flex items-center gap-1.5 rounded-lg border border-[#E2D8C8] bg-white px-2 py-1 text-[10px] font-semibold text-[#4F574F]">
+                순서
+                <input
+                  type="number"
+                  min={0}
+                  defaultValue={sortOrder}
+                  disabled={isSubmitting}
+                  onBlur={(event) => commitSortOrder(event.currentTarget.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') event.currentTarget.blur();
+                  }}
+                  className="w-12 bg-transparent text-[11px] font-bold text-[#1E2621] outline-none disabled:opacity-60"
+                />
+              </label>
+            )}
             {onMoveUp && (
               <button
                 type="button"

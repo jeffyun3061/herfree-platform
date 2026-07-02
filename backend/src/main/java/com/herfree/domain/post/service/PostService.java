@@ -36,6 +36,7 @@ import com.herfree.global.util.BoardWritePolicy;
 import com.herfree.global.util.PrivateBoardPolicy;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -146,30 +147,33 @@ public class PostService {
             PostListPeriod period
     ) {
         PostListSort sort = PostListSort.from(pageable);
+        // @Query ORDER BY는 repository 내부에 있으므로 Pageable sort(engagementScore 등)를 그대로 넘기면
+        // Post 엔티티에 없는 속성으로 추가 정렬이 붙어 500이 난다.
+        Pageable paging = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
         if (boardId != null) {
             Board board = boardRepository.findById(boardId).orElseThrow(BoardNotFoundException::new);
             if (PrivateBoardPolicy.isOffCommunityBoard(board.getBoardType()) && userId == null) {
                 throw new PostAccessDeniedException();
             }
             if (keyword != null) {
-                return postFulltextSearchRepository.searchBoardPosts(boardId, keyword, sort, period, pageable);
+                return postFulltextSearchRepository.searchBoardPosts(boardId, keyword, sort, period, paging);
             }
             if (PrivateBoardPolicy.isInquiryBoard(board.getBoardType())) {
-                return postRepository.searchInquiryPosts(PostStatus.ACTIVE, boardId, null, pageable);
+                return postRepository.searchInquiryPosts(PostStatus.ACTIVE, boardId, null, paging);
             }
             if (PrivateBoardPolicy.isSecretConsultBoard(board.getBoardType())) {
-                return postRepository.searchSecretConsultPosts(PostStatus.ACTIVE, boardId, null, pageable);
+                return postRepository.searchSecretConsultPosts(PostStatus.ACTIVE, boardId, null, paging);
             }
             if (PrivateBoardPolicy.isSecretStoryBoard(board.getBoardType())) {
-                return postRepository.searchSecretStoryPosts(PostStatus.ACTIVE, boardId, null, pageable);
+                return postRepository.searchSecretStoryPosts(PostStatus.ACTIVE, boardId, null, paging);
             }
-            return searchCommunityPosts(PostStatus.ACTIVE, boardId, null, userId, sort, period, pageable);
+            return searchCommunityPosts(PostStatus.ACTIVE, boardId, null, userId, sort, period, paging);
         }
 
         if (keyword != null) {
-            return postFulltextSearchRepository.searchCommunityPosts(boardId, keyword, userId, sort, period, pageable);
+            return postFulltextSearchRepository.searchCommunityPosts(boardId, keyword, userId, sort, period, paging);
         }
-        return searchCommunityPosts(PostStatus.ACTIVE, null, null, userId, sort, period, pageable);
+        return searchCommunityPosts(PostStatus.ACTIVE, null, null, userId, sort, period, paging);
     }
 
     private Page<Post> searchCommunityPosts(

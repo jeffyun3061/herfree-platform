@@ -23,8 +23,8 @@ function CheckIcon() {
 
 export function LoggedOutMyPagePromptCard() {
   return (
-    <div className="px-4 pb-36 pt-5">
-      <section className="mx-auto max-w-[340px] overflow-hidden rounded-[26px] border border-[#E7DFD2] bg-white shadow-[0_24px_54px_-34px_rgba(24,34,28,.52)]">
+    <div className="px-3 pb-8 pt-5">
+      <section className="w-full overflow-hidden rounded-[26px] border border-[#E7DFD2] bg-white shadow-[0_24px_54px_-34px_rgba(24,34,28,.52)]">
         <div className="relative aspect-[16/9] overflow-hidden bg-[#0B3B36]">
           <img
             src={PUBLIC_IMAGES.journalDashboardHero}
@@ -35,7 +35,7 @@ export function LoggedOutMyPagePromptCard() {
           <div className="absolute left-4 top-4 rounded-full bg-white/14 px-3 py-1 text-[10px] font-extrabold uppercase tracking-[.08em] text-white/84 backdrop-blur">
             My page
           </div>
-          <div className="absolute bottom-8 left-4 right-4">
+          <div className="absolute bottom-10 left-4 right-4">
             <p className="text-[11.5px] font-semibold text-white/76">
               내 기록과 활동을 한곳에 모아요
             </p>
@@ -47,8 +47,8 @@ export function LoggedOutMyPagePromptCard() {
           </div>
         </div>
 
-        <div className="px-4 pb-5 pt-4">
-          <div className="-mt-4 mx-auto w-[86%] max-w-[260px] rounded-[20px] border border-[#E9DFD1] bg-[#FFFCF7] p-3 shadow-[0_18px_36px_-28px_rgba(7,37,31,.55)]">
+        <div className="relative px-4 pb-5 pt-0">
+          <div className="relative z-20 -mt-10 ml-auto mr-3 w-[68%] max-w-[238px] rounded-[20px] border border-[#E9DFD1] bg-[#FFFCF7] p-3 shadow-[0_18px_36px_-28px_rgba(7,37,31,.55)]">
             <div className="grid grid-cols-3 gap-2">
               {[
                 ['글', '활동'],

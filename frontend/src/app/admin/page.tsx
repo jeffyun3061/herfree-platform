@@ -143,7 +143,7 @@ function AdminPageContent() {
           </div>
 
           <div className="mt-6 max-w-[680px]">
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#D8C691]/70">Herpfree Admin</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#D8C691]/70">Herfree Admin</p>
             <h1 className="hf-display mt-2 text-[29px] font-extrabold leading-[1.12] sm:text-[38px]">
               운영 관리
             </h1>
@@ -173,7 +173,7 @@ function AdminPageContent() {
         <header className="mb-3 flex items-center justify-between gap-3">
           <BackButton className="bg-white text-[#123D37] shadow-[0_10px_24px_-20px_rgba(18,61,55,.65)] hover:bg-white" />
           <div className="min-w-0 flex-1">
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#958B78]">Herpfree Admin</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#958B78]">Herfree Admin</p>
             <h1 className="mt-0.5 truncate text-[20px] font-extrabold text-[#1E2621]">
               {activeTab?.label ?? '운영 관리'}
             </h1>
