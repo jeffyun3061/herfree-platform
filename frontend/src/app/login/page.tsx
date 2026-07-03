@@ -27,7 +27,7 @@ function resolveReturnUrl(from: string | null): string {
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { login } = useAuth();
+  const { isReady, isLoggedIn, login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberEmail, setRememberEmail] = useState(false);
@@ -49,6 +49,11 @@ function LoginForm() {
       setRememberEmail(true);
     }
   }, []);
+
+  useEffect(() => {
+    if (!isReady || !isLoggedIn) return;
+    router.replace(resolveReturnUrl(searchParams.get('from')));
+  }, [isReady, isLoggedIn, router, searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

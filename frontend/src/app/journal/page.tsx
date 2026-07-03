@@ -10,11 +10,7 @@ import { JournalHomeTab } from '@/components/journal/JournalHomeTab';
 import { JournalRecordFromQuery } from '@/components/journal/JournalRecordFromQuery';
 
 import { JournalRecordSheet } from '@/components/journal/JournalRecordSheet';
-import { JournalTimeline14Days } from '@/components/journal/JournalTimeline14Days';
-import { JournalPatternLine } from '@/components/journal/JournalPatternLine';
-import { JournalReviewDashboard } from '@/components/journal/JournalReviewDashboard';
-import { JournalRecentRelapses } from '@/components/journal/JournalRecentRelapses';
-import { JournalInsightLines } from '@/components/journal/JournalInsightLines';
+import { JournalInsightsPanel } from '@/components/journal/JournalInsightsCarousel';
 
 import { JournalTabBar, type JournalTabId } from '@/components/journal/JournalTabBar';
 
@@ -276,6 +272,8 @@ export default function JournalPage() {
 
                   dashboard={dashboard ?? null}
 
+                  lastRecord={displayHistory[0] ?? null}
+
                   isLoading={dashboardLoading}
 
                   onRecordDaily={() => openDailyWizard()}
@@ -325,59 +323,14 @@ export default function JournalPage() {
 
 
             {activeTab === 'insights' && (
-
-              <div className="mx-auto max-w-app space-y-4">
-
-                <JournalTimeline14Days
-
-                  days={dashboard?.timelineDays ?? []}
-
-                  isLoading={dashboardLoading}
-
-                  onDaySelect={(date) => void handleTimelineDaySelect(date)}
-
-                />
-
-                <JournalPatternLine
-
-                  line={dashboard?.personalPatternLine}
-
-                  isLoading={dashboardLoading}
-
-                />
-
-                <JournalReviewDashboard
-
-                  summary={reviewSummary}
-
-                  isLoading={reviewSummaryLoading}
-
-                />
-
-                <JournalRecentRelapses
-
-                  relapses={dashboard?.recentRelapses ?? []}
-
-                  isLoading={dashboardLoading}
-
-                />
-
-                {insights && insights.insightLines.length > 0 && (
-
-                  <JournalInsightLines
-
-                    lines={insights.insightLines}
-
-                    sufficientData={insights.sufficientData}
-
-                    insightMessage={insights.insightMessage}
-
-                  />
-
-                )}
-
-              </div>
-
+              <JournalInsightsPanel
+                dashboard={dashboard}
+                dashboardLoading={dashboardLoading}
+                reviewSummary={reviewSummary}
+                reviewSummaryLoading={reviewSummaryLoading}
+                insights={insights}
+                onDaySelect={(date) => void handleTimelineDaySelect(date)}
+              />
             )}
 
 

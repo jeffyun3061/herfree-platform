@@ -14,6 +14,7 @@ import type { LoginRequest, SignupRequest } from '@/domain/auth/types';
 import type { SessionUser } from '@/domain/user/types';
 import * as authApi from '@/lib/api/auth';
 import * as usersApi from '@/lib/api/users';
+import { isApiError } from '@/lib/api/client';
 import {
   bumpAuthEpoch,
   clearAuth,
@@ -54,16 +55,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // 첫 렌더 후 저장된 세션을 복원하고, 서버에 토큰 유효성을 확인한다.
   useEffect(() => {
     const restore = async () => {
-      if (typeof window !== 'undefined') {
-        const path = window.location.pathname;
-        if (path.startsWith('/login') || path.startsWith('/signup')) {
-          clearAuth();
-          setUser(null);
-          setIsReady(true);
-          return;
-        }
-      }
-
       const gen = ++restoreGenRef.current;
       const epochAtStart = getAuthEpoch();
       const token = getAccessToken();
@@ -80,10 +71,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const session: SessionUser = { userId: me.id, nickname: me.nickname, role: me.role };
         setSessionUser(session);
         setUser(session);
-      } catch {
+      } catch (error) {
         if (gen !== restoreGenRef.current || epochAtStart !== getAuthEpoch()) return;
-        clearAuth();
-        setUser(null);
+        if (isApiError(error) && (error.status === 401 || error.status === 403)) {
+          clearAuth();
+          setUser(null);
+          return;
+        }
+        setUser(getSessionUser());
       } finally {
         if (gen === restoreGenRef.current) {
           setIsReady(true);

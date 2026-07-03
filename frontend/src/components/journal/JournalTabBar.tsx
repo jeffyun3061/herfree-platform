@@ -5,7 +5,7 @@ import { cn } from '@/lib/cn';
 export type JournalTabId = 'home' | 'records' | 'insights';
 
 const TABS: { id: JournalTabId; label: string }[] = [
-  { id: 'home', label: '홈' },
+  { id: 'home', label: '요약' },
   { id: 'records', label: '기록' },
   { id: 'insights', label: '인사이트' },
 ];
@@ -19,7 +19,7 @@ export function JournalTabBar({ active, onChange }: JournalTabBarProps) {
   return (
     <nav
       className="mx-auto flex w-full max-w-app rounded-[0.875rem] border border-[var(--color-border-tertiary)] bg-white/90 p-0.5 shadow-sm backdrop-blur-sm"
-      aria-label="일지 메뉴"
+      aria-label="개인일지 메뉴"
     >
       {TABS.map((tab) => (
         <button

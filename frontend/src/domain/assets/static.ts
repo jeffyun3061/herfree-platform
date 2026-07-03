@@ -31,6 +31,7 @@ export const PUBLIC_IMAGES = {
   logoHCream: publicPath('assets/logo-h-cream.png'),
   logoHMark: publicPath('assets/logo-h-mark.png'),
   journalDashboardHero: publicPath('images/dashboard/hero-landscape.png'),
+  journalDashboardCard: publicPath('images/dashboard/bg_dash.png'),
 } as const;
 
 /** 일지 UI 아이콘 (PNG 우선) */
