@@ -9,6 +9,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -48,6 +49,15 @@ public class User extends BaseTimeEntity {
     @Column(nullable = false, length = 50)
     private UserStatus status;
 
+    @Column
+    private LocalDateTime suspendedUntil;
+
+    @Column(length = 100)
+    private String suspensionReason;
+
+    @Column(columnDefinition = "TEXT")
+    private String suspensionNote;
+
     @Builder
     private User(String email, String password, UserRole role, UserStatus status) {
         this.email = email;
@@ -69,7 +79,14 @@ public class User extends BaseTimeEntity {
 
     // 관리자에 의한 계정 정지 — 로그인은 막히지만 데이터는 보존된다
     public void suspend() {
+        suspend(null, null, null);
+    }
+
+    public void suspend(LocalDateTime suspendedUntil, String reason, String note) {
         this.status = UserStatus.SUSPENDED;
+        this.suspendedUntil = suspendedUntil;
+        this.suspensionReason = reason;
+        this.suspensionNote = note;
     }
 
     // 회원 탈퇴 처리 — 물리 삭제 대신 DELETED 상태로 전환한다
@@ -81,6 +98,9 @@ public class User extends BaseTimeEntity {
     // 계정 활성화 — 정지 해제 또는 관리자 복구 시 사용
     public void activate() {
         this.status = UserStatus.ACTIVE;
+        this.suspendedUntil = null;
+        this.suspensionReason = null;
+        this.suspensionNote = null;
     }
 
     public void changeRole(UserRole role) {
@@ -89,5 +109,11 @@ public class User extends BaseTimeEntity {
 
     public void changeStatus(UserStatus status) {
         this.status = status;
+    }
+
+    public boolean isSuspensionExpired(LocalDateTime now) {
+        return this.status == UserStatus.SUSPENDED
+                && this.suspendedUntil != null
+                && !this.suspendedUntil.isAfter(now);
     }
 }

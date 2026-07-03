@@ -30,6 +30,8 @@ export type AdminUser = {
   nickname: string;
   role: UserRole;
   status: UserStatus;
+  suspendedUntil: string | null;
+  suspensionReason: string | null;
   createdAt: string;
 };
 

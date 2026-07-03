@@ -23,6 +23,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -81,7 +82,7 @@ public class AuthService {
     }
 
     // 로그인 — 이메일로 사용자를 찾고, 비밀번호를 검증한 뒤 JWT를 발급한다.
-    @Transactional(readOnly = true)
+    @Transactional
     public LoginResponse login(LoginRequest request) {
         loginLockoutService.assertNotLocked(request.email());
 
@@ -95,7 +96,11 @@ public class AuthService {
         // filter()로 ACTIVE만 통과시키면 SUSPENDED와 DELETED가 모두 UserNotFoundException을 던져
         // 클라이언트가 계정 정지 여부를 알 수 없다. 상태별로 예외를 분리해야 한다.
         if (user.getStatus() == UserStatus.SUSPENDED) {
-            throw new SuspendedAccountException();
+            if (user.isSuspensionExpired(LocalDateTime.now())) {
+                user.activate();
+            } else {
+                throw new SuspendedAccountException();
+            }
         }
 
         // DELETED 계정은 탈퇴 처리된 것으로, 존재하지 않는 계정과 동일하게 처리한다.

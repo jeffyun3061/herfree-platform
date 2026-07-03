@@ -9,6 +9,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -42,6 +43,12 @@ public class AdminCommentController {
     @PatchMapping("/{commentId}/restore")
     public ResponseEntity<ApiResponse<Void>> restoreComment(@PathVariable Long commentId) {
         commentService.restoreComment(commentId);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @DeleteMapping("/{commentId}")
+    public ResponseEntity<ApiResponse<Void>> deleteComment(@PathVariable Long commentId) {
+        commentService.adminDeleteComment(commentId);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

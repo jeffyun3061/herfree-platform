@@ -108,17 +108,17 @@ public class PostFulltextSearchRepository {
         boolean weekly = period == PostListPeriod.WEEK;
 
         return switch (sort) {
-            case POPULAR -> NOTICE_PREFIX
+            case POPULAR -> "ORDER BY "
                     + (weekly ? PostEngagementScore.mysqlExpressionWeekly() : PostEngagementScore.mysqlExpressionAllTime())
-                    + " DESC, p.created_at DESC";
+                    + " DESC, p.view_count DESC, p.created_at DESC";
             case COMMENTS -> weekly
-                    ? NOTICE_PREFIX
+                    ? "ORDER BY "
                             + """
                              (SELECT COUNT(c.id) FROM comments c
                               WHERE c.post_id = p.id AND c.status = 'ACTIVE' AND c.created_at >= :since) DESC,
                             """
-                            + " p.created_at DESC"
-                    : NOTICE_PREFIX + " p.comment_count DESC, p.created_at DESC";
+                            + " p.view_count DESC, p.created_at DESC"
+                    : "ORDER BY p.comment_count DESC, p.view_count DESC, p.created_at DESC";
             default -> NOTICE_PREFIX + " p.created_at DESC";
         };
     }

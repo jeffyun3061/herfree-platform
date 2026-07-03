@@ -3,6 +3,7 @@ package com.herfree.domain.journal.entity;
 import com.herfree.domain.user.entity.User;
 import com.herfree.global.common.BaseTimeEntity;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -21,8 +22,6 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 @Getter
 @Entity
@@ -56,14 +55,14 @@ public class JournalRecord extends BaseTimeEntity {
     @Column(nullable = false)
     private boolean hadSymptoms;
 
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(columnDefinition = "json")
+    @Convert(converter = StringListAttributeConverter.class)
+    @Column(length = 500)
     private List<String> prodromalSymptoms = new ArrayList<>();
 
     private Integer severity;
 
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(columnDefinition = "json")
+    @Convert(converter = StringListAttributeConverter.class)
+    @Column(length = 500)
     private List<String> triggers = new ArrayList<>();
 
     @Column(columnDefinition = "TEXT")

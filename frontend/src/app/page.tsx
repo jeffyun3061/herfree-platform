@@ -1,9 +1,12 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { usePostList } from '@/hooks/usePosts';
 import { useJournalDashboard } from '@/hooks/useJournal';
 import { useJournalCheckin } from '@/hooks/useJournalCheckin';
+import { useBoards } from '@/hooks/useBoards';
+import { useVideos } from '@/hooks/useVideos';
 import { GuestHomePage } from '@/components/home/GuestHomePage';
 import { JournalPersonalDashboard } from '@/components/journal/JournalPersonalDashboard';
 import { JournalRecordSheet } from '@/components/journal/JournalRecordSheet';
@@ -15,9 +18,27 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 function LoggedInHomePage() {
   const { postPage: communityPosts, isLoading: communityLoading } = usePostList(
     undefined,
-    5,
+    6,
     '',
     'createdAt,desc',
+  );
+  const { boards } = useBoards();
+  const noticeBoardId = useMemo(
+    () => boards.find((board) => board.boardType === 'NOTICE')?.id ?? null,
+    [boards],
+  );
+  const { postPage: noticePosts, isLoading: noticeLoading } = usePostList(
+    noticeBoardId,
+    1,
+    '',
+    'createdAt,desc',
+    undefined,
+    { enabled: noticeBoardId !== null },
+  );
+  const { videoPage, isLoading: videoLoading } = useVideos(1);
+  const homeCommunityPosts = useMemo(
+    () => communityPosts.content.filter((post) => post.boardType !== 'NOTICE').slice(0, 5),
+    [communityPosts.content],
   );
 
   const {
@@ -54,8 +75,12 @@ function LoggedInHomePage() {
             onRecordDaily={() => openDailyWizard()}
             onRecordRelapse={openRelapseWizard}
             onRoutineItemClick={handleRoutineItemClick}
-            communityPosts={communityPosts.content}
+            noticePost={noticePosts.content[0] ?? null}
+            noticeLoading={noticeLoading}
+            communityPosts={homeCommunityPosts}
             communityLoading={communityLoading}
+            latestVideo={videoPage.content[0] ?? null}
+            videoLoading={videoLoading}
             routinePulse={routinePulse}
             hasTodayRecord={hasTodayRecord}
             afterCommunity={

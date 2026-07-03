@@ -13,6 +13,15 @@ java {
     }
 }
 
+sourceSets {
+    main {
+        java {
+            exclude("com/herfree/domain/auth/auth/**")
+            exclude("com/herfree/global/security/security/**")
+        }
+    }
+}
+
 repositories {
     mavenCentral()
 }

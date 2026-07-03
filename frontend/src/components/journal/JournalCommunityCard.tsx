@@ -16,7 +16,7 @@ function PostAvatar({ nickname }: { nickname: string }) {
   const initial = nickname === '익명' ? '?' : nickname.trim().charAt(0) || '?';
 
   return (
-    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/[0.08] text-sm font-medium text-white/80">
+    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/[0.08] text-xs font-bold text-white/80">
       {initial}
     </span>
   );
@@ -32,13 +32,13 @@ export function JournalCommunityCard({ posts, isLoading, maxPosts = 5 }: Journal
   const previewPosts = posts.slice(0, maxPosts);
 
   return (
-    <section className="journal-community-panel shadow-[0_18px_42px_-30px_rgba(7,37,31,.75)]">
-      <div className="mb-4 flex items-center justify-between">
+    <section className="rounded-[22px] border border-[#0F4A42]/20 bg-[#0D332D] px-4 py-4 shadow-[0_18px_42px_-30px_rgba(7,37,31,.75)] sm:px-5 sm:py-5">
+      <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-white" aria-hidden>
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#F2C86B]/18 text-[#F7D27A]" aria-hidden>
             <svg
               viewBox="0 0 24 24"
-              className="h-5 w-5"
+              className="h-4 w-4"
               fill="none"
               stroke="currentColor"
               strokeWidth="1.8"
@@ -50,11 +50,14 @@ export function JournalCommunityCard({ posts, isLoading, maxPosts = 5 }: Journal
               />
             </svg>
           </span>
-          <h2 className="font-display text-base font-bold text-white">커뮤니티</h2>
+          <div>
+            <h2 className="font-display text-base font-bold text-white">커뮤니티</h2>
+            <p className="mt-0.5 text-[10.5px] text-white/55">방금 올라온 이야기</p>
+          </div>
         </div>
         <Link
           href="/community"
-          className="text-[11px] font-medium text-white/50 transition-colors hover:text-white/70"
+          className="rounded-full bg-white/[0.1] px-2.5 py-1 text-[11px] font-bold text-white/75 transition-colors hover:text-white"
         >
           더보기 &gt;
         </Link>
@@ -63,21 +66,21 @@ export function JournalCommunityCard({ posts, isLoading, maxPosts = 5 }: Journal
       {isLoading ? (
         <LoadingSpinner label="커뮤니티 불러오는 중..." />
       ) : previewPosts.length === 0 ? (
-        <p className="text-sm text-white/50">아직 글이 없습니다. 첫 이야기를 남겨보세요.</p>
+        <p className="text-sm text-white/60">아직 글이 없습니다. 첫 이야기를 남겨보세요.</p>
       ) : (
-        <ul>
+        <ul className="rounded-[18px] bg-[#082720]/75 px-3">
           {previewPosts.map((post, index) => (
             <li key={post.id} className={cn(index > 0 && 'border-t border-white/[0.08]')}>
-              <Link href={`/community/posts/${post.id}`} className="group flex items-center gap-3 py-3">
+              <Link href={`/community/posts/${post.id}`} className="group flex items-center gap-3 py-2.5">
                 <PostAvatar nickname={post.authorNickname} />
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-xs font-semibold text-white">{post.authorNickname}</span>
-                    <span className="text-[10px] text-white/40">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="truncate text-[11px] font-bold text-white">{post.authorNickname}</span>
+                    <span className="shrink-0 text-[10px] text-white/40">
                       {formatRelativeTime(post.createdAt)}
                     </span>
                   </div>
-                  <p className="mt-0.5 line-clamp-2 text-[13px] leading-snug text-white/[0.65] group-hover:text-white/80">
+                  <p className="mt-0.5 line-clamp-1 text-[13px] leading-snug text-white/[0.68] group-hover:text-white/85">
                     {postSnippet(post)}
                   </p>
                 </div>

@@ -335,7 +335,7 @@ body {
   }
 
   .community-chip {
-    @apply shrink-0 rounded-[18px] border border-[#DDE3E1] px-3.5 py-1.5 text-[12.5px] font-medium transition-colors;
+    @apply shrink-0 rounded-[18px] border border-[#DDE3E1] px-3.5 py-1.5 text-[12.5px] font-medium leading-none transition-colors;
   }
 
   .community-chip-active {
@@ -360,19 +360,19 @@ body {
     position: absolute;
     top: 0;
     bottom: 0;
-    width: 0.9rem;
+    width: 0.45rem;
     pointer-events: none;
     z-index: 1;
   }
 
   .community-tabs-scroller--peek-left::before {
     left: 0;
-    background: linear-gradient(90deg, rgba(243, 237, 227, 0.88) 0%, rgba(243, 237, 227, 0) 100%);
+    background: linear-gradient(90deg, rgba(243, 237, 227, 0.6) 0%, rgba(243, 237, 227, 0) 100%);
   }
 
   .community-tabs-scroller--peek-right::after {
     right: 0;
-    background: linear-gradient(270deg, rgba(243, 237, 227, 0.88) 0%, rgba(243, 237, 227, 0) 100%);
+    background: linear-gradient(270deg, rgba(243, 237, 227, 0.6) 0%, rgba(243, 237, 227, 0) 100%);
   }
 
   .community-tabs-nav {

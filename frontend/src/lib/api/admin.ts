@@ -4,7 +4,7 @@ import type { AdminUser, UserRole, UserStatus } from '@/domain/user/types';
 import type { Content } from '@/domain/content/types';
 import type { AdminNotice } from '@/domain/notice/types';
 import type { Product } from '@/domain/product/types';
-import type { Report, ReportProcessInput, ReportStatus } from '@/domain/report/types';
+import type { AdminReportTarget, Report, ReportProcessInput, ReportStatus, ReportTargetType } from '@/domain/report/types';
 import type { Video } from '@/domain/video/types';
 import { request } from '@/lib/api/client';
 
@@ -53,6 +53,23 @@ export function processReport(reportId: number, input: ReportProcessInput): Prom
   });
 }
 
+export function fetchReportTargets(minCount = 1, size = 50): Promise<AdminReportTarget[]> {
+  return request<AdminReportTarget[]>('/api/admin/reports/targets', {
+    query: { minCount, size },
+  });
+}
+
+export function processReportTarget(
+  targetType: ReportTargetType,
+  targetId: number,
+  input: ReportProcessInput,
+): Promise<Report[]> {
+  return request<Report[]>(`/api/admin/reports/targets/${targetType}/${targetId}/process`, {
+    method: 'PATCH',
+    body: input,
+  });
+}
+
 export function hidePost(postId: number): Promise<void> {
   return request<void>(`/api/admin/posts/${postId}/hide`, { method: 'PATCH' });
 }
@@ -67,6 +84,14 @@ export function restorePost(postId: number): Promise<void> {
 
 export function restoreComment(commentId: number): Promise<void> {
   return request<void>(`/api/admin/comments/${commentId}/restore`, { method: 'PATCH' });
+}
+
+export function deletePost(postId: number): Promise<void> {
+  return request<void>(`/api/admin/posts/${postId}`, { method: 'DELETE' });
+}
+
+export function deleteComment(commentId: number): Promise<void> {
+  return request<void>(`/api/admin/comments/${commentId}`, { method: 'DELETE' });
 }
 
 export type AdminPostUpdateInput = {
@@ -361,5 +386,29 @@ export function updateAdminUserStatus(userId: number, status: UserStatus): Promi
   return request<AdminUser>(`/api/admin/users/${userId}/status`, {
     method: 'PATCH',
     body: { status },
+  });
+}
+
+export type RestrictUserInput = {
+  permanent: boolean;
+  days?: number;
+  reason: string;
+  note?: string;
+};
+
+export function restrictAdminUser(userId: number, input: RestrictUserInput): Promise<AdminUser> {
+  return request<AdminUser>(`/api/admin/users/${userId}/restriction`, {
+    method: 'PATCH',
+    body: input,
+  });
+}
+
+export function resetAdminUserNickname(
+  userId: number,
+  input: { reason: string; note?: string },
+): Promise<AdminUser> {
+  return request<AdminUser>(`/api/admin/users/${userId}/nickname/reset`, {
+    method: 'PATCH',
+    body: input,
   });
 }

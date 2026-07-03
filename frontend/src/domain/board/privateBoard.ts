@@ -51,9 +51,9 @@ export const COMMUNITY_TAB_BOARD_TYPES = [
   { boardType: 'NOTICE', label: '공지사항' },
   { boardType: 'FREE', label: '자유게시판' },
   { boardType: 'SYMPTOM', label: '증상기록' },
-  { boardType: 'RELATIONSHIP', label: '연애/고지' },
+  { boardType: 'RELATIONSHIP', label: '연애/고민' },
   { boardType: 'PHOBIA', label: '포비아/대기' },
-  { boardType: 'SUPPORT', label: '위로응원' },
+  { boardType: 'SUPPORT', label: '위로/응원' },
   { boardType: 'PRODUCT_REVIEW', label: '제품후기' },
 ] as const;
 

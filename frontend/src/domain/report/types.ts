@@ -23,6 +23,19 @@ export type Report = {
   createdAt: string;
 };
 
+export type AdminReportTarget = {
+  targetType: ReportTargetType;
+  targetId: number;
+  reportCount: number;
+  urgent: boolean;
+  lastReportedAt: string;
+  targetTitle: string;
+  targetPreview: string | null;
+  targetStatus: string;
+  authorId: number | null;
+  authorNickname: string | null;
+};
+
 export type ReportProcessInput = {
   status: 'ACCEPTED' | 'REJECTED';
   processNote?: string;

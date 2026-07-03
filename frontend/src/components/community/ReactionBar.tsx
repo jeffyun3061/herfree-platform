@@ -17,7 +17,7 @@ export function ReactionBar({ targetType, targetId }: ReactionBarProps) {
 
   return (
     <div className="space-y-2">
-      <div className="flex flex-wrap gap-2">
+      <div className="grid grid-cols-2 gap-1.5 min-[390px]:grid-cols-3 sm:flex sm:flex-wrap sm:gap-2">
         {REACTION_TYPES.map((type) => {
           const state = states[type];
           const active = state?.reacted ?? false;
@@ -30,16 +30,16 @@ export function ReactionBar({ targetType, targetId }: ReactionBarProps) {
               disabled={!isLoggedIn || pendingType !== null || isLoading}
               onClick={() => void toggle(type)}
               className={cn(
-                'inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs transition-colors',
+                'inline-flex min-w-0 items-center justify-center gap-1 rounded-full border px-2.5 py-1.5 text-[11px] font-medium leading-none transition-colors',
                 active
                   ? 'border-primary bg-primary/10 text-primary'
                   : 'border-border bg-card text-muted hover:border-primary/40',
                 !isLoggedIn && 'cursor-not-allowed opacity-60',
               )}
             >
-              <span aria-hidden>{REACTION_ICONS[type]}</span>
-              <span>{REACTION_LABELS[type]}</span>
-              {!isLoading && <span className="font-medium">{count}</span>}
+              <span className="shrink-0" aria-hidden>{REACTION_ICONS[type]}</span>
+              <span className="min-w-0 truncate">{REACTION_LABELS[type]}</span>
+              {!isLoading && <span className="shrink-0 tabular-nums text-cream-foreground">{count}</span>}
             </button>
           );
         })}

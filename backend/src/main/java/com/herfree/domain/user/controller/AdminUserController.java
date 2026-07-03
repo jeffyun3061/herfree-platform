@@ -1,5 +1,7 @@
 package com.herfree.domain.user.controller;
 
+import com.herfree.domain.user.dto.request.ResetNicknameRequest;
+import com.herfree.domain.user.dto.request.RestrictUserRequest;
 import com.herfree.domain.user.dto.request.UpdateUserRoleRequest;
 import com.herfree.domain.user.dto.request.UpdateUserStatusRequest;
 import com.herfree.domain.user.dto.response.AdminUserResponse;
@@ -51,5 +53,23 @@ public class AdminUserController {
             @Valid @RequestBody UpdateUserStatusRequest request
     ) {
         return ResponseEntity.ok(ApiResponse.success(adminUserService.updateStatus(actorId, userId, request)));
+    }
+
+    @PatchMapping("/{userId}/restriction")
+    public ResponseEntity<ApiResponse<AdminUserResponse>> restrictUser(
+            @AuthenticationPrincipal Long actorId,
+            @PathVariable Long userId,
+            @Valid @RequestBody RestrictUserRequest request
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(adminUserService.restrictUser(actorId, userId, request)));
+    }
+
+    @PatchMapping("/{userId}/nickname/reset")
+    public ResponseEntity<ApiResponse<AdminUserResponse>> resetNickname(
+            @AuthenticationPrincipal Long actorId,
+            @PathVariable Long userId,
+            @Valid @RequestBody ResetNicknameRequest request
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(adminUserService.resetNickname(actorId, userId, request)));
     }
 }

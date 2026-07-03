@@ -62,16 +62,22 @@ function formatStress(record: JournalRecord | null | undefined): string {
   return STRESS_LABELS[record.stressLevel];
 }
 
-function buildMainStatus(record: JournalRecord | null, todayRecord: boolean): string {
-  if (!record) return '첫 기록을 남겨볼까요';
+function buildMainStatus(record: JournalRecord | null, todayRecord: boolean, relapseFreeDays: number): string {
+  if (!record) {
+    if (relapseFreeDays > 0) return `${relapseFreeDays}일째 평온`;
+    return '첫 기록을 남겨볼까요';
+  }
   if (todayRecord && record.mood) return `오늘은 ${MOOD_LABELS[record.mood]}`;
   if (record.hadSymptoms) return '증상 기록이 있어요';
   if (record.mood) return MOOD_LABELS[record.mood];
   return '증상 없음';
 }
 
-function buildSubStatus(record: JournalRecord | null, todayRecord: boolean): string {
-  if (!record) return '오늘의 수면, 영양제, 컨디션을 30초만 기록해 보세요.';
+function buildSubStatus(record: JournalRecord | null, todayRecord: boolean, relapseFreeDays: number): string {
+  if (!record) {
+    if (relapseFreeDays > 0) return '최근 기록을 기준으로 평온 흐름을 이어가고 있어요.';
+    return '오늘의 수면, 영양제, 컨디션을 30초만 기록해 보세요.';
+  }
   const prefix = todayRecord ? '오늘 기록' : `${formatRecordDate(record.recordDate)} 기록`;
   return `${prefix} · 수면 ${formatSleep(record)} · 스트레스 ${formatStress(record)}`;
 }
@@ -121,10 +127,10 @@ export function JournalDashboardCard({
               </span>
             </div>
             <h2 className="hf-display text-[28px] font-extrabold leading-tight text-white drop-shadow-[0_2px_12px_rgba(0,0,0,.42)]">
-              {buildMainStatus(focusRecord, todayRecord)}
+              {buildMainStatus(focusRecord, todayRecord, relapseFreeDays)}
             </h2>
             <p className="mt-1.5 text-[12.5px] leading-[1.45] text-white/88 drop-shadow">
-              {buildSubStatus(focusRecord, todayRecord)}
+              {buildSubStatus(focusRecord, todayRecord, relapseFreeDays)}
             </p>
           </div>
         </div>
@@ -171,9 +177,9 @@ export function JournalDashboardCard({
         <button
           type="button"
           onClick={onRecordDaily}
-          className="mx-[14px] mb-3 flex min-h-[48px] w-[calc(100%-28px)] items-center justify-center rounded-[15px] bg-[#0B3B36] text-[14px] font-extrabold text-white shadow-[0_12px_28px_-20px_rgba(0,0,0,.5)] transition-colors hover:bg-[#0F4F48]"
+          className="mx-[14px] mb-3 flex min-h-[48px] w-[calc(100%-28px)] items-center justify-center rounded-[15px] border border-[#FFE29A]/50 bg-[#F2C86B] text-[14px] font-extrabold text-[#082F2A] shadow-[0_14px_30px_-20px_rgba(242,200,107,.9)] transition-colors hover:bg-[#F7D27A]"
         >
-          오늘 기록하기
+          ✎ 오늘 기록하기
         </button>
       )}
     </section>

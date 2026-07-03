@@ -27,8 +27,8 @@ export function postListPeriodHint(sort: PostSortOption, period: PostListPeriod)
   if (!needsPostListPeriod(sort)) return null;
   if (sort === 'popular') {
     return period === 'week'
-      ? '이번 주 · 공감·댓글·조회·최근성 종합'
-      : '전체 · 공감·댓글·조회·최근성 종합';
+      ? '이번 주 반응과 댓글이 많은 순'
+      : '전체 기간 반응과 댓글이 많은 순';
   }
   return period === 'week' ? '이번 주 댓글 많은 순' : '전체 기간 댓글순';
 }

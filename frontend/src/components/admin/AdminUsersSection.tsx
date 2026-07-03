@@ -1,9 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useApiQuery } from '@/hooks/useApiQuery';
 import {
   fetchAdminUsers,
+  resetAdminUserNickname,
+  restrictAdminUser,
   updateAdminUserRole,
   updateAdminUserStatus,
 } from '@/lib/api/admin';
@@ -24,11 +27,16 @@ import { isAdmin, isSuperAdmin } from '@/domain/user/types';
 
 export function AdminUsersSection() {
   const { user: session } = useAuth();
+  const searchParams = useSearchParams();
   const [page, setPage] = useState(0);
   const [searchInput, setSearchInput] = useState('');
   const [keyword, setKeyword] = useState('');
   const [actionError, setActionError] = useState<string | null>(null);
   const [pendingId, setPendingId] = useState<number | null>(null);
+  const [restrictionUserId, setRestrictionUserId] = useState<number | null>(null);
+  const [restrictionDays, setRestrictionDays] = useState('7');
+  const [restrictionReason, setRestrictionReason] = useState('운영 정책 위반');
+  const [restrictionNote, setRestrictionNote] = useState('');
   const hasKeyword = keyword.trim().length > 0;
 
   const { data, isLoading, error, refetch } = useApiQuery(
@@ -39,6 +47,14 @@ export function AdminUsersSection() {
 
   const canChangeStatus = isAdmin(session?.role);
   const canChangeRole = isSuperAdmin(session?.role);
+
+  useEffect(() => {
+    const q = searchParams.get('q');
+    if (!q) return;
+    setSearchInput(q);
+    setKeyword(q);
+    setPage(0);
+  }, [searchParams]);
 
   const handleSearch = () => {
     setKeyword(searchInput.trim());
@@ -63,6 +79,43 @@ export function AdminUsersSection() {
     setActionError(null);
     try {
       await updateAdminUserStatus(userId, status);
+      await refetch();
+    } catch (err) {
+      setActionError(getErrorMessage(err));
+    } finally {
+      setPendingId(null);
+    }
+  };
+
+  const handleRestrict = async (userId: number) => {
+    setPendingId(userId);
+    setActionError(null);
+    try {
+      const permanent = restrictionDays === 'permanent';
+      await restrictAdminUser(userId, {
+        permanent,
+        days: permanent ? undefined : Number(restrictionDays),
+        reason: restrictionReason.trim(),
+        note: restrictionNote.trim() || undefined,
+      });
+      setRestrictionUserId(null);
+      setRestrictionNote('');
+      await refetch();
+    } catch (err) {
+      setActionError(getErrorMessage(err));
+    } finally {
+      setPendingId(null);
+    }
+  };
+
+  const handleNicknameReset = async (userId: number) => {
+    setPendingId(userId);
+    setActionError(null);
+    try {
+      await resetAdminUserNickname(userId, {
+        reason: '부적절한 닉네임',
+        note: '관리자 화면에서 닉네임 초기화',
+      });
       await refetch();
     } catch (err) {
       setActionError(getErrorMessage(err));
@@ -139,6 +192,14 @@ export function AdminUsersSection() {
                   <p className="mt-1 text-xs text-muted">
                     가입 {new Date(member.createdAt).toLocaleDateString('ko-KR')}
                   </p>
+                  {member.status === 'SUSPENDED' && (
+                    <p className="mt-1 text-xs font-medium text-red-600">
+                      {member.suspensionReason ?? '제재 중'} ·{' '}
+                      {member.suspendedUntil
+                        ? `${new Date(member.suspendedUntil).toLocaleDateString('ko-KR')}까지`
+                        : '영구 정지'}
+                    </p>
+                  )}
                 </div>
                 <div className="flex flex-col gap-2 sm:flex-row">
                   {canChangeRole && member.role !== 'SUPER_ADMIN' ? (
@@ -181,6 +242,87 @@ export function AdminUsersSection() {
                   )}
                 </div>
               </div>
+
+              {canChangeStatus && member.role !== 'SUPER_ADMIN' && member.id !== session?.userId && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    disabled={pendingId === member.id}
+                    onClick={() =>
+                      setRestrictionUserId(restrictionUserId === member.id ? null : member.id)
+                    }
+                  >
+                    제재 설정
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    disabled={pendingId === member.id}
+                    onClick={() => void handleNicknameReset(member.id)}
+                  >
+                    닉네임 초기화
+                  </Button>
+                  {member.status === 'SUSPENDED' && (
+                    <Button
+                      size="sm"
+                      variant="primary"
+                      disabled={pendingId === member.id}
+                      onClick={() => void handleStatusChange(member.id, 'ACTIVE')}
+                    >
+                      정지 해제
+                    </Button>
+                  )}
+                </div>
+              )}
+
+              {restrictionUserId === member.id && (
+                <div className="mt-3 rounded-[16px] border border-[#E7DFD2] bg-[#FFFCF7] p-3">
+                  <p className="text-[12px] font-extrabold text-[#1E2621]">회원 제재 설정</p>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-[120px_1fr]">
+                    <select
+                      value={restrictionDays}
+                      onChange={(event) => setRestrictionDays(event.target.value)}
+                      className="rounded-[12px] border border-[#E4D8C8] bg-white px-3 py-2 text-xs"
+                    >
+                      <option value="1">1일 정지</option>
+                      <option value="7">7일 정지</option>
+                      <option value="30">30일 정지</option>
+                      <option value="permanent">영구 정지</option>
+                    </select>
+                    <input
+                      value={restrictionReason}
+                      onChange={(event) => setRestrictionReason(event.target.value)}
+                      placeholder="제재 사유"
+                      className="rounded-[12px] border border-[#E4D8C8] bg-white px-3 py-2 text-xs outline-none focus:border-primary"
+                    />
+                  </div>
+                  <textarea
+                    value={restrictionNote}
+                    onChange={(event) => setRestrictionNote(event.target.value)}
+                    placeholder="운영 메모, 신고 맥락, 재검토 기준을 남겨주세요"
+                    rows={3}
+                    className="mt-2 w-full rounded-[12px] border border-[#E4D8C8] bg-white px-3 py-2 text-xs outline-none focus:border-primary"
+                  />
+                  <div className="mt-2 flex justify-end gap-2">
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => setRestrictionUserId(null)}
+                    >
+                      취소
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="danger"
+                      disabled={pendingId === member.id || restrictionReason.trim().length === 0}
+                      onClick={() => void handleRestrict(member.id)}
+                    >
+                      제재 적용
+                    </Button>
+                  </div>
+                </div>
+              )}
             </li>
           ))}
         </ul>

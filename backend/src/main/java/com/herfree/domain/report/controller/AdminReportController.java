@@ -1,8 +1,10 @@
 package com.herfree.domain.report.controller;
 
 import com.herfree.domain.report.dto.request.ReportProcessRequest;
+import com.herfree.domain.report.dto.response.AdminReportTargetResponse;
 import com.herfree.domain.report.dto.response.ReportResponse;
 import com.herfree.domain.report.entity.ReportStatus;
+import com.herfree.domain.report.entity.ReportTargetType;
 import com.herfree.domain.report.service.ReportService;
 import com.herfree.global.response.ApiResponse;
 import jakarta.validation.Valid;
@@ -37,6 +39,14 @@ public class AdminReportController {
         return ResponseEntity.ok(ApiResponse.success(reportService.getReports(status, pageable)));
     }
 
+    @GetMapping("/targets")
+    public ResponseEntity<ApiResponse<java.util.List<AdminReportTargetResponse>>> getReportTargets(
+            @RequestParam(defaultValue = "1") int minCount,
+            @RequestParam(defaultValue = "50") int size
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(reportService.getPendingTargets(minCount, size)));
+    }
+
     @PatchMapping("/{reportId}/process")
     public ResponseEntity<ApiResponse<ReportResponse>> processReport(
             @AuthenticationPrincipal Long adminId,
@@ -45,5 +55,16 @@ public class AdminReportController {
     ) {
         return ResponseEntity.ok(ApiResponse.success(
                 reportService.processReport(adminId, reportId, request)));
+    }
+
+    @PatchMapping("/targets/{targetType}/{targetId}/process")
+    public ResponseEntity<ApiResponse<java.util.List<ReportResponse>>> processTargetReports(
+            @AuthenticationPrincipal Long adminId,
+            @PathVariable ReportTargetType targetType,
+            @PathVariable Long targetId,
+            @Valid @RequestBody ReportProcessRequest request
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(
+                reportService.processTargetReports(adminId, targetType, targetId, request)));
     }
 }

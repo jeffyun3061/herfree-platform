@@ -4,9 +4,12 @@ import com.herfree.domain.report.entity.Report;
 import com.herfree.domain.report.entity.ReportStatus;
 import com.herfree.domain.report.entity.ReportTargetType;
 import java.time.LocalDateTime;
+import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface ReportRepository extends JpaRepository<Report, Long> {
 
@@ -16,6 +19,25 @@ public interface ReportRepository extends JpaRepository<Report, Long> {
 
     // 관리자가 상태별로 신고 목록을 조회할 때 사용
     Page<Report> findByStatusOrderByCreatedAtDesc(ReportStatus status, Pageable pageable);
+
+    List<Report> findByStatusAndTargetTypeAndTargetId(
+            ReportStatus status, ReportTargetType targetType, Long targetId);
+
+    @Query("""
+            SELECT r.targetType AS targetType,
+                   r.targetId AS targetId,
+                   COUNT(r) AS reportCount,
+                   MAX(r.createdAt) AS lastReportedAt
+            FROM Report r
+            WHERE r.status = :status
+            GROUP BY r.targetType, r.targetId
+            HAVING COUNT(r) >= :minCount
+            ORDER BY COUNT(r) DESC, MAX(r.createdAt) DESC
+            """)
+    List<ReportTargetSummary> findTargetSummaries(
+            @Param("status") ReportStatus status,
+            @Param("minCount") long minCount,
+            Pageable pageable);
 
     long countByStatus(ReportStatus status);
 

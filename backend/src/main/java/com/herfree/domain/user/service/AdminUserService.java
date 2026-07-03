@@ -2,6 +2,8 @@ package com.herfree.domain.user.service;
 
 import com.herfree.domain.user.dto.request.UpdateUserRoleRequest;
 import com.herfree.domain.user.dto.request.UpdateUserStatusRequest;
+import com.herfree.domain.user.dto.request.ResetNicknameRequest;
+import com.herfree.domain.user.dto.request.RestrictUserRequest;
 import com.herfree.domain.user.dto.response.AdminUserResponse;
 import com.herfree.domain.user.entity.User;
 import com.herfree.domain.user.entity.UserProfile;
@@ -14,6 +16,7 @@ import com.herfree.domain.user.repository.UserRepository;
 import com.herfree.global.util.StaffRolePolicy;
 import java.util.List;
 import java.util.Map;
+import java.time.LocalDateTime;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -101,6 +104,63 @@ public class AdminUserService {
         return toResponse(target);
     }
 
+    @Transactional
+    public AdminUserResponse restrictUser(Long actorId, Long targetUserId, RestrictUserRequest request) {
+        User actor = findActiveUser(actorId);
+        if (!StaffRolePolicy.canManageMemberStatus(actor.getRole())) {
+            throw new RoleChangeNotAllowedException();
+        }
+        if (actorId.equals(targetUserId)) {
+            throw new RoleChangeNotAllowedException();
+        }
+
+        User target = findActiveUser(targetUserId);
+        if (target.getRole() == UserRole.SUPER_ADMIN) {
+            throw new RoleChangeNotAllowedException();
+        }
+
+        LocalDateTime suspendedUntil = resolveSuspendedUntil(request);
+        UserStatus previous = target.getStatus();
+        target.suspend(suspendedUntil, request.reason().trim(), normalizeNote(request.note()));
+        roleAuditService.logStatusChange(
+                actorId,
+                targetUserId,
+                previous,
+                UserStatus.SUSPENDED,
+                request.reason().trim(),
+                normalizeNote(request.note()),
+                suspendedUntil
+        );
+        return toResponse(target);
+    }
+
+    @Transactional
+    public AdminUserResponse resetNickname(Long actorId, Long targetUserId, ResetNicknameRequest request) {
+        User actor = findActiveUser(actorId);
+        if (!StaffRolePolicy.canManageMemberStatus(actor.getRole())) {
+            throw new RoleChangeNotAllowedException();
+        }
+        if (actorId.equals(targetUserId)) {
+            throw new RoleChangeNotAllowedException();
+        }
+
+        User target = findActiveUser(targetUserId);
+        if (target.getRole() == UserRole.SUPER_ADMIN) {
+            throw new RoleChangeNotAllowedException();
+        }
+
+        UserProfile profile = userProfileRepository.findByUserId(targetUserId)
+                .orElseThrow(UserNotFoundException::new);
+        profile.updateNickname(resolveSafeNickname(targetUserId, profile.getNickname()));
+        roleAuditService.logNicknameReset(
+                actorId,
+                targetUserId,
+                request.reason().trim(),
+                normalizeNote(request.note())
+        );
+        return AdminUserResponse.of(target, profile);
+    }
+
     private void assertCanChangeRole(User actor) {
         if (!StaffRolePolicy.canChangeRole(actor.getRole())) {
             throw new RoleChangeNotAllowedException();
@@ -125,6 +185,28 @@ public class AdminUserService {
         UserProfile profile = userProfileRepository.findByUserId(user.getId())
                 .orElseThrow(UserNotFoundException::new);
         return AdminUserResponse.of(user, profile);
+    }
+
+    private LocalDateTime resolveSuspendedUntil(RestrictUserRequest request) {
+        if (request.permanent()) {
+            return null;
+        }
+        if (request.days() == null) {
+            throw new RoleChangeNotAllowedException();
+        }
+        return LocalDateTime.now().plusDays(request.days());
+    }
+
+    private String normalizeNote(String note) {
+        return note == null || note.isBlank() ? null : note.trim();
+    }
+
+    private String resolveSafeNickname(Long userId, String currentNickname) {
+        String base = "사용자" + userId;
+        if (base.equals(currentNickname) || !userProfileRepository.existsByNickname(base)) {
+            return base;
+        }
+        return "사용자" + userId + "_" + System.currentTimeMillis();
     }
 
     private Map<Long, UserProfile> loadProfiles(List<User> users) {

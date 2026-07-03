@@ -2,10 +2,9 @@
 
 import { cn } from '@/lib/cn';
 
-export type JournalTabId = 'home' | 'records' | 'insights';
+export type JournalTabId = 'records' | 'insights';
 
 const TABS: { id: JournalTabId; label: string }[] = [
-  { id: 'home', label: '요약' },
   { id: 'records', label: '기록' },
   { id: 'insights', label: '인사이트' },
 ];

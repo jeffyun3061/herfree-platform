@@ -147,6 +147,19 @@ public class CommentService {
         comment.getPost().increaseCommentCount();
     }
 
+    @Transactional
+    public void adminDeleteComment(Long commentId) {
+        Comment comment = commentRepository.findByIdAndStatusIn(
+                        commentId, java.util.List.of(CommentStatus.ACTIVE, CommentStatus.HIDDEN))
+                .orElseThrow(CommentNotFoundException::new);
+        boolean wasActive = comment.getStatus() == CommentStatus.ACTIVE;
+
+        comment.delete();
+        if (wasActive) {
+            comment.getPost().decreaseCommentCount();
+        }
+    }
+
     @Transactional(readOnly = true)
     public Page<AdminCommunityCommentResponse> getAdminComments(
             String keyword,

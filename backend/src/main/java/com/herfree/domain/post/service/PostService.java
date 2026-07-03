@@ -284,6 +284,15 @@ public class PostService {
     }
 
     @Transactional
+    public void adminDeletePost(Long postId) {
+        Post post = postRepository.findByIdAndStatusIn(
+                        postId, java.util.List.of(PostStatus.ACTIVE, PostStatus.HIDDEN))
+                .orElseThrow(PostNotFoundException::new);
+
+        post.delete();
+    }
+
+    @Transactional
     public void adminUpdatePost(Long postId, AdminPostUpdateRequest request) {
         Post post = postRepository.findByIdAndStatusIn(
                         postId, java.util.List.of(PostStatus.ACTIVE, PostStatus.HIDDEN))

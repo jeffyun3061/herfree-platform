@@ -50,6 +50,15 @@ public class RoleAuditLog {
     @Column(name = "new_status", length = 50)
     private UserStatus newStatus;
 
+    @Column(length = 100)
+    private String reason;
+
+    @Column(columnDefinition = "TEXT")
+    private String note;
+
+    @Column(name = "suspended_until")
+    private LocalDateTime suspendedUntil;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
@@ -62,6 +71,9 @@ public class RoleAuditLog {
             UserRole newRole,
             UserStatus previousStatus,
             UserStatus newStatus,
+            String reason,
+            String note,
+            LocalDateTime suspendedUntil,
             LocalDateTime createdAt
     ) {
         this.actorId = actorId;
@@ -71,6 +83,9 @@ public class RoleAuditLog {
         this.newRole = newRole;
         this.previousStatus = previousStatus;
         this.newStatus = newStatus;
+        this.reason = reason;
+        this.note = note;
+        this.suspendedUntil = suspendedUntil;
         this.createdAt = createdAt != null ? createdAt : LocalDateTime.now();
     }
 }

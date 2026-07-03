@@ -613,3 +613,47 @@ IP, User-Agent, sessionId는 원문이 아니라 `ANALYTICS_HASH_SALT` 기반 �
 | `ANALYTICS_HASH_SALT` | IP, UA, sessionId 해시에 사용하는 salt. 운영에서는 강한 랜덤값 필수 |
 | `NEXT_PUBLIC_POSTHOG_KEY` | PostHog 전송 키. 비워두면 PostHog 전송 없음 |
 | `NEXT_PUBLIC_POSTHOG_HOST` | PostHog host. 기본값 `https://app.posthog.com` |
+---
+
+## 추가 운영 API: 신고 누적·회원 제재
+
+Base path는 동일하게 `/api`이며, 모두 관리자 권한이 필요합니다.
+
+| Method | URL | 설명 | 권한 |
+|--------|-----|------|------|
+| GET | `/api/admin/reports/targets?minCount=1&size=50` | 미처리 신고를 대상별로 묶어 조회 | MODERATOR 이상 |
+| PATCH | `/api/admin/reports/targets/{targetType}/{targetId}/process` | 같은 대상의 미처리 신고 일괄 승인/반려 | MODERATOR 이상 |
+| DELETE | `/api/admin/posts/{postId}` | 관리자 게시글 삭제 처리 | MODERATOR 이상 |
+| DELETE | `/api/admin/comments/{commentId}` | 관리자 댓글 삭제 처리 | MODERATOR 이상 |
+| PATCH | `/api/admin/users/{userId}/restriction` | 기간/영구 회원 제재 | ADMIN 이상 |
+| PATCH | `/api/admin/users/{userId}/nickname/reset` | 부적절한 닉네임 안전값으로 초기화 | ADMIN 이상 |
+
+`GET /api/admin/reports/targets` 응답 항목:
+
+```json
+{
+  "targetType": "POST",
+  "targetId": 15,
+  "reportCount": 12,
+  "urgent": true,
+  "lastReportedAt": "2026-07-03T21:30:00",
+  "targetTitle": "신고 대상 제목",
+  "targetPreview": "본문 또는 댓글 일부",
+  "targetStatus": "ACTIVE",
+  "authorId": 7,
+  "authorNickname": "사용자7"
+}
+```
+
+회원 제재 요청 예시:
+
+```json
+{
+  "permanent": false,
+  "days": 7,
+  "reason": "악성 광고 반복",
+  "note": "신고 누적 10건 이상, 동일 링크 반복"
+}
+```
+
+영구 정지는 `permanent: true`로 보내고 `days`는 생략합니다.

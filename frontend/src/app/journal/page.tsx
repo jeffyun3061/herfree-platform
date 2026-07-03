@@ -2,10 +2,9 @@
 
 
 
-import { Suspense, useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 
 import { GuestPeaceCta } from '@/components/home/GuestPeaceCta';
-import { JournalHomeTab } from '@/components/journal/JournalHomeTab';
 
 import { JournalRecordFromQuery } from '@/components/journal/JournalRecordFromQuery';
 
@@ -52,11 +51,7 @@ export default function JournalPage() {
 
   const { isLoggedIn, isReady } = useAuth();
 
-  const homeRef = useRef<HTMLDivElement>(null);
-
-
-
-  const [activeTab, setActiveTab] = useState<JournalTabId>('home');
+  const [activeTab, setActiveTab] = useState<JournalTabId>('records');
 
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
@@ -112,13 +107,9 @@ export default function JournalPage() {
 
   const {
 
-    routinePulse,
-
     error,
 
     wizardProps,
-
-    handleRoutineItemClick,
 
     openDailyWizard,
 
@@ -128,7 +119,7 @@ export default function JournalPage() {
 
   } = useJournalCheckin({
 
-    isLoggedIn,
+      isLoggedIn,
 
     todayRecord: dashboard?.todayRecord,
 
@@ -140,13 +131,11 @@ export default function JournalPage() {
 
       await refreshAll();
 
-      setActiveTab('home');
+      setActiveTab('records');
 
       setSaveMessage('오늘 기록이 저장됐어요.');
 
       setTimeout(() => setSaveMessage(null), 3000);
-
-      homeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
     },
 
@@ -155,10 +144,6 @@ export default function JournalPage() {
 
 
   const displayHistory = historyPageData?.content ?? [];
-
-  const hasTodayRecord = Boolean(dashboard?.todayRecord);
-
-
 
   useEffect(() => {
 
@@ -252,43 +237,13 @@ export default function JournalPage() {
 
 
 
-            {saveMessage && activeTab === 'home' && (
+            {saveMessage && activeTab === 'records' && (
 
               <p className="mx-auto max-w-app rounded-xl bg-journal-success/15 px-4 py-2.5 text-[12px] font-medium text-journal-success">
 
                 {saveMessage}
 
               </p>
-
-            )}
-
-
-
-            {activeTab === 'home' && (
-
-              <div ref={homeRef}>
-
-                <JournalHomeTab
-
-                  dashboard={dashboard ?? null}
-
-                  lastRecord={displayHistory[0] ?? null}
-
-                  isLoading={dashboardLoading}
-
-                  onRecordDaily={() => openDailyWizard()}
-
-                  onRecordRelapse={openRelapseWizard}
-
-                  onRoutineItemClick={handleRoutineItemClick}
-
-                  routinePulse={routinePulse}
-
-                  hasTodayRecord={hasTodayRecord}
-
-                />
-
-              </div>
 
             )}
 
@@ -311,6 +266,10 @@ export default function JournalPage() {
                 onFilterChange={setHistoryFilter}
 
                 onPageChange={setHistoryPage}
+
+                onCreate={() => openDailyWizard()}
+
+                onCreateForDate={(date) => openWizard(date, null, 'daily')}
 
                 onEdit={handleEditRecord}
 

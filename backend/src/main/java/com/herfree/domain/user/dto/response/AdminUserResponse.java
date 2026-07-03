@@ -12,6 +12,8 @@ public record AdminUserResponse(
         String nickname,
         UserRole role,
         UserStatus status,
+        LocalDateTime suspendedUntil,
+        String suspensionReason,
         LocalDateTime createdAt
 ) {
     public static AdminUserResponse of(User user, UserProfile profile) {
@@ -21,6 +23,8 @@ public record AdminUserResponse(
                 profile.getNickname(),
                 user.getRole(),
                 user.getStatus(),
+                user.getSuspendedUntil(),
+                user.getSuspensionReason(),
                 user.getCreatedAt()
         );
     }

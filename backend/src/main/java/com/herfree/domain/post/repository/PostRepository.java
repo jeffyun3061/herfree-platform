@@ -72,16 +72,13 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             AND (:boardId IS NOT NULL OR b.boardType NOT IN ('INQUIRY', 'PRIVATE_CONSULT', 'SECRET_STORY'))
             AND (:keyword IS NULL OR :keyword = '' OR LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%')))
             AND (:viewerId IS NOT NULL OR p.visibility = 'PUBLIC')
-            ORDER BY CASE WHEN b.boardType = 'NOTICE' THEN 0 ELSE 1 END,
-                     CASE WHEN b.boardType = 'NOTICE' AND p.isPinned = true THEN 0 ELSE 1 END,
-                     p.sortOrder DESC,
-                     (
+            ORDER BY (
                        (SELECT COUNT(r) FROM Reaction r
                         WHERE r.targetType = com.herfree.domain.reaction.entity.ReactionTargetType.POST
-                        AND r.targetId = p.id) * 3
-                       + p.commentCount * 2
-                       + p.viewCount / 5
+                        AND r.targetId = p.id)
+                       + p.commentCount
                      ) DESC,
+                     p.viewCount DESC,
                      p.createdAt DESC
             """)
     Page<Post> searchActivePostsByEngagementScore(
@@ -100,18 +97,15 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             AND (:boardId IS NOT NULL OR b.boardType NOT IN ('INQUIRY', 'PRIVATE_CONSULT', 'SECRET_STORY'))
             AND (:keyword IS NULL OR :keyword = '' OR LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%')))
             AND (:viewerId IS NOT NULL OR p.visibility = 'PUBLIC')
-            ORDER BY CASE WHEN b.boardType = 'NOTICE' THEN 0 ELSE 1 END,
-                     CASE WHEN b.boardType = 'NOTICE' AND p.isPinned = true THEN 0 ELSE 1 END,
-                     p.sortOrder DESC,
-                     (
+            ORDER BY (
                        (SELECT COUNT(r) FROM Reaction r
                         WHERE r.targetType = com.herfree.domain.reaction.entity.ReactionTargetType.POST
-                        AND r.targetId = p.id AND r.createdAt >= :since) * 3
+                        AND r.targetId = p.id AND r.createdAt >= :since)
                        + (SELECT COUNT(c) FROM Comment c
                           WHERE c.post.id = p.id AND c.status = com.herfree.domain.comment.entity.CommentStatus.ACTIVE
-                          AND c.createdAt >= :since) * 2
-                       + p.viewCount / 5
+                          AND c.createdAt >= :since)
                      ) DESC,
+                     p.viewCount DESC,
                      p.createdAt DESC
             """)
     Page<Post> searchActivePostsByEngagementScoreThisWeek(
@@ -131,10 +125,8 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             AND (:boardId IS NOT NULL OR b.boardType NOT IN ('INQUIRY', 'PRIVATE_CONSULT', 'SECRET_STORY'))
             AND (:keyword IS NULL OR :keyword = '' OR LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%')))
             AND (:viewerId IS NOT NULL OR p.visibility = 'PUBLIC')
-            ORDER BY CASE WHEN b.boardType = 'NOTICE' THEN 0 ELSE 1 END,
-                     CASE WHEN b.boardType = 'NOTICE' AND p.isPinned = true THEN 0 ELSE 1 END,
-                     p.sortOrder DESC,
-                     p.commentCount DESC,
+            ORDER BY p.commentCount DESC,
+                     p.viewCount DESC,
                      p.createdAt DESC
             """)
     Page<Post> searchActivePostsByCommentCount(
@@ -153,11 +145,9 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             AND (:boardId IS NOT NULL OR b.boardType NOT IN ('INQUIRY', 'PRIVATE_CONSULT', 'SECRET_STORY'))
             AND (:keyword IS NULL OR :keyword = '' OR LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%')))
             AND (:viewerId IS NOT NULL OR p.visibility = 'PUBLIC')
-            ORDER BY CASE WHEN b.boardType = 'NOTICE' THEN 0 ELSE 1 END,
-                     CASE WHEN b.boardType = 'NOTICE' AND p.isPinned = true THEN 0 ELSE 1 END,
-                     p.sortOrder DESC,
-                     (SELECT COUNT(c) FROM Comment c
+            ORDER BY (SELECT COUNT(c) FROM Comment c
                       WHERE c.post.id = p.id AND c.status = :commentStatus AND c.createdAt >= :since) DESC,
+                     p.viewCount DESC,
                      p.createdAt DESC
             """)
     Page<Post> searchActivePostsByRecentCommentCount(

@@ -230,7 +230,7 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
       </div>
 
       {!boardsLoading && communityBoards.length > 0 && selectedBoardId !== null && (
-        <div className="mb-4 min-w-0 overflow-hidden">
+        <div className="mb-4 min-w-0">
           <BoardTabBar
             boards={communityBoards}
             selectedBoardId={selectedBoardId}
