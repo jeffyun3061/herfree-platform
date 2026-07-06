@@ -187,6 +187,19 @@ public class JournalService {
         return page.map(JournalRecordResponse::from);
     }
 
+    public List<JournalRecordResponse> getMonthlyRecords(Long userId, int year, int month, Boolean hadSymptoms) {
+        YearMonth targetMonth = YearMonth.of(year, month);
+        List<JournalRecord> records = journalRecordRepository.findByUserIdAndRecordDateBetweenOrderByRecordDateDesc(
+                userId,
+                targetMonth.atDay(1),
+                targetMonth.atEndOfMonth()
+        );
+        return records.stream()
+                .filter(record -> !Boolean.TRUE.equals(hadSymptoms) || record.isHadSymptoms())
+                .map(JournalRecordResponse::from)
+                .toList();
+    }
+
     public JournalReviewSummaryResponse getReviewSummary(Long userId) {
         LocalDate today = LocalDate.now();
         LocalDate periodStart = today.minusDays(REVIEW_PERIOD_DAYS - 1L);

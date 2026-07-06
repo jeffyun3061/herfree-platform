@@ -51,6 +51,17 @@ export async function fetchJournalRecords(page = 0, size = 20, hadSymptoms?: boo
   };
 }
 
+export async function fetchJournalRecordsByMonth(
+  year: number,
+  month: number,
+  hadSymptoms?: boolean,
+) {
+  const records = await request<JournalRecord[]>('/api/journal/records/month', {
+    query: { year, month, hadSymptoms },
+  });
+  return records.map(normalizeJournalRecord);
+}
+
 export async function fetchJournalRecordByDate(date: string) {
   const record = await request<JournalRecord | null>('/api/journal/records/by-date', {
     query: { date },

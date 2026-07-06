@@ -10,6 +10,7 @@ import com.herfree.domain.journal.service.JournalService;
 import com.herfree.global.response.ApiResponse;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -49,6 +50,16 @@ public class JournalController {
             @PageableDefault(size = 20) Pageable pageable
     ) {
         return ResponseEntity.ok(ApiResponse.success(journalService.getMyRecords(userId, hadSymptoms, pageable)));
+    }
+
+    @GetMapping("/records/month")
+    public ResponseEntity<ApiResponse<List<JournalRecordResponse>>> getMonthlyRecords(
+            @AuthenticationPrincipal Long userId,
+            @RequestParam int year,
+            @RequestParam int month,
+            @RequestParam(required = false) Boolean hadSymptoms
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(journalService.getMonthlyRecords(userId, year, month, hadSymptoms)));
     }
 
     @GetMapping("/records/{recordId}")

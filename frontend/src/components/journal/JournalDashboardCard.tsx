@@ -103,85 +103,84 @@ export function JournalDashboardCard({
   const routineTotal = dashboard?.routineTotalToday ?? 3;
 
   return (
-    <section className="overflow-hidden rounded-[24px] bg-[#07251F] shadow-[0_18px_40px_-22px_rgba(7,37,31,.55)]">
-      <div className="relative h-[210px] overflow-hidden">
-        <img
-          src={PUBLIC_IMAGES.journalDashboardCard}
-          alt=""
-          className="absolute inset-0 h-full w-full object-cover object-[50%_40%]"
-        />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(20,40,44,.12)_0%,rgba(20,40,44,.02)_40%,rgba(9,32,30,.66)_100%)]" />
-        <div className="absolute inset-0 flex flex-col justify-between px-5 py-[18px]">
-          <div className="flex items-center justify-between gap-3">
-            <span className="text-[12.5px] font-medium tracking-wide text-white drop-shadow">
-              {formatDashboardDateBadge(new Date())}
-            </span>
-            <JournalShareButton dashboard={dashboard} variant="icon" />
-          </div>
+    <section className="relative overflow-hidden rounded-[25px] bg-[#07251F] text-white shadow-[0_22px_44px_-24px_rgba(7,37,31,.62)]">
+      <img
+        src={PUBLIC_IMAGES.journalDashboardCard}
+        alt=""
+        className="absolute inset-0 h-full w-full object-cover object-[50%_38%]"
+      />
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(12,55,52,.12)_0%,rgba(7,37,31,.34)_46%,rgba(5,32,28,.96)_68%,rgba(5,32,28,.98)_100%)]" />
 
-          <div>
-            <div className="mb-1.5 flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-[#8AD4B8] shadow-[0_0_8px_#8AD4B8]" />
-              <span className="text-[12.5px] font-semibold tracking-[0.02em] text-white/90 drop-shadow">
-                {todayRecord ? '오늘 상태' : hasAnyRecord ? '마지막 기록' : '기록 시작'}
-              </span>
-            </div>
-            <h2 className="hf-display text-[28px] font-extrabold leading-tight text-white drop-shadow-[0_2px_12px_rgba(0,0,0,.42)]">
-              {buildMainStatus(focusRecord, todayRecord, relapseFreeDays)}
-            </h2>
-            <p className="mt-1.5 text-[12.5px] leading-[1.45] text-white/88 drop-shadow">
-              {buildSubStatus(focusRecord, todayRecord, relapseFreeDays)}
-            </p>
-          </div>
+      <div className="relative flex min-h-[392px] flex-col px-5 pb-5 pt-[18px]">
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-[12px] font-semibold tracking-wide text-white/92 drop-shadow">
+            {formatDashboardDateBadge(new Date())}
+          </span>
+          <JournalShareButton dashboard={dashboard} variant="icon" />
         </div>
-      </div>
 
-      <div className="px-[18px] py-[15px] text-white">
-        <div className="mb-[13px] flex items-center justify-between gap-3">
-          <span className="text-[11.5px] text-white/60">개인일지 요약 · 최근 기록 기준</span>
-          {onRecordRelapse && (
+        <div className="mt-[76px]">
+          <div className="mb-2 flex items-center gap-2">
+            <span className="h-2.5 w-2.5 rounded-full bg-[#8AD4B8] shadow-[0_0_10px_#8AD4B8]" />
+            <span className="text-[13px] font-bold tracking-[0.02em] text-white/90 drop-shadow">
+              {todayRecord ? '오늘 상태' : hasAnyRecord ? '최근 기록' : '기록 시작'}
+            </span>
+          </div>
+          <h2 className="hf-display text-[34px] font-extrabold leading-[1.08] text-white drop-shadow-[0_2px_14px_rgba(0,0,0,.45)]">
+            {buildMainStatus(focusRecord, todayRecord, relapseFreeDays)}
+          </h2>
+          <p className="mt-2 line-clamp-2 text-[12.5px] leading-[1.5] text-white/72 drop-shadow">
+            {buildSubStatus(focusRecord, todayRecord, relapseFreeDays)}
+          </p>
+        </div>
+
+        <div className="mt-auto pt-8">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <span className="text-[12px] font-medium text-white/58">개인일지 요약 · 최근 기록 기준</span>
+            {onRecordRelapse && (
+              <button
+                type="button"
+                onClick={onRecordRelapse}
+                className="shrink-0 text-[12px] font-extrabold text-[#F0C778]"
+              >
+                재발 기록
+              </button>
+            )}
+          </div>
+
+          <div className="grid grid-cols-4 gap-0 text-center">
+            {[
+              [`${relapseFreeDays}`, '일', '평온 유지'],
+              [`${routineCompleted}/${routineTotal}`, '', '오늘 루틴'],
+              [formatSleep(focusRecord), '', '수면'],
+              [`${yearRelapses}`, '회', '올해 재발'],
+            ].map(([value, unit, label], index) => (
+              <div key={label} className="relative px-1">
+                {index > 0 && <span className="absolute left-0 top-1 h-11 w-px bg-white/13" />}
+                <p className="hf-display text-[24px] font-extrabold leading-none">
+                  {value}
+                  {unit && <span className="ml-0.5 text-[12px] font-normal text-white/62">{unit}</span>}
+                </p>
+                <p className="mt-1.5 text-[10px] font-medium text-white/50">{label}</p>
+              </div>
+            ))}
+          </div>
+
+          <p className="mt-4 truncate text-[11px] leading-snug text-white/44">
+            마지막 재발 {lastRelapse} · 영양제 {focusRecord?.supplementTaken ? '복용' : '기록 전'}
+          </p>
+
+          {onRecordDaily && (
             <button
               type="button"
-              onClick={onRecordRelapse}
-              className="text-[12px] font-medium text-[#F0C778]"
+              onClick={onRecordDaily}
+              className="mt-4 flex min-h-[54px] w-full items-center justify-center rounded-[17px] bg-[#F3CC70] text-[15px] font-extrabold text-[#082F2A] shadow-[0_16px_32px_-20px_rgba(243,204,112,.95)] transition-colors hover:bg-[#F8D77D]"
             >
-              재발 기록
+              ✎ 오늘 기록하기
             </button>
           )}
         </div>
-
-        <div className="grid grid-cols-4 gap-0 text-center">
-          {[
-            [`${relapseFreeDays}`, '일', '평온 유지'],
-            [`${routineCompleted}/${routineTotal}`, '', '오늘 루틴'],
-            [formatSleep(focusRecord), '', '수면'],
-            [`${yearRelapses}`, '회', '올해 재발'],
-          ].map(([value, unit, label], index) => (
-            <div key={label} className="relative px-1">
-              {index > 0 && <span className="absolute left-0 top-1 h-10 w-px bg-white/12" />}
-              <p className="hf-display text-[20px] font-extrabold leading-none">
-                {value}
-                {unit && <span className="ml-0.5 text-[11px] font-normal text-white/60">{unit}</span>}
-              </p>
-              <p className="mt-1 text-[9.5px] text-white/55">{label}</p>
-            </div>
-          ))}
-        </div>
-
-        <p className="mt-3 text-[10.5px] leading-snug text-white/45">
-          마지막 재발 {lastRelapse} · 영양제 {focusRecord?.supplementTaken ? '복용' : '기록 전'}
-        </p>
       </div>
-
-      {onRecordDaily && (
-        <button
-          type="button"
-          onClick={onRecordDaily}
-          className="mx-[14px] mb-3 flex min-h-[48px] w-[calc(100%-28px)] items-center justify-center rounded-[15px] border border-[#FFE29A]/50 bg-[#F2C86B] text-[14px] font-extrabold text-[#082F2A] shadow-[0_14px_30px_-20px_rgba(242,200,107,.9)] transition-colors hover:bg-[#F7D27A]"
-        >
-          ✎ 오늘 기록하기
-        </button>
-      )}
     </section>
   );
 }

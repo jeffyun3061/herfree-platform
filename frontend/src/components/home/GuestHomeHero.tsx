@@ -6,34 +6,35 @@ import { PublicStaticImage } from '@/components/ui/PublicStaticImage';
 
 export function GuestHomeHero() {
   return (
-    <section className="relative h-[472px] overflow-hidden">
+    <section className="relative h-[430px] overflow-hidden">
       <PublicStaticImage
         src={PUBLIC_IMAGES.homeHero}
         alt=""
         fill
         priority
         sizes="390px"
-        className="object-cover object-[50%_42%]"
+        className="object-cover object-[50%_44%]"
       />
       <div
-        className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,37,31,.55)_0%,rgba(7,37,31,.12)_28%,rgba(243,237,227,0)_55%,rgba(243,237,227,.85)_86%,#F3EDE3_100%)]"
+        className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,37,31,.68)_0%,rgba(7,37,31,.26)_34%,rgba(7,37,31,.12)_58%,rgba(243,237,227,.82)_90%,#F3EDE3_100%)]"
         aria-hidden
       />
 
-      <div className="absolute left-0 right-0 top-[52px] flex items-center justify-between px-[22px] py-1.5">
+      <div className="absolute left-0 right-0 top-[44px] flex items-center justify-between px-[22px]">
         <Link href="/" className="flex items-center gap-2" aria-label="herfree 홈">
-          <span className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-[#0B3B36] text-[14px] font-bold text-white shadow-[0_2px_8px_rgba(0,0,0,.25)]">
+          <span className="flex h-[31px] w-[31px] shrink-0 items-center justify-center rounded-full bg-white/92 text-[14px] font-extrabold text-[#0B3B36] shadow-[0_8px_18px_-12px_rgba(7,37,31,.8)]">
             h.
           </span>
-          <span className="text-[15px] font-semibold text-white drop-shadow-[0_1px_6px_rgba(7,37,31,.45)]">
+          <span className="text-[13px] font-extrabold text-white drop-shadow-[0_1px_7px_rgba(7,37,31,.55)]">
             herfree
           </span>
         </Link>
+
         <div className="flex items-center gap-3">
           <Link
             href="/community?focus=search"
             aria-label="검색"
-            className="flex h-8 w-8 items-center justify-center rounded-full text-white/95 drop-shadow-[0_1px_4px_rgba(7,37,31,.4)]"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-white drop-shadow-[0_1px_5px_rgba(7,37,31,.55)]"
           >
             <svg
               width="18"
@@ -41,7 +42,7 @@ export function GuestHomeHero() {
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              strokeWidth="2"
+              strokeWidth="2.3"
               strokeLinecap="round"
               strokeLinejoin="round"
               aria-hidden
@@ -52,20 +53,23 @@ export function GuestHomeHero() {
           </Link>
           <Link
             href="/login"
-            className="text-[13.5px] font-medium text-white drop-shadow-[0_1px_4px_rgba(7,37,31,.4)]"
+            className="text-[13px] font-extrabold text-white drop-shadow-[0_1px_5px_rgba(7,37,31,.55)]"
           >
             로그인
           </Link>
         </div>
       </div>
 
-      <div className="absolute bottom-[86px] left-0 right-0 px-[26px]">
-        <h1 className="hf-display text-[33px] font-extrabold leading-[1.4] text-white [text-shadow:0_2px_18px_rgba(7,37,31,.4)]">
+      <div className="absolute bottom-[96px] left-0 right-0 px-[26px]">
+        <p className="mb-3 inline-flex rounded-full bg-white/14 px-3 py-1 text-[11px] font-bold text-white/88 backdrop-blur">
+          안전한 익명 공간
+        </p>
+        <h1 className="hf-display text-[32px] font-extrabold leading-[1.35] text-white [text-shadow:0_2px_18px_rgba(7,37,31,.42)]">
           편하게
           <br />
           들어오세요
         </h1>
-        <p className="mt-3 max-w-[300px] text-[13.5px] leading-[1.7] text-white/90">
+        <p className="mt-3 max-w-[300px] text-[13.5px] font-semibold leading-[1.65] text-white/92">
           우리들의 이야기가 모이는 공간입니다.
         </p>
       </div>

@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo, useState } from 'react';
 import {
   formatTriggerLabels,
   formatJournalDateLabel,
@@ -17,11 +18,15 @@ import { cn } from '@/lib/cn';
 
 type JournalHistoryListProps = {
   records: JournalRecord[];
+  calendarRecords?: JournalRecord[];
+  calendarMonth?: string;
   isLoading: boolean;
   filter: 'relapse' | 'all';
   page: number;
   totalPages: number;
+  totalElements?: number;
   onFilterChange: (filter: 'relapse' | 'all') => void;
+  onCalendarMonthChange?: (month: string) => void;
   onPageChange: (page: number) => void;
   onCreate?: () => void;
   onCreateForDate?: (date: string) => void;
@@ -43,10 +48,6 @@ function formatMonthTitle(date: string): string {
 
 function formatDayNumber(date: string): string {
   return String(parseRecordDate(date).getDate());
-}
-
-function formatWeekday(date: string): string {
-  return parseRecordDate(date).toLocaleDateString('ko-KR', { weekday: 'short' });
 }
 
 function toIsoDate(date: Date): string {
@@ -88,6 +89,11 @@ function buildMonthCalendar(anchorDate: string): Array<{ date: string | null; in
   return cells;
 }
 
+function addMonths(monthDate: string, amount: number): string {
+  const date = parseRecordDate(monthDate);
+  return toIsoDate(new Date(date.getFullYear(), date.getMonth() + amount, 1));
+}
+
 function recordTone(record: JournalRecord): {
   label: string;
   badgeClassName: string;
@@ -121,44 +127,139 @@ function recordTone(record: JournalRecord): {
   };
 }
 
+function JournalRecordDetailSheet({
+  record,
+  onClose,
+  onEdit,
+}: {
+  record: JournalRecord;
+  onClose: () => void;
+  onEdit: (record: JournalRecord) => void;
+}) {
+  const routineDone = countRoutineCompleted(record);
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/35 px-4 py-6">
+      <div className="mx-auto flex min-h-full w-full max-w-app items-end sm:items-center">
+        <div className="w-full rounded-[28px] border border-[#E2D7C8] bg-[#FFFDF8] p-5 shadow-[0_30px_80px_-36px_rgba(7,37,31,.65)]">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-[11px] font-bold tracking-[0.12em] text-[#A08D72]">
+                JOURNAL DETAIL
+              </p>
+              <h3 className="mt-1 font-display text-[20px] font-bold text-[#1E2621]">
+                {formatJournalDateLabel(record.recordDate)}
+              </h3>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-[#E2D7C8] bg-[#F8F1E6] text-lg font-bold text-[#65706B]"
+              aria-label="기록 상세 닫기"
+            >
+              ×
+            </button>
+          </div>
+
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            <div className="rounded-[16px] bg-[#F8F1E6] px-3 py-3">
+              <p className="text-[10px] text-[#8A7964]">상태</p>
+              <p className="mt-1 text-[12px] font-bold text-[#1E2621]">
+                {record.hadSymptoms ? '재발 기록' : '일상 기록'}
+              </p>
+            </div>
+            <div className="rounded-[16px] bg-[#F8F1E6] px-3 py-3">
+              <p className="text-[10px] text-[#8A7964]">수면</p>
+              <p className="mt-1 text-[12px] font-bold text-[#1E2621]">
+                {formatSleepLabel(record)}
+              </p>
+            </div>
+            <div className="rounded-[16px] bg-[#F8F1E6] px-3 py-3">
+              <p className="text-[10px] text-[#8A7964]">루틴</p>
+              <p className="mt-1 text-[12px] font-bold text-[#1E2621]">
+                {routineDone}/{ROUTINE_TASK_TOTAL}
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-3 rounded-[18px] bg-[#F8F1E6] px-4 py-3 text-[13px] leading-relaxed text-[#5E594F]">
+            {record.hadSymptoms
+              ? `심각도 ${record.severity ?? '-'} · ${formatTriggerLabels(record.triggers)}`
+              : formatConditionSummary(record)}
+          </div>
+
+          {record.memo && (
+            <div className="mt-3 whitespace-pre-line rounded-[18px] bg-[#F8F1E6] px-4 py-3 text-[13px] leading-relaxed text-[#5E594F]">
+              {record.memo}
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={() => {
+              onClose();
+              onEdit(record);
+            }}
+            className="mt-4 w-full rounded-[15px] bg-[#0B3B36] px-4 py-3 text-sm font-extrabold text-white shadow-[0_14px_24px_-18px_rgba(11,59,54,.8)]"
+          >
+            이 기록 수정하기
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function JournalHistoryList({
   records,
+  calendarRecords = records,
+  calendarMonth,
   isLoading,
   filter,
   page,
   totalPages,
+  totalElements,
   onFilterChange,
+  onCalendarMonthChange,
   onPageChange,
   onCreate,
   onCreateForDate,
   onEdit,
   onDelete,
 }: JournalHistoryListProps) {
+  const [selectedRecordId, setSelectedRecordId] = useState<number | null>(null);
   const todayIso = toIsoDate(new Date());
-  const monthAnchor = records[0]?.recordDate ?? todayIso;
+  const sortedRecords = useMemo(
+    () =>
+      [...records].sort(
+        (a, b) =>
+          new Date(`${b.recordDate}T00:00:00`).getTime() -
+          new Date(`${a.recordDate}T00:00:00`).getTime(),
+      ),
+    [records],
+  );
+  const selectedRecord =
+    [...sortedRecords, ...calendarRecords].find((record) => record.id === selectedRecordId) ??
+    null;
+  const monthAnchor = calendarMonth ?? sortedRecords[0]?.recordDate ?? todayIso;
   const monthTitle = formatMonthTitle(monthAnchor);
-  const recordsByDate = new Map(records.map((record) => [record.recordDate, record]));
+  const recordsByDate = new Map(calendarRecords.map((record) => [record.recordDate, record]));
   const monthDays = buildMonthDays(monthAnchor);
   const calendarCells = buildMonthCalendar(monthAnchor);
   const monthRecordCount = monthDays.filter((date) => recordsByDate.has(date)).length;
+  const recordTotal = totalElements ?? records.length;
+  const goPrevMonth = () => onCalendarMonthChange?.(addMonths(monthAnchor, -1));
+  const goNextMonth = () => onCalendarMonthChange?.(addMonths(monthAnchor, 1));
+  const goThisMonth = () => onCalendarMonthChange?.(toIsoDate(new Date(new Date().getFullYear(), new Date().getMonth(), 1)));
 
   return (
     <section className="mx-auto w-full max-w-app">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="mb-4">
         <div>
           <h2 className="font-display text-lg font-bold text-ink">기록 목록</h2>
-          <p className="mt-1 text-xs text-muted">날짜를 눌러 수정할 수 있어요.</p>
+          <p className="mt-1 text-xs text-muted">날짜를 누르면 기록을 먼저 확인할 수 있어요.</p>
         </div>
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          {onCreate && (
-            <button
-              type="button"
-              onClick={onCreate}
-              className="rounded-full bg-primary px-3.5 py-1.5 text-xs font-bold text-primary-foreground shadow-[0_10px_24px_-18px_rgba(11,59,54,.75)] transition-colors hover:bg-[#0F4F48]"
-            >
-              오늘 기록하기
-            </button>
-          )}
+        <div className="mt-3 flex items-center justify-between gap-3">
           <div className="inline-flex rounded-full border border-[#D9CDBA] bg-[#EDE4D6] p-1 shadow-inner">
             <button
               type="button"
@@ -185,6 +286,15 @@ export function JournalHistoryList({
               재발만
             </button>
           </div>
+          {onCreate && (
+            <button
+              type="button"
+              onClick={onCreate}
+              className="rounded-full bg-primary px-4 py-2 text-xs font-extrabold text-primary-foreground shadow-[0_12px_26px_-18px_rgba(11,59,54,.85)] transition-colors hover:bg-[#0F4F48]"
+            >
+              오늘 기록하기
+            </button>
+          )}
         </div>
       </div>
 
@@ -213,12 +323,37 @@ export function JournalHistoryList({
                 </p>
                 <h3 className="mt-1 text-[16px] font-extrabold text-[#1E2621]">{monthTitle}</h3>
               </div>
-              <span className="rounded-full bg-[#F8F4EC] px-3 py-1 text-[11px] font-bold text-[#65706B]">
-                {monthRecordCount}일 기록
-              </span>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={goPrevMonth}
+                  className="flex h-8 w-8 items-center justify-center rounded-full border border-[#E2D7C8] bg-[#F8F4EC] text-sm font-bold text-[#65706B]"
+                  aria-label="이전 달"
+                >
+                  ‹
+                </button>
+                <button
+                  type="button"
+                  onClick={goThisMonth}
+                  className="rounded-full bg-[#F8F4EC] px-2.5 py-1 text-[11px] font-bold text-[#65706B]"
+                >
+                  {monthRecordCount}일
+                </button>
+                <button
+                  type="button"
+                  onClick={goNextMonth}
+                  className="flex h-8 w-8 items-center justify-center rounded-full border border-[#E2D7C8] bg-[#F8F4EC] text-sm font-bold text-[#65706B]"
+                  aria-label="다음 달"
+                >
+                  ›
+                </button>
+              </div>
             </div>
 
-            <div className="mt-4 grid grid-cols-7 gap-1.5 text-center">
+            <div
+              className="mt-4 grid gap-1.5 text-center"
+              style={{ gridTemplateColumns: 'repeat(7, minmax(0, 1fr))' }}
+            >
               {['일', '월', '화', '수', '목', '금', '토'].map((weekday) => (
                 <span key={weekday} className="text-[10px] font-bold text-[#9A8F80]">
                   {weekday}
@@ -226,7 +361,7 @@ export function JournalHistoryList({
               ))}
               {calendarCells.map((cell, index) => {
                 if (!cell.date) {
-                  return <span key={`empty-${index}`} className="h-[42px]" aria-hidden="true" />;
+                  return <span key={`empty-${index}`} className="h-[36px] min-w-0" aria-hidden="true" />;
                 }
 
                 const date = cell.date;
@@ -238,15 +373,15 @@ export function JournalHistoryList({
                   <button
                     key={date}
                     type="button"
-                    onClick={() => (record ? onEdit(record) : onCreateForDate?.(date))}
+                    onClick={() => (record ? setSelectedRecordId(record.id) : onCreateForDate?.(date))}
                     disabled={!record && !canCreate}
                     className={cn(
-                      'flex h-[42px] flex-col items-center justify-center rounded-[14px] border text-center transition-colors',
+                      'flex h-[36px] min-w-0 flex-col items-center justify-center rounded-[12px] border text-center transition-colors',
                       record && tone ? tone.cardClassName : 'border-[#E8DECF] bg-[#F7F0E5] text-[#9A8F80]',
                       isToday && 'ring-2 ring-[#0B3B36]/20',
                       (record || canCreate) ? 'hover:bg-[#FFFCF7]' : 'cursor-default opacity-60',
                     )}
-                    aria-label={`${date} ${record ? '기록 수정' : '기록 작성'}`}
+                    aria-label={`${date} ${record ? '기록 보기' : '기록 작성'}`}
                   >
                     <span
                       className={cn(
@@ -268,15 +403,24 @@ export function JournalHistoryList({
             </div>
           </div>
 
+          <div className="mb-3 flex items-center justify-between rounded-[16px] border border-[#E6D9C8] bg-[#F8F1E6] px-3.5 py-2.5 text-[11px] text-[#6E6257]">
+            <span>
+              총 <strong className="text-[#0B3B36]">{recordTotal}</strong>개 기록
+            </span>
+            <span>
+              최신순 · {page + 1}/{Math.max(totalPages, 1)}페이지
+            </span>
+          </div>
+
           <ul className="space-y-3">
-            {records.map((record) => {
+            {sortedRecords.map((record) => {
               const routineDone = countRoutineCompleted(record);
               const tone = recordTone(record);
               return (
                 <li
                   key={record.id}
                   className={cn(
-                    'relative overflow-hidden rounded-[22px] border px-4 py-3.5 text-sm shadow-[0_14px_30px_-28px_rgba(7,37,31,.55)]',
+                    'relative min-h-[112px] overflow-hidden rounded-[22px] border px-4 py-3.5 text-sm shadow-[0_14px_30px_-28px_rgba(7,37,31,.55)]',
                     record.hadSymptoms ? 'border-[#E9C5B7] bg-[#FFF9F3]' : 'border-[#E3D8C7] bg-[#FFFDF8]',
                   )}
                 >
@@ -286,13 +430,13 @@ export function JournalHistoryList({
                       <p className="mb-1 text-[10px] font-bold tracking-[0.12em] text-[#A08D72]">
                         JOURNAL NOTE
                       </p>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-display text-[16px] font-bold text-ink">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <p className="min-w-0 truncate font-display text-[16px] font-bold text-ink">
                           {formatJournalDateLabel(record.recordDate)}
                         </p>
                         <span
                           className={cn(
-                            'rounded-pill px-2 py-0.5 text-[10px] font-bold',
+                            'shrink-0 rounded-pill px-2 py-0.5 text-[10px] font-bold',
                             tone.badgeClassName,
                           )}
                         >
@@ -300,21 +444,32 @@ export function JournalHistoryList({
                         </span>
                       </div>
                       {record.hadSymptoms ? (
-                        <p className="mt-1.5 text-[13px] leading-relaxed text-[#645D55]">
+                        <p className="mt-1.5 truncate text-[13px] leading-relaxed text-[#645D55]">
                           심각도 {record.severity ?? '-'} · {formatTriggerLabels(record.triggers)}
                         </p>
                       ) : (
-                        <p className="mt-1.5 text-[13px] leading-relaxed text-[#645D55]">
+                        <p className="mt-1.5 truncate text-[13px] leading-relaxed text-[#645D55]">
                           수면 {formatSleepLabel(record)} · {formatConditionSummary(record)}
                         </p>
                       )}
-                      {record.memo && (
-                        <p className="mt-2 line-clamp-2 rounded-[14px] bg-[#F7F1E8] px-3 py-2 text-xs leading-relaxed text-[#635A4F]">
-                          {record.memo}
-                        </p>
-                      )}
+                      <p
+                        className={cn(
+                          'mt-2 h-[30px] truncate rounded-[14px] bg-[#F7F1E8] px-3 py-2 text-xs leading-none text-[#635A4F]',
+                          !record.memo && 'text-transparent',
+                        )}
+                        aria-hidden={!record.memo}
+                      >
+                        {record.memo || '메모 없음'}
+                      </p>
                     </div>
                     <div className="flex shrink-0 gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedRecordId(record.id)}
+                        className="rounded-lg border border-[#D8CDBD] bg-white/70 px-2 py-1 text-xs font-bold text-[#0B3B36] hover:bg-canvas"
+                      >
+                        보기
+                      </button>
                       <button
                         type="button"
                         onClick={() => onEdit(record)}
@@ -341,6 +496,13 @@ export function JournalHistoryList({
             </div>
           )}
         </>
+      )}
+      {selectedRecord && (
+        <JournalRecordDetailSheet
+          record={selectedRecord}
+          onClose={() => setSelectedRecordId(null)}
+          onEdit={onEdit}
+        />
       )}
     </section>
   );

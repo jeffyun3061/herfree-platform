@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import {
+  RECORD_SYMPTOM_TRIGGER_OPTIONS,
   toDateInputValue,
   type JournalRecord,
   type JournalRecordInput,
@@ -174,6 +175,7 @@ export function JournalRecordSheet({
   const currentRecordDate = form.recordDate || targetDate || toDateInputValue();
   const isEditMode = entryMode === 'edit' && Boolean(initialRecord);
   const hasProdromal = (form.prodromalSymptoms ?? []).length > 0;
+  const hasSymptoms = Boolean(form.hadSymptoms);
 
   const toggleProdromal = () => {
     setForm((prev) => ({
@@ -189,6 +191,25 @@ export function JournalRecordSheet({
         ? current.filter((item) => item !== value)
         : [...current, value];
       return { ...prev, prodromalSymptoms: next };
+    });
+  };
+
+  const toggleSymptoms = () => {
+    setForm((prev) => ({
+      ...prev,
+      hadSymptoms: !prev.hadSymptoms,
+      severity: prev.hadSymptoms ? null : prev.severity ?? 3,
+      triggers: prev.hadSymptoms ? [] : prev.triggers ?? [],
+    }));
+  };
+
+  const toggleTriggerChip = (value: string) => {
+    setForm((prev) => {
+      const current = prev.triggers ?? [];
+      const next = current.includes(value)
+        ? current.filter((item) => item !== value)
+        : [...current, value];
+      return { ...prev, triggers: next };
     });
   };
 
@@ -208,9 +229,9 @@ export function JournalRecordSheet({
             className="flex items-center gap-2 text-[#5C645A]"
             aria-label="닫기"
           >
-            <span className="text-[28px] leading-none">‹</span>
+            <span className="text-[28px] leading-none">×</span>
             <span className="text-[16px] font-bold text-[#1E2621]">
-              {isEditMode ? '기록 수정하기' : '오늘 기록하기'}
+              {isEditMode ? '기록 수정하기' : '기록하기'}
             </span>
           </button>
 
@@ -227,8 +248,10 @@ export function JournalRecordSheet({
         </header>
 
         <FieldCard>
-          <h2 className="text-[14px] font-bold text-[#1E2621]">오늘 기본 컨디션</h2>
-          <p className="mb-[18px] mt-1 text-[11.5px] text-[#9A9F94]">수면 · 영양제 · 스트레스</p>
+          <h2 className="text-[14px] font-bold text-[#1E2621]">기본 컨디션</h2>
+          <p className="mb-[18px] mt-1 text-[11.5px] text-[#9A9F94]">
+            수면, 영양제, 스트레스를 가볍게 남겨두세요.
+          </p>
 
           <div className="mb-[18px]">
             <div className="mb-2.5 flex items-center gap-2 text-[13px] text-[#5C645A]">
@@ -315,8 +338,63 @@ export function JournalRecordSheet({
           )}
         </FieldCard>
 
+        <FieldCard className={hasSymptoms ? 'border-[#F0B39A] bg-[#FFF8F3]' : undefined}>
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-2 text-[14px] font-semibold text-[#1E2621]">
+                <span className="h-[9px] w-[9px] rounded-full bg-[#D85D47]" />
+                증상도 기록할게요
+              </div>
+              <p className="mt-1 text-[11.5px] text-[#8A9086]">
+                증상이 있었던 날만 켜고 강도와 원인을 남겨주세요.
+              </p>
+            </div>
+            <ToggleSwitch on={hasSymptoms} onClick={toggleSymptoms} />
+          </div>
+
+          {hasSymptoms && (
+            <div className="mt-4 space-y-4 border-t border-[#F1DED2] pt-4">
+              <div>
+                <p className="mb-2.5 text-[12.5px] font-semibold text-[#5C645A]">증상 강도</p>
+                <div className="grid grid-cols-5 gap-1.5">
+                  {[1, 2, 3, 4, 5].map((value) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setForm((prev) => ({ ...prev, severity: value }))}
+                      className={cn(
+                        'h-10 rounded-[10px] border text-[12px] font-bold transition-colors',
+                        form.severity === value
+                          ? 'border-[#D85D47] bg-[#FCE1D7] text-[#632314]'
+                          : 'border-[#ECE5D8] bg-white text-[#8A9086]',
+                      )}
+                    >
+                      {value}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <p className="mb-2.5 text-[12.5px] font-semibold text-[#5C645A]">관련 요인</p>
+                <div className="flex flex-wrap gap-2">
+                  {RECORD_SYMPTOM_TRIGGER_OPTIONS.map((option) => (
+                    <ChipButton
+                      key={option.value}
+                      selected={(form.triggers ?? []).includes(option.value)}
+                      onClick={() => toggleTriggerChip(option.value)}
+                    >
+                      {option.label}
+                    </ChipButton>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </FieldCard>
+
         <FieldCard>
-          <h2 className="mb-3 text-[14px] font-bold text-[#1E2621]">오늘 메모</h2>
+          <h2 className="mb-3 text-[14px] font-bold text-[#1E2621]">메모</h2>
           <textarea
             rows={4}
             maxLength={200}

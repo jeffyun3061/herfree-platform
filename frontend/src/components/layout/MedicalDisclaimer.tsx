@@ -30,9 +30,12 @@ export function MedicalDisclaimer({ className, compact = false }: MedicalDisclai
       <div className="min-w-0 flex-1 space-y-1.5 text-left">
         {compact ? (
           <>
-            <p className="break-keep leading-snug">참고용 건강 정보입니다.</p>
-            <p className="break-keep leading-snug">진단·치료를 대체하지 않습니다.</p>
-            <p className="break-keep leading-snug">의료기관·전문의 상담을 권장합니다.</p>
+            <p className="break-keep leading-snug">
+              이곳의 정보는 건강 이해를 돕기 위한 참고 자료입니다.
+            </p>
+            <p className="break-keep leading-snug">
+              개인의 증상, 진단, 치료 여부는 의료기관 또는 전문의 상담을 통해 확인해 주세요.
+            </p>
           </>
         ) : (
           <>

@@ -10,6 +10,7 @@ import { JournalRecordFromQuery } from '@/components/journal/JournalRecordFromQu
 
 import { JournalRecordSheet } from '@/components/journal/JournalRecordSheet';
 import { JournalInsightsPanel } from '@/components/journal/JournalInsightsCarousel';
+import { JournalDashboardCard } from '@/components/journal/JournalDashboardCard';
 
 import { JournalTabBar, type JournalTabId } from '@/components/journal/JournalTabBar';
 
@@ -39,6 +40,8 @@ import {
 
   useJournalInsights,
 
+  useJournalMonthlyRecords,
+
   useJournalRecords,
 
   useJournalReviewSummary,
@@ -51,13 +54,20 @@ export default function JournalPage() {
 
   const { isLoggedIn, isReady } = useAuth();
 
-  const [activeTab, setActiveTab] = useState<JournalTabId>('records');
+  const [activeTab, setActiveTab] = useState<JournalTabId>('today');
 
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
   const [historyPage, setHistoryPage] = useState(0);
 
   const [historyFilter, setHistoryFilter] = useState<'relapse' | 'all'>('all');
+
+  const [calendarMonth, setCalendarMonth] = useState(() => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    return `${year}-${month}-01`;
+  });
 
   const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
 
@@ -93,13 +103,24 @@ export default function JournalPage() {
 
     useJournalRecords(historyPage, 10, isLoggedIn && isReady, historyHadSymptoms);
 
+  const calendarDate = new Date(`${calendarMonth}T00:00:00`);
+  const calendarYear = calendarDate.getFullYear();
+  const calendarMonthNumber = calendarDate.getMonth() + 1;
+  const { data: monthlyRecordsRaw, refetch: refetchMonthlyRecords } = useJournalMonthlyRecords(
+    calendarYear,
+    calendarMonthNumber,
+    isLoggedIn && isReady,
+    historyHadSymptoms,
+  );
+  const monthlyRecords = monthlyRecordsRaw ?? [];
+
   const { remove, isDeleting, error: deleteError } = useJournalDelete();
 
 
 
   const refreshAll = async () => {
 
-    await Promise.all([refetchDashboard(), refetchHistory(), refetchReviewSummary()]);
+    await Promise.all([refetchDashboard(), refetchHistory(), refetchReviewSummary(), refetchMonthlyRecords()]);
 
   };
 
@@ -237,7 +258,7 @@ export default function JournalPage() {
 
 
 
-            {saveMessage && activeTab === 'records' && (
+            {saveMessage && (
 
               <p className="mx-auto max-w-app rounded-xl bg-journal-success/15 px-4 py-2.5 text-[12px] font-medium text-journal-success">
 
@@ -249,11 +270,38 @@ export default function JournalPage() {
 
 
 
+            {activeTab === 'today' && (
+
+              <div className="mx-auto w-full max-w-app space-y-3">
+
+                <JournalDashboardCard
+
+                  dashboard={dashboard}
+
+                  isLoading={dashboardLoading}
+
+                  lastRecord={displayHistory[0] ?? null}
+
+                  onRecordDaily={openDailyWizard}
+
+                  onRecordRelapse={openRelapseWizard}
+
+                />
+
+              </div>
+
+            )}
+
+
+
             {activeTab === 'records' && (
 
               <JournalHistoryList
 
                 records={displayHistory}
+                calendarRecords={monthlyRecords}
+                calendarMonth={calendarMonth}
+                onCalendarMonthChange={setCalendarMonth}
 
                 isLoading={historyLoading}
 
@@ -262,6 +310,7 @@ export default function JournalPage() {
                 page={historyPage}
 
                 totalPages={historyPageData?.totalPages ?? 1}
+                totalElements={historyPageData?.totalElements ?? displayHistory.length}
 
                 onFilterChange={setHistoryFilter}
 

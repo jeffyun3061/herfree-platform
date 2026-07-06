@@ -157,16 +157,16 @@ export function installBackNavigationGuard(
   const needsGuard = !canNavigateBackInApp() && pathname !== fallbackForPage;
 
   if (needsGuard) {
-    const state = window.history.state as { herpfreeBackGuard?: boolean } | null;
-    if (!state?.herpfreeBackGuard) {
-      window.history.pushState({ herpfreeBackGuard: true }, '', window.location.href);
+    const state = window.history.state as { herfreeBackGuard?: boolean } | null;
+    if (!state?.herfreeBackGuard) {
+      window.history.pushState({ herfreeBackGuard: true }, '', window.location.href);
     }
   }
 
   const onPopState = (event: PopStateEvent) => {
-    const state = event.state as { herpfreeBackGuard?: boolean } | null;
+    const state = event.state as { herfreeBackGuard?: boolean } | null;
 
-    if (state?.herpfreeBackGuard || !canNavigateBackInApp()) {
+    if (state?.herfreeBackGuard || !canNavigateBackInApp()) {
       resetStack(fallbackForPage);
       router.replace(fallbackForPage);
     }

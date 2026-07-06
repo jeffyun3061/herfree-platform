@@ -54,6 +54,19 @@ export function useJournalRecords(
   );
 }
 
+export function useJournalMonthlyRecords(
+  year: number,
+  month: number,
+  enabled = true,
+  hadSymptoms?: boolean,
+) {
+  return useApiQuery(
+    () => journalApi.fetchJournalRecordsByMonth(year, month, hadSymptoms),
+    [year, month, hadSymptoms],
+    { enabled },
+  );
+}
+
 export function useJournalMutation() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);

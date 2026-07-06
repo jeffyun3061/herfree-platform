@@ -2,11 +2,12 @@
 
 import { cn } from '@/lib/cn';
 
-export type JournalTabId = 'records' | 'insights';
+export type JournalTabId = 'today' | 'records' | 'insights';
 
 const TABS: { id: JournalTabId; label: string }[] = [
-  { id: 'records', label: '기록' },
-  { id: 'insights', label: '인사이트' },
+  { id: 'today', label: '기록' },
+  { id: 'records', label: '일지' },
+  { id: 'insights', label: '요약' },
 ];
 
 type JournalTabBarProps = {
@@ -17,7 +18,7 @@ type JournalTabBarProps = {
 export function JournalTabBar({ active, onChange }: JournalTabBarProps) {
   return (
     <nav
-      className="mx-auto flex w-full max-w-app rounded-[0.875rem] border border-[var(--color-border-tertiary)] bg-white/90 p-0.5 shadow-sm backdrop-blur-sm"
+      className="mx-auto grid w-full max-w-app grid-cols-3 rounded-[0.875rem] border border-[var(--color-border-tertiary)] bg-white/90 p-0.5 shadow-sm backdrop-blur-sm"
       aria-label="개인일지 메뉴"
     >
       {TABS.map((tab) => (
@@ -26,7 +27,7 @@ export function JournalTabBar({ active, onChange }: JournalTabBarProps) {
           type="button"
           onClick={() => onChange(tab.id)}
           className={cn(
-            'flex-1 rounded-[0.65rem] py-2 text-[13px] font-semibold transition-colors',
+            'rounded-[0.65rem] py-2 text-[13px] font-semibold transition-colors',
             active === tab.id
               ? 'bg-primary text-primary-foreground shadow-sm'
               : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]',

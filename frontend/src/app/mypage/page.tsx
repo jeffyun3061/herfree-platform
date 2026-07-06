@@ -284,14 +284,26 @@ export default function MyPage() {
               {profileError && <div className="mt-2"><ErrorMessage message={profileError} /></div>}
             </div>
             <MenuRow icon="📓" label="개인일지" href="/journal" />
-            {isAdmin(user?.role) && (
-              <MenuRow icon="⚙️" label="칼럼·영상 올리기" href="/admin?tab=contents" />
-            )}
-            {isStaff(user?.role) && !isAdmin(user?.role) && (
-              <MenuRow icon="⚙️" label="운영 관리" href="/admin" />
-            )}
           </div>
         </div>
+
+        {isStaff(user?.role) && (
+          <div className="mx-4 mt-[18px]">
+            <p className="mb-2 px-0.5 text-xs text-[#8B9590]">운영자 메뉴</p>
+            <div className="mypage-menu-card">
+              <MenuRow icon="📊" label="운영 대시보드" href="/admin?tab=dashboard" />
+              <MenuRow icon="🚨" label="신고·숨김 관리" href="/admin?tab=reports" />
+              <MenuRow icon="🛡️" label="회원 제재 관리" href="/admin?tab=users" />
+              {isAdmin(user?.role) && (
+                <>
+                  <MenuRow icon="📢" label="공지사항 관리" href="/admin?tab=notices" />
+                  <MenuRow icon="📝" label="칼럼 관리" href="/admin?tab=contents" />
+                  <MenuRow icon="🎬" label="영상 관리" href="/admin?tab=videos" />
+                </>
+              )}
+            </div>
+          </div>
+        )}
 
         <div className="mx-4 mt-[18px]">
           <p className="mb-2 px-0.5 text-xs text-[#8B9590]">고객지원</p>
