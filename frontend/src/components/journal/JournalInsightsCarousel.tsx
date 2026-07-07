@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import type {
   JournalDashboard,
   JournalInsights,
@@ -423,10 +424,9 @@ export function JournalInsightsPanel({
   dashboardLoading,
   reviewSummary,
   reviewSummaryLoading,
-  insights,
-  onDaySelect,
 }: JournalInsightsPanelProps) {
   const loading = dashboardLoading || reviewSummaryLoading;
+  const [period, setPeriod] = useState<'3m' | '6m' | '1y'>('6m');
 
   if (loading) {
     return (
@@ -450,11 +450,30 @@ export function JournalInsightsPanel({
 
   return (
     <div className="mx-auto max-w-app space-y-3">
-      <TimelineCard days={dashboard.timelineDays ?? []} onDaySelect={onDaySelect} />
+      <div className="grid grid-cols-3 gap-1 rounded-full border border-[#D9CDBA] bg-[#EDE4D6] p-1 shadow-inner">
+        {[
+          ['3m', '3개월'],
+          ['6m', '6개월'],
+          ['1y', '1년'],
+        ].map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setPeriod(key as '3m' | '6m' | '1y')}
+            className={cn(
+              'rounded-full px-3 py-2 text-xs font-extrabold transition-colors',
+              period === key ? 'bg-primary text-primary-foreground' : 'text-[#756A5D]',
+            )}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
       <InsightsHeroCard dashboard={dashboard} reviewSummary={reviewSummary} />
-      <FocusCard dashboard={dashboard} reviewSummary={reviewSummary} />
-      <RecentRelapseCard relapses={dashboard.recentRelapses ?? []} />
-      <CommunityInsightCard insights={insights} />
+      <p className="rounded-[18px] border border-[#E7DFD2] bg-[#FFFCF7] px-4 py-3 text-[11.5px] leading-[1.65] text-[#7A847C]">
+        요약은 현재 최근 기록 기준으로 보여드려요. 기간별 서버 집계가 연결되면 선택한 기간에 맞춰
+        수치가 바뀌도록 확장하면 됩니다.
+      </p>
     </div>
   );
 }

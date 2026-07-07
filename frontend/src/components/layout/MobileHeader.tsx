@@ -100,7 +100,7 @@ export function MobileHeader() {
         <div className="flex shrink-0 items-center gap-4">
           {showHeaderActions ? (
             <>
-              <HeaderIconLink href="/community?focus=search" label="검색">
+              <HeaderIconLink href="/community/search" label="통합 검색">
                 <SearchIcon />
               </HeaderIconLink>
               {isLoggedIn ? (

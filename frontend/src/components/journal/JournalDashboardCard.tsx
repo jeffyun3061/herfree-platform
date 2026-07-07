@@ -62,13 +62,45 @@ function formatStress(record: JournalRecord | null | undefined): string {
   return STRESS_LABELS[record.stressLevel];
 }
 
+function getStatusTone(record: JournalRecord | null): {
+  label: string;
+  dot: string;
+  overlay: string;
+} {
+  if (record?.hadSymptoms) {
+    return {
+      label: '증상 발현',
+      dot: '#EF8C6B',
+      overlay:
+        'linear-gradient(180deg,rgba(50,20,14,.16)_0%,rgba(50,20,14,.08)_38%,rgba(74,24,16,.88)_70%,rgba(74,24,16,.96)_100%)',
+    };
+  }
+
+  if ((record?.prodromalSymptoms ?? []).length > 0) {
+    return {
+      label: '전조 증상',
+      dot: '#F0B27A',
+      overlay:
+        'linear-gradient(180deg,rgba(46,34,14,.14)_0%,rgba(46,34,14,.06)_40%,rgba(74,47,16,.86)_70%,rgba(74,47,16,.96)_100%)',
+    };
+  }
+
+  return {
+    label: '증상 없음',
+    dot: '#8AD4B8',
+    overlay:
+      'linear-gradient(180deg,rgba(12,55,52,.12)_0%,rgba(7,37,31,.34)_46%,rgba(5,32,28,.96)_68%,rgba(5,32,28,.98)_100%)',
+  };
+}
+
 function buildMainStatus(record: JournalRecord | null, todayRecord: boolean, relapseFreeDays: number): string {
   if (!record) {
     if (relapseFreeDays > 0) return `${relapseFreeDays}일째 평온`;
     return '첫 기록을 남겨볼까요';
   }
+  if (record.hadSymptoms) return '증상 발현';
+  if ((record.prodromalSymptoms ?? []).length > 0) return '전조 증상';
   if (todayRecord && record.mood) return `오늘은 ${MOOD_LABELS[record.mood]}`;
-  if (record.hadSymptoms) return '증상 기록이 있어요';
   if (record.mood) return MOOD_LABELS[record.mood];
   return '증상 없음';
 }
@@ -101,6 +133,7 @@ export function JournalDashboardCard({
   const lastRelapse = formatLastRelapseLabel(dashboard?.lastRelapseDate);
   const routineCompleted = dashboard?.routineCompletedToday ?? 0;
   const routineTotal = dashboard?.routineTotalToday ?? 3;
+  const statusTone = getStatusTone(focusRecord);
 
   return (
     <section className="relative overflow-hidden rounded-[25px] bg-[#07251F] text-white shadow-[0_22px_44px_-24px_rgba(7,37,31,.62)]">
@@ -109,7 +142,7 @@ export function JournalDashboardCard({
         alt=""
         className="absolute inset-0 h-full w-full object-cover object-[50%_38%]"
       />
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(12,55,52,.12)_0%,rgba(7,37,31,.34)_46%,rgba(5,32,28,.96)_68%,rgba(5,32,28,.98)_100%)]" />
+      <div className="absolute inset-0" style={{ background: statusTone.overlay }} />
 
       <div className="relative flex min-h-[392px] flex-col px-5 pb-5 pt-[18px]">
         <div className="flex items-center justify-between gap-3">
@@ -121,9 +154,12 @@ export function JournalDashboardCard({
 
         <div className="mt-[76px]">
           <div className="mb-2 flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-full bg-[#8AD4B8] shadow-[0_0_10px_#8AD4B8]" />
+            <span
+              className="h-2.5 w-2.5 rounded-full"
+              style={{ background: statusTone.dot, boxShadow: `0 0 10px ${statusTone.dot}` }}
+            />
             <span className="text-[13px] font-bold tracking-[0.02em] text-white/90 drop-shadow">
-              {todayRecord ? '오늘 상태' : hasAnyRecord ? '최근 기록' : '기록 시작'}
+              {todayRecord ? '오늘 상태' : hasAnyRecord ? statusTone.label : '기록 시작'}
             </span>
           </div>
           <h2 className="hf-display text-[34px] font-extrabold leading-[1.08] text-white drop-shadow-[0_2px_14px_rgba(0,0,0,.45)]">

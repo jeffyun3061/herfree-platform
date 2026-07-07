@@ -255,25 +255,41 @@ export default function PostDetailPage() {
           </div>
         }
       />
-      <article className="px-4 py-5">
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-lg font-semibold text-cream-foreground">{post.title}</h1>
-          {isMaskedPost && (
-            <span
-              className={`inline-flex items-center rounded-pill px-2.5 py-0.5 text-[11px] font-medium ${
-                post.staffReplied
-                  ? 'bg-primary/15 text-primary'
-                  : 'bg-canvas-dark text-muted'
-              }`}
-            >
-              {post.staffReplied ? '답변완료' : '답변 대기'}
+      <article className="mx-auto max-w-app px-4 pb-8 pt-4 lg:max-w-content">
+        <section className="rounded-[26px] border border-[#E3D8C7] bg-[#FFFCF7] px-5 py-5 shadow-[0_18px_42px_-34px_rgba(7,37,31,.45)]">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded-full bg-[#E7F1EC] px-2.5 py-1 text-[10.5px] font-extrabold text-[#0B3B36]">
+              {post.boardName}
             </span>
-          )}
-        </div>
-        <div className="mt-2 flex gap-2 text-xs text-muted">
-          <span>{displayAuthorNickname(post.authorNickname)}</span>
-          <span>· 조회 {post.viewCount}</span>
-        </div>
+            {isMaskedPost && (
+              <span
+                className={`inline-flex items-center rounded-full px-2.5 py-1 text-[10.5px] font-bold ${
+                  post.staffReplied
+                    ? 'bg-primary/15 text-primary'
+                    : 'bg-[#F3ECDD] text-[#8A7964]'
+                }`}
+              >
+                {post.staffReplied ? '답변완료' : '답변 대기'}
+              </span>
+            )}
+          </div>
+
+          <h1 className="hf-display mt-3 text-[22px] font-extrabold leading-[1.45] text-[#1E2621]">
+            {post.title}
+          </h1>
+
+          <div className="mt-4 flex items-center gap-3 border-b border-[#EAE3D6] pb-4">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#EDF2EC] text-[14px] font-extrabold text-[#0B3B36]">
+              {displayAuthorNickname(post.authorNickname).charAt(0) || '익'}
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[13px] font-bold text-[#2C342E]">
+                {displayAuthorNickname(post.authorNickname)}
+              </p>
+              <p className="mt-0.5 text-[11px] text-[#A6ABA0]">조회 {post.viewCount}</p>
+            </div>
+          </div>
+
         {post.imageUrl && (
           <div className="mt-4 overflow-hidden rounded-2xl border border-border/80 bg-card">
             <img
@@ -285,22 +301,23 @@ export default function PostDetailPage() {
         )}
         <p
           className={cn(
-            'mt-5 whitespace-pre-wrap text-sm leading-relaxed',
-            isContentMasked ? 'text-center text-muted' : 'text-cream-foreground',
+            'mt-5 whitespace-pre-wrap text-[14px] leading-[1.9]',
+            isContentMasked ? 'text-center text-[#7A847C]' : 'text-[#2C342E]',
           )}
         >
           {post.content}
         </p>
 
         {!isMaskedPost && !isContentMasked && (
-          <div className="mt-6 border-t border-border pt-5">
+          <div className="mt-6 border-t border-[#EAE3D6] pt-4">
             <ReactionBar targetType="POST" targetId={post.id} />
           </div>
         )}
+        </section>
 
         {showComments && (
-        <section className="mt-8">
-          <h2 className="mb-4 font-medium text-cream-foreground">
+        <section className="mt-5 rounded-[24px] border border-[#E3D8C7] bg-[#FFFCF7] px-4 py-5 shadow-[0_16px_36px_-32px_rgba(7,37,31,.4)]">
+          <h2 className="mb-4 text-[15px] font-extrabold text-[#1E2621]">
             {isMaskedPost ? '운영자 답변' : '댓글'} {commentPage.totalElements}
           </h2>
           {privateCommentHint && (

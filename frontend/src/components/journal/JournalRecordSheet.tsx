@@ -37,11 +37,13 @@ const STRESS_OPTIONS: StressOption[] = [
 ];
 
 const PRODROMAL_OPTIONS = [
-  { value: 'NUMBNESS', label: '저림' },
   { value: 'ITCHING', label: '가려움' },
-  { value: 'HEAVINESS', label: '묵직함' },
+  { value: 'NUMBNESS', label: '저림' },
   { value: 'WARMTH', label: '열감' },
+  { value: 'PAIN', label: '통증' },
 ];
+
+const PRESET_PRODROME_VALUES = new Set(PRODROMAL_OPTIONS.map((option) => option.value));
 
 function FieldCard({
   children,
@@ -153,12 +155,14 @@ export function JournalRecordSheet({
     recordToSheetForm(initialRecord, targetDate, entryMode),
   );
   const [sleepHours, setSleepHours] = useState(7);
+  const [customProdromeText, setCustomProdromeText] = useState('');
 
   useEffect(() => {
     if (!open) return;
     const nextForm = recordToSheetForm(initialRecord, targetDate, entryMode);
     setForm(nextForm);
     setSleepHours(nextForm.sleepHours ?? 7);
+    setCustomProdromeText('');
   }, [open, initialRecord, targetDate, entryMode]);
 
   useEffect(() => {
@@ -176,11 +180,14 @@ export function JournalRecordSheet({
   const isEditMode = entryMode === 'edit' && Boolean(initialRecord);
   const hasProdromal = (form.prodromalSymptoms ?? []).length > 0;
   const hasSymptoms = Boolean(form.hadSymptoms);
+  const customProdromeValues = (form.prodromalSymptoms ?? []).filter(
+    (value) => !PRESET_PRODROME_VALUES.has(value),
+  );
 
   const toggleProdromal = () => {
     setForm((prev) => ({
       ...prev,
-      prodromalSymptoms: hasProdromal ? [] : ['NUMBNESS'],
+      prodromalSymptoms: hasProdromal ? [] : ['ITCHING'],
     }));
   };
 
@@ -192,6 +199,24 @@ export function JournalRecordSheet({
         : [...current, value];
       return { ...prev, prodromalSymptoms: next };
     });
+  };
+
+  const addCustomProdrome = () => {
+    const value = customProdromeText.trim();
+    if (!value) return;
+    setForm((prev) => {
+      const current = prev.prodromalSymptoms ?? [];
+      if (current.includes(value)) return prev;
+      return { ...prev, prodromalSymptoms: [...current, value] };
+    });
+    setCustomProdromeText('');
+  };
+
+  const removeCustomProdrome = (value: string) => {
+    setForm((prev) => ({
+      ...prev,
+      prodromalSymptoms: (prev.prodromalSymptoms ?? []).filter((item) => item !== value),
+    }));
   };
 
   const toggleSymptoms = () => {
@@ -333,6 +358,40 @@ export function JournalRecordSheet({
                     {option.label}
                   </ChipButton>
                 ))}
+                {customProdromeValues.map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => removeCustomProdrome(value)}
+                    className="rounded-[9px] border border-[#1D9E75] bg-[#E3F1EA] px-3 py-2 text-[12px] font-medium text-[#04342C]"
+                  >
+                    {value}
+                    <span className="ml-1.5 text-[#54766A]" aria-hidden>
+                      ×
+                    </span>
+                  </button>
+                ))}
+              </div>
+              <div className="mt-3 flex gap-2">
+                <input
+                  value={customProdromeText}
+                  onChange={(event) => setCustomProdromeText(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      event.preventDefault();
+                      addCustomProdrome();
+                    }
+                  }}
+                  placeholder="직접 입력"
+                  className="min-w-0 flex-1 rounded-[10px] border border-[#ECE5D8] bg-[#F8F4EC] px-3 py-2.5 text-[12px] text-[#1E2621] outline-none placeholder:text-[#B4B2A6] focus:border-[#1D9E75]"
+                />
+                <button
+                  type="button"
+                  onClick={addCustomProdrome}
+                  className="shrink-0 rounded-[10px] border border-[#E5D9C2] bg-[#F6F1E8] px-4 text-[12px] font-bold text-[#0B3B36]"
+                >
+                  추가
+                </button>
               </div>
             </div>
           )}

@@ -43,10 +43,10 @@ export function DesktopHeader() {
 
         <div className="flex shrink-0 items-center gap-3">
           <Link
-            href="/community?focus=search"
+            href="/community/search"
             className="flex h-9 w-9 items-center justify-center rounded-full text-[#5C645A] transition-colors hover:bg-[#F6F1E8] hover:text-[#0B3B36]"
-            aria-label="커뮤니티 검색"
-            title="커뮤니티 검색"
+            aria-label="통합 검색"
+            title="통합 검색"
           >
             <SearchIcon />
           </Link>
