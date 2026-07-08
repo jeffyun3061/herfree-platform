@@ -38,6 +38,7 @@ type AuthContextValue = {
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+const RESTORE_TIMEOUT_MS = 1800;
 
 function toSessionUser(result: {
   userId: number;
@@ -66,7 +67,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       setUser(getSessionUser());
       try {
-        const me = await usersApi.fetchMe();
+        const me = await Promise.race([
+          usersApi.fetchMe(),
+          new Promise<null>((resolve) => {
+            window.setTimeout(() => resolve(null), RESTORE_TIMEOUT_MS);
+          }),
+        ]);
+        if (me === null) {
+          if (gen !== restoreGenRef.current || epochAtStart !== getAuthEpoch()) return;
+          setUser(getSessionUser());
+          return;
+        }
         if (gen !== restoreGenRef.current || epochAtStart !== getAuthEpoch()) return;
         const session: SessionUser = { userId: me.id, nickname: me.nickname, role: me.role };
         setSessionUser(session);

@@ -163,7 +163,19 @@ export function JournalShareButton({ dashboard, className, variant = 'button' }:
 
   const handleNativeShare = async () => {
     try {
-      await shareJournalText(shareText);
+      const blob = await buildDashboardImageBlob(dashboard);
+      const file = new File([blob], `herfree-dashboard-${formatShareDate().replaceAll('.', '-')}.png`, {
+        type: 'image/png',
+      });
+      if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
+        await navigator.share({
+          title: '헤르프리 개인일지',
+          text: '메모와 상세 증상은 포함되지 않은 대시보드 이미지입니다.',
+          files: [file],
+        });
+      } else {
+        await shareJournalText(shareText);
+      }
       setDone('shared');
       setOpen(false);
     } catch {
@@ -179,6 +191,11 @@ export function JournalShareButton({ dashboard, className, variant = 'button' }:
     } catch {
       setDone('error');
     }
+  };
+
+  const handleCopyHomeLink = async () => {
+    const origin = window.location.origin;
+    await handleCopyText(`${origin}/`);
   };
 
   const handleCopyImage = async () => {
@@ -240,6 +257,7 @@ export function JournalShareButton({ dashboard, className, variant = 'button' }:
           <p className="px-3 pb-1.5 pt-2 text-[11px] font-semibold text-[#8A9086]">
             메모와 상세 증상은 포함되지 않습니다.
           </p>
+          <ShareMenuButton onClick={() => void handleCopyHomeLink()}>홈 링크 복사</ShareMenuButton>
           <ShareMenuButton onClick={() => void handleCopyImage()}>대시보드 이미지 복사</ShareMenuButton>
           <ShareMenuButton onClick={() => void handleDownloadImage()}>이미지 저장(PNG)</ShareMenuButton>
           <ShareMenuButton onClick={() => void handleNativeShare()}>앱/브라우저로 공유</ShareMenuButton>

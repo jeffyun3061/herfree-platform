@@ -10,6 +10,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { CONTENT_CATEGORIES } from '@/domain/content/types';
 import { AdminPublishFab, AdminPublishLink } from '@/components/admin/AdminPublishLink';
+import { InlineTopActions } from '@/components/layout/InlineTopActions';
 import { cn } from '@/lib/cn';
 
 function ContentsPageContent() {
@@ -45,21 +46,20 @@ function ContentsPageContent() {
 
   return (
     <>
-      <div className="page-container content-screen mx-auto max-w-app lg:max-w-none">
-        <div className="mb-4 lg:hidden">
-          <p className="text-[19px] font-semibold text-[#15201D]">칼럼</p>
-          <p className="mt-1 text-[12.5px] text-[#8B9590]">경험과 전문가 정보에서 고른 이야기</p>
+      <div className="content-screen mx-auto max-w-app pb-24 lg:max-w-none">
+        <div className="flex items-start justify-between gap-3 px-5 pt-7 lg:pt-8">
+          <div className="min-w-0">
+            <h1 className="hf-display text-[25px] font-extrabold leading-tight text-[#15201D]">칼럼</h1>
+            <p className="mt-1.5 text-[12.5px] text-[#8B9590]">경험에서 나온 이야기</p>
+          </div>
+          <InlineTopActions />
         </div>
 
-        <div className="mb-4 hidden items-start justify-between gap-3 lg:flex">
-          <div>
-            <h1 className="section-heading">칼럼</h1>
-            <p className="mt-2 text-sm text-muted">경험과 전문가 정보에서 고른 이야기</p>
-          </div>
+        <div className="mx-5 mt-4 hidden items-start justify-end gap-3 lg:flex">
           <AdminPublishLink tab="contents" label="칼럼 올리기" />
         </div>
 
-        <div className="mb-4 flex gap-2 overflow-x-auto pb-1 pr-6 scrollbar-hide">
+        <div className="mt-4 flex gap-2 overflow-x-auto px-5 pb-1 pr-10 scrollbar-hide">
           <button
             type="button"
             onClick={() => {
@@ -92,20 +92,22 @@ function ContentsPageContent() {
         </div>
 
         {isLoading ? (
-          <div className="flex flex-col gap-3">
+          <div className="mt-[18px] flex flex-col gap-3.5 px-5">
             {[1, 2, 3].map((i) => (
               <ContentCardSkeleton key={i} />
             ))}
           </div>
         ) : error ? (
-          <ErrorMessage message={error} />
+          <div className="px-5 pt-5"><ErrorMessage message={error} /></div>
         ) : contentPage.content.length === 0 ? (
-          <EmptyState title="등록된 칼럼이 없습니다" description="곧 새로운 칼럼이 준비될 예정입니다." />
+          <div className="px-5 pt-5">
+            <EmptyState title="등록된 칼럼이 없습니다" description="곧 새로운 칼럼이 준비될 예정입니다." />
+          </div>
         ) : (
-          <div className="mx-auto max-w-app space-y-4">
+          <div className="mx-auto mt-[18px] max-w-app space-y-3.5 px-5">
             {latestContent && <ContentCard content={latestContent} featured />}
             {restContents.length > 0 && (
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-3.5">
                 {restContents.map((item) => (
                   <ContentCard key={item.id} content={item} />
                 ))}
@@ -114,7 +116,9 @@ function ContentsPageContent() {
           </div>
         )}
 
-        <Pagination page={page} totalPages={contentPage.totalPages} onPageChange={setPage} />
+        <div className="px-5">
+          <Pagination page={page} totalPages={contentPage.totalPages} onPageChange={setPage} />
+        </div>
       </div>
       <AdminPublishFab tab="contents" label="칼럼 올리기" />
     </>

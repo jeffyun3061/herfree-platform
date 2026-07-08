@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useApiQuery } from '@/hooks/useApiQuery';
 import { fetchVideo } from '@/lib/api/videos';
-import { PageHeader } from '@/components/layout/PageHeader';
 import { VideoPlayerSection } from '@/components/video/VideoPlayerSection';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
@@ -38,33 +37,52 @@ export default function VideoDetailPage() {
 
   return (
     <>
-      <PageHeader title="영상" showBack backHref="/videos" mobileOnly />
-      <div className="page-container mx-auto max-w-content pb-20 lg:pb-8">
+      <div className="media-screen mx-auto max-w-app px-5 pb-16 pt-[54px] lg:pb-8">
+        <Link
+          href="/videos"
+          className="mb-3 inline-flex items-center gap-1 text-[13px] font-bold text-[#5C645A]"
+        >
+          <span className="text-[22px] leading-none">‹</span>
+          영상
+        </Link>
         <VideoPlayerSection youtubeVideoId={video.youtubeVideoId} title={video.title} />
 
-        <article className="surface-card mt-6 p-5 lg:mt-8 lg:p-7">
+        <article className="mt-4 rounded-[24px] border border-[#E7DFD2] bg-[#FFF9EE] px-4 py-4 shadow-[0_18px_40px_-32px_rgba(7,37,31,.42)]">
           <div className="flex flex-wrap items-center gap-2">
             {video.isFeatured && <Badge variant="gold">추천 영상</Badge>}
             <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-primary/70">
               YouTube
             </span>
           </div>
-          <h1 className="mt-3 font-display text-xl font-bold leading-snug text-ink lg:text-2xl">
+          <h1 className="hf-display mt-3 text-[22px] font-extrabold leading-[1.42] text-[#1E2621]">
             {video.title}
           </h1>
           {video.description ? (
-            <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-muted">{video.description}</p>
+            <p className="mt-4 whitespace-pre-wrap rounded-[18px] bg-[#FFFCF7] px-4 py-4 text-[14px] leading-[1.85] text-[#4F5A53]">{video.description}</p>
           ) : (
-            <p className="mt-4 text-sm text-muted">영상 설명이 준비 중입니다.</p>
+            <p className="mt-4 rounded-[18px] bg-[#FFFCF7] px-4 py-4 text-[14px] leading-[1.8] text-[#6E766F]">영상 설명이 준비 중입니다.</p>
           )}
-          <div className="mt-6 flex flex-wrap gap-2 border-t border-border/60 pt-5">
+          <div className="mt-6 flex flex-wrap gap-2 border-t border-[#EAE3D6] pt-5">
             <Link href="/videos">
-              <Button size="sm" variant="secondary">
+              <Button size="sm" variant="secondary" className="rounded-full">
                 목록으로
               </Button>
             </Link>
           </div>
         </article>
+
+        <a
+          href="https://open.kakao.com/o/srMDr6gi"
+          target="_blank"
+          rel="noreferrer"
+          className="mx-5 mt-5 flex rounded-2xl bg-[#07251F] px-5 py-[18px] shadow-[0_16px_34px_-24px_rgba(7,37,31,.7)]"
+        >
+          <span className="min-w-0 flex-1">
+            <span className="block text-[14px] font-extrabold text-white">영상만으로 부족하다면</span>
+            <span className="mt-1 block text-[12.5px] text-white/72">1:1 비밀상담으로 편하게 물어보세요.</span>
+          </span>
+          <span className="text-[22px] text-[#F0C778]">›</span>
+        </a>
       </div>
     </>
   );

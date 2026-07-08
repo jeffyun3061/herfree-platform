@@ -35,7 +35,7 @@ export function HomeColumnPreview({ maxItems = 3, className }: HomeColumnPreview
               />
             </svg>
           </span>
-          <h2 className="font-display text-base font-bold text-[#1E2621]">칼럼</h2>
+          <h2 className="font-display text-base font-bold text-[#1E2621]">추천 칼럼</h2>
         </div>
         <Link
           href="/contents"

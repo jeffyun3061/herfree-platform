@@ -104,6 +104,21 @@ function handleUnauthorized(hadToken: boolean, tokenAtRequest: string | null): v
   if (path.startsWith('/login') || path.startsWith('/signup')) return;
 
   clearAuth();
+  const publicPath =
+    path === '/' ||
+    path.startsWith('/community') ||
+    path.startsWith('/contents') ||
+    path.startsWith('/videos') ||
+    path.startsWith('/qna') ||
+    path.startsWith('/notice') ||
+    path.startsWith('/terms') ||
+    path.startsWith('/privacy') ||
+    path.startsWith('/consult');
+
+  if (publicPath) {
+    return;
+  }
+
   if (!path.startsWith('/login')) {
     const from = encodeURIComponent(path + window.location.search);
     window.location.href = `/login?reason=session_expired&from=${from}`;

@@ -1,21 +1,21 @@
 'use client';
 
 import { useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { usePostList } from '@/hooks/usePosts';
 import { useJournalDashboard } from '@/hooks/useJournal';
 import { useJournalCheckin } from '@/hooks/useJournalCheckin';
 import { useBoards } from '@/hooks/useBoards';
-import { useVideos } from '@/hooks/useVideos';
 import { GuestHomePage } from '@/components/home/GuestHomePage';
 import { JournalPersonalDashboard } from '@/components/journal/JournalPersonalDashboard';
 import { JournalRecordSheet } from '@/components/journal/JournalRecordSheet';
 import { QuickAccessSection } from '@/components/home/QuickAccessSection';
 import { MedicalDisclaimer } from '@/components/layout/MedicalDisclaimer';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 function LoggedInHomePage() {
+  const router = useRouter();
   const { postPage: communityPosts, isLoading: communityLoading } = usePostList(
     undefined,
     6,
@@ -35,7 +35,6 @@ function LoggedInHomePage() {
     undefined,
     { enabled: noticeBoardId !== null },
   );
-  const { videoPage, isLoading: videoLoading } = useVideos(1);
   const homeCommunityPosts = useMemo(
     () => communityPosts.content.filter((post) => post.boardType !== 'NOTICE').slice(0, 5),
     [communityPosts.content],
@@ -72,20 +71,18 @@ function LoggedInHomePage() {
           <JournalPersonalDashboard
             dashboard={dashboard ?? null}
             isLoading={dashboardLoading}
-            onRecordDaily={() => openDailyWizard()}
-            onRecordRelapse={openRelapseWizard}
+            onRecordDaily={() => router.push('/record')}
+            onRecordRelapse={() => router.push('/record?type=relapse')}
             onRoutineItemClick={handleRoutineItemClick}
             noticePost={noticePosts.content[0] ?? null}
             noticeLoading={noticeLoading}
             communityPosts={homeCommunityPosts}
             communityLoading={communityLoading}
-            latestVideo={videoPage.content[0] ?? null}
-            videoLoading={videoLoading}
             routinePulse={routinePulse}
             hasTodayRecord={hasTodayRecord}
             afterCommunity={
               <div className="flex flex-col gap-2">
-                <QuickAccessSection layout="home" onChecklistClick={() => openDailyWizard()} />
+                <QuickAccessSection layout="home" onChecklistClick={() => router.push('/record')} />
                 <MedicalDisclaimer compact />
               </div>
             }
@@ -106,11 +103,7 @@ export default function HomePage() {
   const { isLoggedIn, isReady } = useAuth();
 
   if (!isReady) {
-    return (
-      <div className="flex min-h-[50vh] items-center justify-center bg-canvas">
-        <LoadingSpinner label="불러오는 중..." />
-      </div>
-    );
+    return <GuestHomePage />;
   }
 
   if (!isLoggedIn) {

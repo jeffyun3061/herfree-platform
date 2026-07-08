@@ -243,7 +243,9 @@ export function JournalHistoryList({
     null;
   const monthAnchor = calendarMonth ?? sortedRecords[0]?.recordDate ?? todayIso;
   const monthTitle = formatMonthTitle(monthAnchor);
-  const recordsByDate = new Map(calendarRecords.map((record) => [record.recordDate, record]));
+  const recordsByDate = new Map(
+    [...calendarRecords, ...records].map((record) => [record.recordDate, record]),
+  );
   const monthDays = buildMonthDays(monthAnchor);
   const calendarCells = buildMonthCalendar(monthAnchor);
   const monthRecordCount = monthDays.filter((date) => recordsByDate.has(date)).length;
@@ -254,65 +256,12 @@ export function JournalHistoryList({
 
   return (
     <section className="mx-auto w-full max-w-app">
-      <div className="mb-4">
-        <div>
-          <h2 className="font-display text-lg font-bold text-ink">기록 목록</h2>
-          <p className="mt-1 text-xs text-muted">날짜를 누르면 기록을 먼저 확인할 수 있어요.</p>
-        </div>
-        <div className="mt-3 flex items-center justify-between gap-3">
-          <div className="inline-flex rounded-full border border-[#D9CDBA] bg-[#EDE4D6] p-1 shadow-inner">
-            <button
-              type="button"
-              onClick={() => onFilterChange('all')}
-              className={cn(
-                'rounded-full px-3 py-1.5 text-xs font-bold transition-colors',
-                filter === 'all'
-                  ? 'bg-primary text-primary-foreground shadow-[0_8px_18px_-14px_rgba(11,59,54,.9)]'
-                  : 'text-[#756A5D]',
-              )}
-            >
-              전체
-            </button>
-            <button
-              type="button"
-              onClick={() => onFilterChange('relapse')}
-              className={cn(
-                'rounded-full px-3 py-1.5 text-xs font-bold transition-colors',
-                filter === 'relapse'
-                  ? 'bg-primary text-primary-foreground shadow-[0_8px_18px_-14px_rgba(11,59,54,.9)]'
-                  : 'text-[#756A5D]',
-              )}
-            >
-              재발만
-            </button>
-          </div>
-          {onCreate && (
-            <button
-              type="button"
-              onClick={onCreate}
-              className="rounded-full bg-primary px-4 py-2 text-xs font-extrabold text-primary-foreground shadow-[0_12px_26px_-18px_rgba(11,59,54,.85)] transition-colors hover:bg-[#0F4F48]"
-            >
-              오늘 기록하기
-            </button>
-          )}
-        </div>
-      </div>
-
       {isLoading ? (
         <div className="animate-pulse space-y-2">
           {[1, 2, 3].map((i) => (
             <div key={i} className="h-16 rounded-2xl bg-white" />
           ))}
         </div>
-      ) : records.length === 0 ? (
-        <EmptyState
-          title={filter === 'relapse' ? '재발 기록이 없어요' : '아직 기록이 없어요'}
-          description={
-            filter === 'relapse'
-              ? '재발이 있었던 날 「재발 기록하기」로 남겨 보세요.'
-              : '홈에서 오늘 기록하기로 첫 기록을 남겨 보세요.'
-          }
-        />
       ) : (
         <>
           <div className="mb-4 rounded-[24px] border border-[#E2D7C8] bg-[#FFFDF8] px-4 py-4 shadow-[0_16px_36px_-30px_rgba(7,37,31,.45)]">
@@ -403,6 +352,44 @@ export function JournalHistoryList({
             </div>
           </div>
 
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <div className="inline-flex rounded-full border border-[#D9CDBA] bg-[#EDE4D6] p-1 shadow-inner">
+              <button
+                type="button"
+                onClick={() => onFilterChange('all')}
+                className={cn(
+                  'rounded-full px-3 py-1.5 text-xs font-bold transition-colors',
+                  filter === 'all'
+                    ? 'bg-primary text-primary-foreground shadow-[0_8px_18px_-14px_rgba(11,59,54,.9)]'
+                    : 'text-[#756A5D]',
+                )}
+              >
+                전체
+              </button>
+              <button
+                type="button"
+                onClick={() => onFilterChange('relapse')}
+                className={cn(
+                  'rounded-full px-3 py-1.5 text-xs font-bold transition-colors',
+                  filter === 'relapse'
+                    ? 'bg-primary text-primary-foreground shadow-[0_8px_18px_-14px_rgba(11,59,54,.9)]'
+                    : 'text-[#756A5D]',
+                )}
+              >
+                재발만
+              </button>
+            </div>
+            {onCreate && (
+              <button
+                type="button"
+                onClick={onCreate}
+                className="shrink-0 rounded-full bg-primary px-4 py-2 text-xs font-extrabold text-primary-foreground shadow-[0_12px_26px_-18px_rgba(11,59,54,.85)] transition-colors hover:bg-[#0F4F48]"
+              >
+                오늘 기록하기
+              </button>
+            )}
+          </div>
+
           <div className="mb-3 flex items-center justify-between rounded-[16px] border border-[#E6D9C8] bg-[#F8F1E6] px-3.5 py-2.5 text-[11px] text-[#6E6257]">
             <span>
               총 <strong className="text-[#0B3B36]">{recordTotal}</strong>개 기록
@@ -412,6 +399,17 @@ export function JournalHistoryList({
             </span>
           </div>
 
+          {records.length === 0 ? (
+            <EmptyState
+              title={filter === 'relapse' ? '재발 기록이 없어요' : '아직 기록이 없어요'}
+              description={
+                filter === 'relapse'
+                  ? '재발이 있었던 날 「재발 기록하기」로 남겨 보세요.'
+                  : '달력에서 원하는 날짜를 눌러 첫 기록을 남겨 보세요.'
+              }
+            />
+          ) : (
+            <>
           <ul className="space-y-3">
             {sortedRecords.map((record) => {
               const routineDone = countRoutineCompleted(record);
@@ -420,7 +418,7 @@ export function JournalHistoryList({
                 <li
                   key={record.id}
                   className={cn(
-                    'relative min-h-[112px] overflow-hidden rounded-[22px] border px-4 py-3.5 text-sm shadow-[0_14px_30px_-28px_rgba(7,37,31,.55)]',
+                    'relative h-[116px] overflow-hidden rounded-[22px] border px-4 py-3 text-sm shadow-[0_14px_30px_-28px_rgba(7,37,31,.55)]',
                     record.hadSymptoms ? 'border-[#E9C5B7] bg-[#FFF9F3]' : 'border-[#E3D8C7] bg-[#FFFDF8]',
                   )}
                 >
@@ -444,17 +442,17 @@ export function JournalHistoryList({
                         </span>
                       </div>
                       {record.hadSymptoms ? (
-                        <p className="mt-1.5 truncate text-[13px] leading-relaxed text-[#645D55]">
+                        <p className="mt-1.5 max-w-full truncate text-[13px] leading-relaxed text-[#645D55]">
                           심각도 {record.severity ?? '-'} · {formatTriggerLabels(record.triggers)}
                         </p>
                       ) : (
-                        <p className="mt-1.5 truncate text-[13px] leading-relaxed text-[#645D55]">
+                        <p className="mt-1.5 max-w-full truncate text-[13px] leading-relaxed text-[#645D55]">
                           수면 {formatSleepLabel(record)} · {formatConditionSummary(record)}
                         </p>
                       )}
                       <p
                         className={cn(
-                          'mt-2 h-[30px] truncate rounded-[14px] bg-[#F7F1E8] px-3 py-2 text-xs leading-none text-[#635A4F]',
+                          'mt-2 h-[24px] max-w-full truncate rounded-[12px] bg-[#F7F1E8] px-3 py-1.5 text-xs leading-none text-[#635A4F]',
                           !record.memo && 'text-transparent',
                         )}
                         aria-hidden={!record.memo}
@@ -494,6 +492,8 @@ export function JournalHistoryList({
             <div className="mt-4">
               <Pagination page={page} totalPages={totalPages} onPageChange={onPageChange} />
             </div>
+          )}
+            </>
           )}
         </>
       )}

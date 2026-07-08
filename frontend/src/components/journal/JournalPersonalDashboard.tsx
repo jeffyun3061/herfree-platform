@@ -2,14 +2,12 @@
 
 import Link from 'next/link';
 import type { Post } from '@/domain/post/types';
-import type { Video } from '@/domain/video/types';
-import { getVideoThumbnail } from '@/domain/video/types';
-import { formatRelativeTime, formatRelativeTimeMedia } from '@/domain/common/format';
+import { formatRelativeTime } from '@/domain/common/format';
 import type { JournalDashboard, JournalRecord } from '@/domain/journal/types';
 import type { RoutineItemId } from '@/domain/journal/routine';
 import { JournalDashboardCard } from '@/components/journal/JournalDashboardCard';
 import { JournalCommunityCard } from '@/components/journal/JournalCommunityCard';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { HomeColumnPreview } from '@/components/home/HomeColumnPreview';
 
 type JournalPersonalDashboardProps = {
   dashboard: JournalDashboard | null;
@@ -22,8 +20,6 @@ type JournalPersonalDashboardProps = {
   noticeLoading?: boolean;
   communityPosts?: Post[];
   communityLoading?: boolean;
-  latestVideo?: Video | null;
-  videoLoading?: boolean;
   routinePulse?: boolean;
   hasTodayRecord?: boolean;
   showCommunity?: boolean;
@@ -32,7 +28,7 @@ type JournalPersonalDashboardProps = {
 
 function HomeNoticeStrip({ post, isLoading }: { post: Post | null; isLoading: boolean }) {
   return (
-    <section className="rounded-[20px] border border-[#DED2BE] bg-[#F8F1E6] px-4 py-3 shadow-[0_16px_34px_-30px_rgba(7,37,31,.5)]">
+    <section className="rounded-[18px] border border-[#E3D7C3] bg-[#FFF9EE] px-4 py-3 shadow-[0_14px_30px_-26px_rgba(7,37,31,.45)]">
       <div className="flex items-center gap-3">
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#0B3B36] text-[15px] font-black text-[#F4D27E] shadow-[0_10px_22px_-16px_rgba(11,59,54,.8)]">
           !
@@ -58,7 +54,7 @@ function HomeNoticeStrip({ post, isLoading }: { post: Post | null; isLoading: bo
             <p className="mt-0.5 text-[13px] font-bold text-[#1E2621]">새 공지가 올라오면 이곳에 보여드릴게요.</p>
           </div>
         )}
-        <Link href="/community" className="shrink-0 rounded-full bg-white/70 px-2.5 py-1 text-[11px] font-bold text-[#0B3B36]">
+        <Link href={post ? `/community/posts/${post.id}` : '/notice'} className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[11px] font-bold text-[#0B3B36] shadow-[0_8px_18px_-16px_rgba(7,37,31,.45)]">
           보기
         </Link>
       </div>
@@ -66,48 +62,39 @@ function HomeNoticeStrip({ post, isLoading }: { post: Post | null; isLoading: bo
   );
 }
 
-function HomeLatestVideoCard({ video, isLoading }: { video: Video | null; isLoading: boolean }) {
-  return (
-    <section className="overflow-hidden rounded-[22px] border border-[#DCD0BA] bg-[#F7EEDF] shadow-[0_18px_42px_-32px_rgba(7,37,31,.55)]">
-      <div className="flex items-center justify-between px-4 pb-3 pt-4">
-        <div>
-          <p className="text-[10px] font-bold tracking-[0.14em] text-[#9B7430]">HERFREE VIDEO</p>
-          <h2 className="mt-1 font-display text-[17px] font-bold text-[#1E2621]">최신 영상</h2>
-        </div>
-        <Link href="/videos" className="rounded-full bg-white/70 px-2.5 py-1 text-[11px] font-bold text-[#0B3B36]">
-          더보기 &gt;
-        </Link>
-      </div>
+function HomeStatusTabs({ dashboard }: { dashboard: JournalDashboard | null }) {
+  const todayRecord = dashboard?.todayRecord ?? null;
+  const active = todayRecord?.hadSymptoms
+    ? 'symptom'
+    : (todayRecord?.prodromalSymptoms ?? []).length > 0
+      ? 'prodrome'
+      : 'none';
+  const tabs = [
+    { id: 'none', label: '증상 없음' },
+    { id: 'prodrome', label: '전조 증상' },
+    { id: 'symptom', label: '증상 발현' },
+  ] as const;
 
-      {isLoading ? (
-        <div className="px-4 pb-4">
-          <LoadingSpinner label="영상 불러오는 중..." />
-        </div>
-      ) : video ? (
-        <Link href={`/videos/${video.id}`} className="group block px-4 pb-4">
-          <div className="relative aspect-video overflow-hidden rounded-[18px] bg-[#07342E] shadow-[0_16px_34px_-24px_rgba(7,37,31,.7)]">
-            <img
-              src={getVideoThumbnail(video)}
-              alt=""
-              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-              loading="lazy"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/15 to-transparent" />
-            <span className="absolute left-3 top-3 rounded-full bg-[#F2C86B] px-2.5 py-1 text-[10px] font-bold text-[#082F2A]">
-              YouTube
-            </span>
-            <span className="absolute inset-0 m-auto flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-sm font-bold text-[#0B3B36] shadow-lg">
-              ▶
-            </span>
-            <div className="absolute inset-x-0 bottom-0 p-3">
-              <p className="line-clamp-2 text-[14px] font-bold leading-snug text-white">{video.title}</p>
-              <p className="mt-1 text-[10.5px] text-white/70">{formatRelativeTimeMedia(video.createdAt)}</p>
+  return (
+    <section className="rounded-[16px] bg-[#EBE2D1] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,.55)]">
+      <div className="grid grid-cols-3 gap-1">
+        {tabs.map((tab) => {
+          const selected = active === tab.id;
+          return (
+            <div
+              key={tab.id}
+              className={
+                selected
+                  ? 'rounded-[12px] bg-[#0B3B36] px-2 py-2 text-center text-[12px] font-extrabold text-white shadow-[0_10px_20px_-16px_rgba(11,59,54,.85)]'
+                  : 'rounded-[12px] px-2 py-2 text-center text-[12px] font-bold text-[#8A9089]'
+              }
+              aria-current={selected ? 'true' : undefined}
+            >
+              {tab.label}
             </div>
-          </div>
-        </Link>
-      ) : (
-        <p className="px-4 pb-4 text-sm text-[#7B8179]">등록된 영상이 없습니다.</p>
-      )}
+          );
+        })}
+      </div>
     </section>
   );
 }
@@ -122,13 +109,13 @@ export function JournalPersonalDashboard({
   noticeLoading = false,
   communityPosts = [],
   communityLoading = false,
-  latestVideo = null,
-  videoLoading = false,
   showCommunity = true,
   afterCommunity,
 }: JournalPersonalDashboardProps) {
   return (
     <div className="journal-home-stack mx-auto w-full max-w-app gap-3">
+      <HomeStatusTabs dashboard={dashboard} />
+
       <JournalDashboardCard
         dashboard={dashboard}
         isLoading={isLoading}
@@ -143,7 +130,7 @@ export function JournalPersonalDashboard({
         <JournalCommunityCard posts={communityPosts} isLoading={communityLoading} />
       )}
 
-      <HomeLatestVideoCard video={latestVideo} isLoading={videoLoading} />
+      <HomeColumnPreview maxItems={3} />
 
       {afterCommunity}
     </div>

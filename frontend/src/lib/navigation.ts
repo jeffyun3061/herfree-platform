@@ -26,6 +26,17 @@ export const HIDE_SHELL_HEADER_PATHS = [
   '/consult',
   '/consult/write',
   '/forgot-password',
+  '/mypage',
+] as const;
+
+const HIDE_SHELL_HEADER_EXACT_PATHS = [
+  '/',
+  '/community',
+  '/contents',
+  '/videos',
+  '/journal',
+  '/qna',
+  '/mypage',
 ] as const;
 
 export function shouldShowBottomNav(pathname: string): boolean {
@@ -39,6 +50,19 @@ export function shouldShowBottomNav(pathname: string): boolean {
 }
 
 export function shouldShowShellHeader(pathname: string): boolean {
+  if (isCommunityListRoute(pathname)) {
+    return false;
+  }
+  if (
+    pathname.startsWith('/community/posts/') ||
+    pathname.startsWith('/contents/') ||
+    pathname.startsWith('/videos/')
+  ) {
+    return false;
+  }
+  if (HIDE_SHELL_HEADER_EXACT_PATHS.some((p) => pathname === p)) {
+    return false;
+  }
   if (HIDE_SHELL_HEADER_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
     return false;
   }

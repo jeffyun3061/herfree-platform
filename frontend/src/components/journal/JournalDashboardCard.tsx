@@ -122,7 +122,7 @@ export function JournalDashboardCard({
   onRecordRelapse,
 }: JournalDashboardCardProps) {
   if (isLoading) {
-    return <section className="h-[333px] animate-pulse rounded-[24px] bg-[#D8CDB9]" aria-hidden />;
+    return <section className="h-[314px] animate-pulse rounded-[24px] bg-[#D8CDB9]" aria-hidden />;
   }
 
   const focusRecord = dashboard?.todayRecord ?? lastRecord ?? null;
@@ -136,7 +136,7 @@ export function JournalDashboardCard({
   const statusTone = getStatusTone(focusRecord);
 
   return (
-    <section className="relative overflow-hidden rounded-[25px] bg-[#07251F] text-white shadow-[0_22px_44px_-24px_rgba(7,37,31,.62)]">
+    <section id="hf-dashboard-card" className="relative overflow-hidden rounded-[25px] bg-[#07251F] text-white shadow-[0_22px_44px_-24px_rgba(7,37,31,.62)]">
       <img
         src={PUBLIC_IMAGES.journalDashboardCard}
         alt=""
@@ -144,7 +144,7 @@ export function JournalDashboardCard({
       />
       <div className="absolute inset-0" style={{ background: statusTone.overlay }} />
 
-      <div className="relative flex min-h-[392px] flex-col px-5 pb-5 pt-[18px]">
+      <div className="relative flex min-h-[314px] flex-col px-5 pb-4 pt-[18px]">
         <div className="flex items-center justify-between gap-3">
           <span className="text-[12px] font-semibold tracking-wide text-white/92 drop-shadow">
             {formatDashboardDateBadge(new Date())}
@@ -152,7 +152,7 @@ export function JournalDashboardCard({
           <JournalShareButton dashboard={dashboard} variant="icon" />
         </div>
 
-        <div className="mt-[76px]">
+        <div className="mt-[42px]">
           <div className="mb-2 flex items-center gap-2">
             <span
               className="h-2.5 w-2.5 rounded-full"
@@ -162,7 +162,7 @@ export function JournalDashboardCard({
               {todayRecord ? '오늘 상태' : hasAnyRecord ? statusTone.label : '기록 시작'}
             </span>
           </div>
-          <h2 className="hf-display text-[34px] font-extrabold leading-[1.08] text-white drop-shadow-[0_2px_14px_rgba(0,0,0,.45)]">
+          <h2 className="hf-display text-[32px] font-extrabold leading-[1.08] text-white drop-shadow-[0_2px_14px_rgba(0,0,0,.45)]">
             {buildMainStatus(focusRecord, todayRecord, relapseFreeDays)}
           </h2>
           <p className="mt-2 line-clamp-2 text-[12.5px] leading-[1.5] text-white/72 drop-shadow">
@@ -170,7 +170,7 @@ export function JournalDashboardCard({
           </p>
         </div>
 
-        <div className="mt-auto pt-8">
+        <div className="mt-auto pt-5">
           <div className="mb-4 flex items-center justify-between gap-3">
             <span className="text-[12px] font-medium text-white/58">개인일지 요약 · 최근 기록 기준</span>
             {onRecordRelapse && (
@@ -210,7 +210,7 @@ export function JournalDashboardCard({
             <button
               type="button"
               onClick={onRecordDaily}
-              className="mt-4 flex min-h-[54px] w-full items-center justify-center rounded-[17px] bg-[#F3CC70] text-[15px] font-extrabold text-[#082F2A] shadow-[0_16px_32px_-20px_rgba(243,204,112,.95)] transition-colors hover:bg-[#F8D77D]"
+            className="mt-4 flex min-h-[50px] w-full items-center justify-center rounded-[16px] bg-[#F3CC70] text-[15px] font-extrabold text-[#082F2A] shadow-[0_16px_32px_-20px_rgba(243,204,112,.95)] transition-colors hover:bg-[#F8D77D]"
             >
               ✎ 오늘 기록하기
             </button>

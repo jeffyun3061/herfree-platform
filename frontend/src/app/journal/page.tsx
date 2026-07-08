@@ -3,6 +3,7 @@
 
 
 import { Suspense, useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 import { GuestPeaceCta } from '@/components/home/GuestPeaceCta';
 
@@ -10,7 +11,7 @@ import { JournalRecordFromQuery } from '@/components/journal/JournalRecordFromQu
 
 import { JournalRecordSheet } from '@/components/journal/JournalRecordSheet';
 import { JournalInsightsPanel } from '@/components/journal/JournalInsightsCarousel';
-import { JournalDashboardCard } from '@/components/journal/JournalDashboardCard';
+import { JournalInlineRecordForm } from '@/components/journal/JournalInlineRecordForm';
 
 import { JournalTabBar, type JournalTabId } from '@/components/journal/JournalTabBar';
 
@@ -19,6 +20,7 @@ import { JournalHistoryList } from '@/components/journal/JournalHistoryList';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 
 import { MedicalDisclaimer } from '@/components/layout/MedicalDisclaimer';
+import { InlineTopActions } from '@/components/layout/InlineTopActions';
 
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 
@@ -40,6 +42,8 @@ import {
 
   useJournalInsights,
 
+  useJournalMutation,
+
   useJournalMonthlyRecords,
 
   useJournalRecords,
@@ -48,11 +52,11 @@ import {
 
 } from '@/hooks/useJournal';
 
-
-
-export default function JournalPage() {
+function JournalPageContent() {
 
   const { isLoggedIn, isReady } = useAuth();
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [activeTab, setActiveTab] = useState<JournalTabId>('today');
 
@@ -115,6 +119,11 @@ export default function JournalPage() {
   const monthlyRecords = monthlyRecordsRaw ?? [];
 
   const { remove, isDeleting, error: deleteError } = useJournalDelete();
+  const {
+    save: saveInlineRecord,
+    isSubmitting: isInlineSubmitting,
+    error: inlineSaveError,
+  } = useJournalMutation();
 
 
 
@@ -131,10 +140,6 @@ export default function JournalPage() {
     error,
 
     wizardProps,
-
-    openDailyWizard,
-
-    openRelapseWizard,
 
     openWizard,
 
@@ -171,6 +176,13 @@ export default function JournalPage() {
     setHistoryPage(0);
 
   }, [historyFilter]);
+
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab === 'today' || tab === 'records' || tab === 'insights') {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
 
 
 
@@ -214,11 +226,19 @@ export default function JournalPage() {
 
   };
 
+  const handleInlineSave = async (input: import('@/domain/journal/types').JournalRecordInput) => {
+    await saveInlineRecord(input);
+    await refreshAll();
+    setActiveTab('records');
+    setSaveMessage('기록이 저장됐어요.');
+    setTimeout(() => setSaveMessage(null), 3000);
+  };
+
 
 
   return (
 
-    <div className="bg-[#e9ebea] pb-6 lg:pb-10">
+    <div className="bg-[#F3EDE3] pb-6 lg:pb-10">
 
       <div className="page-container space-y-3">
 
@@ -233,6 +253,17 @@ export default function JournalPage() {
         ) : isLoggedIn ? (
 
           <>
+            <div className="mx-auto flex w-full max-w-app items-start justify-between gap-3 px-1 pt-2">
+              <div>
+                <h1 className="hf-display text-[24px] font-extrabold tracking-[-0.01em] text-[#1E2621]">
+                  개인일지
+                </h1>
+                <p className="mt-1 text-[12.5px] font-medium text-[#8A9089]">
+                  매일의 컨디션을 기록하고 흐름을 살펴봐요
+                </p>
+              </div>
+              <InlineTopActions />
+            </div>
 
             <Suspense fallback={null}>
 
@@ -244,9 +275,9 @@ export default function JournalPage() {
 
                 dashboardLoading={dashboardLoading}
 
-                onOpenDaily={openDailyWizard}
+                onOpenDaily={() => router.push('/record')}
 
-                onOpenRelapse={openRelapseWizard}
+                onOpenRelapse={() => router.push('/record?type=relapse')}
 
               />
 
@@ -272,23 +303,11 @@ export default function JournalPage() {
 
             {activeTab === 'today' && (
 
-              <div className="mx-auto w-full max-w-app space-y-3">
-
-                <JournalDashboardCard
-
-                  dashboard={dashboard}
-
-                  isLoading={dashboardLoading}
-
-                  lastRecord={displayHistory[0] ?? null}
-
-                  onRecordDaily={openDailyWizard}
-
-                  onRecordRelapse={openRelapseWizard}
-
-                />
-
-              </div>
+              <JournalInlineRecordForm
+                initialRecord={dashboard?.todayRecord ?? null}
+                isSubmitting={isInlineSubmitting || dashboardLoading}
+                onSave={handleInlineSave}
+              />
 
             )}
 
@@ -316,9 +335,9 @@ export default function JournalPage() {
 
                 onPageChange={setHistoryPage}
 
-                onCreate={() => openDailyWizard()}
+                onCreate={() => router.push('/record')}
 
-                onCreateForDate={(date) => openWizard(date, null, 'daily')}
+                onCreateForDate={(date) => router.push(`/record?date=${date}`)}
 
                 onEdit={handleEditRecord}
 
@@ -355,11 +374,13 @@ export default function JournalPage() {
 
 
 
-        {(error || deleteError) && <ErrorMessage message={error ?? deleteError ?? ''} />}
+        {(error || deleteError || inlineSaveError) && <ErrorMessage message={error ?? deleteError ?? inlineSaveError ?? ''} />}
 
 
 
-        <MedicalDisclaimer />
+        <div className="mx-auto w-full max-w-app">
+          <MedicalDisclaimer compact />
+        </div>
 
       </div>
 
@@ -389,5 +410,19 @@ export default function JournalPage() {
 
   );
 
+}
+
+export default function JournalPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-[50vh] items-center justify-center bg-[#F3EDE3]">
+          <LoadingSpinner label="개인일지를 준비하는 중..." />
+        </div>
+      }
+    >
+      <JournalPageContent />
+    </Suspense>
+  );
 }
 

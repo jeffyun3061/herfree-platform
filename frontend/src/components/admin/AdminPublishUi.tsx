@@ -19,7 +19,7 @@ export function AdminSectionModeTabs({
   createLabel = '새로 올리기',
 }: AdminSectionModeTabsProps) {
   return (
-    <div className="flex gap-1.5 rounded-[16px] bg-[#E5D9C7] p-1">
+    <div className="grid grid-cols-2 gap-1.5 rounded-[16px] bg-[#E5D9C7] p-1">
       {(
         [
           { id: 'list' as const, label: listLabel },
@@ -31,7 +31,7 @@ export function AdminSectionModeTabs({
           type="button"
           onClick={() => onChange(item.id)}
           className={cn(
-            'min-h-9 flex-1 rounded-[12px] px-2 py-2 text-[12px] font-bold transition-colors',
+            'min-h-10 rounded-[12px] px-2 py-2 text-[12px] font-bold transition-colors',
             mode === item.id ? 'bg-white text-[#1E2621] shadow-sm' : 'text-[#81786A]',
           )}
         >
@@ -88,7 +88,7 @@ export function AdminListToolbar({
           검색
         </button>
       </form>
-      <div className="mt-3 space-y-3">
+      <div className="mt-3 grid gap-3 sm:grid-cols-2">
         <AdminChipGroup
           label="노출 상태"
           value={statusFilter === '' ? 'ALL' : statusFilter}
@@ -134,7 +134,7 @@ export function AdminListSummary({
 }: AdminListSummaryProps) {
   const safeTotalPages = Math.max(totalPages, 1);
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2 rounded-[14px] border border-[#E7DFD2] bg-white/70 px-3 py-2 text-[11.5px] text-[#6F766F]">
+    <div className="flex flex-wrap items-center justify-between gap-2 rounded-[14px] border border-[#E7DFD2] bg-white/75 px-3 py-2 text-[11.5px] text-[#6F766F]">
       <span>
         전체 <strong className="font-extrabold text-[#1E2621]">{totalElements.toLocaleString('ko-KR')}</strong>
         개 {label}
@@ -155,9 +155,9 @@ type AdminPublishHeaderProps = {
 
 export function AdminPublishHeader({ title, description, note }: AdminPublishHeaderProps) {
   return (
-    <div className="rounded-[18px] border border-[#DDE4D9] bg-[#F7F5ED] px-3.5 py-3">
-      <h2 className="text-[15px] font-extrabold text-[#1E2621]">{title}</h2>
-      <p className="mt-1 text-[12px] leading-[1.65] text-[#67706A]">{description}</p>
+    <div className="rounded-[18px] border border-[#DDE4D9] bg-[#F7F5ED] px-4 py-3.5">
+      <h2 className="text-[16px] font-extrabold text-[#1E2621]">{title}</h2>
+      <p className="mt-1.5 text-[12px] leading-[1.65] text-[#67706A]">{description}</p>
       {note && (
         <p className="mt-2 rounded-[12px] bg-white/80 px-3 py-2 text-[11px] leading-[1.6] text-[#737A75]">
           {note}
@@ -277,7 +277,8 @@ export function AdminManageRow({
   return (
     <div
       className={cn(
-        'flex h-full gap-3 rounded-[16px] border border-[#E7DFD2] bg-[#FFFCF7] p-3 shadow-[0_10px_22px_-24px_rgba(20,31,26,.35)]',
+        'h-full rounded-[16px] border border-[#E7DFD2] bg-[#FFFCF7] p-3 shadow-[0_10px_22px_-24px_rgba(20,31,26,.35)]',
+        preview ? 'grid grid-cols-[88px_minmax(0,1fr)] gap-3' : 'block',
         highlight
           ? 'border-[#D8C69E] bg-[#FFF9EE] shadow-[0_18px_36px_-28px_rgba(7,37,31,.45)]'
           : undefined,
@@ -287,15 +288,15 @@ export function AdminManageRow({
       {preview ? (
         <div
           className={cn(
-            'shrink-0 overflow-hidden rounded-[11px] bg-[#E9DFD1]',
-            'h-20 w-28',
+            'overflow-hidden rounded-[11px] bg-[#E9DFD1]',
+            'h-[74px] w-[88px]',
           )}
         >
           {preview}
         </div>
       ) : null}
       <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-1.5">
+        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
           {highlight && (
             <span className="rounded-full bg-[#0B3B36] px-2 py-0.5 text-[10px] font-bold text-white">
               최신
@@ -324,7 +325,7 @@ export function AdminManageRow({
           {sortOrder !== undefined && (
             <span className="text-[10px] text-muted">순서 {sortOrder}</span>
           )}
-          <span className="min-w-0 break-words text-[10.5px] text-muted">{meta}</span>
+          <span className="min-w-0 truncate text-[10.5px] text-muted">{meta}</span>
         </div>
         <p
           className={cn(
@@ -335,9 +336,9 @@ export function AdminManageRow({
           {title}
         </p>
         {showCuration && (
-          <div className="mt-2 flex flex-wrap gap-1.5">
+          <div className="mt-2 rounded-[12px] border border-[#E9DFD1] bg-[#F8F1E6] p-2">
             {sortOrder !== undefined && onSetSortOrder && (
-              <label className="flex items-center gap-1.5 rounded-lg border border-[#E2D8C8] bg-white px-2 py-1 text-[10px] font-semibold text-[#4F574F]">
+              <label className="mb-1.5 flex items-center justify-between gap-2 rounded-lg border border-[#E2D8C8] bg-white px-2 py-1 text-[10px] font-semibold text-[#4F574F]">
                 순서
                 <input
                   type="number"
@@ -352,32 +353,34 @@ export function AdminManageRow({
                 />
               </label>
             )}
-            {onMoveUp && (
-              <button
-                type="button"
-                disabled={isSubmitting || canMoveUp === false}
-                onClick={onMoveUp}
-                className="rounded-lg border border-border px-2 py-1 text-[10px] text-cream-foreground hover:bg-cream-dark disabled:opacity-40"
-              >
-                위로
-              </button>
-            )}
-            {onMoveDown && (
-              <button
-                type="button"
-                disabled={isSubmitting || canMoveDown === false}
-                onClick={onMoveDown}
-                className="rounded-lg border border-border px-2 py-1 text-[10px] text-cream-foreground hover:bg-cream-dark disabled:opacity-40"
-              >
-                아래로
-              </button>
-            )}
+            <div className="grid grid-cols-2 gap-1.5">
+              {onMoveUp && (
+                <button
+                  type="button"
+                  disabled={isSubmitting || canMoveUp === false}
+                  onClick={onMoveUp}
+                  className="rounded-lg border border-border bg-white px-2 py-1.5 text-[10px] font-semibold text-cream-foreground hover:bg-cream-dark disabled:opacity-40"
+                >
+                  위로
+                </button>
+              )}
+              {onMoveDown && (
+                <button
+                  type="button"
+                  disabled={isSubmitting || canMoveDown === false}
+                  onClick={onMoveDown}
+                  className="rounded-lg border border-border bg-white px-2 py-1.5 text-[10px] font-semibold text-cream-foreground hover:bg-cream-dark disabled:opacity-40"
+                >
+                  아래로
+                </button>
+              )}
+            </div>
             {onTogglePin && (
               <button
                 type="button"
                 disabled={isSubmitting}
                 onClick={onTogglePin}
-                className="rounded-lg border border-border px-2 py-1 text-[10px] text-cream-foreground hover:bg-cream-dark disabled:opacity-60"
+                className="mt-1.5 w-full rounded-lg border border-border bg-white px-2 py-1.5 text-[10px] font-semibold text-cream-foreground hover:bg-cream-dark disabled:opacity-60"
               >
                 {isPinned ? '고정 해제' : '상단 고정'}
               </button>
@@ -387,18 +390,18 @@ export function AdminManageRow({
                 type="button"
                 disabled={isSubmitting}
                 onClick={onToggleFeatured}
-                className="rounded-lg border border-border px-2 py-1 text-[10px] text-cream-foreground hover:bg-cream-dark disabled:opacity-60"
+                className="mt-1.5 w-full rounded-lg border border-border bg-white px-2 py-1.5 text-[10px] font-semibold text-cream-foreground hover:bg-cream-dark disabled:opacity-60"
               >
                 {isFeatured ? '추천 해제' : '추천 등록'}
               </button>
             )}
           </div>
         )}
-        <div className="mt-2 flex flex-wrap gap-1.5">
+        <div className="mt-2 grid grid-cols-3 gap-1.5">
           <button
             type="button"
             onClick={onEdit}
-            className="rounded-lg border border-border px-2.5 py-1 text-[11px] text-cream-foreground hover:bg-cream-dark"
+            className="rounded-lg border border-border bg-white px-2 py-1.5 text-[11px] font-semibold text-cream-foreground hover:bg-cream-dark"
           >
             수정
           </button>
@@ -406,7 +409,7 @@ export function AdminManageRow({
             type="button"
             disabled={isSubmitting}
             onClick={onToggleVisibility}
-            className="rounded-lg border border-border px-2.5 py-1 text-[11px] text-cream-foreground hover:bg-cream-dark disabled:opacity-60"
+            className="rounded-lg border border-border bg-white px-2 py-1.5 text-[11px] font-semibold text-cream-foreground hover:bg-cream-dark disabled:opacity-60"
           >
             {isVisible ? '숨기기' : '다시 노출'}
           </button>
@@ -415,7 +418,7 @@ export function AdminManageRow({
               type="button"
               disabled={isSubmitting}
               onClick={onDelete}
-              className="rounded-lg border border-red-200 px-2.5 py-1 text-[11px] text-red-600 hover:bg-red-50 disabled:opacity-60"
+              className="rounded-lg border border-red-200 bg-white px-2 py-1.5 text-[11px] font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60"
             >
               삭제
             </button>

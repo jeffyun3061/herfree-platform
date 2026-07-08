@@ -13,15 +13,15 @@ function CheckIcon() {
 
 export function GuestPeaceCta() {
   return (
-    <section className="mx-2 mt-2 overflow-hidden rounded-[26px] border border-[#E7DFD2] bg-white shadow-[0_22px_52px_-34px_rgba(24,34,28,.5)]">
+    <section className="mx-4 mt-3 overflow-hidden rounded-[26px] border border-[#E7DFD2] bg-white shadow-[0_22px_52px_-34px_rgba(24,34,28,.5)]">
       <div className="relative">
         <div className="relative aspect-[16/9] overflow-hidden bg-[#0B3B36]">
           <img
-            src={PUBLIC_IMAGES.journalDashboardHero}
+            src={PUBLIC_IMAGES.homeHero}
             alt=""
-            className="absolute inset-0 h-full w-full object-cover"
+            className="absolute inset-0 h-full w-full object-cover object-[50%_45%]"
           />
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,37,31,.18)_0%,rgba(7,37,31,.72)_100%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,37,31,.08)_0%,rgba(7,37,31,.55)_100%)]" />
           <div className="absolute left-4 top-4 rounded-full bg-white/16 px-3 py-1 text-[10px] font-extrabold uppercase text-white/86 backdrop-blur">
             Private journal
           </div>
@@ -36,7 +36,7 @@ export function GuestPeaceCta() {
         </div>
 
         <div className="relative px-4 pb-5 pt-4">
-          <div className="-mt-9 ml-auto w-[72%] rounded-[20px] border border-[#E9DFD1] bg-[#FFFCF7] p-3 shadow-[0_18px_36px_-28px_rgba(7,37,31,.55)]">
+          <div className="-mt-9 mx-auto w-[min(86%,274px)] rounded-[20px] border border-[#E9DFD1] bg-[#FFFCF7] p-3 shadow-[0_18px_36px_-28px_rgba(7,37,31,.55)]">
             <div className="grid grid-cols-3 gap-2">
               {[
                 ['수면', '7시간+'],

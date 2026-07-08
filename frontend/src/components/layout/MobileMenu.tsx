@@ -24,7 +24,7 @@ const MAIN_LINKS = [
 ] as const;
 
 const GUIDE_LINKS = [
-  { href: '/community', label: '공지사항' },
+  { href: '/notice', label: '공지사항' },
   { href: '/terms', label: '이용약관' },
   { href: '/privacy', label: '개인정보 처리방침' },
 ] as const;

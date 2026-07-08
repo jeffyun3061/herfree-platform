@@ -27,13 +27,13 @@ const consultInfo = [
 
 export function ConsultIntroPage() {
   return (
-    <main className="min-h-screen bg-white pb-12">
-      <header className="flex items-center gap-2.5 border-b border-[#EFE9DD] px-[18px] pb-3.5 pt-14">
+    <main className="min-h-screen bg-[#F3EDE3] pb-24">
+      <header className="flex items-center gap-2.5 border-b border-[#E7DFD2] bg-[#F3EDE3]/95 px-[18px] pb-3.5 pt-14">
         <BackButton size="sm" className="text-[#5C645A] hover:text-[#0B3B36]" />
         <h1 className="text-[15px] font-bold text-[#1E2621]">1:1 비밀 상담</h1>
       </header>
 
-      <section className="relative overflow-hidden bg-[#04342C] px-4 py-[30px] text-white">
+      <section className="relative mx-4 mt-4 overflow-hidden rounded-[26px] bg-[#04342C] px-5 py-[30px] text-white shadow-[0_22px_48px_-34px_rgba(7,37,31,.72)]">
         <div className="absolute right-[-30px] top-[-30px] h-[140px] w-[140px] rounded-full bg-[radial-gradient(circle,rgba(240,199,120,.16)_0%,rgba(240,199,120,0)_70%)]" />
         <h2 className="hf-display relative text-[20px] font-semibold leading-[1.5] text-white">
           말 꺼내기 어려운 이야기,
@@ -46,7 +46,7 @@ export function ConsultIntroPage() {
         </p>
       </section>
 
-      <section className="mx-2 mt-[18px] flex items-start gap-2.5 rounded-xl bg-[#E3F1EA] px-4 py-3.5">
+      <section className="mx-4 mt-[18px] flex items-start gap-2.5 rounded-[18px] border border-[#CFE6DA] bg-[#E3F1EA] px-4 py-3.5">
         <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#0B3B36] text-[11px] font-bold text-white">
           i
         </span>
@@ -56,7 +56,7 @@ export function ConsultIntroPage() {
         </p>
       </section>
 
-      <section className="mx-2 mt-[18px] rounded-2xl border border-[#ECE5D8] px-4 py-1.5">
+      <section className="mx-4 mt-[18px] rounded-[20px] border border-[#E7DFD2] bg-[#FFFCF7] px-4 py-1.5 shadow-[0_14px_30px_-28px_rgba(7,37,31,.35)]">
         {consultInfo.map(([label, value]) => (
           <div
             key={label}
@@ -68,9 +68,9 @@ export function ConsultIntroPage() {
         ))}
       </section>
 
-      <p className="mx-2 mt-2 text-[10.5px] text-[#C7826B]">* 초기 운영 기간 동안은 무료로 진행돼요.</p>
+      <p className="mx-4 mt-2 text-[10.5px] text-[#C7826B]">* 초기 운영 기간 동안은 무료로 진행돼요.</p>
 
-      <section className="mx-2 mt-5 flex items-center gap-3">
+      <section className="mx-4 mt-5 flex items-center gap-3 rounded-[20px] border border-[#E7DFD2] bg-[#FFFCF7] px-4 py-4 shadow-[0_14px_30px_-28px_rgba(7,37,31,.35)]">
         <div className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-full bg-[#E3F1EA] text-[20px] font-bold text-[#0B3B36]">
           h.
         </div>
@@ -80,11 +80,11 @@ export function ConsultIntroPage() {
         </div>
       </section>
 
-      <section className="mx-2 mt-6">
+      <section className="mx-4 mt-6">
         <p className="mb-1.5 text-[12px] font-semibold text-[#9A9F94]">자주 묻는 질문</p>
-        <div>
+        <div className="overflow-hidden rounded-[20px] border border-[#E7DFD2] bg-[#FFFCF7]">
           {consultFaqs.map((faq) => (
-            <article key={faq.question} className="border-t border-[#EFE9DD] py-[13px]">
+            <article key={faq.question} className="border-t border-[#EFE9DD] px-4 py-[13px] first:border-t-0">
               <h3 className="mb-1 text-[13px] font-semibold text-[#1E2621]">{faq.question}</h3>
               <p className="text-[12px] leading-[1.65] text-[#5C645A]">{faq.answer}</p>
             </article>
@@ -92,7 +92,7 @@ export function ConsultIntroPage() {
         </div>
       </section>
 
-      <section className="px-2 pt-6">
+      <section className="px-4 pt-6">
         <a
           href={KAKAO_CONSULT_URL}
           target="_blank"

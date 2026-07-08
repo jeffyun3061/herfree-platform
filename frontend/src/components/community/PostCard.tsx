@@ -30,14 +30,14 @@ export function PostCard({ post, boardName }: PostCardProps) {
           <span className={cn('community-feed-tag', tagClass)}>{displayBoard}</span>
           <span className="community-feed-row__title text-muted">{post.title}</span>
         </div>
-        <p className="mt-1.5 text-[11px] text-muted">다른 회원의 비공개 글입니다.</p>
+        <p className="mt-1.5 text-[12.5px] leading-relaxed text-[#7D8580]">다른 회원의 비공개 글입니다.</p>
       </article>
     );
   }
 
   return (
     <Link href={`/community/posts/${post.id}`} className="block">
-      <article className="community-feed-row transition-colors hover:bg-[#FAF6F2]/60">
+      <article className="community-feed-row transition-colors hover:bg-[#F7EFE5]">
         <div className="community-feed-row__title-line">
           <span className={cn('community-feed-tag', tagClass)}>{displayBoard}</span>
           {showReplyStatus && (
@@ -52,6 +52,11 @@ export function PostCard({ post, boardName }: PostCardProps) {
           )}
           <span className="community-feed-row__title">{post.title}</span>
         </div>
+        {post.contentPreview && (
+          <p className="mb-2.5 line-clamp-2 text-[12.5px] leading-[1.55] text-[#6E7671]">
+            {post.contentPreview}
+          </p>
+        )}
         <div className="community-feed-row__meta">
           <span>{post.authorNickname}</span>
           <MetaDot />

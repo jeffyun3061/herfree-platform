@@ -17,7 +17,7 @@ export function ReactionBar({ targetType, targetId }: ReactionBarProps) {
 
   return (
     <div className="space-y-2">
-      <div className="grid grid-cols-2 gap-1.5 min-[390px]:grid-cols-3 sm:flex sm:flex-wrap sm:gap-2">
+      <div className="grid grid-cols-2 gap-2 min-[390px]:grid-cols-3 sm:flex sm:flex-wrap">
         {REACTION_TYPES.map((type) => {
           const state = states[type];
           const active = state?.reacted ?? false;
@@ -30,10 +30,10 @@ export function ReactionBar({ targetType, targetId }: ReactionBarProps) {
               disabled={!isLoggedIn || pendingType !== null || isLoading}
               onClick={() => void toggle(type)}
               className={cn(
-                'inline-flex min-w-0 items-center justify-center gap-1 rounded-full border px-2.5 py-1.5 text-[11px] font-medium leading-none transition-colors',
+                'inline-flex min-h-8 min-w-0 items-center justify-center gap-1 rounded-full border px-3 py-1.5 text-[11px] font-bold leading-none transition-colors',
                 active
-                  ? 'border-primary bg-primary/10 text-primary'
-                  : 'border-border bg-card text-muted hover:border-primary/40',
+                  ? 'border-[#0B3B36] bg-[#E7F1EC] text-[#0B3B36]'
+                  : 'border-[#E2D7C8] bg-[#FFFDF8] text-[#6E766F] hover:border-[#0B3B36]/35',
                 !isLoggedIn && 'cursor-not-allowed opacity-60',
               )}
             >

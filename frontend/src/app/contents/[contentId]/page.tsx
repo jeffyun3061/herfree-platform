@@ -1,8 +1,8 @@
 'use client';
 
 import { useParams } from 'next/navigation';
+import Link from 'next/link';
 import { useContentDetail } from '@/hooks/useContents';
-import { PageHeader } from '@/components/layout/PageHeader';
 import { Badge } from '@/components/ui/Badge';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
@@ -27,9 +27,8 @@ export default function ContentDetailPage() {
 
   return (
     <>
-      <PageHeader title="칼럼" showBack backHref="/contents" />
-      <article className="mx-auto max-w-app px-4 pb-8 pt-4 lg:max-w-content">
-        <section className="overflow-hidden rounded-[26px] border border-[#E3D8C7] bg-[#07251F] shadow-[0_22px_44px_-30px_rgba(7,37,31,.65)]">
+      <article className="mx-auto max-w-app pb-16 lg:pb-8">
+        <section className="overflow-hidden bg-[#07251F] shadow-[0_22px_48px_-34px_rgba(7,37,31,.7)] lg:rounded-[26px]">
           <div className="relative min-h-[230px]">
             <img
               src={content.imageUrl || PUBLIC_IMAGES.homeHero}
@@ -37,37 +36,48 @@ export default function ContentDetailPage() {
               className="absolute inset-0 h-full w-full object-cover"
             />
             <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,37,31,.08)_0%,rgba(7,37,31,.35)_42%,rgba(7,37,31,.88)_100%)]" />
-            <div className="relative flex min-h-[230px] flex-col justify-end px-5 py-5 text-white">
+            <Link
+              href="/contents"
+              aria-label="칼럼 목록으로 돌아가기"
+              className="absolute left-4 top-6 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-black/18 text-[28px] leading-none text-white backdrop-blur-sm"
+            >
+              ‹
+            </Link>
+            <div className="relative flex min-h-[230px] flex-col justify-end px-[22px] pb-[18px] pt-16 text-white">
               <div className="mb-3 flex items-center gap-2">
                 <Badge variant="gold">{content.category}</Badge>
                 <span className="rounded-full bg-white/16 px-2.5 py-1 text-[11px] font-semibold text-white/82">
                   {getContentTypeLabel(content.contentType)}
                 </span>
               </div>
-              <h1 className="hf-display text-[24px] font-extrabold leading-[1.35] drop-shadow-[0_2px_12px_rgba(0,0,0,.35)]">
+              <h1 className="hf-display text-[22px] font-extrabold leading-[1.45] drop-shadow-[0_2px_14px_rgba(7,37,31,.4)]">
                 {content.title}
               </h1>
             </div>
           </div>
         </section>
 
-        <div className="mt-3 flex items-center gap-2 px-1 text-[11.5px] text-[#9A9F94]">
+        <div className="flex items-center gap-2 px-6 pt-3 text-[11px] text-[#A6ABA0]">
           <span>{new Date(content.createdAt).toLocaleDateString('ko-KR')}</span>
           <span className="h-0.5 w-0.5 rounded-full bg-[#CBD0C7]" />
           <span>{estimateReadMinutes(content.content)}분 읽기</span>
         </div>
 
-        <MedicalDisclaimer className="mt-4" />
+        <div className="px-6 pt-5">
+          <div className="whitespace-pre-wrap text-[14px] leading-[1.95] text-[#2C342E]">
+            {content.content}
+          </div>
+        </div>
 
-        <div className="mt-5 whitespace-pre-wrap rounded-[24px] border border-[#E7DFD2] bg-[#FFFCF7] px-5 py-5 text-[14px] leading-[1.95] text-[#2C342E] shadow-[0_18px_42px_-34px_rgba(7,37,31,.35)]">
-          {content.content}
+        <div className="px-5 pt-4">
+          <MedicalDisclaimer />
         </div>
 
         <a
           href="https://open.kakao.com/o/srMDr6gi"
           target="_blank"
           rel="noreferrer"
-          className="mt-4 flex rounded-[18px] bg-[#07251F] px-5 py-4 shadow-[0_16px_34px_-24px_rgba(7,37,31,.7)]"
+          className="mx-5 mt-5 flex rounded-[20px] bg-[#07251F] px-5 py-[18px] shadow-[0_16px_34px_-24px_rgba(7,37,31,.7)]"
         >
           <span className="min-w-0 flex-1">
             <span className="block text-[14px] font-extrabold text-white">

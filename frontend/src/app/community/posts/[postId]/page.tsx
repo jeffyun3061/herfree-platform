@@ -8,7 +8,6 @@ import { useComments } from '@/hooks/useComments';
 import { useAuth } from '@/hooks/useAuth';
 import { useBoards } from '@/hooks/useBoards';
 import { CommunityGuestPostPanel } from '@/components/community/CommunityGuestPostPanel';
-import { PageHeader } from '@/components/layout/PageHeader';
 import { ReactionBar } from '@/components/community/ReactionBar';
 import { CommentItem } from '@/components/community/CommentItem';
 import { ReportModal } from '@/components/community/ReportModal';
@@ -187,12 +186,49 @@ export default function PostDetailPage() {
 
   return (
     <>
-      <PageHeader
-        title={post.boardName}
-        showBack
-        backHref={backHref}
-        rightSlot={
-          <div className="flex gap-2">
+      <article className="mx-auto max-w-app pb-20 lg:pb-8">
+        <Link
+          href={backHref}
+          className="flex items-center gap-2.5 px-4 pb-3.5 pt-[54px] text-[15px] font-bold text-[#15201D]"
+        >
+          <span className="text-[24px] font-normal leading-none text-[#6E7671]">‹</span>
+          커뮤니티
+        </Link>
+        <section className="px-5 pt-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded-[7px] bg-[#E7F1EC] px-2.5 py-1 text-[10.5px] font-extrabold text-[#0B3B36]">
+              {post.boardName}
+            </span>
+            {isMaskedPost && (
+              <span
+                className={`inline-flex items-center rounded-[7px] px-2.5 py-1 text-[10.5px] font-bold ${
+                  post.staffReplied
+                    ? 'bg-primary/15 text-primary'
+                    : 'bg-[#F3ECDD] text-[#8A7964]'
+                }`}
+              >
+                {post.staffReplied ? '답변완료' : '답변 대기'}
+              </span>
+            )}
+          </div>
+
+          <h1 className="hf-display mt-[13px] text-[20px] font-extrabold leading-[1.45] tracking-normal text-[#15201D]">
+            {post.title}
+          </h1>
+
+          <div className="mt-3 flex items-center gap-[9px] border-b border-[#EAE3D6] pb-4">
+            <span className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-[#EDF2EC] text-[14px] font-extrabold text-[#0B3B36]">
+              {displayAuthorNickname(post.authorNickname).charAt(0) || '익'}
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[12.5px] font-bold text-[#2C342E]">
+                {displayAuthorNickname(post.authorNickname)}
+              </p>
+              <p className="mt-0.5 text-[11px] text-[#A6ABA0]">조회 {post.viewCount}</p>
+            </div>
+          </div>
+
+          <div className="mt-3 flex flex-wrap gap-2">
             {isLoggedIn && !isMaskedPost && (
               <Button variant="ghost" size="sm" onClick={() => setReportOpen(true)}>
                 신고
@@ -253,45 +289,9 @@ export default function PostDetailPage() {
               </>
             )}
           </div>
-        }
-      />
-      <article className="mx-auto max-w-app px-4 pb-8 pt-4 lg:max-w-content">
-        <section className="rounded-[26px] border border-[#E3D8C7] bg-[#FFFCF7] px-5 py-5 shadow-[0_18px_42px_-34px_rgba(7,37,31,.45)]">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-[#E7F1EC] px-2.5 py-1 text-[10.5px] font-extrabold text-[#0B3B36]">
-              {post.boardName}
-            </span>
-            {isMaskedPost && (
-              <span
-                className={`inline-flex items-center rounded-full px-2.5 py-1 text-[10.5px] font-bold ${
-                  post.staffReplied
-                    ? 'bg-primary/15 text-primary'
-                    : 'bg-[#F3ECDD] text-[#8A7964]'
-                }`}
-              >
-                {post.staffReplied ? '답변완료' : '답변 대기'}
-              </span>
-            )}
-          </div>
-
-          <h1 className="hf-display mt-3 text-[22px] font-extrabold leading-[1.45] text-[#1E2621]">
-            {post.title}
-          </h1>
-
-          <div className="mt-4 flex items-center gap-3 border-b border-[#EAE3D6] pb-4">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#EDF2EC] text-[14px] font-extrabold text-[#0B3B36]">
-              {displayAuthorNickname(post.authorNickname).charAt(0) || '익'}
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-[13px] font-bold text-[#2C342E]">
-                {displayAuthorNickname(post.authorNickname)}
-              </p>
-              <p className="mt-0.5 text-[11px] text-[#A6ABA0]">조회 {post.viewCount}</p>
-            </div>
-          </div>
 
         {post.imageUrl && (
-          <div className="mt-4 overflow-hidden rounded-2xl border border-border/80 bg-card">
+          <div className="mt-5 overflow-hidden rounded-2xl border border-[#EAE3D6] bg-[#FFFCF7]">
             <img
               src={post.imageUrl}
               alt="게시글 첨부 이미지"
@@ -299,25 +299,32 @@ export default function PostDetailPage() {
             />
           </div>
         )}
-        <p
+        <div
           className={cn(
-            'mt-5 whitespace-pre-wrap text-[14px] leading-[1.9]',
-            isContentMasked ? 'text-center text-[#7A847C]' : 'text-[#2C342E]',
+            'py-[18px] pb-1',
+            isContentMasked && 'rounded-[18px] bg-[#F8F4EC] px-4 py-4 text-center',
           )}
         >
-          {post.content}
-        </p>
+          <p
+            className={cn(
+              'whitespace-pre-wrap text-[14px] leading-[1.9]',
+              isContentMasked ? 'text-[#7A847C]' : 'text-[#2C342E]',
+            )}
+          >
+            {post.content}
+          </p>
+        </div>
 
         {!isMaskedPost && !isContentMasked && (
-          <div className="mt-6 border-t border-[#EAE3D6] pt-4">
+          <div className="mt-3 border-t border-[#EAE3D6] pt-4">
             <ReactionBar targetType="POST" targetId={post.id} />
           </div>
         )}
         </section>
 
         {showComments && (
-        <section className="mt-5 rounded-[24px] border border-[#E3D8C7] bg-[#FFFCF7] px-4 py-5 shadow-[0_16px_36px_-32px_rgba(7,37,31,.4)]">
-          <h2 className="mb-4 text-[15px] font-extrabold text-[#1E2621]">
+        <section className="px-5 pt-[18px]">
+          <h2 className="mb-3 text-[13px] font-extrabold text-[#15201D]">
             {isMaskedPost ? '운영자 답변' : '댓글'} {commentPage.totalElements}
           </h2>
           {privateCommentHint && (
@@ -357,9 +364,9 @@ export default function PostDetailPage() {
           )}
 
           {canWriteComments ? (
-            <div className="mt-6 space-y-3 rounded-2xl border border-border bg-card p-4">
+            <div className="mt-[18px] flex items-start gap-2">
               {replyParentId !== null && (
-                <p className="text-xs text-primary">
+                <p className="sr-only">
                   답글 작성 중 ·{' '}
                   <button
                     type="button"
@@ -374,31 +381,37 @@ export default function PostDetailPage() {
                 placeholder={isMaskedPost ? '운영자 답변을 작성해 주세요.' : '댓글을 남겨 주세요.'}
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
+                className="min-h-[42px] flex-1 rounded-[12px] border-[#ECE5D8] bg-[#F8F4EC] px-3.5 py-3 text-[12.5px]"
               />
-              {!isMaskedPost && (
-                <label className="flex items-center gap-2 text-sm text-muted">
-                  <input
-                    type="checkbox"
-                    checked={isAnonymous}
-                    onChange={(e) => setIsAnonymous(e.target.checked)}
-                  />
-                  익명으로 작성
-                </label>
-              )}
-              {commentError && <ErrorMessage message={commentError} />}
-              {mutationError && <ErrorMessage message={mutationError} />}
-              <Button disabled={isSubmitting} onClick={() => void handleComment()}>
-                {isSubmitting ? '등록 중…' : replyParentId ? '답글 등록' : isMaskedPost ? '답변 등록' : '댓글 등록'}
+              <Button
+                disabled={isSubmitting}
+                onClick={() => void handleComment()}
+                className="h-[42px] w-[42px] shrink-0 rounded-[12px] px-0"
+                aria-label={replyParentId ? '답글 등록' : isMaskedPost ? '답변 등록' : '댓글 등록'}
+              >
+                ↗
               </Button>
             </div>
           ) : !isLoggedIn ? (
-            <div className="mt-6 rounded-2xl border border-dashed border-border bg-card p-5 text-center">
+            <div className="mt-5 rounded-xl border border-dashed border-[#ECE5D8] bg-[#F8F4EC] p-5 text-center">
               <p className="text-sm text-muted">댓글을 남기려면 로그인이 필요합니다.</p>
               <Link href={loginHref} className="mt-3 inline-block">
                 <Button size="sm">로그인하기</Button>
               </Link>
             </div>
           ) : null}
+          {!isMaskedPost && canWriteComments && (
+            <label className="mt-3 flex items-center gap-2 text-[12px] text-muted">
+              <input
+                type="checkbox"
+                checked={isAnonymous}
+                onChange={(e) => setIsAnonymous(e.target.checked)}
+              />
+              익명으로 작성
+            </label>
+          )}
+          {commentError && <div className="mt-3"><ErrorMessage message={commentError} /></div>}
+          {mutationError && <div className="mt-3"><ErrorMessage message={mutationError} /></div>}
         </section>
         )}
       </article>

@@ -4,7 +4,6 @@ import { useState } from 'react';
 import type {
   JournalDashboard,
   JournalInsights,
-  JournalRecord,
   JournalReviewSummary,
   JournalTimelineDay,
 } from '@/domain/journal/types';
@@ -15,18 +14,12 @@ type JournalInsightsPanelProps = {
   dashboardLoading: boolean;
   reviewSummary: JournalReviewSummary | null | undefined;
   reviewSummaryLoading: boolean;
-  insights: JournalInsights | null | undefined;
+  insights?: JournalInsights | null | undefined;
   onDaySelect: (date: string) => void;
 };
 
 function clampPercent(value: number): number {
   return Math.min(100, Math.max(0, value));
-}
-
-function formatDay(date: string): string {
-  const parsed = new Date(`${date}T00:00:00`);
-  if (Number.isNaN(parsed.getTime())) return date.slice(5).replace('-', '.');
-  return parsed.toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' });
 }
 
 function formatDayNumber(date: string): string {
@@ -53,11 +46,11 @@ function normalizeText(value: string | null | undefined, fallback = '기록 전'
   return value;
 }
 
-function stressTone(label: string): { percent: number; label: string; toneClassName: string } {
-  if (label.includes('낮')) return { percent: 24, label: '안정', toneClassName: 'text-[#0B8E73]' };
-  if (label.includes('높')) return { percent: 82, label: '주의', toneClassName: 'text-[#A66A20]' };
-  if (label.includes('보통')) return { percent: 52, label: '보통', toneClassName: 'text-[#A66A20]' };
-  return { percent: 0, label, toneClassName: 'text-[#65706B]' };
+function stressTone(label: string): { percent: number; label: string; variant: 'green' | 'gold' } {
+  if (label.includes('낮')) return { percent: 24, label: '안정', variant: 'green' };
+  if (label.includes('높')) return { percent: 82, label: '주의', variant: 'gold' };
+  if (label.includes('보통')) return { percent: 52, label: '보통', variant: 'gold' };
+  return { percent: 0, label, variant: 'gold' };
 }
 
 function averageRelapseGap(dashboard: JournalDashboard): number {
@@ -124,12 +117,7 @@ function MetricBar({
     <div className="space-y-1.5">
       <div className="flex items-center justify-between gap-3">
         <p className="min-w-0 truncate text-[12px] font-bold text-[#4A514B]">{label}</p>
-        <span
-          className={cn(
-            'shrink-0 text-[12px] font-extrabold',
-            variant === 'green' ? 'text-[#0B8E73]' : 'text-[#A66A20]',
-          )}
-        >
+        <span className={cn('shrink-0 text-[12px] font-extrabold', variant === 'green' ? 'text-[#0B8E73]' : 'text-[#A66A20]')}>
           {value}
         </span>
       </div>
@@ -153,7 +141,6 @@ function TimelineCard({
   const recentDays = days.slice(-14);
   const recordedDays = recentDays.filter((day) => day.recorded);
   const warningDays = recordedDays.filter((day) => timelineSignalLabels(day).length > 0);
-  const symptomDays = recentDays.filter((day) => day.hadSymptoms);
   const stableDays = recordedDays.length - warningDays.length;
 
   return (
@@ -162,7 +149,7 @@ function TimelineCard({
         <div>
           <h3 className="text-[16px] font-extrabold text-[#1E2621]">최근 14일 흐름</h3>
           <p className="mt-1 text-[11.5px] leading-[1.5] text-[#7A847C]">
-            기록한 날짜를 눌러 자세히 확인하거나 수정할 수 있어요.
+            기록한 날짜를 눌러 상세 내용을 확인하거나 수정할 수 있어요.
           </p>
         </div>
         <span className="rounded-full bg-[#E7F1EC] px-2.5 py-1 text-[10.5px] font-bold text-[#0B3B36]">
@@ -172,10 +159,7 @@ function TimelineCard({
 
       <div className="mt-4 rounded-[19px] bg-[#F8F4EC] px-3 py-3">
         {recentDays.length > 0 ? (
-          <div
-            className="grid items-end gap-1.5"
-            style={{ gridTemplateColumns: `repeat(${recentDays.length}, minmax(16px, 1fr))` }}
-          >
+          <div className="grid items-end gap-1.5" style={{ gridTemplateColumns: `repeat(${recentDays.length}, minmax(16px, 1fr))` }}>
             {recentDays.map((day) => {
               const signals = timelineSignalLabels(day);
               const stable = day.recorded && signals.length === 0;
@@ -191,7 +175,7 @@ function TimelineCard({
                     day.recorded ? 'hover:bg-white/80' : 'cursor-default opacity-50',
                     day.hadSymptoms && 'bg-[#FFF1EC]',
                   )}
-                  aria-label={`${formatDay(day.date)} 기록 보기`}
+                  aria-label={`${day.date} 기록 보기`}
                 >
                   <span className="text-[9.5px] font-bold text-[#7A847C]">{formatDayNumber(day.date)}</span>
                   <span className="mt-2 flex h-[54px] flex-col-reverse items-center gap-1">
@@ -208,25 +192,8 @@ function TimelineCard({
             })}
           </div>
         ) : (
-          <p className="py-5 text-center text-[12px] font-medium text-[#7A847C]">
-            아직 표시할 기록이 없어요.
-          </p>
+          <p className="py-5 text-center text-[12px] font-medium text-[#7A847C]">아직 표시할 기록이 없어요.</p>
         )}
-      </div>
-
-      <div className="mt-3 grid grid-cols-3 gap-2">
-        <div className="rounded-[15px] bg-[#F8F4EC] px-3 py-3">
-          <p className="text-[10.5px] font-bold text-[#7A847C]">기록</p>
-          <p className="mt-1 text-[17px] font-extrabold text-[#1E2621]">{recordedDays.length}일</p>
-        </div>
-        <div className="rounded-[15px] bg-[#F1FAF5] px-3 py-3">
-          <p className="text-[10.5px] font-bold text-[#0B6D60]">안정</p>
-          <p className="mt-1 text-[17px] font-extrabold text-[#0B6D60]">{stableDays}일</p>
-        </div>
-        <div className="rounded-[15px] bg-[#FFF2EA] px-3 py-3">
-          <p className="text-[10.5px] font-bold text-[#B6402D]">증상</p>
-          <p className="mt-1 text-[17px] font-extrabold text-[#B6402D]">{symptomDays.length}일</p>
-        </div>
       </div>
 
       <div className="mt-3 rounded-[16px] border border-[#ECE5D8] bg-[#FFFCF7] px-3 py-3">
@@ -239,24 +206,38 @@ function TimelineCard({
           <span className="inline-flex items-center gap-1"><SignalDot className="bg-[#D94B3D]" />증상</span>
         </div>
       </div>
+
+      <div className="mt-3 grid grid-cols-3 gap-2">
+        <div className="rounded-[15px] bg-[#F8F4EC] px-3 py-3">
+          <p className="text-[10.5px] font-bold text-[#7A847C]">기록</p>
+          <p className="mt-1 text-[17px] font-extrabold text-[#1E2621]">{recordedDays.length}일</p>
+        </div>
+        <div className="rounded-[15px] bg-[#F1FAF5] px-3 py-3">
+          <p className="text-[10.5px] font-bold text-[#0B6D60]">안정</p>
+          <p className="mt-1 text-[17px] font-extrabold text-[#0B6D60]">{stableDays}일</p>
+        </div>
+        <div className="rounded-[15px] bg-[#FFF2EA] px-3 py-3">
+          <p className="text-[10.5px] font-bold text-[#B6402D]">주의</p>
+          <p className="mt-1 text-[17px] font-extrabold text-[#B6402D]">{warningDays.length}일</p>
+        </div>
+      </div>
     </section>
   );
 }
 
-function InsightsHeroCard({
+function SummaryCard({
   dashboard,
   reviewSummary,
 }: {
   dashboard: JournalDashboard;
   reviewSummary: JournalReviewSummary | null | undefined;
 }) {
-  const periodDays = reviewSummary?.periodDays ?? 90;
+  const periodDays = reviewSummary?.periodDays ?? 30;
   const supplementRate = calcSupplementRate(dashboard.timelineDays ?? []);
   const avgSleep = normalizeText(reviewSummary?.avgSleepLabel);
   const sleepHours = parseSleepHours(avgSleep);
   const sleepPercent = sleepHours == null ? 0 : Math.round((sleepHours / 8) * 100);
-  const stressLabel = normalizeText(reviewSummary?.avgStressLabel);
-  const stress = stressTone(stressLabel);
+  const stress = stressTone(normalizeText(reviewSummary?.avgStressLabel));
   const relapseGap = averageRelapseGap(dashboard);
   const symptomDays = reviewSummary?.symptomDays ?? dashboard.yearRelapses ?? 0;
   const symptomStatus = symptomDays === 0 ? '안정' : symptomDays >= 5 ? '주의' : '보통';
@@ -268,7 +249,7 @@ function InsightsHeroCard({
           <p className="text-[12px] font-medium tracking-wide text-white/72">
             개인일지 요약 · 최근 {periodDays}일
           </p>
-          <span className="text-[12px] font-semibold text-[#F0C778]">자세히 ›</span>
+          <span className="text-[12px] font-semibold text-[#F0C778]">자세히</span>
         </div>
 
         <div className="mt-4 grid grid-cols-2">
@@ -292,7 +273,7 @@ function InsightsHeroCard({
       <div className="space-y-4 px-5 py-5">
         <MetricBar label="💊 영양제 복용률" value={`${supplementRate}%`} percent={supplementRate} />
         <MetricBar label="😴 평균 수면" value={avgSleep} percent={sleepPercent} />
-        <MetricBar label="🧠 스트레스" value={stress.label} percent={stress.percent} variant="gold" />
+        <MetricBar label="🧠 스트레스" value={stress.label} percent={stress.percent} variant={stress.variant} />
 
         <div className="grid grid-cols-3 gap-2 pt-1">
           <div className="rounded-[12px] border border-[#E7DFD2] bg-white px-3 py-3 shadow-[0_1px_0_rgba(7,37,31,.04)]">
@@ -305,115 +286,9 @@ function InsightsHeroCard({
           </div>
           <div className="rounded-[12px] border border-[#E7DFD2] bg-white px-3 py-3 shadow-[0_1px_0_rgba(7,37,31,.04)]">
             <p className="text-[10.5px] font-medium text-[#7A847C]">올해 재발</p>
-            <p className="mt-1 text-[14px] font-extrabold leading-tight text-[#1E2621]">
-              {dashboard.yearRelapses ?? 0}회
-            </p>
+            <p className="mt-1 text-[14px] font-extrabold leading-tight text-[#1E2621]">{dashboard.yearRelapses ?? 0}회</p>
           </div>
         </div>
-      </div>
-    </section>
-  );
-}
-
-function FocusCard({
-  dashboard,
-  reviewSummary,
-}: {
-  dashboard: JournalDashboard;
-  reviewSummary: JournalReviewSummary | null | undefined;
-}) {
-  const triggers = reviewSummary?.topTriggerLabels ?? [];
-  const prodromals = reviewSummary?.topProdromalLabels ?? [];
-  const patternLine = normalizeText(dashboard.personalPatternLine, '기록이 더 쌓이면 반복되는 패턴을 보여드릴게요.');
-
-  return (
-    <section className="rounded-[24px] border border-[#E7DFD2] bg-white px-4 py-4 shadow-[0_14px_32px_-28px_rgba(7,37,31,.35)]">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h3 className="text-[16px] font-extrabold text-[#1E2621]">관리 포인트</h3>
-          <p className="mt-1 text-[11.5px] leading-[1.5] text-[#7A847C]">
-            내 기록에서 반복되는 요인을 정리했어요.
-          </p>
-        </div>
-      </div>
-
-      <div className="mt-4 rounded-[18px] bg-[#F8F4EC] px-4 py-3">
-        <p className="text-[12.5px] font-bold leading-[1.65] text-[#3D4842]">{patternLine}</p>
-      </div>
-
-      <div className="mt-3 grid grid-cols-2 gap-2">
-        <div className="rounded-[17px] border border-[#ECE5D8] px-3 py-3">
-          <p className="text-[10.5px] font-bold text-[#7A847C]">자주 함께 온 요인</p>
-          <p className="mt-1 text-[13px] font-extrabold leading-snug text-[#1E2621]">
-            {triggers.length > 0 ? triggers.slice(0, 2).join(' · ') : '기록 전'}
-          </p>
-        </div>
-        <div className="rounded-[17px] border border-[#ECE5D8] px-3 py-3">
-          <p className="text-[10.5px] font-bold text-[#7A847C]">초기 신호</p>
-          <p className="mt-1 text-[13px] font-extrabold leading-snug text-[#1E2621]">
-            {prodromals.length > 0 ? prodromals.slice(0, 2).join(' · ') : '기록 전'}
-          </p>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function RecentRelapseCard({ relapses }: { relapses: JournalRecord[] }) {
-  return (
-    <section className="rounded-[24px] border border-[#E7DFD2] bg-white px-4 py-4 shadow-[0_14px_32px_-28px_rgba(7,37,31,.35)]">
-      <div className="flex items-center justify-between gap-3">
-        <h3 className="text-[16px] font-extrabold text-[#1E2621]">최근 재발 기록</h3>
-        <span className="text-[11px] font-bold text-[#7A847C]">{relapses.length}건</span>
-      </div>
-
-      {relapses.length === 0 ? (
-        <p className="mt-3 rounded-[17px] bg-[#F8F4EC] px-3 py-3 text-[12px] leading-[1.55] text-[#65706B]">
-          아직 재발 기록이 없어요. 증상이 있었던 날만 별도로 남기면 인사이트가 더 정확해집니다.
-        </p>
-      ) : (
-        <div className="mt-3 space-y-2">
-          {relapses.slice(0, 3).map((record) => (
-            <div key={record.id} className="rounded-[17px] bg-[#F8F4EC] px-3 py-3">
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-[12.5px] font-extrabold text-[#1E2621]">{formatDay(record.recordDate)}</p>
-                <span className="rounded-full bg-[#FFF1EC] px-2 py-0.5 text-[10.5px] font-bold text-[#B6402D]">
-                  강도 {record.severity ?? '-'}
-                </span>
-              </div>
-              {record.memo && (
-                <p className="mt-2 line-clamp-2 text-[11.5px] leading-[1.5] text-[#65706B]">{record.memo}</p>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-    </section>
-  );
-}
-
-function CommunityInsightCard({ insights }: { insights: JournalInsights | null | undefined }) {
-  if (!insights || insights.insightLines.length === 0) return null;
-
-  return (
-    <section className="rounded-[24px] border border-[#E7DFD2] bg-[#FFFCF7] px-4 py-4 shadow-[0_14px_32px_-28px_rgba(7,37,31,.35)]">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h3 className="text-[16px] font-extrabold text-[#1E2621]">익명 전체 흐름</h3>
-          <p className="mt-1 text-[11.5px] leading-[1.5] text-[#7A847C]">
-            개인이 드러나지 않는 집계 기준입니다.
-          </p>
-        </div>
-        <span className="rounded-full bg-[#E7F1EC] px-2.5 py-1 text-[10.5px] font-bold text-[#0B3B36]">
-          {insights.sufficientData ? '충분' : '수집 중'}
-        </span>
-      </div>
-      <div className="mt-3 space-y-2">
-        {insights.insightLines.slice(0, 3).map((line) => (
-          <p key={line} className="rounded-[15px] bg-white px-3 py-2 text-[12px] leading-[1.55] text-[#4A514B]">
-            {line}
-          </p>
-        ))}
       </div>
     </section>
   );
@@ -424,6 +299,7 @@ export function JournalInsightsPanel({
   dashboardLoading,
   reviewSummary,
   reviewSummaryLoading,
+  onDaySelect,
 }: JournalInsightsPanelProps) {
   const loading = dashboardLoading || reviewSummaryLoading;
   const [period, setPeriod] = useState<'3m' | '6m' | '1y'>('6m');
@@ -440,7 +316,7 @@ export function JournalInsightsPanel({
   if (!dashboard) {
     return (
       <section className="mx-auto max-w-app rounded-[24px] border border-[#E7DFD2] bg-white px-4 py-8 text-center shadow-[0_14px_32px_-28px_rgba(7,37,31,.35)]">
-        <h2 className="text-[16px] font-extrabold text-[#1E2621]">기록을 남기면 인사이트가 열려요</h2>
+        <h2 className="text-[16px] font-extrabold text-[#1E2621]">기록을 남기면 요약이 열려요</h2>
         <p className="mt-2 text-[12.5px] leading-[1.6] text-[#7A847C]">
           수면, 영양제, 스트레스, 증상 기록이 쌓이면 관리 흐름을 한눈에 볼 수 있어요.
         </p>
@@ -450,6 +326,24 @@ export function JournalInsightsPanel({
 
   return (
     <div className="mx-auto max-w-app space-y-3">
+      <section className="rounded-[20px] border border-[#E7DFD2] bg-[#FFF9EE] px-4 py-3 shadow-[0_14px_32px_-28px_rgba(7,37,31,.35)]">
+        <div className="flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-[#F7E7C3] text-lg" aria-hidden>
+            🔥
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-[13px] font-extrabold text-[#1E2621]">
+              {dashboard.relapseFreeDays || 0}일째 평온 기록 중
+            </p>
+            <p className="mt-1 truncate text-[11px] font-medium text-[#7A847C]">
+              최근 흐름을 먼저 확인하고 관리 요약을 살펴봐요
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <TimelineCard days={dashboard.timelineDays ?? []} onDaySelect={onDaySelect} />
+
       <div className="grid grid-cols-3 gap-1 rounded-full border border-[#D9CDBA] bg-[#EDE4D6] p-1 shadow-inner">
         {[
           ['3m', '3개월'],
@@ -469,11 +363,8 @@ export function JournalInsightsPanel({
           </button>
         ))}
       </div>
-      <InsightsHeroCard dashboard={dashboard} reviewSummary={reviewSummary} />
-      <p className="rounded-[18px] border border-[#E7DFD2] bg-[#FFFCF7] px-4 py-3 text-[11.5px] leading-[1.65] text-[#7A847C]">
-        요약은 현재 최근 기록 기준으로 보여드려요. 기간별 서버 집계가 연결되면 선택한 기간에 맞춰
-        수치가 바뀌도록 확장하면 됩니다.
-      </p>
+
+      <SummaryCard dashboard={dashboard} reviewSummary={reviewSummary} />
     </div>
   );
 }

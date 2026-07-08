@@ -24,9 +24,9 @@ function CommunityIcon() {
 
 const QUICK_ITEMS = [
   { id: 'consult', title: '1:1 비밀상담', href: '/consult', Icon: ConsultIcon },
-  { id: 'journal', title: '개인일지', href: '/journal', Icon: QuickAccessChecklistIcon },
+  { id: 'inquiry', title: '문의하기', href: '/inquiry', Icon: CommunityIcon },
   { id: 'column', title: '칼럼', href: '/contents', Icon: QuickAccessColumnIcon },
-  { id: 'community', title: '커뮤니티', href: '/community', Icon: CommunityIcon },
+  { id: 'home', title: '헤르프리', href: '/', Icon: QuickAccessChecklistIcon },
 ] as const;
 
 type QuickAccessSectionProps = {
@@ -37,6 +37,7 @@ type QuickAccessSectionProps = {
 export function QuickAccessSection({ layout = 'row', onChecklistClick }: QuickAccessSectionProps) {
   const isPanel = layout === 'panel';
   const isHome = layout === 'home';
+  void onChecklistClick;
 
   return (
     <section
@@ -63,7 +64,6 @@ export function QuickAccessSection({ layout = 'row', onChecklistClick }: QuickAc
         )}
       >
         {QUICK_ITEMS.map((item) => {
-          const useJournalHandler = item.id === 'journal' && onChecklistClick;
           const className = 'flex flex-col items-center gap-2.5 transition-opacity hover:opacity-80';
 
           const content = (
@@ -81,14 +81,6 @@ export function QuickAccessSection({ layout = 'row', onChecklistClick }: QuickAc
               </span>
             </>
           );
-
-          if (useJournalHandler) {
-            return (
-              <button key={item.id} type="button" onClick={onChecklistClick} className={className}>
-                {content}
-              </button>
-            );
-          }
 
           return (
             <Link key={item.id} href={item.href} className={className}>

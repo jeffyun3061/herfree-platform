@@ -7,6 +7,7 @@ import { VideoFeedCard, VideoFeedCardSkeleton } from '@/components/video/VideoFe
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { AdminPublishFab, AdminPublishLink } from '@/components/admin/AdminPublishLink';
+import { InlineTopActions } from '@/components/layout/InlineTopActions';
 import { getErrorMessage } from '@/lib/api/client';
 
 export default function VideosPage() {
@@ -37,41 +38,40 @@ export default function VideosPage() {
 
   return (
     <>
-      <div className="page-container media-screen mx-auto max-w-app lg:max-w-none">
-        <div className="mb-1 lg:hidden">
-          <p className="text-[19px] font-semibold text-[#15201D]">헤르프리 영상</p>
-          <p className="mt-1 text-[12.5px] text-[#8B9590]">
-            유튜브 채널에서 다뤄온 이야기들
-          </p>
-        </div>
-
-        <div className="mb-6 hidden items-start justify-between gap-3 lg:flex">
-          <div>
-            <h1 className="section-heading">헤르프리 영상</h1>
-            <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted">
+      <div className="media-screen mx-auto max-w-app pb-24 lg:max-w-none">
+        <div className="flex items-start justify-between gap-3 px-5 pt-7 lg:pt-8">
+          <div className="min-w-0">
+            <h1 className="hf-display text-[25px] font-extrabold leading-tight text-[#15201D]">헤르프리 영상</h1>
+            <p className="mt-1.5 text-[12.5px] text-[#8B9590]">
               유튜브 채널에서 다뤄온 이야기들
             </p>
           </div>
+          <InlineTopActions />
+        </div>
+
+        <div className="mx-5 mt-4 hidden items-start justify-end gap-3 lg:flex">
           <div className="shrink-0">
             <AdminPublishLink tab="videos" label="영상 등록" />
           </div>
         </div>
 
         {isLoading ? (
-          <div className="flex flex-col gap-3.5">
+          <div className="mt-[18px] flex flex-col gap-3.5 px-5">
             {[1, 2, 3].map((i) => (
               <VideoFeedCardSkeleton key={i} />
             ))}
           </div>
         ) : error ? (
-          <ErrorMessage message={getErrorMessage(error)} />
+          <div className="px-5 pt-5"><ErrorMessage message={getErrorMessage(error)} /></div>
         ) : videoPage.content.length === 0 ? (
-          <EmptyState
-            title="등록된 영상이 없습니다"
-            description="곧 마음을 덜어주는 영상이 준비될 예정입니다."
-          />
+          <div className="px-5 pt-5">
+            <EmptyState
+              title="등록된 영상이 없습니다"
+              description="곧 마음을 덜어주는 영상이 준비될 예정입니다."
+            />
+          </div>
         ) : (
-          <div className="space-y-4">
+          <div className="mt-[18px] space-y-4 px-5">
             {latestVideo && (
               <VideoFeedCard
                 video={latestVideo}

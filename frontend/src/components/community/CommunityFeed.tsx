@@ -13,12 +13,11 @@ import { CommunitySortTabs, CommunityPeriodToggle, postSortToQuery, type PostLis
 import { needsPostListPeriod, postListPeriodHint, postListPeriodQuery } from '@/domain/post/sort';
 import { PostCard, PostCardSkeleton } from '@/components/community/PostCard';
 import { Pagination } from '@/components/common/Pagination';
-import { CommunityGuestPostPanel } from '@/components/community/CommunityGuestPostPanel';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { Button } from '@/components/ui/Button';
 import { AdminPublishFab, AdminPublishLink } from '@/components/admin/AdminPublishLink';
+import { InlineTopActions } from '@/components/layout/InlineTopActions';
 import { getWritableBoards, isStaffOnlyBoardType } from '@/domain/board/types';
 import { getCommunityBoards, getCommunityBoardTabLabel, isSecretStoryBoardType, SECRET_STORY_BOARD_COPY } from '@/domain/board/privateBoard';
 import { validatePostSearchKeyword } from '@/domain/post/search';
@@ -28,6 +27,73 @@ import { getErrorMessage } from '@/lib/api/client';
 type CommunityFeedProps = {
   initialBoardId?: number | null;
 };
+
+function CommunityLockedPreview({ loginHref, boardLabel }: { loginHref: string; boardLabel?: string }) {
+  return (
+    <div className="pb-10">
+      <section className="mx-5 mt-[18px] overflow-hidden rounded-[18px] bg-white px-[18px] pt-[18px] shadow-[0_1px_2px_rgba(20,30,25,.04),0_16px_34px_-24px_rgba(20,30,25,.22)]">
+        <p className="mb-2 text-[11.5px] font-semibold text-[#15695E]">
+          {boardLabel ? `${boardLabel} · FAQ ›` : '질문 · FAQ ›'}
+        </p>
+        <h3 className="mb-3 text-[16.5px] font-bold leading-[1.45] tracking-normal text-[#15201D]">
+          오늘 받은 결과, 다들 어떻게 받아들이셨어요?
+        </h3>
+        <div className="flex items-center gap-2.5 border-b border-[#F0EADF] pb-3.5">
+          <div className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-[#EDF2EC] text-sm">
+            🌙
+          </div>
+          <div className="min-w-0">
+            <p className="text-[12.5px] font-semibold text-[#2C342E]">새벽두시</p>
+            <p className="mt-0.5 text-[10.5px] text-[#A6ABA0]">2026.06.26 13:03 · 조회 61</p>
+          </div>
+          <span className="ml-auto whitespace-nowrap text-[11px] text-[#A6ABA0]">댓글 0</span>
+        </div>
+        <div className="relative py-5 pb-8">
+          <div aria-hidden className="pointer-events-none select-none opacity-55 blur-[5px]">
+            <div className="mb-2.5 h-2.5 w-[96%] rounded-full bg-[#E5DECF]" />
+            <div className="mb-2.5 h-2.5 w-[88%] rounded-full bg-[#E5DECF]" />
+            <div className="mb-2.5 h-2.5 w-[92%] rounded-full bg-[#E5DECF]" />
+            <div className="h-2.5 w-[60%] rounded-full bg-[#E5DECF]" />
+          </div>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-[#6E7671]">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8A9089" strokeWidth="2">
+                <rect x="5" y="11" width="14" height="9" rx="2" />
+                <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+              </svg>
+              가입하면 바로 글을 볼 수 있어요
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-5 mt-6 px-1.5 text-center">
+        <p className="text-[16px] font-bold leading-[1.6] text-[#15201D]">
+          1,532명의 회원과 함께하는
+          <br />
+          <span className="text-[#15695E]">헤르프리 비공개 커뮤니티</span>에
+          <br />
+          함께해 보세요.
+        </p>
+        <p className="mt-3 text-[12.5px] leading-[1.75] text-[#9A9F94]">
+          같은 경험을 가진 사람들이 일상과 고민을
+          <br />
+          나누는 익명 공간이에요.
+        </p>
+        <p className="mt-5 text-[13px] text-[#6E7671]">가입하면 128개의 이야기를 볼 수 있어요</p>
+        <Link
+          href="/signup"
+          className="mt-4 flex h-12 items-center justify-center rounded-[14px] bg-[#0B3B36] text-[14.5px] font-bold text-white shadow-[0_14px_30px_-14px_rgba(11,59,54,.6)]"
+        >
+          30초 만에 가입하기
+        </Link>
+        <Link href={loginHref} className="mt-4 block text-[12.5px] text-[#A6ABA0]">
+          이미 계정이 있다면 로그인
+        </Link>
+      </section>
+    </div>
+  );
+}
 
 export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
   const router = useRouter();
@@ -168,31 +234,19 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
     ? getCommunityBoardTabLabel(selectedBoard.boardType) ?? selectedBoard.name
     : undefined;
 
-  if (!isReady) {
-    return (
-      <div className="page-container community-screen mx-auto flex min-h-[40vh] max-w-app items-center justify-center lg:max-w-none">
-        <LoadingSpinner label="불러오는 중…" />
-      </div>
-    );
-  }
-
   return (
-    <div className="page-container community-screen mx-auto max-w-app lg:max-w-none">
-      <div className="mb-4 lg:hidden">
-        <h2 className="text-[19px] font-semibold text-[#15201D]">커뮤니티</h2>
-        <p className="mt-1 text-[12.5px] leading-relaxed text-[#8B9590]">
-          같은 경험을 가진 사람들의 이야기가 모이는 곳
-        </p>
+    <div className="community-screen mx-auto max-w-app pb-24 lg:max-w-none">
+      <div className="flex items-start justify-between gap-3 px-5 pt-7 lg:pt-8">
+        <div className="min-w-0">
+          <h2 className="hf-display text-[25px] font-extrabold leading-tight text-[#15201D]">커뮤니티</h2>
+          <p className="mt-1.5 text-[12.5px] leading-relaxed text-[#8B9590]">
+            같은 경험을 가진 사람들의 이야기가 모이는 곳
+          </p>
+        </div>
+        <InlineTopActions />
       </div>
 
-      <div className="mb-4 hidden lg:block">
-        <h1 className="section-heading">커뮤니티</h1>
-        <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted">
-          같은 경험을 가진 사람들의 이야기가 모이는 곳
-        </p>
-      </div>
-
-      <div className="mb-4">
+      <div className="mx-5 mt-4 hidden lg:block">
         <div className="flex gap-2">
           <div className="relative min-w-0 flex-1">
           <svg
@@ -230,7 +284,7 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
       </div>
 
       {!boardsLoading && communityBoards.length > 0 && selectedBoardId !== null && (
-        <div className="mb-4 min-w-0">
+        <div className="mt-4 min-w-0 px-5">
           <BoardTabBar
             boards={communityBoards}
             selectedBoardId={selectedBoardId}
@@ -239,14 +293,12 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
         </div>
       )}
 
-      {!isLoggedIn ? (
-        <div>
-          <CommunityGuestPostPanel boardLabel={selectedBoardLabel} />
-        </div>
+      {(!isReady || !isLoggedIn) ? (
+        <CommunityLockedPreview boardLabel={selectedBoardLabel} loginHref={loginHref} />
       ) : (
-        <>
+        <div className="px-5">
       {isSecretStoryBoard && (
-        <div className="mb-4 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3">
+        <div className="mt-4 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3">
           <p className="text-sm font-semibold text-ink">{SECRET_STORY_BOARD_COPY.bannerTitle}</p>
           <p className="mt-1.5 text-xs leading-relaxed text-wrtn-muted">
             {SECRET_STORY_BOARD_COPY.bannerDescription}
@@ -255,14 +307,16 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
       )}
 
       {!isLoadingAll && !listError && (
-        <p className="mb-3 text-xs text-[#8B9590]">총 {postPage.totalElements.toLocaleString('ko-KR')}개</p>
+        <p className="mt-3 text-[11.5px] text-[#9A9F94]">
+          총 {postPage.totalElements.toLocaleString('ko-KR')}개의 이야기
+        </p>
       )}
 
       {!isNoticeBoard && (
-        <div className="mb-4">
+        <div className="mt-4">
           <CommunitySortTabs value={sort} onChange={handleSortChange} />
           {needsPostListPeriod(sort) && (
-            <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
               {periodHint && (
                 <p className="text-xs text-muted" role="status">
                   {periodHint}
@@ -285,7 +339,7 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
       </div>
 
       {isLoadingAll && (
-        <div className="space-y-2">
+        <div className="mt-3 space-y-0">
           {[1, 2, 3].map((i) => (
             <PostCardSkeleton key={i} />
           ))}
@@ -321,7 +375,7 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
       )}
 
       {!isLoadingAll && !listError && postPage.content.length > 0 && (
-        <div className="community-feed-list">
+        <div className="community-feed-list mt-1">
           {postPage.content.map((post) => (
             <PostCard key={post.id} post={post} boardName={post.boardName} />
           ))}
@@ -340,7 +394,7 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
 
       {canCommunityWrite && <CommunityFab href={writeHref} />}
       {isNoticeBoard && <AdminPublishFab tab="notices" label="공지 올리기" />}
-        </>
+        </div>
       )}
     </div>
   );

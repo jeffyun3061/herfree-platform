@@ -8,6 +8,7 @@ import { BrandMark } from '@/components/brand/BrandMark';
 import { usePageHeaderContext } from '@/contexts/PageHeaderContext';
 import { useAuth } from '@/hooks/useAuth';
 import { navigateBack } from '@/lib/navigateBack';
+import { getMobileTabRootTitle } from '@/lib/navigation';
 
 function HeaderIconLink({
   href,
@@ -71,7 +72,8 @@ export function MobileHeader() {
   const router = useRouter();
   const { header } = usePageHeaderContext() ?? {};
 
-  const shouldShowBack = Boolean(header?.showBack) || pathname !== '/';
+  const isTabRoot = pathname === '/' || Boolean(getMobileTabRootTitle(pathname));
+  const shouldShowBack = Boolean(header?.showBack) || !isTabRoot;
   const showHeaderActions = !header?.showBack;
 
   const handleBack = () => {

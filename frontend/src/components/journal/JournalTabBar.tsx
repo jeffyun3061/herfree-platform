@@ -18,7 +18,7 @@ type JournalTabBarProps = {
 export function JournalTabBar({ active, onChange }: JournalTabBarProps) {
   return (
     <nav
-      className="mx-auto grid w-full max-w-app grid-cols-3 rounded-[0.875rem] border border-[var(--color-border-tertiary)] bg-white/90 p-0.5 shadow-sm backdrop-blur-sm"
+      className="mx-auto grid w-full max-w-app grid-cols-3 rounded-[14px] bg-[#EBE2D1] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,.55)]"
       aria-label="개인일지 메뉴"
     >
       {TABS.map((tab) => (
@@ -29,8 +29,8 @@ export function JournalTabBar({ active, onChange }: JournalTabBarProps) {
           className={cn(
             'rounded-[0.65rem] py-2 text-[13px] font-semibold transition-colors',
             active === tab.id
-              ? 'bg-primary text-primary-foreground shadow-sm'
-              : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]',
+              ? 'bg-[#0B3B36] text-white shadow-[0_8px_18px_-14px_rgba(11,59,54,.9)]'
+              : 'text-[#8A9089] hover:text-[#1E2621]',
           )}
         >
           {tab.label}

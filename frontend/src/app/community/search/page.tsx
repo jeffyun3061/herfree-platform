@@ -2,11 +2,13 @@
 
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { usePostList } from '@/hooks/usePosts';
 import { useContentList } from '@/hooks/useContents';
 import { FAQ_GROUPS } from '@/domain/faq/content';
 import { getContentPreview } from '@/domain/content/types';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { navigateBack } from '@/lib/navigateBack';
 
 type SearchResult = {
   id: string;
@@ -48,6 +50,8 @@ function ResultCard({ result }: { result: SearchResult }) {
 }
 
 export default function CommunitySearchPage() {
+  const router = useRouter();
+  const pathname = usePathname();
   const [keyword, setKeyword] = useState('');
   const query = normalize(keyword);
 
@@ -86,16 +90,16 @@ export default function CommunitySearchPage() {
         href: `/contents/${content.id}`,
       }));
 
-    const faqResults = FAQ_GROUPS.flatMap((group) =>
+    const faqResults = FAQ_GROUPS.flatMap((group, groupIndex) =>
       group.items
         .filter((item) => `${item.question} ${item.answer}`.toLowerCase().includes(query))
         .map((item, index) => ({
-          id: `faq-${group.category}-${index}`,
+          id: `faq-${groupIndex}-${index}`,
           type: 'faq' as const,
           label: 'FAQ',
           title: item.question,
           description: item.answer,
-          href: '/qna',
+          href: `/qna?faq=${groupIndex}-${index}#faq-${groupIndex}-${index}`,
         })),
     ).slice(0, 8);
 
@@ -106,6 +110,24 @@ export default function CommunitySearchPage() {
 
   return (
     <main className="page-container mx-auto max-w-app pb-8 lg:max-w-content lg:pb-12">
+      <div className="mb-3 flex items-center justify-between">
+        <button
+          type="button"
+          onClick={() => navigateBack(router, { pathname, fallbackHref: '/community' })}
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-[22px] font-medium text-[#1E2621] shadow-[0_10px_22px_-18px_rgba(7,37,31,.45)]"
+          aria-label="검색 닫기"
+        >
+          ×
+        </button>
+        <Link
+          href="/"
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0B3B36] text-[15px] font-extrabold text-white shadow-[0_10px_22px_-18px_rgba(11,59,54,.75)]"
+          aria-label="홈으로 이동"
+        >
+          h.
+        </Link>
+      </div>
+
       <section className="rounded-[26px] border border-[#E1D5C1] bg-[#FBF6ED] px-4 py-5 shadow-[0_18px_42px_-34px_rgba(7,37,31,.45)] lg:px-6">
         <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-[#9B8B70]">
           Herfree Search

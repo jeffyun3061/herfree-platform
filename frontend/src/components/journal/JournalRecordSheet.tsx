@@ -6,7 +6,6 @@ import {
   toDateInputValue,
   type JournalRecord,
   type JournalRecordInput,
-  type JournalTimelineDay,
   type StressLevel,
 } from '@/domain/journal/types';
 import { recordToSheetForm, sheetFormToInput } from '@/domain/journal/recordForm';
@@ -19,7 +18,6 @@ type JournalRecordSheetProps = {
   targetDate: string;
   initialRecord?: JournalRecord | null;
   entryMode?: WizardEntryMode;
-  timelineDays?: JournalTimelineDay[];
   isSubmitting: boolean;
   onClose: () => void;
   onSave: (input: JournalRecordInput) => Promise<void>;
@@ -252,9 +250,9 @@ export function JournalRecordSheet({
             type="button"
             onClick={onClose}
             className="flex items-center gap-2 text-[#5C645A]"
-            aria-label="닫기"
+            aria-label="기록 화면 닫기"
           >
-            <span className="text-[28px] leading-none">×</span>
+            <span className="text-[24px] leading-none">‹</span>
             <span className="text-[16px] font-bold text-[#1E2621]">
               {isEditMode ? '기록 수정하기' : '기록하기'}
             </span>
@@ -402,7 +400,7 @@ export function JournalRecordSheet({
             <div>
               <div className="flex items-center gap-2 text-[14px] font-semibold text-[#1E2621]">
                 <span className="h-[9px] w-[9px] rounded-full bg-[#D85D47]" />
-                증상도 기록할게요
+                증상을 기록할게요
               </div>
               <p className="mt-1 text-[11.5px] text-[#8A9086]">
                 증상이 있었던 날만 켜고 강도와 원인을 남겨주세요.

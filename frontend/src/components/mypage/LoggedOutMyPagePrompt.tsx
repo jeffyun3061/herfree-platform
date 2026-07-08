@@ -23,15 +23,15 @@ function CheckIcon() {
 
 export function LoggedOutMyPagePromptCard() {
   return (
-    <div className="px-3 pb-8 pt-5">
+    <div className="px-3 pb-28 pt-5">
       <section className="w-full overflow-hidden rounded-[26px] border border-[#E7DFD2] bg-white shadow-[0_24px_54px_-34px_rgba(24,34,28,.52)]">
         <div className="relative aspect-[16/9] overflow-hidden bg-[#0B3B36]">
           <img
-            src={PUBLIC_IMAGES.journalDashboardHero}
+            src={PUBLIC_IMAGES.homeHero}
             alt=""
-            className="absolute inset-0 h-full w-full object-cover"
+            className="absolute inset-0 h-full w-full object-cover object-[50%_45%]"
           />
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,37,31,.08)_0%,rgba(7,37,31,.80)_100%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,37,31,.08)_0%,rgba(7,37,31,.58)_100%)]" />
           <div className="absolute left-4 top-4 rounded-full bg-white/14 px-3 py-1 text-[10px] font-extrabold uppercase tracking-[.08em] text-white/84 backdrop-blur">
             My page
           </div>
@@ -48,7 +48,7 @@ export function LoggedOutMyPagePromptCard() {
         </div>
 
         <div className="relative px-4 pb-5 pt-0">
-          <div className="relative z-20 -mt-10 ml-auto mr-3 w-[68%] max-w-[238px] rounded-[20px] border border-[#E9DFD1] bg-[#FFFCF7] p-3 shadow-[0_18px_36px_-28px_rgba(7,37,31,.55)]">
+          <div className="relative z-20 -mt-10 mx-auto w-[min(88%,274px)] rounded-[20px] border border-[#E9DFD1] bg-[#FFFCF7] p-3 shadow-[0_18px_36px_-28px_rgba(7,37,31,.55)]">
             <div className="grid grid-cols-3 gap-2">
               {[
                 ['글', '활동'],

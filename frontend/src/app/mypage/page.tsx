@@ -20,65 +20,12 @@ import { LoggedOutMyPagePromptCard } from '@/components/mypage/LoggedOutMyPagePr
 import { isAdmin, isStaff } from '@/domain/user/types';
 import { formatDate } from '@/domain/common/format';
 import { KAKAO_CONSULT_URL } from '@/domain/consult/constants';
+import { PUBLIC_IMAGES } from '@/domain/assets/static';
 import { findBoardByType } from '@/domain/board/types';
 import { getErrorMessage } from '@/lib/api/client';
+import { InlineTopActions } from '@/components/layout/InlineTopActions';
 
 const BOOKMARK_KEY = 'herfree-bookmarks';
-
-function LoggedOutMyPagePrompt() {
-  return (
-    <div className="px-4 pb-36 pt-5">
-      <section className="overflow-hidden rounded-[24px] border border-[#E7DFD2] bg-white shadow-[0_18px_42px_-30px_rgba(24,34,28,.45)]">
-        <div className="bg-[#07251F] px-5 pb-6 pt-7 text-white">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/48">
-            My page
-          </p>
-          <h1 className="hf-display mt-2 text-[26px] font-extrabold leading-[1.32]">
-            내 기록과 활동을
-            <br />
-            한곳에서 확인해요
-          </h1>
-          <p className="mt-3 text-[13px] leading-[1.7] text-white/72">
-            로그인하면 내가 쓴 글, 받은 공감, 개인일지 요약과 상담 흐름을 이어서 볼 수 있어요.
-          </p>
-        </div>
-
-        <div className="px-5 py-5">
-          <div className="grid grid-cols-3 gap-2">
-            {[
-              ['0', '작성 글'],
-              ['0', '받은 공감'],
-              ['0', '평온 일수'],
-            ].map(([value, label]) => (
-              <div key={label} className="rounded-[16px] bg-[#F7F3EC] px-3 py-3 text-center">
-                <p className="text-[18px] font-extrabold text-[#0B3B36]">{value}</p>
-                <p className="mt-1 text-[11px] text-[#65706B]">{label}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-4 rounded-[18px] border border-[#ECE5D8] bg-[#FFFCF7] p-4">
-            <p className="text-[13px] font-semibold text-[#1E2621]">
-              익명 기반으로 안전하게 관리돼요
-            </p>
-            <p className="mt-1.5 text-[12px] leading-[1.65] text-[#65706B]">
-              공개 커뮤니티와 개인 기록은 분리해서 관리하고, 필요한 정보만 마이페이지에서 확인할 수 있어요.
-            </p>
-          </div>
-
-          <Link href="/login?from=%2Fmypage">
-            <Button fullWidth size="lg" className="mt-4 rounded-[14px]">
-              로그인
-            </Button>
-          </Link>
-          <Link href="/signup?from=/mypage" className="mt-3 block text-center text-[12.5px] text-[#54614F]">
-            아직 계정이 없나요? 회원가입
-          </Link>
-        </div>
-      </section>
-    </div>
-  );
-}
 
 function loadBookmarkCount(): number {
   if (typeof window === 'undefined') return 0;
@@ -94,6 +41,7 @@ function MenuRow({
   href,
   icon,
   label,
+  sub,
   trailing,
   external,
   danger,
@@ -102,6 +50,7 @@ function MenuRow({
   href?: string;
   icon: string;
   label: string;
+  sub?: string;
   trailing?: React.ReactNode;
   external?: boolean;
   danger?: boolean;
@@ -109,12 +58,17 @@ function MenuRow({
 }) {
   const className = `mypage-menu-row ${danger ? 'text-[#C0512F]' : ''}`;
   const inner = (
-  <>
-      <span className={`flex items-center gap-2.5 text-[13.5px] ${danger ? 'text-[#C0512F]' : 'text-[#15201D]'}`}>
-        <span className="text-[15px] text-[#5B6864]" aria-hidden>
+    <>
+      <span className="flex min-w-0 items-center gap-[13px]">
+        <span className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px] bg-[#F6F1E8] text-[16px] text-[#0B3B36]" aria-hidden>
           {icon}
         </span>
-        {label}
+        <span className="min-w-0">
+          <span className={`block truncate text-[13.5px] font-semibold ${danger ? 'text-[#C0512F]' : 'text-[#15201D]'}`}>
+            {label}
+          </span>
+          {sub && <span className="mt-0.5 block truncate text-[11px] font-medium text-[#A6ABA0]">{sub}</span>}
+        </span>
       </span>
       <span className="flex items-center gap-1.5 text-xs text-[#A6ABA3]">
         {trailing}
@@ -167,7 +121,7 @@ export default function MyPage() {
     setBookmarkCount(loadBookmarkCount());
   }, []);
 
-  if (!isReady) return <LoadingSpinner />;
+  if (!isReady) return <LoggedOutMyPagePromptCard />;
 
   if (!isLoggedIn) return <LoggedOutMyPagePromptCard />;
 
@@ -213,52 +167,88 @@ export default function MyPage() {
   };
 
   const peaceDays = journalDashboard?.relapseFreeDays ?? 0;
+  const recordedDays = journalDashboard?.timelineDays?.filter((day) => day.recorded).length ?? 0;
   const memberSince = activity?.memberSince ? formatDate(activity.memberSince) : null;
 
   return (
     <>
       <div className="pb-8 lg:pb-10">
-        <section className="mypage-profile-card">
-          <span className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full bg-white/10 text-[22px]">
-            🌿
-          </span>
-          <div className="min-w-0">
-            <p className="truncate text-[15.5px] font-semibold text-white">{user?.nickname}</p>
-            <p className="mt-0.5 text-[11.5px] text-white/60">
-              {memberSince ? `${memberSince} 가입` : '헤르프리 회원'}
-            </p>
+        <section className="relative h-[172px] overflow-hidden">
+          <img
+            src={PUBLIC_IMAGES.homeHero}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover object-[50%_40%]"
+          />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,37,31,.45)_0%,rgba(7,37,31,.25)_50%,rgba(243,237,227,.96)_100%)]" />
+          <div className="absolute right-4 top-[46px] text-white drop-shadow-[0_1px_8px_rgba(7,37,31,.35)]">
+            <InlineTopActions className="text-white" />
           </div>
-          <div className="ml-auto shrink-0 text-right">
-            <p className="text-lg font-bold text-[#FFD566]">{peaceDays}일</p>
-            <p className="text-[10.5px] text-white/60">평온 유지중</p>
+          <div className="absolute bottom-4 left-0 right-0 flex items-center gap-3 px-[22px]">
+            <span className="flex h-[58px] w-[58px] shrink-0 items-center justify-center rounded-full bg-white/92 text-[26px] shadow-[0_8px_18px_-8px_rgba(0,0,0,.3)]">
+              🌙
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[18px] font-extrabold tracking-[-0.01em] text-white drop-shadow-[0_1px_8px_rgba(7,37,31,.42)]">
+                {user?.nickname ?? '헤르프리'}
+              </p>
+              <p className="mt-0.5 text-[11.5px] text-white/85 drop-shadow-[0_1px_8px_rgba(7,37,31,.35)]">
+                {memberSince ? `${memberSince} 가입` : '헤르프리 회원'}
+              </p>
+            </div>
           </div>
         </section>
 
-        <div className="mx-4 mt-[18px]">
+        <section className="-mt-2 mx-5 rounded-[18px] bg-white px-2 py-4 shadow-[0_1px_2px_rgba(20,30,25,.04),0_14px_30px_-24px_rgba(20,30,25,.22)]">
+          <div className="grid grid-cols-3 divide-x divide-[#F0EADF]">
+            <div className="text-center">
+              <p className="hf-display text-[23px] font-extrabold text-[#0B3B36]">
+                {peaceDays}
+              </p>
+              <p className="mt-1 text-[11px] text-[#9A9F94]">무증상 일수</p>
+            </div>
+            <div className="text-center">
+              <p className="hf-display text-[23px] font-extrabold text-[#0B3B36]">
+                {recordedDays}
+              </p>
+              <p className="mt-1 text-[11px] text-[#9A9F94]">기록한 날</p>
+            </div>
+            <div className="text-center">
+              <p className="hf-display text-[23px] font-extrabold text-[#0B3B36]">
+                {activityLoading ? '…' : activity?.totalPosts ?? 0}
+              </p>
+              <p className="mt-1 text-[11px] text-[#9A9F94]">남긴 글</p>
+            </div>
+          </div>
+        </section>
+
+        <div className="mx-5 mt-[18px]">
           <p className="mb-2 px-0.5 text-xs text-[#8B9590]">활동</p>
           <div className="mypage-menu-card">
             <MenuRow
               icon="📝"
               label="내가 쓴 글"
+              sub="커뮤니티에 남긴 글"
               trailing={activityLoading ? '…' : (activity?.totalPosts ?? 0)}
               onClick={() => setShowPosts((v) => !v)}
             />
             <MenuRow
               icon="💬"
               label="받은 공감"
+              sub="내 글에 달린 반응"
               trailing={activityLoading ? '…' : (activity?.receivedReactions ?? 0)}
               href="/community"
             />
             <MenuRow
               icon="🔖"
               label="스크랩한 글"
+              sub="나중에 다시 볼 글"
               trailing={bookmarkCount}
               href="/community"
             />
           </div>
         </div>
 
-        <div className="mx-4 mt-[18px]">
+        <div className="mx-5 mt-[18px]">
           <p className="mb-2 px-0.5 text-xs text-[#8B9590]">설정</p>
           <div className="mypage-menu-card">
             <div className="border-b border-[#EAEDEC] px-4 py-3.5">
@@ -283,47 +273,48 @@ export default function MyPage() {
               </div>
               {profileError && <div className="mt-2"><ErrorMessage message={profileError} /></div>}
             </div>
-            <MenuRow icon="📓" label="개인일지" href="/journal" />
+            <MenuRow icon="📓" label="개인일지" sub="기록과 요약 확인" href="/journal" />
           </div>
         </div>
 
         {isStaff(user?.role) && (
-          <div className="mx-4 mt-[18px]">
+          <div className="mx-5 mt-[18px]">
             <p className="mb-2 px-0.5 text-xs text-[#8B9590]">운영자 메뉴</p>
             <div className="mypage-menu-card">
-              <MenuRow icon="📊" label="운영 대시보드" href="/admin?tab=dashboard" />
-              <MenuRow icon="🚨" label="신고·숨김 관리" href="/admin?tab=reports" />
-              <MenuRow icon="🛡️" label="회원 제재 관리" href="/admin?tab=users" />
+              <MenuRow icon="📊" label="운영 대시보드" sub="오늘 운영 지표" href="/admin?tab=dashboard" />
+              <MenuRow icon="🚨" label="신고·숨김 관리" sub="신고 접수 확인" href="/admin?tab=reports" />
+              <MenuRow icon="🛡️" label="회원 제재 관리" sub="닉네임·이용 제한" href="/admin?tab=users" />
               {isAdmin(user?.role) && (
                 <>
-                  <MenuRow icon="📢" label="공지사항 관리" href="/admin?tab=notices" />
-                  <MenuRow icon="📝" label="칼럼 관리" href="/admin?tab=contents" />
-                  <MenuRow icon="🎬" label="영상 관리" href="/admin?tab=videos" />
+                  <MenuRow icon="📢" label="공지사항 관리" sub="공지 등록" href="/admin?tab=notices" />
+                  <MenuRow icon="📝" label="칼럼 관리" sub="칼럼 등록·수정" href="/admin?tab=contents" />
+                  <MenuRow icon="🎬" label="영상 관리" sub="영상 링크 관리" href="/admin?tab=videos" />
                 </>
               )}
             </div>
           </div>
         )}
 
-        <div className="mx-4 mt-[18px]">
+        <div className="mx-5 mt-[18px]">
           <p className="mb-2 px-0.5 text-xs text-[#8B9590]">고객지원</p>
           <div className="mypage-menu-card">
-            <MenuRow icon="❓" label="FAQ" href="/qna" />
-            <MenuRow icon="🔒" label="1:1 비밀상담" href="/consult" />
+            <MenuRow icon="❓" label="FAQ" sub="자주 묻는 질문" href="/qna" />
+            <MenuRow icon="🔒" label="1:1 비밀상담" sub="비공개 상담 안내" href="/consult" />
             <MenuRow
               icon="💬"
               label="카카오톡 상담 신청"
+              sub="오픈채팅으로 이동"
               href={KAKAO_CONSULT_URL}
               external
               trailing={<span className="ext-badge rounded bg-[#F4F6F5] px-1.5 py-0.5 text-[10px]">외부</span>}
             />
-            <MenuRow icon="📢" label="공지사항" href={noticeBoard ? `/community/${noticeBoard.id}` : '/community'} />
+            <MenuRow icon="📢" label="공지사항" sub="서비스 안내" href={noticeBoard ? `/community/${noticeBoard.id}` : '/community'} />
           </div>
         </div>
 
-        <div className="mx-4 mt-[18px]">
+        <div className="mx-5 mt-[18px]">
           <div className="mypage-menu-card">
-            <MenuRow icon="🚪" label="로그아웃" danger onClick={() => void logout()} />
+            <MenuRow icon="🚪" label="로그아웃" sub="현재 계정에서 나가기" danger onClick={() => void logout()} />
           </div>
         </div>
 

@@ -32,7 +32,7 @@ function MemberStatusStrip({
   todayStories: number;
 }) {
   return (
-    <section className="relative z-10 mx-4 -mt-[50px] rounded-[18px] bg-[#062B25] px-4 py-[14px] text-white shadow-[0_18px_40px_-26px_rgba(3,30,25,.9)]">
+    <section className="relative z-10 mx-[18px] -mt-[22px] rounded-[18px] bg-[#062B25] px-[18px] py-[15px] text-white shadow-[0_18px_40px_-24px_rgba(3,30,25,.9)]">
       <div className="flex items-center gap-3">
         <div className="flex -space-x-2" aria-hidden>
           {['h', '+', String(Math.max(todayStories, 1)).slice(0, 2)].map((label, index) => (
@@ -67,15 +67,15 @@ function GuestCommunityPreview({ posts, isLoading }: { posts: Post[]; isLoading:
   ];
 
   return (
-    <section className="mx-4 mt-6">
-      <div className="mb-3 flex items-center justify-between">
-        <div>
+    <section className="mx-5 mt-6">
+      <div className="mb-3 flex min-w-0 items-center justify-between gap-2">
+        <div className="min-w-0">
           <h2 className="hf-display text-[21px] font-extrabold text-[#1F2723]">
             방금 올라온 이야기
           </h2>
           <p className="mt-1 text-[12px] font-medium text-[#7B837D]">로그인 후 볼 수 있어요</p>
         </div>
-        <span className="inline-flex items-center gap-1 rounded-full border border-[#DCCDAF] bg-[#F9F2E7] px-2.5 py-1 text-[10.5px] font-bold text-[#9D8556]">
+        <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-[#DCCDAF] bg-[#F9F2E7] px-2 py-1 text-[10px] font-bold text-[#9D8556]">
           <LockIcon className="h-3 w-3" />
           회원 전용
         </span>
@@ -148,7 +148,7 @@ function LatestVideoSection({
   isLoading: boolean;
 }) {
   return (
-    <section className="mx-4 mt-6 rounded-[23px] border border-[#E3D4BA] bg-[#FBF4E8] p-4 shadow-[0_16px_34px_-30px_rgba(20,30,25,.35)]">
+    <section className="mx-5 mt-6 rounded-[23px] border border-[#E3D4BA] bg-[#FBF4E8] p-4 shadow-[0_16px_34px_-30px_rgba(20,30,25,.35)]">
       <div className="mb-3 flex items-center justify-between gap-3">
         <div>
           <p className="text-[10px] font-extrabold uppercase tracking-[.12em] text-[#A7864B]">
@@ -204,6 +204,79 @@ function LatestVideoSection({
   );
 }
 
+function GuestQuickLinks() {
+  const links = [
+    { href: '/consult', label: '1:1 비밀상담', icon: 'lock' },
+    { href: '/contents', label: '칼럼', icon: 'book' },
+    { href: '/qna', label: 'FAQ', icon: 'help' },
+    { href: '/notice', label: '공지사항', icon: 'notice' },
+  ];
+
+  return (
+    <section className="mx-6 mt-7">
+      <p className="mb-4 text-[12px] font-extrabold tracking-[0.08em] text-[#9A9184]">
+        바로가기
+      </p>
+      <div className="grid grid-cols-4 gap-2.5">
+        {links.map((item) => (
+          <Link key={item.href} href={item.href} className="group flex min-w-0 flex-col items-center gap-2">
+            <span className="flex h-14 w-14 items-center justify-center rounded-[18px] border border-[#ECE5D8] bg-white text-[#0B3B36] shadow-[0_8px_18px_-14px_rgba(7,37,31,.4)] transition-colors group-hover:bg-[#F8F1E6]">
+              <QuickLinkIcon name={item.icon} />
+            </span>
+            <span className="max-w-full truncate text-center text-[10.5px] font-semibold text-[#5B6864]">
+              {item.label}
+            </span>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function QuickLinkIcon({ name }: { name: string }) {
+  if (name === 'lock') {
+    return (
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+        <rect x="5" y="11" width="14" height="9" rx="2" />
+        <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+      </svg>
+    );
+  }
+  if (name === 'book') {
+    return (
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+        <path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z" />
+      </svg>
+    );
+  }
+  if (name === 'notice') {
+    return (
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+        <path d="M12 9v4" />
+        <path d="M12 17h.01" />
+        <circle cx="12" cy="12" r="9" />
+      </svg>
+    );
+  }
+  return (
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9.5 9a2.5 2.5 0 1 1 3.9 2.05c-.8.5-1.4 1.05-1.4 2.2" />
+      <path d="M12 17h.01" />
+    </svg>
+  );
+}
+
+function GuestQuietFooter() {
+  return (
+    <footer className="px-6 pb-7 pt-6 text-center">
+      <p className="hf-display text-[14px] leading-[1.7] text-[#8A9089]">오늘도 편안하게</p>
+      <p className="mt-2 text-[10.5px] text-[#B4B2A6]">herfree · 익명 기반 비공개 커뮤니티</p>
+    </footer>
+  );
+}
+
 function LockIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -249,9 +322,11 @@ export function GuestHomePage() {
       <MemberStatusStrip activeUsersLabel={activeUsersLabel} todayStories={todayStories} />
       <GuestCommunityPreview posts={recentPosts.content} isLoading={recentLoading} />
       <LatestVideoSection video={latestVideo} isLoading={videosLoading} />
-      <div className="mx-4 mt-5">
+      <GuestQuickLinks />
+      <div className="mx-5 mt-5">
         <MedicalDisclaimer compact />
       </div>
+      <GuestQuietFooter />
     </div>
   );
 }
