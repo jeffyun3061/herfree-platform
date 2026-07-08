@@ -159,7 +159,7 @@ function JournalPageContent() {
 
       setActiveTab('records');
 
-      setSaveMessage('오늘 기록이 저장됐어요.');
+      setSaveMessage('기록이 저장됐어요.');
 
       setTimeout(() => setSaveMessage(null), 3000);
 

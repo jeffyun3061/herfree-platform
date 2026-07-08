@@ -9,6 +9,7 @@ import { FAQ_GROUPS } from '@/domain/faq/content';
 import { getContentPreview } from '@/domain/content/types';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { navigateBack } from '@/lib/navigateBack';
+import { cn } from '@/lib/cn';
 
 type SearchResult = {
   id: string;
@@ -19,33 +20,97 @@ type SearchResult = {
   href: string;
 };
 
-const RECOMMENDED_KEYWORDS = ['재발', '검사', '전조증상', '영양제', '연애 고지'];
+const RECOMMENDED_KEYWORDS = ['재발', '영양제', '연애고지', '전조증상', '확진초기', '수면'];
+
+const RESULT_GROUP_LABELS: Record<SearchResult['type'], string> = {
+  community: '커뮤니티',
+  content: '칼럼',
+  faq: 'FAQ',
+};
 
 function normalize(value: string): string {
   return value.trim().toLowerCase();
 }
 
-function ResultCard({ result }: { result: SearchResult }) {
+function HighlightText({
+  text,
+  query,
+  className,
+}: {
+  text: string;
+  query: string;
+  className?: string;
+}) {
+  const index = text.toLowerCase().indexOf(query);
+  if (!query || index < 0) return <span className={className}>{text}</span>;
+
+  return (
+    <span className={className}>
+      {text.slice(0, index)}
+      <mark className="rounded-[4px] bg-[#FBE9C6] px-0.5 text-[#8A6B2A]">
+        {text.slice(index, index + query.length)}
+      </mark>
+      {text.slice(index + query.length)}
+    </span>
+  );
+}
+
+function ResultRow({ result, query }: { result: SearchResult; query: string }) {
   return (
     <Link
       href={result.href}
-      className="block rounded-[18px] border border-[#E4D8C4] bg-[#FFFCF7] px-4 py-3.5 shadow-[0_12px_28px_-26px_rgba(7,37,31,.5)] transition-colors hover:border-[#0B3B36]/30 hover:bg-white"
+      className="block border-t border-[#F2ECE1] px-[15px] py-[13px] first:border-t-0 transition-colors hover:bg-[#FFFCF7]"
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <span className="rounded-full bg-[#E7F1EC] px-2.5 py-1 text-[10.5px] font-extrabold text-[#0B3B36]">
-            {result.label}
+      <div className="flex min-w-0 items-start gap-2">
+        {result.type === 'faq' && (
+          <span className="hf-display shrink-0 text-[13px] font-extrabold leading-[1.45] text-[#C9A24B]">
+            Q
           </span>
-          <h2 className="mt-2 truncate text-[15px] font-extrabold text-[#1E2621]">
-            {result.title}
-          </h2>
-          <p className="mt-1 line-clamp-2 text-[12.5px] leading-[1.65] text-[#65706B]">
-            {result.description}
-          </p>
+        )}
+        <div className="min-w-0 flex-1">
+          <div className="mb-1.5 flex min-w-0 items-center gap-2">
+            <span
+              className={cn(
+                'shrink-0 rounded-[6px] px-2 py-0.5 text-[10px] font-extrabold',
+                result.type === 'community' && 'bg-[#E7F1EC] text-[#0B3B36]',
+                result.type === 'content' && 'bg-[#F6E8C8] text-[#8A6B2A]',
+                result.type === 'faq' && 'bg-[#EFE8DA] text-[#15695E]',
+              )}
+            >
+              {result.label}
+            </span>
+            <HighlightText
+              text={result.title}
+              query={query}
+              className="min-w-0 truncate text-[13.5px] font-bold leading-[1.45] text-[#1E2621]"
+            />
+          </div>
+          <HighlightText
+            text={result.description}
+            query={query}
+            className="line-clamp-2 text-[12px] leading-[1.55] text-[#65706B]"
+          />
         </div>
-        <span className="mt-7 shrink-0 text-[#B89A63]">›</span>
+        <span className="mt-1 shrink-0 text-[#C3B79E]">›</span>
       </div>
     </Link>
+  );
+}
+
+function ResultGroup({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section>
+      <h2 className="px-0.5 pb-2 text-[12.5px] font-extrabold text-[#15695E]">{title}</h2>
+      <div className="overflow-hidden rounded-[16px] bg-white shadow-[0_1px_2px_rgba(20,30,25,.04),0_14px_30px_-24px_rgba(20,30,25,.22)]">
+        {children}
+      </div>
+    </section>
   );
 }
 
@@ -107,39 +172,27 @@ export default function CommunitySearchPage() {
   }, [contentPage.content, postPage.content, query]);
 
   const isLoading = Boolean(query) && (postsLoading || contentsLoading);
+  const groupedResults = useMemo(
+    () => ({
+      community: results.filter((result) => result.type === 'community'),
+      content: results.filter((result) => result.type === 'content'),
+      faq: results.filter((result) => result.type === 'faq'),
+    }),
+    [results],
+  );
 
   return (
-    <main className="page-container mx-auto max-w-app pb-8 lg:max-w-content lg:pb-12">
-      <div className="mb-3 flex items-center justify-between">
+    <main className="mx-auto flex min-h-screen max-w-app flex-col bg-[#F3EDE3] pb-8 lg:max-w-content">
+      <div className="flex items-center gap-2 border-b border-[#EAE3D6] px-4 pb-3 pt-[52px]">
         <button
           type="button"
           onClick={() => navigateBack(router, { pathname, fallbackHref: '/community' })}
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-[22px] font-medium text-[#1E2621] shadow-[0_10px_22px_-18px_rgba(7,37,31,.45)]"
-          aria-label="검색 닫기"
+          className="flex h-9 w-8 shrink-0 items-center justify-center text-[24px] leading-none text-[#65706B]"
+          aria-label="이전 화면으로"
         >
-          ×
+          ‹
         </button>
-        <Link
-          href="/"
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0B3B36] text-[15px] font-extrabold text-white shadow-[0_10px_22px_-18px_rgba(11,59,54,.75)]"
-          aria-label="홈으로 이동"
-        >
-          h.
-        </Link>
-      </div>
-
-      <section className="rounded-[26px] border border-[#E1D5C1] bg-[#FBF6ED] px-4 py-5 shadow-[0_18px_42px_-34px_rgba(7,37,31,.45)] lg:px-6">
-        <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-[#9B8B70]">
-          Herfree Search
-        </p>
-        <h1 className="hf-display mt-1 text-[24px] font-extrabold text-[#10231F]">
-          통합 검색
-        </h1>
-        <p className="mt-1 text-[12.5px] leading-[1.6] text-[#6D746D]">
-          커뮤니티 글, 칼럼, FAQ를 한 번에 찾아볼 수 있어요.
-        </p>
-
-        <label className="mt-4 flex items-center gap-3 rounded-[17px] border border-[#E3D8C7] bg-white px-4 py-3 shadow-[0_12px_28px_-26px_rgba(7,37,31,.45)]">
+        <label className="flex min-w-0 flex-1 items-center gap-2 rounded-[12px] border border-[#E6DECF] bg-white px-3 py-2.5">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#65706B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
             <circle cx="11" cy="11" r="7" />
             <path d="M20 20l-3.4-3.4" />
@@ -147,43 +200,71 @@ export default function CommunitySearchPage() {
           <input
             value={keyword}
             onChange={(event) => setKeyword(event.target.value)}
-            placeholder="궁금한 내용을 검색해 보세요"
+            placeholder="이야기 · 칼럼 · FAQ 검색"
             className="min-w-0 flex-1 bg-transparent text-[14px] font-semibold text-[#1E2621] outline-none placeholder:text-[#9AA19C]"
             autoFocus
           />
+          {keyword && (
+            <button
+              type="button"
+              onClick={() => setKeyword('')}
+              className="shrink-0 text-[15px] font-bold text-[#B4B2A6]"
+              aria-label="검색어 지우기"
+            >
+              ×
+            </button>
+          )}
         </label>
+      </div>
 
+      <section className="flex-1 overflow-y-auto px-5 py-[18px]">
         {!query && (
-          <div className="mt-4 flex flex-wrap gap-2">
-            {RECOMMENDED_KEYWORDS.map((item) => (
-              <button
-                key={item}
-                type="button"
-                onClick={() => setKeyword(item)}
-                className="rounded-full border border-[#D9CBB5] bg-white px-3 py-2 text-[12px] font-bold text-[#33413B]"
-              >
-                {item}
-              </button>
-            ))}
+          <div>
+            <p className="mb-3 text-[12px] font-bold text-[#9A9F94]">추천 검색어</p>
+            <div className="flex flex-wrap gap-2">
+              {RECOMMENDED_KEYWORDS.map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() => setKeyword(item)}
+                  className="rounded-full border border-[#EADFCB] bg-[#FBF6EA] px-3.5 py-2 text-[12.5px] font-bold text-[#5C645A]"
+                >
+                  {item}
+                </button>
+              ))}
+            </div>
           </div>
         )}
-      </section>
 
-      <section className="mt-4 space-y-3">
         {isLoading ? (
-          <div className="rounded-[22px] border border-[#E4D8C4] bg-[#FFFCF7] px-4 py-8">
+          <div className="rounded-[22px] border border-[#E4D8C4] bg-[#FFFCF7] px-4 py-10">
             <LoadingSpinner label="검색 중..." />
           </div>
         ) : query && results.length === 0 ? (
-          <div className="rounded-[22px] border border-[#E4D8C4] bg-[#FFFCF7] px-4 py-8 text-center">
-            <h2 className="text-[15px] font-extrabold text-[#1E2621]">검색 결과가 없어요</h2>
-            <p className="mt-2 text-[12.5px] leading-[1.6] text-[#65706B]">
-              다른 표현으로 다시 검색하거나 FAQ를 확인해 보세요.
-            </p>
+          <div className="px-5 py-[60px] text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#FBF6EA] text-[#9A9F94]">
+              <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <circle cx="11" cy="11" r="7" />
+                <path d="M20 20l-3.4-3.4" />
+              </svg>
+            </div>
+            <h2 className="mt-4 text-[14px] font-bold text-[#65706B]">‘{keyword.trim()}’에 대한 결과가 없어요</h2>
+            <p className="mt-1.5 text-[12px] leading-[1.6] text-[#9A9F94]">다른 키워드로 검색해보세요</p>
           </div>
-        ) : (
-          results.map((result) => <ResultCard key={result.id} result={result} />)
-        )}
+        ) : query ? (
+          <div className="flex flex-col gap-[22px]">
+            <p className="text-[11.5px] font-medium text-[#9A9F94]">총 {results.length}개의 결과</p>
+            {(['community', 'content', 'faq'] as const).map((type) =>
+              groupedResults[type].length > 0 ? (
+                <ResultGroup key={type} title={RESULT_GROUP_LABELS[type]}>
+                  {groupedResults[type].map((result) => (
+                    <ResultRow key={result.id} result={result} query={query} />
+                  ))}
+                </ResultGroup>
+              ) : null,
+            )}
+          </div>
+        ) : null}
       </section>
     </main>
   );

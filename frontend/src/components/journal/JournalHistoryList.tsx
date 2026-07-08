@@ -13,7 +13,6 @@ import {
   ROUTINE_TASK_TOTAL,
 } from '@/domain/journal/routine';
 import { Pagination } from '@/components/common/Pagination';
-import { EmptyState } from '@/components/ui/EmptyState';
 import { cn } from '@/lib/cn';
 
 type JournalHistoryListProps = {
@@ -385,7 +384,7 @@ export function JournalHistoryList({
                 onClick={onCreate}
                 className="shrink-0 rounded-full bg-primary px-4 py-2 text-xs font-extrabold text-primary-foreground shadow-[0_12px_26px_-18px_rgba(11,59,54,.85)] transition-colors hover:bg-[#0F4F48]"
               >
-                오늘 기록하기
+                기록하기
               </button>
             )}
           </div>
@@ -400,14 +399,25 @@ export function JournalHistoryList({
           </div>
 
           {records.length === 0 ? (
-            <EmptyState
-              title={filter === 'relapse' ? '재발 기록이 없어요' : '아직 기록이 없어요'}
-              description={
-                filter === 'relapse'
-                  ? '재발이 있었던 날 「재발 기록하기」로 남겨 보세요.'
-                  : '달력에서 원하는 날짜를 눌러 첫 기록을 남겨 보세요.'
-              }
-            />
+            <div className="rounded-[20px] border border-[#E7DFD2] bg-[#FFFCF7] px-5 py-8 text-center shadow-[0_14px_30px_-28px_rgba(7,37,31,.35)]">
+              <h3 className="text-[15px] font-extrabold text-[#1E2621]">
+                {filter === 'relapse' ? '재발 기록이 없어요' : '아직 기록이 없어요'}
+              </h3>
+              <p className="mx-auto mt-2 max-w-[260px] text-[12.5px] leading-[1.65] text-[#65706B]">
+                {filter === 'relapse'
+                  ? '재발이 있었던 날을 달력에서 선택하거나 기록하기로 남겨 보세요.'
+                  : '달력에서 원하는 날짜를 누르거나 기록하기 버튼으로 첫 기록을 남겨 보세요.'}
+              </p>
+              {onCreate && (
+                <button
+                  type="button"
+                  onClick={onCreate}
+                  className="mt-5 rounded-[13px] bg-[#0B3B36] px-5 py-3 text-[13px] font-extrabold text-white shadow-[0_12px_24px_-18px_rgba(11,59,54,.9)]"
+                >
+                  기록하기
+                </button>
+              )}
+            </div>
           ) : (
             <>
           <ul className="space-y-3">

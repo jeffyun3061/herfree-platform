@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { MobileMenu } from '@/components/layout/MobileMenu';
+import { useAuth } from '@/hooks/useAuth';
 
 function SearchIcon() {
   return (
@@ -32,6 +33,7 @@ function MenuIcon() {
 
 export function InlineTopActions({ className = '' }: { className?: string }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const { isLoggedIn } = useAuth();
 
   return (
     <>
@@ -39,9 +41,15 @@ export function InlineTopActions({ className = '' }: { className?: string }) {
         <Link href="/community/search" aria-label="통합 검색" className="flex h-8 w-8 items-center justify-center">
           <SearchIcon />
         </Link>
-        <Link href="/mypage" aria-label="마이페이지" className="flex h-8 w-8 items-center justify-center">
-          <UserIcon />
-        </Link>
+        {isLoggedIn ? (
+          <Link href="/mypage" aria-label="마이페이지" className="flex h-8 w-8 items-center justify-center">
+            <UserIcon />
+          </Link>
+        ) : (
+          <Link href="/login" aria-label="로그인" className="text-[13px] font-semibold text-[#15201D]">
+            로그인
+          </Link>
+        )}
         <button
           type="button"
           onClick={() => setMenuOpen(true)}

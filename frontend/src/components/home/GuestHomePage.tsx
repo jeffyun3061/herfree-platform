@@ -1,17 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo } from 'react';
 import { usePostList } from '@/hooks/usePosts';
 import { useJournalPublicHomeStats } from '@/hooks/useJournal';
-import { useVideos } from '@/hooks/useVideos';
 import { GuestHomeHero } from '@/components/home/GuestHomeHero';
 import { MedicalDisclaimer } from '@/components/layout/MedicalDisclaimer';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import type { Post } from '@/domain/post/types';
-import type { Video } from '@/domain/video/types';
-import { getVideoThumbnail } from '@/domain/video/types';
-import { formatRelativeTime, formatRelativeTimeMedia } from '@/domain/common/format';
+import { formatRelativeTime } from '@/domain/common/format';
 
 function formatMemberStatus(value: number | null | undefined, loading: boolean): string {
   if (loading) return '회원 수 확인 중';
@@ -140,66 +136,29 @@ function PreviewPostRow({ title, author, time }: { title: string; author: string
   );
 }
 
-function LatestVideoSection({
-  video,
-  isLoading,
-}: {
-  video: Video | null;
-  isLoading: boolean;
-}) {
+function GuestJournalStartCard() {
   return (
-    <section className="mx-5 mt-6 rounded-[23px] border border-[#E3D4BA] bg-[#FBF4E8] p-4 shadow-[0_16px_34px_-30px_rgba(20,30,25,.35)]">
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <div>
-          <p className="text-[10px] font-extrabold uppercase tracking-[.12em] text-[#A7864B]">
-            Herfree Video
-          </p>
-          <h2 className="hf-display mt-1 text-[20px] font-extrabold text-[#1F2723]">최신 영상</h2>
-        </div>
-        <Link
-          href="/videos"
-          className="rounded-full bg-white px-3 py-1.5 text-[11.5px] font-extrabold text-[#0B3B36] shadow-[0_8px_16px_-14px_rgba(11,59,54,.8)]"
-        >
-          더보기
-        </Link>
-      </div>
-
-      {isLoading ? (
-        <div className="aspect-video animate-pulse rounded-[18px] bg-[#E8DFD0]" />
-      ) : video ? (
-        <Link href={`/videos/${video.id}`} className="block">
-          <article className="overflow-hidden rounded-[18px] bg-[#052D27] text-white shadow-[0_16px_28px_-22px_rgba(5,45,39,.9)]">
-            <div className="relative aspect-video overflow-hidden">
-              <img
-                src={getVideoThumbnail(video)}
-                alt=""
-                className="absolute inset-0 h-full w-full object-cover"
-              />
-              <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,18,15,.1)_0%,rgba(2,18,15,.14)_45%,rgba(2,18,15,.68)_100%)]" />
-              <span className="absolute left-3 top-3 rounded-full bg-[#F0C778] px-2.5 py-1 text-[10.5px] font-extrabold text-[#07251F]">
-                최신 영상
-              </span>
-              <span className="absolute left-1/2 top-1/2 flex h-11 w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white/92 text-[17px] text-[#0B3B36] shadow-[0_12px_26px_-16px_rgba(0,0,0,.85)]">
-                ▶
-              </span>
-              <div className="absolute bottom-0 left-0 right-0 p-3.5">
-                <h3 className="line-clamp-2 text-[15px] font-extrabold leading-[1.35]">
-                  {video.title}
-                </h3>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 px-3.5 py-2.5 text-[11.5px] text-white/72">
-              <span>YouTube</span>
-              <span className="h-0.5 w-0.5 rounded-full bg-white/45" />
-              <span>{formatRelativeTimeMedia(video.createdAt)}</span>
-            </div>
-          </article>
-        </Link>
-      ) : (
-        <div className="rounded-[18px] bg-white px-4 py-8 text-center text-[13px] font-semibold text-[#6E766F]">
-          공개된 영상이 아직 없어요.
-        </div>
-      )}
+    <section className="mx-[18px] mt-[26px] rounded-[20px] border border-[#DCE6DC] bg-[#EDF2EC] px-[22px] py-[22px]">
+      <h2 className="hf-display text-[17px] font-extrabold leading-[1.5] text-[#1E2621]">
+        막 알게 되셨나요?
+      </h2>
+      <p className="mt-2 text-[13px] leading-[1.75] text-[#54614F]">
+        관리의 시작은 기록부터.
+        <br />
+        오늘부터 개인 일지를 작성해보세요.
+      </p>
+      <Link
+        href="/signup?from=/journal"
+        className="mt-[18px] flex min-h-12 items-center justify-center rounded-[12px] bg-[#0B3B36] text-[14px] font-extrabold text-white shadow-[0_12px_24px_-18px_rgba(11,59,54,.9)]"
+      >
+        오늘부터 시작하기
+      </Link>
+      <Link
+        href="/community"
+        className="mt-[13px] block text-center text-[12.5px] font-semibold text-[#54614F]"
+      >
+        먼저 둘러볼게요 ›
+      </Link>
     </section>
   );
 }
@@ -208,8 +167,8 @@ function GuestQuickLinks() {
   const links = [
     { href: '/consult', label: '1:1 비밀상담', icon: 'lock' },
     { href: '/contents', label: '칼럼', icon: 'book' },
-    { href: '/qna', label: 'FAQ', icon: 'help' },
-    { href: '/notice', label: '공지사항', icon: 'notice' },
+    { href: '/inquiry', label: '문의하기', icon: 'notice' },
+    { href: '/', label: '헤르프리', icon: 'help' },
   ];
 
   return (
@@ -271,8 +230,8 @@ function QuickLinkIcon({ name }: { name: string }) {
 function GuestQuietFooter() {
   return (
     <footer className="px-6 pb-7 pt-6 text-center">
-      <p className="hf-display text-[14px] leading-[1.7] text-[#8A9089]">오늘도 편안하게</p>
-      <p className="mt-2 text-[10.5px] text-[#B4B2A6]">herfree · 익명 기반 비공개 커뮤니티</p>
+      <p className="hf-display text-[14px] leading-[1.7] text-[#8A9089]">오늘도, 담담하게</p>
+      <p className="mt-2 text-[10.5px] text-[#B4B2A6]">헤르프리 · 익명 기반 비공개 커뮤니티</p>
     </footer>
   );
 }
@@ -303,25 +262,16 @@ export function GuestHomePage() {
     'createdAt,desc',
   );
   const { data: homeStats, isLoading: statsLoading } = useJournalPublicHomeStats();
-  const { videoPage, isLoading: videosLoading } = useVideos(6);
 
   const activeUsersLabel = formatMemberStatus(homeStats?.totalUsers, statsLoading);
   const todayStories = recentPosts.totalElements || recentPosts.content.length;
-  const latestVideo = useMemo(() => {
-    if (videoPage.content.length === 0) return null;
-    return videoPage.content.reduce((latest, video) => {
-      const latestTime = new Date(latest.createdAt).getTime();
-      const videoTime = new Date(video.createdAt).getTime();
-      return videoTime > latestTime ? video : latest;
-    }, videoPage.content[0]);
-  }, [videoPage.content]);
 
   return (
     <div className="min-h-screen bg-[#F3EDE3] pb-7">
       <GuestHomeHero />
       <MemberStatusStrip activeUsersLabel={activeUsersLabel} todayStories={todayStories} />
       <GuestCommunityPreview posts={recentPosts.content} isLoading={recentLoading} />
-      <LatestVideoSection video={latestVideo} isLoading={videosLoading} />
+      <GuestJournalStartCard />
       <GuestQuickLinks />
       <div className="mx-5 mt-5">
         <MedicalDisclaimer compact />

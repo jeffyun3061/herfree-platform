@@ -68,6 +68,7 @@ export default function PostDetailPage() {
   const [pendingConfirm, setPendingConfirm] = useState<PendingConfirm | null>(null);
   const [isConfirming, setIsConfirming] = useState(false);
   const [isHiding, setIsHiding] = useState(false);
+  const [copyMessage, setCopyMessage] = useState<string | null>(null);
 
   const loginHref = `/login?from=${encodeURIComponent(`/community/posts/${postId}`)}`;
   const staffUser = isStaff(user?.role);
@@ -128,7 +129,23 @@ export default function PostDetailPage() {
     }
   };
 
-  if (!isReady) return <LoadingSpinner />;
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopyMessage('글 링크를 복사했어요.');
+    } catch {
+      setCopyMessage('링크 복사를 지원하지 않는 환경이에요.');
+    }
+    window.setTimeout(() => setCopyMessage(null), 2200);
+  };
+
+  if (!isReady) {
+    return (
+      <div className="mx-auto max-w-app px-5 py-12">
+        <LoadingSpinner label="글을 준비하는 중..." />
+      </div>
+    );
+  }
   if (!isLoggedIn) {
     return (
       <div className="page-container mx-auto max-w-app px-4 pb-20 lg:pb-8">
@@ -137,10 +154,16 @@ export default function PostDetailPage() {
     );
   }
 
-  if (isLoading) return <LoadingSpinner />;
+  if (isLoading) {
+    return (
+      <div className="mx-auto max-w-app px-5 py-12">
+        <LoadingSpinner label="게시글을 불러오는 중..." />
+      </div>
+    );
+  }
   if (error || !post) {
     return (
-      <div className="px-4 py-6">
+      <div className="mx-auto max-w-app px-5 py-10">
         <ErrorMessage message={error ? getErrorMessage(error) : '글을 찾을 수 없습니다.'} />
       </div>
     );
@@ -187,13 +210,31 @@ export default function PostDetailPage() {
   return (
     <>
       <article className="mx-auto max-w-app pb-20 lg:pb-8">
-        <Link
-          href={backHref}
-          className="flex items-center gap-2.5 px-4 pb-3.5 pt-[54px] text-[15px] font-bold text-[#15201D]"
-        >
-          <span className="text-[24px] font-normal leading-none text-[#6E7671]">‹</span>
-          커뮤니티
-        </Link>
+        <div className="flex items-center justify-between gap-3 px-4 pb-3.5 pt-[54px]">
+          <Link
+            href={backHref}
+            className="flex min-w-0 items-center gap-2.5 text-[15px] font-bold text-[#15201D]"
+          >
+            <span className="text-[24px] font-normal leading-none text-[#6E7671]">‹</span>
+            커뮤니티
+          </Link>
+          <button
+            type="button"
+            onClick={() => void handleCopyLink()}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-[#65706B] shadow-[0_10px_22px_-18px_rgba(7,37,31,.45)]"
+            aria-label="글 링크 복사"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M10 13a5 5 0 0 0 7.1 0l2.8-2.8a5 5 0 0 0-7.1-7.1l-1.3 1.3" />
+              <path d="M14 11a5 5 0 0 0-7.1 0l-2.8 2.8a5 5 0 0 0 7.1 7.1l1.3-1.3" />
+            </svg>
+          </button>
+        </div>
+        {copyMessage && (
+          <p className="mx-5 mb-3 rounded-[13px] bg-[#0B3B36] px-4 py-2 text-[12px] font-bold text-white">
+            {copyMessage}
+          </p>
+        )}
         <section className="px-5 pt-1">
           <div className="flex flex-wrap items-center gap-2">
             <span className="rounded-[7px] bg-[#E7F1EC] px-2.5 py-1 text-[10.5px] font-extrabold text-[#0B3B36]">
@@ -324,9 +365,16 @@ export default function PostDetailPage() {
 
         {showComments && (
         <section className="px-5 pt-[18px]">
-          <h2 className="mb-3 text-[13px] font-extrabold text-[#15201D]">
-            {isMaskedPost ? '운영자 답변' : '댓글'} {commentPage.totalElements}
-          </h2>
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <h2 className="text-[13px] font-extrabold text-[#15201D]">
+              {isMaskedPost ? '운영자 답변' : '댓글'} {commentPage.totalElements}
+            </h2>
+            {commentPage.totalPages > 1 && (
+              <span className="text-[11px] font-medium text-[#A6ABA0]">
+                {page + 1}/{commentPage.totalPages}페이지
+              </span>
+            )}
+          </div>
           {privateCommentHint && (
             <p className="mb-4 text-xs leading-relaxed text-muted">
               운영자 답변이 등록되면 여기에 표시됩니다. 답글은 운영자만 작성할 수 있습니다.
@@ -334,7 +382,7 @@ export default function PostDetailPage() {
           )}
           {commentsLoading ? (
             <LoadingSpinner label="댓글 불러오는 중…" />
-          ) : (
+          ) : commentTree.length > 0 ? (
             <>
               {commentTree.map((comment) => (
                 <CommentItem
@@ -361,6 +409,15 @@ export default function PostDetailPage() {
               ))}
               <Pagination page={page} totalPages={commentPage.totalPages} onPageChange={setPage} />
             </>
+          ) : (
+            <div className="rounded-[16px] border border-[#E7DFD2] bg-[#FBF6EA] px-4 py-6 text-center">
+              <p className="text-[13px] font-bold text-[#1E2621]">
+                {isMaskedPost ? '아직 운영자 답변이 없어요' : '아직 댓글이 없어요'}
+              </p>
+              <p className="mt-1 text-[12px] text-[#7A847C]">
+                {isMaskedPost ? '답변이 등록되면 이곳에 표시됩니다.' : '첫 댓글로 따뜻한 마음을 남겨보세요.'}
+              </p>
+            </div>
           )}
 
           {canWriteComments ? (

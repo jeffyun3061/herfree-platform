@@ -176,7 +176,7 @@ export function JournalInlineRecordForm({
       <div className="flex items-center justify-between px-1">
         <div>
           <h1 className="font-display text-[22px] font-extrabold text-[#1E2621]">기록하기</h1>
-          <p className="mt-1 text-[12px] text-[#8A9086]">날짜를 고르고 오늘 컨디션을 남겨주세요</p>
+          <p className="mt-1 text-[12px] text-[#8A9086]">날짜를 고르고 컨디션을 남겨주세요</p>
         </div>
         <label className="flex shrink-0 items-center gap-1.5 rounded-full border border-[#E1D8C8] bg-white px-3 py-2 shadow-[0_8px_20px_-18px_rgba(20,30,25,.35)]">
           <span className="text-[10px] font-semibold text-[#9A9F94]">날짜</span>
@@ -376,7 +376,7 @@ export function JournalInlineRecordForm({
           maxLength={200}
           value={form.memo ?? ''}
           onChange={(event) => setForm((prev) => ({ ...prev, memo: event.target.value }))}
-          placeholder="오늘 특이사항이 있다면 적어주세요"
+          placeholder="특이사항이 있다면 적어주세요"
           className="min-h-[74px] w-full resize-none rounded-[12px] border border-[#E5D9C2] bg-[#F3ECDD] px-3.5 py-3 text-[13px] text-[#1E2621] outline-none placeholder:text-[#B4B2A6] focus:border-[#1D9E75]"
         />
       </FieldCard>

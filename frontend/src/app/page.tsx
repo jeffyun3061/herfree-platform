@@ -7,11 +7,13 @@ import { usePostList } from '@/hooks/usePosts';
 import { useJournalDashboard } from '@/hooks/useJournal';
 import { useJournalCheckin } from '@/hooks/useJournalCheckin';
 import { useBoards } from '@/hooks/useBoards';
+import { BrandMark } from '@/components/brand/BrandMark';
 import { GuestHomePage } from '@/components/home/GuestHomePage';
 import { JournalPersonalDashboard } from '@/components/journal/JournalPersonalDashboard';
 import { JournalRecordSheet } from '@/components/journal/JournalRecordSheet';
 import { QuickAccessSection } from '@/components/home/QuickAccessSection';
 import { MedicalDisclaimer } from '@/components/layout/MedicalDisclaimer';
+import { InlineTopActions } from '@/components/layout/InlineTopActions';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 
 function LoggedInHomePage() {
@@ -67,7 +69,12 @@ function LoggedInHomePage() {
   return (
     <div className="min-h-screen bg-[#F3EDE3] lg:pb-10">
       <div className="page-container home-dashboard-screen max-lg:pb-28">
-        <div className="space-y-3">
+        <div className="mx-auto flex w-full max-w-app flex-col gap-[22px]">
+          <div className="flex items-center justify-between px-0.5">
+            <BrandMark size="md" showText={false} />
+            <InlineTopActions />
+          </div>
+
           <JournalPersonalDashboard
             dashboard={dashboard ?? null}
             isLoading={dashboardLoading}

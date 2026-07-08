@@ -62,43 +62,6 @@ function HomeNoticeStrip({ post, isLoading }: { post: Post | null; isLoading: bo
   );
 }
 
-function HomeStatusTabs({ dashboard }: { dashboard: JournalDashboard | null }) {
-  const todayRecord = dashboard?.todayRecord ?? null;
-  const active = todayRecord?.hadSymptoms
-    ? 'symptom'
-    : (todayRecord?.prodromalSymptoms ?? []).length > 0
-      ? 'prodrome'
-      : 'none';
-  const tabs = [
-    { id: 'none', label: '증상 없음' },
-    { id: 'prodrome', label: '전조 증상' },
-    { id: 'symptom', label: '증상 발현' },
-  ] as const;
-
-  return (
-    <section className="rounded-[16px] bg-[#EBE2D1] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,.55)]">
-      <div className="grid grid-cols-3 gap-1">
-        {tabs.map((tab) => {
-          const selected = active === tab.id;
-          return (
-            <div
-              key={tab.id}
-              className={
-                selected
-                  ? 'rounded-[12px] bg-[#0B3B36] px-2 py-2 text-center text-[12px] font-extrabold text-white shadow-[0_10px_20px_-16px_rgba(11,59,54,.85)]'
-                  : 'rounded-[12px] px-2 py-2 text-center text-[12px] font-bold text-[#8A9089]'
-              }
-              aria-current={selected ? 'true' : undefined}
-            >
-              {tab.label}
-            </div>
-          );
-        })}
-      </div>
-    </section>
-  );
-}
-
 export function JournalPersonalDashboard({
   dashboard,
   isLoading,
@@ -113,9 +76,7 @@ export function JournalPersonalDashboard({
   afterCommunity,
 }: JournalPersonalDashboardProps) {
   return (
-    <div className="journal-home-stack mx-auto w-full max-w-app gap-3">
-      <HomeStatusTabs dashboard={dashboard} />
-
+    <div className="journal-home-stack mx-auto w-full max-w-app gap-[22px]">
       <JournalDashboardCard
         dashboard={dashboard}
         isLoading={isLoading}
