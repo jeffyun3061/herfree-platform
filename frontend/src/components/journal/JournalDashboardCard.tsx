@@ -3,7 +3,11 @@
 import type { JournalDashboard, JournalRecord, SleepRange, StressLevel, MoodType } from '@/domain/journal/types';
 import { PUBLIC_IMAGES } from '@/domain/assets/static';
 import { JournalShareButton } from '@/components/journal/JournalShareButton';
-import { formatDashboardDateBadge, formatLastRelapseLabel } from '@/domain/journal/routine';
+import {
+  countRecordStreak,
+  formatDashboardDateBadge,
+  formatLastRelapseLabel,
+} from '@/domain/journal/routine';
 
 type JournalDashboardCardProps = {
   dashboard: JournalDashboard | null;
@@ -133,6 +137,7 @@ export function JournalDashboardCard({
   const lastRelapse = formatLastRelapseLabel(dashboard?.lastRelapseDate);
   const routineCompleted = dashboard?.routineCompletedToday ?? 0;
   const routineTotal = dashboard?.routineTotalToday ?? 3;
+  const recordStreak = countRecordStreak(dashboard?.timelineDays);
   const statusTone = getStatusTone(focusRecord);
 
   return (
@@ -205,6 +210,15 @@ export function JournalDashboardCard({
           <p className="mt-4 truncate text-[11px] leading-snug text-white/44">
             마지막 재발 {lastRelapse} · 영양제 {focusRecord?.supplementTaken ? '복용' : '기록 전'}
           </p>
+
+          {recordStreak > 0 && (
+            <p
+              data-share-exclude="1"
+              className="mt-3 flex items-center justify-center gap-1.5 text-[12px] font-semibold text-[#F0C778]"
+            >
+              🔥 {recordStreak}일 연속 기록 중
+            </p>
+          )}
 
           {onRecordDaily && (
             <button

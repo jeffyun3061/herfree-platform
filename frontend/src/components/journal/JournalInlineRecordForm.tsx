@@ -33,6 +33,25 @@ const PRODROMAL_OPTIONS = [
 
 const PRESET_PRODROME_VALUES = new Set(PRODROMAL_OPTIONS.map((option) => option.value));
 
+/** 디자이너 원본 심각도 셀 색상 (1~5). */
+const SEVERITY_CELLS: Array<[string, string]> = [
+  ['#FBE3DA', '#7A2E12'],
+  ['#F4C3B1', '#7A2E12'],
+  ['#EA9C7F', '#fff'],
+  ['#DD6E48', '#fff'],
+  ['#CF5B36', '#fff'],
+];
+
+function formatRecordDateBadge(isoDate: string): string {
+  const date = new Date(`${isoDate}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return isoDate;
+  const weekdays = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'] as const;
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}.${m}.${d} ${weekdays[date.getDay()]}`;
+}
+
 function FieldCard({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
     <section
@@ -175,16 +194,16 @@ export function JournalInlineRecordForm({
     <section className="mx-auto w-full max-w-app space-y-3">
       <div className="flex items-center justify-between px-1">
         <div>
-          <h1 className="font-display text-[22px] font-extrabold text-[#1E2621]">기록하기</h1>
-          <p className="mt-1 text-[12px] text-[#8A9086]">날짜를 고르고 컨디션을 남겨주세요</p>
+          <p className="text-[13.5px] font-bold text-[#1E2621]">{formatRecordDateBadge(currentRecordDate)}</p>
+          <p className="mt-0.5 text-[11.5px] text-[#9A9F94]">하루에 한 번 기록해요</p>
         </div>
-        <label className="flex shrink-0 items-center gap-1.5 rounded-full border border-[#E1D8C8] bg-white px-3 py-2 shadow-[0_8px_20px_-18px_rgba(20,30,25,.35)]">
+        <label className="flex shrink-0 items-center gap-1.5 rounded-[9px] border-[0.5px] border-[#DCD6C8] bg-white px-2.5 py-1.5">
           <span className="text-[10px] font-semibold text-[#9A9F94]">날짜</span>
           <input
             type="date"
             value={currentRecordDate}
             onChange={(event) => setForm((prev) => ({ ...prev, recordDate: event.target.value }))}
-            className="w-[116px] border-0 bg-transparent text-right text-[12px] font-semibold text-[#5C645A] outline-none"
+            className="w-[112px] border-0 bg-transparent text-right text-[12px] font-semibold text-[#5C645A] outline-none"
             aria-label="기록 날짜 선택"
           />
         </label>
@@ -310,10 +329,10 @@ export function JournalInlineRecordForm({
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2 text-[14px] font-semibold text-[#1E2621]">
-              <span className="h-[9px] w-[9px] rounded-full bg-[#D85D47]" />
-              증상을 기록할게요
+              <span className="h-[9px] w-[9px] rounded-full bg-[#CF5B36]" />
+              증상이 있었어요
             </div>
-            <p className="mt-1 text-[11.5px] text-[#8A9086]">증상이 있었던 날만 켜고 강도와 요인을 적어주세요</p>
+            <p className="mt-1 text-[11.5px] text-[#8A9086]">증상이 있었던 날만 켜고 심각도와 요인을 적어주세요</p>
           </div>
           <ToggleSwitch
             on={hasSymptoms}
@@ -331,23 +350,27 @@ export function JournalInlineRecordForm({
         {hasSymptoms && (
           <div className="mt-4 space-y-4 border-t border-[#F1DED2] pt-4">
             <div>
-              <p className="mb-2.5 text-[12.5px] font-semibold text-[#5C645A]">증상 강도</p>
-              <div className="grid grid-cols-5 gap-1.5">
-                {[1, 2, 3, 4, 5].map((value) => (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => setForm((prev) => ({ ...prev, severity: value }))}
-                    className={cn(
-                      'h-10 rounded-[10px] border text-[12px] font-bold transition-colors',
-                      form.severity === value
-                        ? 'border-[#D85D47] bg-[#FCE1D7] text-[#632314]'
-                        : 'border-[#ECE5D8] bg-white text-[#8A9086]',
-                    )}
-                  >
-                    {value}
-                  </button>
-                ))}
+              <p className="mb-2.5 text-[12.5px] text-[#5C645A]">심각도</p>
+              <div className="flex gap-1.5">
+                {SEVERITY_CELLS.map(([bg, fg], index) => {
+                  const value = index + 1;
+                  const active = form.severity === value;
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setForm((prev) => ({ ...prev, severity: value }))}
+                      className={cn(
+                        'flex h-[34px] flex-1 items-center justify-center rounded-[9px] text-[11.5px] transition-shadow',
+                        active ? 'font-extrabold shadow-[inset_0_0_0_2px_#1E2621]' : 'font-normal',
+                      )}
+                      style={{ background: bg, color: fg }}
+                      aria-pressed={active}
+                    >
+                      {value}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 

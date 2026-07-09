@@ -1,4 +1,10 @@
-import type { JournalRecord, SleepRange, MoodType, StressLevel } from '@/domain/journal/types';
+import type {
+  JournalRecord,
+  JournalTimelineDay,
+  SleepRange,
+  MoodType,
+  StressLevel,
+} from '@/domain/journal/types';
 import { MOOD_OPTIONS, SLEEP_OPTIONS, STRESS_OPTIONS } from '@/domain/journal/types';
 
 export const ROUTINE_TASK_TOTAL = 3;
@@ -102,6 +108,28 @@ export function formatConditionSummary(record: JournalRecord): string {
   if (record.stressLevel) parts.push(`스트레스 ${formatStressLabel(record.stressLevel)}`);
   if (record.memo?.trim()) parts.push('메모');
   return parts.length > 0 ? parts.join(' · ') : '—';
+}
+
+/**
+ * 연속 기록 일수 (오늘 또는 어제까지 끊기지 않은 recorded 일수).
+ * 디자이너 개선판 홈/요약 탭의 "N일 연속 기록 중" 스트릭 라인에 사용한다.
+ */
+export function countRecordStreak(days: JournalTimelineDay[] | null | undefined): number {
+  if (!days || days.length === 0) return 0;
+  const sorted = [...days].sort((a, b) => (a.date < b.date ? 1 : -1));
+  let streak = 0;
+  for (let index = 0; index < sorted.length; index += 1) {
+    const day = sorted[index];
+    if (day.recorded) {
+      streak += 1;
+    } else if (index === 0) {
+      // 오늘 아직 기록 전이면 어제까지의 연속 기록을 유지한다.
+      continue;
+    } else {
+      break;
+    }
+  }
+  return streak;
 }
 
 export function formatDashboardDateBadge(date: Date): string {

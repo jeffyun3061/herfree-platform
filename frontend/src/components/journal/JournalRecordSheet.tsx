@@ -43,6 +43,15 @@ const PRODROMAL_OPTIONS = [
 
 const PRESET_PRODROME_VALUES = new Set(PRODROMAL_OPTIONS.map((option) => option.value));
 
+/** 디자이너 원본 심각도 셀 색상 (1~5). */
+const SEVERITY_CELLS: Array<[string, string]> = [
+  ['#FBE3DA', '#7A2E12'],
+  ['#F4C3B1', '#7A2E12'],
+  ['#EA9C7F', '#fff'],
+  ['#DD6E48', '#fff'],
+  ['#CF5B36', '#fff'],
+];
+
 function FieldCard({
   children,
   className,
@@ -399,11 +408,11 @@ export function JournalRecordSheet({
           <div className="flex items-center justify-between">
             <div>
               <div className="flex items-center gap-2 text-[14px] font-semibold text-[#1E2621]">
-                <span className="h-[9px] w-[9px] rounded-full bg-[#D85D47]" />
-                증상을 기록할게요
+                <span className="h-[9px] w-[9px] rounded-full bg-[#CF5B36]" />
+                증상이 있었어요
               </div>
               <p className="mt-1 text-[11.5px] text-[#8A9086]">
-                증상이 있었던 날만 켜고 강도와 원인을 남겨주세요.
+                증상이 있었던 날만 켜고 심각도와 요인을 남겨주세요.
               </p>
             </div>
             <ToggleSwitch on={hasSymptoms} onClick={toggleSymptoms} />
@@ -412,23 +421,27 @@ export function JournalRecordSheet({
           {hasSymptoms && (
             <div className="mt-4 space-y-4 border-t border-[#F1DED2] pt-4">
               <div>
-                <p className="mb-2.5 text-[12.5px] font-semibold text-[#5C645A]">증상 강도</p>
-                <div className="grid grid-cols-5 gap-1.5">
-                  {[1, 2, 3, 4, 5].map((value) => (
-                    <button
-                      key={value}
-                      type="button"
-                      onClick={() => setForm((prev) => ({ ...prev, severity: value }))}
-                      className={cn(
-                        'h-10 rounded-[10px] border text-[12px] font-bold transition-colors',
-                        form.severity === value
-                          ? 'border-[#D85D47] bg-[#FCE1D7] text-[#632314]'
-                          : 'border-[#ECE5D8] bg-white text-[#8A9086]',
-                      )}
-                    >
-                      {value}
-                    </button>
-                  ))}
+                <p className="mb-2.5 text-[12.5px] text-[#5C645A]">심각도</p>
+                <div className="flex gap-1.5">
+                  {SEVERITY_CELLS.map(([bg, fg], index) => {
+                    const value = index + 1;
+                    const active = form.severity === value;
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => setForm((prev) => ({ ...prev, severity: value }))}
+                        className={cn(
+                          'flex h-[34px] flex-1 items-center justify-center rounded-[9px] text-[11.5px] transition-shadow',
+                          active ? 'font-extrabold shadow-[inset_0_0_0_2px_#1E2621]' : 'font-normal',
+                        )}
+                        style={{ background: bg, color: fg }}
+                        aria-pressed={active}
+                      >
+                        {value}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -457,7 +470,7 @@ export function JournalRecordSheet({
             maxLength={200}
             value={form.memo ?? ''}
             onChange={(event) => setForm((prev) => ({ ...prev, memo: event.target.value }))}
-            placeholder="오늘 특이사항이 있다면 적어주세요"
+            placeholder="특이사항이 있다면 적어주세요"
             className="min-h-[74px] w-full resize-none rounded-[12px] border border-[#ECE5D8] bg-[#F8F4EC] px-3.5 py-3 text-[13px] text-[#1E2621] outline-none placeholder:text-[#B4B2A6] focus:border-[#1D9E75]"
           />
         </FieldCard>
