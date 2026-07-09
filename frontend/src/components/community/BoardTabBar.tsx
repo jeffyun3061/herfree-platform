@@ -31,6 +31,12 @@ function ChevronIcon({ direction }: { direction: 'left' | 'right' }) {
   );
 }
 
+function normalizeBoardLabel(board: Board) {
+  return (getCommunityBoardTabLabel(board.boardType) ?? board.name)
+    .replace(/게시판|방/g, '')
+    .trim();
+}
+
 export function BoardTabBar({ boards, selectedBoardId, onSelect }: BoardTabBarProps) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [edge, setEdge] = useState({ left: false, right: false });
@@ -87,7 +93,7 @@ export function BoardTabBar({ boards, selectedBoardId, onSelect }: BoardTabBarPr
         <div className="flex w-max gap-2 px-4 pb-1 pr-16">
           {boards.map((board) => {
             const active = selectedBoardId === board.id;
-            const label = getCommunityBoardTabLabel(board.boardType) ?? board.name.replace(/게시판|방$/g, '');
+            const label = normalizeBoardLabel(board);
 
             return (
               <button

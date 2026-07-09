@@ -16,8 +16,12 @@ function MetaDot() {
   return <span className="h-0.5 w-0.5 shrink-0 rounded-full bg-[#C7CECB]" aria-hidden />;
 }
 
+function normalizeBoardLabel(label: string | undefined) {
+  return (label ?? '커뮤니티').replace(/게시판|방/g, '').trim() || '커뮤니티';
+}
+
 export function PostCard({ post, boardName }: PostCardProps) {
-  const displayBoard = (boardName ?? post.boardName).replace(/방$/, '');
+  const displayBoard = normalizeBoardLabel(boardName ?? post.boardName);
   const isSecretStory = isSecretStoryBoardType(post.boardType);
   const canOpen = post.readable !== false || isSecretStory;
   const showReplyStatus = isMaskedBoardType(post.boardType) && (post.readable !== false || isSecretStory);
@@ -47,7 +51,7 @@ export function PostCard({ post, boardName }: PostCardProps) {
                 post.staffReplied ? 'bg-primary/15 text-primary' : 'bg-[#F4F6F5] text-[#8B9590]',
               )}
             >
-              {post.staffReplied ? '답변완료' : '답변대기'}
+              {post.staffReplied ? '답변 완료' : '답변 대기'}
             </span>
           )}
           <span className="community-feed-row__title">{post.title}</span>
@@ -62,8 +66,8 @@ export function PostCard({ post, boardName }: PostCardProps) {
           <MetaDot />
           <span>{formatRelativeTime(post.createdAt)}</span>
           <MetaDot />
-          <span>❤️ {post.reactionCount ?? 0}</span>
-          <span>💬 {post.commentCount ?? 0}</span>
+          <span>공감 {post.reactionCount ?? 0}</span>
+          <span>댓글 {post.commentCount ?? 0}</span>
         </div>
       </article>
     </Link>

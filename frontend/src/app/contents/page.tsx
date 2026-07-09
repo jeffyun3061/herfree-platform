@@ -49,7 +49,7 @@ function ContentsPageContent() {
       <div className="content-screen mx-auto max-w-app pb-24 lg:max-w-none">
         <div className="flex items-start justify-between gap-3 px-5 pt-7 lg:pt-8">
           <div className="min-w-0">
-            <h1 className="hf-display text-[25px] font-extrabold leading-tight text-[#15201D]">칼럼</h1>
+            <h1 className="hf-display text-[24px] font-semibold leading-tight text-[#15201D]">칼럼</h1>
             <p className="mt-1.5 text-[12.5px] text-[#8B9590]">경험에서 나온 이야기</p>
           </div>
           <InlineTopActions />
@@ -59,7 +59,7 @@ function ContentsPageContent() {
           <AdminPublishLink tab="contents" label="칼럼 올리기" />
         </div>
 
-        <div className="mt-4 flex gap-2 overflow-x-auto px-5 pb-1 pr-10 scrollbar-hide">
+        <div className="mt-[18px] flex gap-2 overflow-x-auto px-5 pb-1 pr-10 scrollbar-hide">
           <button
             type="button"
             onClick={() => {
@@ -91,6 +91,12 @@ function ContentsPageContent() {
           ))}
         </div>
 
+        {!isLoading && !error && contentPage.content.length > 0 && (
+          <p className="px-5 pt-3 text-[11.5px] text-[#9A9F94]">
+            총 {contentPage.totalElements.toLocaleString('ko-KR')}개의 칼럼
+          </p>
+        )}
+
         {isLoading ? (
           <div className="mt-[18px] flex flex-col gap-3.5 px-5">
             {[1, 2, 3].map((i) => (
@@ -104,7 +110,7 @@ function ContentsPageContent() {
             <EmptyState title="등록된 칼럼이 없습니다" description="곧 새로운 칼럼이 준비될 예정입니다." />
           </div>
         ) : (
-          <div className="mx-auto mt-[18px] max-w-app space-y-3.5 px-5">
+          <div className="mx-auto mt-[14px] max-w-app space-y-3.5 px-5">
             {latestContent && <ContentCard content={latestContent} featured />}
             {restContents.length > 0 && (
               <div className="flex flex-col gap-3.5">

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
@@ -28,22 +28,31 @@ type CommunityFeedProps = {
   initialBoardId?: number | null;
 };
 
+function LockIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+      <rect x="5" y="11" width="14" height="9" rx="2" />
+      <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+    </svg>
+  );
+}
+
 function CommunityLockedPreview({ loginHref, boardLabel }: { loginHref: string; boardLabel?: string }) {
   return (
     <div className="pb-10">
       <section className="mx-5 mt-[18px] overflow-hidden rounded-[18px] bg-white px-[18px] pt-[18px] shadow-[0_1px_2px_rgba(20,30,25,.04),0_16px_34px_-24px_rgba(20,30,25,.22)]">
         <p className="mb-2 text-[11.5px] font-semibold text-[#15695E]">
-          {boardLabel ? `${boardLabel} · FAQ ›` : '질문 · FAQ ›'}
+          {boardLabel ? `${boardLabel} · FAQ` : '질문 · FAQ'}
         </p>
         <h3 className="mb-3 text-[16.5px] font-bold leading-[1.45] tracking-normal text-[#15201D]">
           오늘 받은 결과, 다들 어떻게 받아들이셨어요?
         </h3>
         <div className="flex items-center gap-2.5 border-b border-[#F0EADF] pb-3.5">
           <div className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-[#EDF2EC] text-sm">
-            🌙
+            h
           </div>
           <div className="min-w-0">
-            <p className="text-[12.5px] font-semibold text-[#2C342E]">새벽두시</p>
+            <p className="text-[12.5px] font-semibold text-[#2C342E]">익명사용자</p>
             <p className="mt-0.5 text-[10.5px] text-[#A6ABA0]">2026.06.26 13:03 · 조회 61</p>
           </div>
           <span className="ml-auto whitespace-nowrap text-[11px] text-[#A6ABA0]">댓글 0</span>
@@ -57,10 +66,7 @@ function CommunityLockedPreview({ loginHref, boardLabel }: { loginHref: string; 
           </div>
           <div className="absolute inset-0 flex items-center justify-center">
             <span className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-[#6E7671]">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8A9089" strokeWidth="2">
-                <rect x="5" y="11" width="14" height="9" rx="2" />
-                <path d="M8 11V7a4 4 0 0 1 8 0v4" />
-              </svg>
+              <LockIcon />
               가입하면 바로 글을 볼 수 있어요
             </span>
           </div>
@@ -69,20 +75,20 @@ function CommunityLockedPreview({ loginHref, boardLabel }: { loginHref: string; 
 
       <section className="mx-5 mt-6 px-1.5 text-center">
         <p className="text-[16px] font-bold leading-[1.6] text-[#15201D]">
-          1,532명의 회원과 함께하는
+          같은 경험을 가진 사람들의
           <br />
-          <span className="text-[#15695E]">헤르프리 비공개 커뮤니티</span>에
+          <span className="text-[#15695E]">비공개 커뮤니티</span>를
           <br />
-          함께해 보세요.
+          함께 둘러보세요
         </p>
         <p className="mt-3 text-[12.5px] leading-[1.75] text-[#9A9F94]">
-          같은 경험을 가진 사람들이 일상과 고민을
+          일상과 고민을 나누는 익명 공간에서
           <br />
-          나누는 익명 공간이에요.
+          비슷한 마음을 조용히 확인할 수 있어요.
         </p>
-        <p className="mt-5 text-[13px] text-[#6E7671]">가입하면 128개의 이야기를 볼 수 있어요</p>
+        <p className="mt-5 text-[13px] text-[#6E7671]">가입하면 커뮤니티 글을 바로 볼 수 있어요.</p>
         <Link
-          href="/signup"
+          href="/signup?from=/community"
           className="mt-4 flex h-12 items-center justify-center rounded-[14px] bg-[#0B3B36] text-[14.5px] font-bold text-white shadow-[0_14px_30px_-14px_rgba(11,59,54,.6)]"
         >
           30초 만에 가입하기
@@ -91,6 +97,60 @@ function CommunityLockedPreview({ loginHref, boardLabel }: { loginHref: string; 
           이미 계정이 있다면 로그인
         </Link>
       </section>
+    </div>
+  );
+}
+
+function SearchPanel({
+  inputRef,
+  searchInput,
+  searchHint,
+  onInputChange,
+  onSearch,
+}: {
+  inputRef: RefObject<HTMLInputElement>;
+  searchInput: string;
+  searchHint: string | null;
+  onInputChange: (value: string) => void;
+  onSearch: () => void;
+}) {
+  return (
+    <div className="mx-5 mt-4 hidden lg:block">
+      <div className="flex gap-2">
+        <div className="relative min-w-0 flex-1">
+          <svg
+            viewBox="0 0 24 24"
+            className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            aria-hidden
+          >
+            <circle cx="11" cy="11" r="7" />
+            <path d="M20 20l-3-3" strokeLinecap="round" />
+          </svg>
+          <input
+            ref={inputRef}
+            type="search"
+            placeholder="게시글 검색"
+            aria-label="게시글 검색"
+            value={searchInput}
+            onChange={(e) => onInputChange(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') onSearch();
+            }}
+            className="community-search"
+          />
+        </div>
+        <Button type="button" size="sm" onClick={onSearch} className="shrink-0">
+          검색
+        </Button>
+      </div>
+      {searchHint && (
+        <p className="mt-1.5 text-xs text-amber-700" role="status">
+          {searchHint}
+        </p>
+      )}
     </div>
   );
 }
@@ -209,6 +269,7 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
       setPage(0);
     }
   }, [isNoticeBoard, sort, setPage]);
+
   const staffUser = isStaff(user?.role);
   const isStaffOnlyBoard =
     selectedBoard !== null && selectedBoard !== undefined && isStaffOnlyBoardType(selectedBoard.boardType);
@@ -246,42 +307,13 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
         <InlineTopActions />
       </div>
 
-      <div className="mx-5 mt-4 hidden lg:block">
-        <div className="flex gap-2">
-          <div className="relative min-w-0 flex-1">
-          <svg
-            viewBox="0 0 24 24"
-            className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <circle cx="11" cy="11" r="7" />
-            <path d="M20 20l-3-3" strokeLinecap="round" />
-          </svg>
-          <input
-            ref={searchInputRef}
-            type="search"
-            placeholder="두 글자 이상 검색"
-            aria-label="게시글 검색"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') handleSearch();
-            }}
-            className="community-search"
-          />
-        </div>
-        <Button type="button" size="sm" onClick={handleSearch} className="shrink-0">
-          검색
-        </Button>
-        </div>
-        {searchHint && (
-          <p className="mt-1.5 text-xs text-amber-700" role="status">
-            {searchHint}
-          </p>
-        )}
-      </div>
+      <SearchPanel
+        inputRef={searchInputRef}
+        searchInput={searchInput}
+        searchHint={searchHint}
+        onInputChange={setSearchInput}
+        onSearch={handleSearch}
+      />
 
       {!boardsLoading && communityBoards.length > 0 && selectedBoardId !== null && (
         <div className="mt-4 min-w-0 px-5">
@@ -293,107 +325,112 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
         </div>
       )}
 
-      {(!isReady || !isLoggedIn) ? (
+      {!isReady || !isLoggedIn ? (
         <CommunityLockedPreview boardLabel={selectedBoardLabel} loginHref={loginHref} />
       ) : (
         <div className="px-5">
-      {isSecretStoryBoard && (
-        <div className="mt-4 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3">
-          <p className="text-sm font-semibold text-ink">{SECRET_STORY_BOARD_COPY.bannerTitle}</p>
-          <p className="mt-1.5 text-xs leading-relaxed text-wrtn-muted">
-            {SECRET_STORY_BOARD_COPY.bannerDescription}
-          </p>
-        </div>
-      )}
+          {isSecretStoryBoard && (
+            <div className="mt-4 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3">
+              <p className="text-sm font-semibold text-ink">{SECRET_STORY_BOARD_COPY.bannerTitle}</p>
+              <p className="mt-1.5 text-xs leading-relaxed text-wrtn-muted">
+                {SECRET_STORY_BOARD_COPY.bannerDescription}
+              </p>
+            </div>
+          )}
 
-      {!isLoadingAll && !listError && (
-        <p className="mt-3 text-[11.5px] text-[#9A9F94]">
-          총 {postPage.totalElements.toLocaleString('ko-KR')}개의 이야기
-        </p>
-      )}
+          {!isLoadingAll && !listError && (
+            <div className="mt-3 flex items-center justify-between gap-3">
+              <p className="text-[11.5px] text-[#9A9F94]">
+                총 {postPage.totalElements.toLocaleString('ko-KR')}개의 이야기
+              </p>
+              {!isNoticeBoard && (
+                <Link href="/community/search" className="text-[11.5px] font-semibold text-[#15695E] lg:hidden">
+                  검색
+                </Link>
+              )}
+            </div>
+          )}
 
-      {!isNoticeBoard && (
-        <div className="mt-4">
-          <CommunitySortTabs value={sort} onChange={handleSortChange} />
-          {needsPostListPeriod(sort) && (
-            <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+          {!isNoticeBoard && (
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+              <CommunitySortTabs value={sort} onChange={handleSortChange} />
+              {needsPostListPeriod(sort) && (
+                <CommunityPeriodToggle value={period} onChange={handlePeriodChange} />
+              )}
               {periodHint && (
-                <p className="text-xs text-muted" role="status">
+                <p className="basis-full text-xs text-muted" role="status">
                   {periodHint}
                 </p>
               )}
-              <CommunityPeriodToggle value={period} onChange={handlePeriodChange} />
             </div>
           )}
-        </div>
-      )}
 
-      <div className="mb-4 hidden items-center justify-end gap-2 lg:flex">
-        {isNoticeBoard ? (
-          <AdminPublishLink tab="notices" label="공지 올리기" />
-        ) : canCommunityWrite ? (
-          <Link href={writeHref}>
-            <Button size="sm">글쓰기</Button>
-          </Link>
-        ) : null}
-      </div>
+          <div className="mb-4 hidden items-center justify-end gap-2 lg:flex">
+            {isNoticeBoard ? (
+              <AdminPublishLink tab="notices" label="공지 올리기" />
+            ) : canCommunityWrite ? (
+              <Link href={writeHref}>
+                <Button size="sm">글쓰기</Button>
+              </Link>
+            ) : null}
+          </div>
 
-      {isLoadingAll && (
-        <div className="mt-3 space-y-0">
-          {[1, 2, 3].map((i) => (
-            <PostCardSkeleton key={i} />
-          ))}
-        </div>
-      )}
+          {isLoadingAll && (
+            <div className="mt-3 space-y-0">
+              {[1, 2, 3].map((i) => (
+                <PostCardSkeleton key={i} />
+              ))}
+            </div>
+          )}
 
-      {listError && (
-        <div className="py-4">
-          <ErrorMessage message={getErrorMessage(listError)} />
-        </div>
-      )}
+          {listError && (
+            <div className="py-4">
+              <ErrorMessage message={getErrorMessage(listError)} />
+            </div>
+          )}
 
-      {!isLoadingAll && !listError && postPage.content.length === 0 && (
-        <div className="py-6">
-          <EmptyState
-            title={keyword ? '검색 결과가 없습니다' : '글이 없습니다'}
-            description={
-              keyword
-                ? '다른 검색어로 다시 시도해 보세요.'
-                : isNoticeBoard
-                  ? '등록된 공지가 없습니다.'
-                  : '첫 이야기를 남겨 보세요.'
-            }
-            action={
-              !isNoticeBoard && canCommunityWrite ? (
-                <Link href={writeHref}>
-                  <Button size="sm">글쓰기</Button>
-                </Link>
-              ) : undefined
-            }
-          />
-        </div>
-      )}
+          {!isLoadingAll && !listError && postPage.content.length === 0 && (
+            <div className="py-6">
+              <EmptyState
+                title={keyword ? '검색 결과가 없습니다' : '아직 글이 없습니다'}
+                description={
+                  keyword
+                    ? '다른 검색어로 다시 시도해 보세요.'
+                    : isNoticeBoard
+                      ? '등록된 공지가 없습니다.'
+                      : '첫 이야기를 함께 남겨 보세요.'
+                }
+                action={
+                  !isNoticeBoard && canCommunityWrite ? (
+                    <Link href={writeHref}>
+                      <Button size="sm">글쓰기</Button>
+                    </Link>
+                  ) : undefined
+                }
+              />
+            </div>
+          )}
 
-      {!isLoadingAll && !listError && postPage.content.length > 0 && (
-        <div className="community-feed-list mt-1">
-          {postPage.content.map((post) => (
-            <PostCard key={post.id} post={post} boardName={post.boardName} />
-          ))}
-        </div>
-      )}
+          {!isLoadingAll && !listError && postPage.content.length > 0 && (
+            <div className="community-feed-list mt-1">
+              {postPage.content.map((post) => (
+                <PostCard key={post.id} post={post} boardName={post.boardName} />
+              ))}
+            </div>
+          )}
 
-      {!isLoadingAll && !listError && postPage.totalPages > 1 && (
-        <div className="mt-2">
-          <Pagination page={page} totalPages={postPage.totalPages} onPageChange={setPage} />
-        </div>
-      )}
+          {!isLoadingAll && !listError && postPage.totalPages > 1 && (
+            <div className="mt-2">
+              <Pagination page={page} totalPages={postPage.totalPages} onPageChange={setPage} />
+            </div>
+          )}
 
-      {!isLoadingAll && !listError && postPage.content.length > 0 && (
-        <CommunityPageSizeSelect value={pageSize} onChange={handlePageSizeChange} />
-      )}
+          {!isLoadingAll && !listError && postPage.content.length > 0 && (
+            <CommunityPageSizeSelect value={pageSize} onChange={handlePageSizeChange} />
+          )}
 
-      {canCommunityWrite && <CommunityFab href={writeHref} />}
-      {isNoticeBoard && <AdminPublishFab tab="notices" label="공지 올리기" />}
+          {canCommunityWrite && <CommunityFab href={writeHref} />}
+          {isNoticeBoard && <AdminPublishFab tab="notices" label="공지 올리기" />}
         </div>
       )}
     </div>

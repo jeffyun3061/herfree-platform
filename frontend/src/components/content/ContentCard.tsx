@@ -21,7 +21,7 @@ export function ContentCard({ content, featured }: ContentCardProps) {
   const readMinutes = estimateReadMinutes(content.content);
 
   return (
-    <Link href={`/contents/${content.id}`} className="block">
+    <Link href={`/contents/${content.id}`} className="block" aria-label={`${content.title} 칼럼 보기`}>
       <article className={cn('column-feed-card', featured && 'column-feed-card--featured')}>
         <div className="column-feed-card__media">
           {content.imageUrl ? (
