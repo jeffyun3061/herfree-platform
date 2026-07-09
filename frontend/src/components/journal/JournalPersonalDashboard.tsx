@@ -88,7 +88,7 @@ export function JournalPersonalDashboard({
       <HomeNoticeStrip post={noticePost} isLoading={noticeLoading} />
 
       {showCommunity && (
-        <JournalCommunityCard posts={communityPosts} isLoading={communityLoading} />
+        <JournalCommunityCard posts={communityPosts} isLoading={communityLoading} maxPosts={4} />
       )}
 
       <HomeColumnPreview maxItems={3} />

@@ -18,14 +18,12 @@ import { Button } from '@/components/ui/Button';
 import { Textarea } from '@/components/ui/Textarea';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { buildCommentTree, validateCommentInput } from '@/domain/comment/types';
-import { isStaffOnlyBoardType } from '@/domain/board/types';
+import { isStaffOnlyBoardType, getBoardTagClass } from '@/domain/board/types';
 import {
+  getCommunityBoardTabLabel,
   getMaskedBoardBackHref,
   getPrivatePostWriteHref,
-  getPrivateBoardMetaByType,
   isMaskedBoardType,
-  isSecretStoryBoardType,
-  SECRET_STORY_BOARD_COPY,
 } from '@/domain/board/privateBoard';
 import { formatRelativeTime } from '@/domain/common/format';
 import { displayAuthorNickname } from '@/domain/post/types';
@@ -39,6 +37,31 @@ type PendingConfirm =
   | { type: 'delete-comment'; commentId: number }
   | { type: 'hide-post' }
   | { type: 'hide-comment'; commentId: number };
+
+function PostDetailBackHeader({ href }: { href: string }) {
+  return (
+    <div className="flex items-center gap-2.5 px-4 pb-3.5 pt-[54px]">
+      <Link href={href} className="flex min-w-0 items-center gap-2.5 text-[15px] font-bold text-[#15201D]">
+        <span className="text-[22px] font-normal leading-none text-[#6E7671]">‹</span>
+        커뮤니티
+      </Link>
+    </div>
+  );
+}
+
+function CommentSendIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+      <path d="M22 2L11 13" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M22 2L15 22l-4-9-9-4 20-7z" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function normalizeBoardTagLabel(boardType: string | undefined, boardName: string) {
+  const tabLabel = boardType ? getCommunityBoardTabLabel(boardType) : undefined;
+  return (tabLabel ?? boardName).replace(/게시판|방/g, '').trim() || boardName;
+}
 
 export default function PostDetailPage() {
   const params = useParams();
@@ -149,8 +172,11 @@ export default function PostDetailPage() {
   }
   if (!isLoggedIn) {
     return (
-      <div className="page-container mx-auto max-w-app px-4 pb-20 lg:pb-8">
-        <CommunityGuestPostPanel loginFrom={encodeURIComponent(`/community/posts/${postId}`)} />
+      <div className="mx-auto max-w-app pb-20">
+        <PostDetailBackHeader href="/community" />
+        <div className="px-5">
+          <CommunityGuestPostPanel loginFrom={encodeURIComponent(`/community/posts/${postId}`)} />
+        </div>
       </div>
     );
   }
@@ -199,7 +225,6 @@ export default function PostDetailPage() {
   const postBoard = boards.find((board) => board.id === post.boardId);
   const isStaffOnlyPost = postBoard != null && isStaffOnlyBoardType(postBoard.boardType);
   const isMaskedPost = postBoard != null && isMaskedBoardType(postBoard.boardType);
-  const isSecretStory = postBoard != null && isSecretStoryBoardType(postBoard.boardType);
   const isContentMasked = post.readable === false;
   const backHref = postBoard
     ? getMaskedBoardBackHref(postBoard.boardType, postBoard.id)
@@ -207,6 +232,8 @@ export default function PostDetailPage() {
   const showComments = (!isMaskedPost || post.isMyPost || staffUser) && !isContentMasked;
   const canWriteComments = isMaskedPost ? staffUser && isLoggedIn : isLoggedIn;
   const privateCommentHint = isMaskedPost && post.isMyPost && !staffUser;
+  const boardTagLabel = normalizeBoardTagLabel(postBoard?.boardType, post.boardName);
+  const boardTagClass = getBoardTagClass(postBoard?.boardType ?? 'FREE');
 
   return (
     <>
@@ -222,7 +249,7 @@ export default function PostDetailPage() {
           <button
             type="button"
             onClick={() => void handleCopyLink()}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-[#65706B] shadow-[0_10px_22px_-18px_rgba(7,37,31,.45)]"
+            className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-[#65706B] shadow-[0_10px_22px_-18px_rgba(7,37,31,.45)] lg:flex"
             aria-label="글 링크 복사"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -238,16 +265,15 @@ export default function PostDetailPage() {
         )}
         <section className="px-5 pt-1.5">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-[7px] bg-[#E7F1EC] px-[9px] py-[3px] text-[10.5px] font-bold text-[#0B3B36]">
-              {post.boardName}
+            <span className={cn('rounded-[7px] px-[9px] py-[3px] text-[10.5px] font-bold', boardTagClass)}>
+              {boardTagLabel}
             </span>
             {isMaskedPost && (
               <span
-                className={`inline-flex items-center rounded-[7px] px-2.5 py-1 text-[10.5px] font-bold ${
-                  post.staffReplied
-                    ? 'bg-primary/15 text-primary'
-                    : 'bg-[#F3ECDD] text-[#8A7964]'
-                }`}
+                className={cn(
+                  'inline-flex items-center rounded-[7px] px-2.5 py-1 text-[10.5px] font-bold',
+                  post.staffReplied ? 'bg-primary/15 text-primary' : 'bg-[#F3ECDD] text-[#8A7964]',
+                )}
               >
                 {post.staffReplied ? '답변완료' : '답변 대기'}
               </span>
@@ -274,6 +300,42 @@ export default function PostDetailPage() {
               </p>
             </div>
           </div>
+
+          {post.imageUrl && (
+            <div className="mt-[18px] overflow-hidden rounded-2xl border border-[#EAE3D6] bg-[#FFFCF7]">
+              <img
+                src={post.imageUrl}
+                alt="게시글 첨부 이미지"
+                className="max-h-[480px] w-full object-contain"
+              />
+            </div>
+          )}
+          <div
+            className={cn(
+              'pb-1 pt-[18px]',
+              isContentMasked && 'rounded-[18px] bg-[#F8F4EC] px-4 py-4 text-center',
+            )}
+          >
+            <p
+              className={cn(
+                'whitespace-pre-wrap text-[13.5px] leading-[1.85]',
+                isContentMasked ? 'text-[#7A847C]' : 'text-[#2C342E]',
+              )}
+            >
+              {post.content}
+            </p>
+          </div>
+
+          {!isMaskedPost && !isContentMasked && (
+            <div className="mt-3.5">
+              <ReactionBar
+                variant="detail"
+                targetType="POST"
+                targetId={post.id}
+                commentCount={commentPage.totalElements}
+              />
+            </div>
+          )}
 
           <div className="mt-3 flex flex-wrap gap-2">
             {isLoggedIn && !isMaskedPost && (
@@ -336,42 +398,6 @@ export default function PostDetailPage() {
               </>
             )}
           </div>
-
-        {post.imageUrl && (
-          <div className="mt-5 overflow-hidden rounded-2xl border border-[#EAE3D6] bg-[#FFFCF7]">
-            <img
-              src={post.imageUrl}
-              alt="게시글 첨부 이미지"
-              className="max-h-[480px] w-full object-contain"
-            />
-          </div>
-        )}
-        <div
-          className={cn(
-            'pb-1 pt-[18px]',
-            isContentMasked && 'rounded-[18px] bg-[#F8F4EC] px-4 py-4 text-center',
-          )}
-        >
-          <p
-            className={cn(
-              'whitespace-pre-wrap text-[13.5px] leading-[1.85]',
-              isContentMasked ? 'text-[#7A847C]' : 'text-[#2C342E]',
-            )}
-          >
-            {post.content}
-          </p>
-        </div>
-
-        {!isMaskedPost && !isContentMasked && (
-          <div className="mt-3.5">
-            <ReactionBar
-              variant="detail"
-              targetType="POST"
-              targetId={post.id}
-              commentCount={commentPage.totalElements}
-            />
-          </div>
-        )}
         </section>
 
         {showComments && (
@@ -433,7 +459,7 @@ export default function PostDetailPage() {
           )}
 
           {canWriteComments ? (
-            <div className="mt-[18px] flex items-start gap-2">
+            <div className="mt-[18px] flex items-center gap-2">
               {replyParentId !== null && (
                 <p className="sr-only">
                   답글 작성 중 ·{' '}
@@ -457,10 +483,10 @@ export default function PostDetailPage() {
               <Button
                 disabled={isSubmitting}
                 onClick={() => void handleComment()}
-                className="h-[42px] w-[42px] shrink-0 rounded-[12px] px-0"
+                className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[12px] px-0"
                 aria-label={replyParentId ? '답글 등록' : isMaskedPost ? '답변 등록' : '댓글 등록'}
               >
-                ↗
+                <CommentSendIcon />
               </Button>
             </div>
           ) : !isLoggedIn ? (

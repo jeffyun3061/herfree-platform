@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import type { JournalDashboard } from '@/domain/journal/types';
 import { PUBLIC_IMAGES } from '@/domain/assets/static';
 import { buildJournalShareText, shareJournalText } from '@/domain/journal/share';
+import { captureElementPngBlob } from '@/lib/domCapture';
 import { cn } from '@/lib/cn';
 
 type JournalShareButtonProps = {
@@ -13,7 +14,15 @@ type JournalShareButtonProps = {
   variant?: 'button' | 'icon';
 };
 
-type ShareActionStatus = 'idle' | 'copied' | 'saved' | 'shared' | 'unsupported' | 'error';
+type ShareActionStatus =
+  | 'idle'
+  | 'home-link-copied'
+  | 'image-copied'
+  | 'image-saved'
+  | 'text-copied'
+  | 'shared'
+  | 'unsupported'
+  | 'error';
 
 const SHARE_ICON_PROPS = {
   fill: 'none' as const,
@@ -119,6 +128,18 @@ function canvasToBlob(canvas: HTMLCanvasElement) {
   });
 }
 
+async function resolveDashboardImageBlob(dashboard: JournalDashboard | null) {
+  const card = document.getElementById('hf-dashboard-card');
+  if (card instanceof HTMLElement) {
+    try {
+      return await captureElementPngBlob(card);
+    } catch {
+      // Fall back to generated card when DOM capture is unavailable.
+    }
+  }
+  return buildDashboardImageBlob(dashboard);
+}
+
 async function buildDashboardImageBlob(dashboard: JournalDashboard | null) {
   const canvas = document.createElement('canvas');
   canvas.width = 900;
@@ -215,14 +236,18 @@ function downloadBlob(blob: Blob, filename: string) {
 
 function getToastMessage(status: ShareActionStatus) {
   switch (status) {
-    case 'copied':
+    case 'home-link-copied':
+      return '홈 링크를 복사했어요';
+    case 'image-copied':
+      return '대시보드 이미지를 복사했어요';
+    case 'image-saved':
+      return '대시보드 이미지를 저장했어요';
+    case 'text-copied':
       return '복사했어요';
-    case 'saved':
-      return '저장했어요';
     case 'shared':
       return '공유를 열었어요';
     case 'unsupported':
-      return '이 브라우저는 이미지 복사를 지원하지 않아요';
+      return '이미지 복사를 지원하지 않는 환경이에요';
     case 'error':
       return '다시 시도해 주세요';
     default:
@@ -286,7 +311,7 @@ export function JournalShareButton({ dashboard, className, variant = 'button' }:
 
   const handleNativeShare = async () => {
     try {
-      const blob = await buildDashboardImageBlob(dashboard);
+      const blob = await resolveDashboardImageBlob(dashboard);
       const file = new File([blob], `herfree-dashboard-${formatShareDate().replaceAll('.', '-')}.png`, {
         type: 'image/png',
       });
@@ -305,10 +330,10 @@ export function JournalShareButton({ dashboard, className, variant = 'button' }:
     }
   };
 
-  const handleCopyText = async (text: string) => {
+  const handleCopyText = async (text: string, status: ShareActionStatus = 'text-copied') => {
     try {
       await navigator.clipboard.writeText(text);
-      setDone('copied');
+      setDone(status);
     } catch {
       setDone('error');
     }
@@ -316,14 +341,14 @@ export function JournalShareButton({ dashboard, className, variant = 'button' }:
 
   const handleCopyHomeLink = async () => {
     const origin = window.location.origin;
-    await handleCopyText(`${origin}/`);
+    await handleCopyText(`${origin}/`, 'home-link-copied');
   };
 
   const handleCopyImage = async () => {
     try {
-      const blob = await buildDashboardImageBlob(dashboard);
+      const blob = await resolveDashboardImageBlob(dashboard);
       await copyBlobToClipboard(blob);
-      setDone('copied');
+      setDone('image-copied');
     } catch (error) {
       setDone(error instanceof Error && error.message === 'unsupported' ? 'unsupported' : 'error');
     }
@@ -331,9 +356,9 @@ export function JournalShareButton({ dashboard, className, variant = 'button' }:
 
   const handleDownloadImage = async () => {
     try {
-      const blob = await buildDashboardImageBlob(dashboard);
+      const blob = await resolveDashboardImageBlob(dashboard);
       downloadBlob(blob, `herfree-dashboard-${formatShareDate().replaceAll('.', '-')}.png`);
-      setDone('saved');
+      setDone('image-saved');
     } catch {
       setDone('error');
     }
@@ -421,7 +446,7 @@ export function JournalShareButton({ dashboard, className, variant = 'button' }:
     ) : null;
 
   return (
-    <div className={cn('relative inline-flex', className)}>
+    <div className={cn('relative inline-flex', className)} data-share-exclude={variant === 'icon' ? '1' : undefined}>
       <button
         type="button"
         onClick={() => setOpen(true)}

@@ -3,8 +3,10 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { PUBLIC_IMAGES } from '@/domain/assets/static';
+import { BRAND_LOGO } from '@/domain/brand/assets';
 import { MobileMenu } from '@/components/layout/MobileMenu';
 import { PublicStaticImage } from '@/components/ui/PublicStaticImage';
+import Image from 'next/image';
 
 function MenuIcon() {
   return (
@@ -34,9 +36,14 @@ export function GuestHomeHero() {
 
       <div className="absolute left-4 top-[44px]">
         <Link href="/" className="flex min-w-0 items-center gap-2" aria-label="헤르프리 홈">
-          <span className="flex h-[31px] w-[31px] shrink-0 items-center justify-center rounded-full bg-white/92 text-[14px] font-extrabold text-[#0B3B36] shadow-[0_8px_18px_-12px_rgba(7,37,31,.8)]">
-            h.
-          </span>
+          <Image
+            src={BRAND_LOGO.hMarkOnDark}
+            alt=""
+            width={31}
+            height={31}
+            className="h-[31px] w-[31px] rounded-full"
+            aria-hidden
+          />
           <span className="truncate text-[13px] font-extrabold text-white drop-shadow-[0_1px_7px_rgba(7,37,31,.55)]">
             헤르프리
           </span>

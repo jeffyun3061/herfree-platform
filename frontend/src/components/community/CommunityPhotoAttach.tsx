@@ -16,6 +16,7 @@ type CommunityPhotoAttachProps = {
   label?: string;
   helperText?: string;
   emptyText?: string;
+  variant?: 'default' | 'compact';
 };
 
 export function CommunityPhotoAttach({
@@ -25,6 +26,7 @@ export function CommunityPhotoAttach({
   label = '사진 첨부 (선택)',
   helperText = '사진 1장, 10MB 이하 (JPEG, PNG, WEBP)',
   emptyText = '사진 추가',
+  variant = 'default',
 }: CommunityPhotoAttachProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -61,6 +63,63 @@ export function CommunityPhotoAttach({
     setError(null);
     onChange(null);
   };
+
+  if (variant === 'compact') {
+    return (
+      <div>
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          className="hidden"
+          disabled={disabled || isUploading}
+          onChange={(e) => void handleFileChange(e)}
+        />
+        {imageUrl ? (
+          <div className="overflow-hidden rounded-[14px] border border-[#ECE5D8] bg-[#FFFCF7]">
+            <img src={imageUrl} alt="첨부 이미지 미리보기" className="max-h-48 w-full object-contain" />
+            <div className="flex gap-2 border-t border-[#F2ECE1] p-2.5">
+              <button
+                type="button"
+                disabled={disabled || isUploading}
+                onClick={() => inputRef.current?.click()}
+                className="rounded-lg border border-[#ECE5D8] px-3 py-1.5 text-[11px] font-medium text-[#5C645A] disabled:opacity-50"
+              >
+                {isUploading ? '업로드 중…' : '다른 사진'}
+              </button>
+              <button
+                type="button"
+                disabled={disabled || isUploading}
+                onClick={handleRemove}
+                className="rounded-lg px-3 py-1.5 text-[11px] font-medium text-[#C0512F] disabled:opacity-50"
+              >
+                삭제
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            disabled={disabled || isUploading}
+            onClick={() => inputRef.current?.click()}
+            className="inline-flex items-center gap-1.5 rounded-full border border-[#ECE5D8] bg-white px-3.5 py-2 text-[12px] font-medium text-[#5C645A] disabled:opacity-50"
+          >
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+              <rect x="3" y="5" width="18" height="14" rx="2" />
+              <circle cx="9" cy="10" r="1.5" fill="currentColor" stroke="none" />
+              <path d="M3 16l4.5-4.5a1 1 0 0 1 1.4 0L14 16l2.3-2.3a1 1 0 0 1 1.4 0L21 18" />
+            </svg>
+            {isUploading ? '업로드 중…' : emptyText}
+          </button>
+        )}
+        {error && (
+          <div className="mt-2">
+            <ErrorMessage message={error} />
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="wrtn-field">

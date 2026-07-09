@@ -4,7 +4,7 @@ import Link from 'next/link';
 import type { Post } from '@/domain/post/types';
 import { formatRelativeTime } from '@/domain/common/format';
 import { getBoardTagClass } from '@/domain/board/types';
-import { isMaskedBoardType, isSecretStoryBoardType } from '@/domain/board/privateBoard';
+import { getCommunityBoardTabLabel, isMaskedBoardType, isSecretStoryBoardType } from '@/domain/board/privateBoard';
 import { cn } from '@/lib/cn';
 
 type PostCardProps = {
@@ -13,15 +13,16 @@ type PostCardProps = {
 };
 
 function MetaDot() {
-  return <span className="h-0.5 w-0.5 shrink-0 rounded-full bg-[#C7CECB]" aria-hidden />;
+  return <span className="h-0.5 w-0.5 shrink-0 rounded-full bg-[#CBD0C7]" aria-hidden />;
 }
 
-function normalizeBoardLabel(label: string | undefined) {
-  return (label ?? '커뮤니티').replace(/게시판|방/g, '').trim() || '커뮤니티';
+function normalizeBoardLabel(label: string | undefined, boardType?: string) {
+  const tabLabel = boardType ? getCommunityBoardTabLabel(boardType) : undefined;
+  return (tabLabel ?? label ?? '커뮤니티').replace(/게시판|방/g, '').trim() || '커뮤니티';
 }
 
 export function PostCard({ post, boardName }: PostCardProps) {
-  const displayBoard = normalizeBoardLabel(boardName ?? post.boardName);
+  const displayBoard = normalizeBoardLabel(boardName ?? post.boardName, post.boardType);
   const isSecretStory = isSecretStoryBoardType(post.boardType);
   const canOpen = post.readable !== false || isSecretStory;
   const showReplyStatus = isMaskedBoardType(post.boardType) && (post.readable !== false || isSecretStory);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
@@ -126,70 +126,13 @@ function ReplyIcon() {
   );
 }
 
-function SearchPanel({
-  inputRef,
-  searchInput,
-  searchHint,
-  onInputChange,
-  onSearch,
-}: {
-  inputRef: RefObject<HTMLInputElement>;
-  searchInput: string;
-  searchHint: string | null;
-  onInputChange: (value: string) => void;
-  onSearch: () => void;
-}) {
-  return (
-    <div className="mx-5 mt-4 hidden lg:block">
-      <div className="flex gap-2">
-        <div className="relative min-w-0 flex-1">
-          <svg
-            viewBox="0 0 24 24"
-            className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            aria-hidden
-          >
-            <circle cx="11" cy="11" r="7" />
-            <path d="M20 20l-3-3" strokeLinecap="round" />
-          </svg>
-          <input
-            ref={inputRef}
-            type="search"
-            placeholder="게시글 검색"
-            aria-label="게시글 검색"
-            value={searchInput}
-            onChange={(e) => onInputChange(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') onSearch();
-            }}
-            className="community-search"
-          />
-        </div>
-        <Button type="button" size="sm" onClick={onSearch} className="shrink-0">
-          검색
-        </Button>
-      </div>
-      {searchHint && (
-        <p className="mt-1.5 text-xs text-amber-700" role="status">
-          {searchHint}
-        </p>
-      )}
-    </div>
-  );
-}
-
 export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const searchInputRef = useRef<HTMLInputElement>(null);
   const { isLoggedIn, isReady, user } = useAuth();
   const { boards, isLoading: boardsLoading, error: boardsError } = useBoards();
   const [selectedBoardId, setSelectedBoardId] = useState<number | null>(initialBoardId);
   const [keyword, setKeyword] = useState('');
-  const [searchInput, setSearchInput] = useState('');
-  const [searchHint, setSearchHint] = useState<string | null>(null);
   const [sort, setSort] = useState<PostSortOption>('latest');
   const [period, setPeriod] = useState<PostListPeriod>('week');
   const [pageSize, setPageSize] = useState<CommunityPageSize>(20);
@@ -212,15 +155,14 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
   useEffect(() => {
     if (boardsLoading || communityBoards.length === 0) return;
 
-    const isValidSelection =
-      selectedBoardId !== null && communityBoards.some((board) => board.id === selectedBoardId);
+    if (selectedBoardId === null) return;
 
+    const isValidSelection = communityBoards.some((board) => board.id === selectedBoardId);
     if (isValidSelection) return;
 
-    const defaultBoard = communityBoards[0];
-    setSelectedBoardId(defaultBoard.id);
+    setSelectedBoardId(null);
     setPage(0);
-    router.replace(`/community/${defaultBoard.id}`);
+    router.replace('/community');
   }, [boardsLoading, communityBoards, selectedBoardId, router, setPage]);
 
   useEffect(() => {
@@ -229,45 +171,24 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
   }, [initialBoardId, setPage]);
 
   useEffect(() => {
-    const q = searchParams.get('q')?.trim();
-    if (q) {
-      const hint = validatePostSearchKeyword(q);
-      setSearchInput(q);
-      if (hint) {
-        setSearchHint(hint);
-        setKeyword('');
-      } else {
-        setSearchHint(null);
-        setKeyword(q);
-        setPage(0);
-      }
-    }
-    if (searchParams.get('focus') === 'search') {
-      const timer = window.setTimeout(() => {
-        searchInputRef.current?.focus({ preventScroll: true });
-        searchInputRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-      }, 80);
-      return () => window.clearTimeout(timer);
-    }
-    return undefined;
-  }, [searchParams, setPage]);
-
-  const handleBoardSelect = (boardId: number) => {
-    setSelectedBoardId(boardId);
-    setPage(0);
-    router.push(`/community/${boardId}`);
-  };
-
-  const handleSearch = () => {
-    if (!isLoggedIn) return;
-    const hint = validatePostSearchKeyword(searchInput);
-    if (hint) {
-      setSearchHint(hint);
+    const q = searchParams.get('q')?.trim() ?? '';
+    if (!q) {
+      setKeyword('');
       return;
     }
-    setSearchHint(null);
-    setKeyword(searchInput.trim());
+    const hint = validatePostSearchKeyword(q);
+    if (hint) {
+      setKeyword('');
+      return;
+    }
+    setKeyword(q);
     setPage(0);
+  }, [searchParams, setPage]);
+
+  const handleBoardSelect = (boardId: number | null) => {
+    setSelectedBoardId(boardId);
+    setPage(0);
+    router.push(boardId === null ? '/community' : `/community/${boardId}`);
   };
 
   const handleSortChange = (value: PostSortOption) => {
@@ -335,20 +256,13 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
         <InlineTopActions />
       </div>
 
-      <SearchPanel
-        inputRef={searchInputRef}
-        searchInput={searchInput}
-        searchHint={searchHint}
-        onInputChange={setSearchInput}
-        onSearch={handleSearch}
-      />
-
-      {!boardsLoading && communityBoards.length > 0 && selectedBoardId !== null && (
-        <div className="mt-4 min-w-0 px-5">
+      {isLoggedIn && !boardsLoading && communityBoards.length > 0 && (
+        <div className="min-w-0 px-5 pt-4 pb-1">
           <BoardTabBar
             boards={communityBoards}
             selectedBoardId={selectedBoardId}
             onSelect={handleBoardSelect}
+            showAllTab
           />
         </div>
       )}
@@ -363,7 +277,7 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
           {isSecretStoryBoard && <SecretStoryBoardBanner className="mt-4" />}
 
           {!isLoadingAll && !listError && (
-            <div className="mt-2 flex items-center justify-between gap-3">
+            <div className="pt-2">
               <p className="text-[11.5px] text-[#9A9F94]">
                 총 {postPage.totalElements.toLocaleString('ko-KR')}개의 이야기
               </p>
@@ -371,7 +285,7 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
           )}
 
           {!isNoticeBoard && (
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+            <div className="mt-3 hidden flex-wrap items-center justify-between gap-2 lg:flex">
               <CommunitySortTabs value={sort} onChange={handleSortChange} />
               {needsPostListPeriod(sort) && (
                 <CommunityPeriodToggle value={period} onChange={handlePeriodChange} />
@@ -431,7 +345,7 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
           )}
 
           {!isLoadingAll && !listError && postPage.content.length > 0 && (
-            <div className="community-feed-list mt-1">
+            <div className="community-feed-list pt-1">
               {postPage.content.map((post) => (
                 <PostCard key={post.id} post={post} boardName={post.boardName} />
               ))}
@@ -445,7 +359,9 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
           )}
 
           {!isLoadingAll && !listError && postPage.content.length > 0 && (
-            <CommunityPageSizeSelect value={pageSize} onChange={handlePageSizeChange} />
+            <div className="hidden lg:block">
+              <CommunityPageSizeSelect value={pageSize} onChange={handlePageSizeChange} />
+            </div>
           )}
 
           {canCommunityWrite && <CommunityFab href={writeHref} ariaLabel="커뮤니티 글쓰기" />}

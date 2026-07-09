@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { usePostList } from '@/hooks/usePosts';
 import { useJournalPublicHomeStats } from '@/hooks/useJournal';
 import { GuestHomeHero } from '@/components/home/GuestHomeHero';
-import { MedicalDisclaimer } from '@/components/layout/MedicalDisclaimer';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import type { Post } from '@/domain/post/types';
 import { formatRelativeTime } from '@/domain/common/format';
@@ -360,9 +359,6 @@ export function GuestHomePage() {
       />
       <GuestJournalStartCard />
       <GuestQuickLinks />
-      <div className="mx-5 mt-5">
-        <MedicalDisclaimer compact />
-      </div>
       <GuestQuietFooter />
     </div>
   );

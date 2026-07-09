@@ -81,10 +81,8 @@ export default function ContentDetailPage() {
           <MedicalDisclaimer />
         </div>
 
-        <a
-          href="https://open.kakao.com/o/srMDr6gi"
-          target="_blank"
-          rel="noreferrer"
+        <Link
+          href="/consult"
           className="mx-6 mt-[14px] flex items-center gap-3 rounded-[16px] bg-[#07251F] px-5 py-[18px]"
         >
           <span className="min-w-0 flex-1">
@@ -96,7 +94,7 @@ export default function ContentDetailPage() {
             </span>
           </span>
           <span className="text-[20px] text-[#F0C778]">›</span>
-        </a>
+        </Link>
 
         <section className="px-5 pt-7">
           <div className="mb-3 flex items-end justify-between gap-3">

@@ -41,7 +41,19 @@ function inlineComputedStyles(source: HTMLElement, target: HTMLElement) {
   });
 }
 
-export async function downloadElementPng(element: HTMLElement, filename: string): Promise<void> {
+
+function cloneElementForCapture(element: HTMLElement): HTMLElement {
+  const clone = element.cloneNode(true) as HTMLElement;
+  inlineComputedStyles(element, clone);
+
+  const excludeNodes = clone.querySelectorAll('[data-share-exclude]');
+  excludeNodes.forEach((node) => node.remove());
+
+  clone.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+  return clone;
+}
+
+async function renderElementToBlob(element: HTMLElement, pixelRatio = 2): Promise<Blob> {
   const rect = element.getBoundingClientRect();
   const width = Math.ceil(rect.width);
   const height = Math.ceil(rect.height);
@@ -49,10 +61,7 @@ export async function downloadElementPng(element: HTMLElement, filename: string)
     throw new Error('캡처할 영역이 비어 있습니다.');
   }
 
-  const clone = element.cloneNode(true) as HTMLElement;
-  inlineComputedStyles(element, clone);
-  clone.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
-
+  const clone = cloneElementForCapture(element);
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
       <foreignObject width="100%" height="100%">
@@ -66,13 +75,13 @@ export async function downloadElementPng(element: HTMLElement, filename: string)
   try {
     const image = await loadImage(url);
     const canvas = document.createElement('canvas');
-    canvas.width = width * 2;
-    canvas.height = height * 2;
+    canvas.width = width * pixelRatio;
+    canvas.height = height * pixelRatio;
     const ctx = canvas.getContext('2d');
     if (!ctx) {
       throw new Error('Canvas를 사용할 수 없습니다.');
     }
-    ctx.scale(2, 2);
+    ctx.scale(pixelRatio, pixelRatio);
     ctx.drawImage(image, 0, 0, width, height);
 
     const blob = await new Promise<Blob | null>((resolve) =>
@@ -81,16 +90,27 @@ export async function downloadElementPng(element: HTMLElement, filename: string)
     if (!blob) {
       throw new Error('이미지 생성에 실패했습니다.');
     }
-
-    const objectUrl = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = objectUrl;
-    link.download = filename;
-    link.click();
-    URL.revokeObjectURL(objectUrl);
+    return blob;
   } finally {
     URL.revokeObjectURL(url);
   }
+}
+
+export async function captureElementPngBlob(
+  element: HTMLElement,
+  pixelRatio = 2,
+): Promise<Blob> {
+  return renderElementToBlob(element, pixelRatio);
+}
+
+export async function downloadElementPng(element: HTMLElement, filename: string): Promise<void> {
+  const blob = await renderElementToBlob(element);
+  const objectUrl = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = objectUrl;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(objectUrl);
 }
 
 function loadImage(url: string): Promise<HTMLImageElement> {

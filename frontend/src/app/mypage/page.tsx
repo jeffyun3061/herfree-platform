@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { useMyPosts } from '@/hooks/useMyPosts';
 import { useMyActivity } from '@/hooks/useMyActivity';
-import { useBoards } from '@/hooks/useBoards';
 import { useJournalDashboard } from '@/hooks/useJournal';
 import { PostCard } from '@/components/community/PostCard';
 import { Pagination } from '@/components/common/Pagination';
@@ -21,7 +20,6 @@ import { isAdmin, isStaff } from '@/domain/user/types';
 import { formatMemberDays } from '@/domain/common/format';
 import { KAKAO_CONSULT_URL } from '@/domain/consult/constants';
 import { PUBLIC_IMAGES } from '@/domain/assets/static';
-import { findBoardByType } from '@/domain/board/types';
 import { getErrorMessage } from '@/lib/api/client';
 import { InlineTopActions } from '@/components/layout/InlineTopActions';
 
@@ -104,7 +102,6 @@ export default function MyPage() {
   const router = useRouter();
   const { isReady, isLoggedIn, user, logout, withdraw, updateNickname } = useAuth();
   const { activity, isLoading: activityLoading } = useMyActivity(isLoggedIn);
-  const { boards } = useBoards();
   const { data: journalDashboard } = useJournalDashboard(isLoggedIn);
   const { postPage, page, setPage, isLoading: postsLoading } = useMyPosts(isLoggedIn, 10);
   const [showPosts, setShowPosts] = useState(false);
@@ -115,13 +112,11 @@ export default function MyPage() {
   const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [bookmarkCount, setBookmarkCount] = useState(0);
 
-  const noticeBoard = findBoardByType(boards, 'NOTICE');
-
   useEffect(() => {
     setBookmarkCount(loadBookmarkCount());
   }, []);
 
-  if (!isReady) return <LoggedOutMyPagePromptCard />;
+  if (!isReady) return <LoadingSpinner label="마이페이지 불러오는 중…" />;
 
   if (!isLoggedIn) return <LoggedOutMyPagePromptCard />;
 
@@ -169,8 +164,8 @@ export default function MyPage() {
             className="absolute inset-0 h-full w-full object-cover object-[50%_40%]"
           />
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,37,31,.45)_0%,rgba(7,37,31,.25)_50%,rgba(243,237,227,.95)_100%)]" />
-          <div className="absolute right-5 top-[52px] text-white">
-            <InlineTopActions className="text-white" />
+          <div className="absolute right-5 top-[52px]">
+            <InlineTopActions variant="onDark" />
           </div>
           <div className="absolute bottom-[14px] left-0 right-0 flex items-center gap-[13px] px-[22px]">
             <span className="flex h-[58px] w-[58px] shrink-0 items-center justify-center rounded-full bg-white/[0.92] text-[26px] shadow-[0_8px_18px_-8px_rgba(0,0,0,.3)]">
@@ -188,21 +183,23 @@ export default function MyPage() {
         </section>
 
         <section className="mx-5 mt-[14px] rounded-[18px] bg-white px-2.5 py-[18px] shadow-[0_1px_2px_rgba(20,30,25,.04),0_14px_30px_-24px_rgba(20,30,25,.22)]">
-          <div className="grid grid-cols-3 divide-x divide-[#F0EADF]">
-            <div className="text-center">
-              <p className="hf-display text-[23px] font-extrabold text-[#0B3B36]">{peaceDays}</p>
-              <p className="mt-[3px] text-[11px] text-[#9A9F94]">무증상 일수</p>
-            </div>
-            <div className="text-center">
-              <p className="hf-display text-[23px] font-extrabold text-[#0B3B36]">{recordedDays}</p>
-              <p className="mt-[3px] text-[11px] text-[#9A9F94]">기록한 날</p>
-            </div>
-            <div className="text-center">
-              <p className="hf-display text-[23px] font-extrabold text-[#0B3B36]">
-                {activityLoading ? '…' : activity?.totalPosts ?? 0}
-              </p>
-              <p className="mt-[3px] text-[11px] text-[#9A9F94]">남긴 글</p>
-            </div>
+          <div className="grid grid-cols-3">
+            {[
+              { value: peaceDays, label: '무증상 일수' },
+              { value: recordedDays, label: '기록한 날' },
+              {
+                value: activityLoading ? '…' : (activity?.totalPosts ?? 0),
+                label: '남긴 글',
+              },
+            ].map((stat, index) => (
+              <div
+                key={stat.label}
+                className={`text-center ${index > 0 ? 'border-l border-[#F0EADF]' : ''}`}
+              >
+                <p className="hf-display text-[23px] font-extrabold text-[#0B3B36]">{stat.value}</p>
+                <p className="mt-[3px] text-[11px] text-[#9A9F94]">{stat.label}</p>
+              </div>
+            ))}
           </div>
         </section>
 
@@ -212,16 +209,11 @@ export default function MyPage() {
               icon="📝"
               label="내가 쓴 글"
               sub="커뮤니티 · FAQ"
-              trailing={activityLoading ? '…' : (activity?.totalPosts ?? 0)}
               onClick={() => setShowPosts((v) => !v)}
             />
             <MenuRow icon="📓" label="내 기록 모아보기" sub="개인일지" href="/journal" />
             <MenuRow icon="🔒" label="1:1 비밀 상담 내역" href="/consult" />
-            <MenuRow
-              icon="📢"
-              label="공지사항"
-              href={noticeBoard ? `/community/${noticeBoard.id}` : '/notice'}
-            />
+            <MenuRow icon="📢" label="공지사항" href="/notice" />
             <MenuRow icon="📄" label="이용약관" href="/terms" />
             <MenuRow icon="🛡️" label="개인정보처리방침" href="/privacy" />
           </div>
@@ -299,7 +291,7 @@ export default function MyPage() {
           </div>
         )}
 
-        <p className="mt-4 text-center">
+        <p className="mx-5 mt-4 text-center">
           <button
             type="button"
             className="text-[12.5px] text-[#A6ABA0] underline underline-offset-[3px]"
@@ -309,7 +301,7 @@ export default function MyPage() {
           </button>
         </p>
 
-        <p className="mt-3 text-center">
+        <p className="mt-2 text-center">
           <button
             type="button"
             className="text-[11px] text-[#C7CECB]"
@@ -320,7 +312,7 @@ export default function MyPage() {
         </p>
 
         {showPosts && (
-          <section className="page-container mt-6">
+          <section className="mx-5 mt-6">
             <h3 className="mb-3 text-base font-semibold text-[#15201D]">내가 쓴 글</h3>
             {postsLoading ? (
               <LoadingSpinner label="글 불러오는 중…" />

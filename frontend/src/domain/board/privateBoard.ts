@@ -46,13 +46,17 @@ export function isOffCommunityTabBoardType(boardType: string): boolean {
   return isInquiryBoardType(boardType) || boardType === 'EXPERT';
 }
 
-/** 커뮤니티 상단 탭 — 고정 7개 (순서·표시명) */
+/** 커뮤니티 상단 탭 — DB sort_order(V17)와 동기화, UI 표시명은 디자이너 시안 */
+export const COMMUNITY_ALL_TAB_LABEL = '전체';
+
 export const COMMUNITY_TAB_BOARD_TYPES = [
-  { boardType: 'NOTICE', label: '공지사항' },
-  { boardType: 'FREE', label: '자유게시판' },
-  { boardType: 'SYMPTOM', label: '증상기록' },
-  { boardType: 'RELATIONSHIP', label: '연애/고민' },
+  { boardType: 'NOTICE', label: '공지' },
+  { boardType: 'FREE', label: '자유·응원' },
+  { boardType: 'QUESTION', label: '질문' },
   { boardType: 'PHOBIA', label: '포비아/대기' },
+  { boardType: 'SYMPTOM', label: '확진초기' },
+  { boardType: 'RELATIONSHIP', label: '연애고지' },
+  { boardType: 'EXPERIENCE', label: '정보공유' },
   { boardType: 'SUPPORT', label: '위로/응원' },
   { boardType: 'PRODUCT_REVIEW', label: '제품후기' },
   { boardType: 'SECRET_STORY', label: '비밀사연' },
@@ -64,7 +68,7 @@ export function getCommunityBoardTabLabel(boardType: string): string | undefined
   return COMMUNITY_TAB_BOARD_TYPES.find((tab) => tab.boardType === boardType)?.label;
 }
 
-/** 커뮤니티 탭 — 고정 7개만, 지정 순서 */
+/** 커뮤니티 탭 — 지정 순서만 노출 */
 export function getCommunityBoards<T extends { boardType: string }>(boards: T[]): T[] {
   return COMMUNITY_TAB_TYPE_ORDER.map((boardType) =>
     boards.find((board) => board.boardType === boardType),

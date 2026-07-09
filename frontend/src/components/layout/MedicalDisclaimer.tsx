@@ -31,10 +31,10 @@ export function MedicalDisclaimer({ className, compact = false }: MedicalDisclai
         {compact ? (
           <>
             <p className="break-keep leading-snug">
-              이곳의 정보는 건강 이해를 돕기 위한 참고 자료입니다.
+              이곳의 정보는 건강 이해를 돕기 위한 참고 자료예요.
             </p>
             <p className="break-keep leading-snug">
-              개인의 증상, 진단, 치료 여부는 의료기관 또는 전문의 상담을 통해 확인해 주세요.
+              개인의 증상·진단·치료는 의료기관 또는 전문의 상담을 통해 확인해 주세요.
             </p>
           </>
         ) : (

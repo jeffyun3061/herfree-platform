@@ -11,6 +11,8 @@ type ReactionBarProps = {
   targetId: number;
   variant?: 'default' | 'detail';
   commentCount?: number;
+  /** detail 변형에서 공감·댓글 외 부가 반응 칩 노출 (데스크톱 보조) */
+  showSecondaryReactions?: boolean;
 };
 
 function DetailReactionButton({
@@ -59,6 +61,7 @@ export function ReactionBar({
   targetId,
   variant = 'default',
   commentCount = 0,
+  showSecondaryReactions = variant !== 'detail',
 }: ReactionBarProps) {
   const { isLoggedIn } = useAuth();
   const { states, pendingType, error, isLoading, toggle } = useReaction(targetType, targetId);
@@ -99,6 +102,7 @@ export function ReactionBar({
             <span className="tabular-nums">{commentCount}</span>
           </div>
         </div>
+        {showSecondaryReactions && (
         <div className="flex flex-wrap gap-1.5">
           {secondaryTypes.map((type) => {
             const state = states[type];
@@ -128,6 +132,7 @@ export function ReactionBar({
             );
           })}
         </div>
+        )}
         {!isLoggedIn && (
           <p className="text-xs text-muted">로그인 후 반응을 남길 수 있습니다.</p>
         )}

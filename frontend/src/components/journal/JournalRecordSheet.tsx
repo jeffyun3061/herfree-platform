@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import {
-  RECORD_SYMPTOM_TRIGGER_OPTIONS,
   toDateInputValue,
   type JournalRecord,
   type JournalRecordInput,
@@ -231,18 +230,8 @@ export function JournalRecordSheet({
       ...prev,
       hadSymptoms: !prev.hadSymptoms,
       severity: prev.hadSymptoms ? null : prev.severity ?? 3,
-      triggers: prev.hadSymptoms ? [] : prev.triggers ?? [],
+      triggers: [],
     }));
-  };
-
-  const toggleTriggerChip = (value: string) => {
-    setForm((prev) => {
-      const current = prev.triggers ?? [];
-      const next = current.includes(value)
-        ? current.filter((item) => item !== value)
-        : [...current, value];
-      return { ...prev, triggers: next };
-    });
   };
 
   const handleSave = async () => {
@@ -404,63 +393,45 @@ export function JournalRecordSheet({
           )}
         </FieldCard>
 
-        <FieldCard className={hasSymptoms ? 'border-[#F0B39A] bg-[#FFF8F3]' : undefined}>
+        <FieldCard>
           <div className="flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-2 text-[14px] font-semibold text-[#1E2621]">
-                <span className="h-[9px] w-[9px] rounded-full bg-[#CF5B36]" />
-                증상이 있었어요
-              </div>
-              <p className="mt-1 text-[11.5px] text-[#8A9086]">
-                증상이 있었던 날만 켜고 심각도와 요인을 남겨주세요.
-              </p>
+            <div className="flex items-center gap-2 text-[14px] font-semibold text-[#1E2621]">
+              <span className="h-[9px] w-[9px] rounded-full bg-[#CF5B36]" />
+              증상이 있었어요
             </div>
             <ToggleSwitch on={hasSymptoms} onClick={toggleSymptoms} />
           </div>
 
-          {hasSymptoms && (
-            <div className="mt-4 space-y-4 border-t border-[#F1DED2] pt-4">
-              <div>
-                <p className="mb-2.5 text-[12.5px] text-[#5C645A]">심각도</p>
-                <div className="flex gap-1.5">
-                  {SEVERITY_CELLS.map(([bg, fg], index) => {
-                    const value = index + 1;
-                    const active = form.severity === value;
-                    return (
-                      <button
-                        key={value}
-                        type="button"
-                        onClick={() => setForm((prev) => ({ ...prev, severity: value }))}
-                        className={cn(
-                          'flex h-[34px] flex-1 items-center justify-center rounded-[9px] text-[11.5px] transition-shadow',
-                          active ? 'font-extrabold shadow-[inset_0_0_0_2px_#1E2621]' : 'font-normal',
-                        )}
-                        style={{ background: bg, color: fg }}
-                        aria-pressed={active}
-                      >
-                        {value}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div>
-                <p className="mb-2.5 text-[12.5px] font-semibold text-[#5C645A]">관련 요인</p>
-                <div className="flex flex-wrap gap-2">
-                  {RECORD_SYMPTOM_TRIGGER_OPTIONS.map((option) => (
-                    <ChipButton
-                      key={option.value}
-                      selected={(form.triggers ?? []).includes(option.value)}
-                      onClick={() => toggleTriggerChip(option.value)}
-                    >
-                      {option.label}
-                    </ChipButton>
-                  ))}
-                </div>
-              </div>
+          <div
+            className={cn(
+              'mt-4 border-t border-[#EADFCB] pt-4 transition-opacity',
+              !hasSymptoms && 'pointer-events-none opacity-40',
+            )}
+          >
+            <p className="mb-2.5 text-[12.5px] text-[#5C645A]">심각도</p>
+            <div className="flex gap-1.5">
+              {SEVERITY_CELLS.map(([bg, fg], index) => {
+                const value = index + 1;
+                const active = form.severity === value;
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    disabled={!hasSymptoms}
+                    onClick={() => setForm((prev) => ({ ...prev, severity: value }))}
+                    className={cn(
+                      'flex h-[34px] flex-1 items-center justify-center rounded-[9px] text-[11.5px] transition-shadow',
+                      active ? 'font-extrabold shadow-[inset_0_0_0_2px_#1E2621]' : 'font-normal',
+                    )}
+                    style={{ background: bg, color: fg }}
+                    aria-pressed={active}
+                  >
+                    {value}
+                  </button>
+                );
+              })}
             </div>
-          )}
+          </div>
         </FieldCard>
 
         <FieldCard>

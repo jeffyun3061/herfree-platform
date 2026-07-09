@@ -2,13 +2,14 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Board } from '@/domain/board/types';
-import { getCommunityBoardTabLabel } from '@/domain/board/privateBoard';
+import { COMMUNITY_ALL_TAB_LABEL, getCommunityBoardTabLabel } from '@/domain/board/privateBoard';
 import { cn } from '@/lib/cn';
 
 type BoardTabBarProps = {
   boards: Board[];
-  selectedBoardId: number;
-  onSelect: (boardId: number) => void;
+  selectedBoardId: number | null;
+  onSelect: (boardId: number | null) => void;
+  showAllTab?: boolean;
 };
 
 const SCROLL_EPSILON = 4;
@@ -37,7 +38,7 @@ function normalizeBoardLabel(board: Board) {
     .trim();
 }
 
-export function BoardTabBar({ boards, selectedBoardId, onSelect }: BoardTabBarProps) {
+export function BoardTabBar({ boards, selectedBoardId, onSelect, showAllTab = false }: BoardTabBarProps) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [edge, setEdge] = useState({ left: false, right: false });
 
@@ -91,6 +92,22 @@ export function BoardTabBar({ boards, selectedBoardId, onSelect }: BoardTabBarPr
         aria-label="게시판 카테고리"
       >
         <div className="flex w-max gap-2 px-4 pb-1 pr-16">
+          {showAllTab && (
+            <button
+              type="button"
+              role="tab"
+              aria-selected={selectedBoardId === null}
+              onClick={() => onSelect(null)}
+              className={cn(
+                'shrink-0 whitespace-nowrap rounded-full border-[0.5px] px-[15px] py-2 text-[12.5px] font-medium',
+                selectedBoardId === null
+                  ? 'border-[#0B3B36] bg-[#0B3B36] text-white'
+                  : 'border-[#ECE5D8] bg-white text-[#5C645A]',
+              )}
+            >
+              {COMMUNITY_ALL_TAB_LABEL}
+            </button>
+          )}
           {boards.map((board) => {
             const active = selectedBoardId === board.id;
             const label = normalizeBoardLabel(board);

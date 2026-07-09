@@ -89,10 +89,8 @@ export default function VideoDetailPage() {
         )}
       </div>
 
-      <a
-        href="https://open.kakao.com/o/srMDr6gi"
-        target="_blank"
-        rel="noreferrer"
+      <Link
+        href="/consult"
         className="mx-6 mt-[14px] flex items-center gap-3 rounded-[16px] bg-[#07251F] px-5 py-[18px]"
       >
         <span className="min-w-0 flex-1">
@@ -102,7 +100,7 @@ export default function VideoDetailPage() {
           </span>
         </span>
         <span className="text-[20px] text-[#F0C778]">›</span>
-      </a>
+      </Link>
 
       {relatedVideos.length > 0 && (
         <section className="px-5 pt-7">

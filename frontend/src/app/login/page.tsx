@@ -83,8 +83,8 @@ function LoginForm() {
   return (
     <div className="min-h-screen bg-cream">
       <TopBar title="로그인" showBack />
-      <div className="auth-screen !min-h-0 pt-6">
-      <div className="flex flex-col items-center text-center">
+      <div className="auth-screen relative z-10 !min-h-0 pt-6">
+      <div className="pointer-events-none flex flex-col items-center text-center">
         <BrandMark variant="auth" size="lg" />
         <h1 className="mt-8 text-2xl font-bold text-ink">어서오세요</h1>
         <p className="mt-2 text-sm text-wrtn-muted">이메일로 로그인해 주세요.</p>

@@ -1,3 +1,4 @@
+@import '../styles/fonts/suit.css';
 @import '../styles/fonts/source-han-serif.css';
 
 @tailwind base;
@@ -41,7 +42,7 @@
 }
 
 body {
-  font-family: 'Source Han Serif KR', 'Noto Serif KR', Georgia, 'Times New Roman', serif;
+  font-family: 'SUIT', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
   font-weight: 400;
   background:
     radial-gradient(130% 90% at 50% -10%, #f1e9dc 0%, #e6dccb 55%, #d8cdb9 100%);
@@ -62,6 +63,10 @@ body {
 }
 
 @layer components {
+  .hf-display {
+    font-family: 'Source Han Serif KR', 'Noto Serif KR', Georgia, serif;
+  }
+
   .page-container {
     @apply px-4 py-6 lg:mx-auto lg:max-w-content lg:px-10 lg:py-10;
   }
@@ -416,7 +421,7 @@ body {
   }
 
   .community-feed-tag {
-    @apply shrink-0 rounded-[7px] px-2 py-0.5 text-[10.5px] font-extrabold;
+    @apply shrink-0 rounded-[7px] px-2 py-0.5 text-[10.5px] font-bold;
   }
 
   .community-feed-row__title {

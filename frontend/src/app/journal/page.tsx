@@ -6,6 +6,8 @@ import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 import { GuestPeaceCta } from '@/components/home/GuestPeaceCta';
+import { BrandMark } from '@/components/brand/BrandMark';
+import { InlineTopActions } from '@/components/layout/InlineTopActions';
 
 import { JournalRecordFromQuery } from '@/components/journal/JournalRecordFromQuery';
 
@@ -18,9 +20,6 @@ import { JournalTabBar, type JournalTabId } from '@/components/journal/JournalTa
 import { JournalHistoryList } from '@/components/journal/JournalHistoryList';
 
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
-
-import { MedicalDisclaimer } from '@/components/layout/MedicalDisclaimer';
-import { InlineTopActions } from '@/components/layout/InlineTopActions';
 
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 
@@ -367,7 +366,11 @@ function JournalPageContent() {
           </>
 
         ) : (
-          <div className="mx-auto max-w-app">
+          <div className="mx-auto max-w-app space-y-3">
+            <div className="flex items-center justify-between px-1 pt-2">
+              <BrandMark size="sm" showText={false} />
+              <InlineTopActions />
+            </div>
             <GuestPeaceCta />
           </div>
         )}
@@ -375,12 +378,6 @@ function JournalPageContent() {
 
 
         {(error || deleteError || inlineSaveError) && <ErrorMessage message={error ?? deleteError ?? inlineSaveError ?? ''} />}
-
-
-
-        <div className="mx-auto w-full max-w-app">
-          <MedicalDisclaimer compact />
-        </div>
 
       </div>
 

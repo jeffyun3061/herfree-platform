@@ -276,18 +276,18 @@ function WritePostForm() {
   const boardPickerDisabled = isEditMode || lockedPrivateBoard;
 
   return (
-    <div className="flex min-h-screen flex-col bg-white pb-10 pt-14">
+    <div className="flex min-h-screen flex-col bg-white pb-10 pt-[54px]">
       <header className="flex items-center justify-between border-b border-[#EFE9DD] px-[18px] pb-3.5 pt-0.5">
-        <div className="flex min-w-0 items-center gap-2.5">
-          <Link
-            href={backHref}
-            aria-label="뒤로 가기"
-            className="shrink-0 text-[22px] leading-none text-[#6E7671]"
-          >
-            ‹
-          </Link>
-          <h1 className="truncate text-[15px] font-bold text-[#15201D]">{writeTitle}</h1>
-        </div>
+        <Link
+          href={backHref}
+          aria-label="뒤로 가기"
+          className="shrink-0 text-[22px] leading-none text-[#6E7671]"
+        >
+          ‹
+        </Link>
+        <h1 className="min-w-0 flex-1 truncate px-3 text-center text-[15px] font-bold text-[#15201D]">
+          {writeTitle}
+        </h1>
         <button
           type="submit"
           form="community-write-form"
@@ -380,24 +380,45 @@ function WritePostForm() {
         </div>
 
         {!isMaskedWrite && (
-          <div className="px-5 pt-4">
-            <CommunityPhotoAttach imageUrl={imageUrl} onChange={setImageUrl} disabled={isSubmitting} />
+          <div className="flex-1 px-5 pt-3.5">
+            <label htmlFor="content" className="sr-only">
+              본문
+            </label>
+            <textarea
+              id="content"
+              required
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder={contentPlaceholder}
+              className="min-h-[200px] w-full resize-y rounded-[14px] border border-[#ECE5D8] bg-[#F8F4EC] p-[15px] text-[13.5px] leading-[1.7] text-[#1E2621] placeholder:text-[#B4B2A6] outline-none focus:border-[#0B3B36]/35"
+            />
+            <div className="mt-3">
+              <CommunityPhotoAttach
+                imageUrl={imageUrl}
+                onChange={setImageUrl}
+                disabled={isSubmitting}
+                variant="compact"
+                emptyText="사진 추가"
+              />
+            </div>
           </div>
         )}
 
-        <div className="flex-1 px-5 pt-3.5">
-          <label htmlFor="content" className="sr-only">
-            본문
-          </label>
-          <textarea
-            id="content"
-            required
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder={contentPlaceholder}
-            className="min-h-[200px] w-full resize-y rounded-[14px] border border-[#ECE5D8] bg-[#F8F4EC] p-[15px] text-[13.5px] leading-[1.7] text-[#1E2621] placeholder:text-[#B4B2A6] outline-none focus:border-[#0B3B36]/35"
-          />
-        </div>
+        {isMaskedWrite && (
+          <div className="flex-1 px-5 pt-3.5">
+            <label htmlFor="content" className="sr-only">
+              본문
+            </label>
+            <textarea
+              id="content"
+              required
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder={contentPlaceholder}
+              className="min-h-[200px] w-full resize-y rounded-[14px] border border-[#ECE5D8] bg-[#F8F4EC] p-[15px] text-[13.5px] leading-[1.7] text-[#1E2621] placeholder:text-[#B4B2A6] outline-none focus:border-[#0B3B36]/35"
+            />
+          </div>
+        )}
 
         <div className="mt-auto flex items-center gap-2.5 px-5 pt-3">
           {!isMaskedWrite && (
@@ -420,13 +441,13 @@ function WritePostForm() {
                 <rect x="5" y="11" width="14" height="9" rx="2" />
                 <path d="M8 11V7a4 4 0 0 1 8 0v4" />
               </svg>
-              익명으로 작성
+              비밀글로 작성
             </label>
           )}
           <Button
             type="submit"
             disabled={isSubmitting || isAdminSubmitting || boardId <= 0}
-            className="ml-auto rounded-xl px-[22px] py-[11px] text-[13.5px] font-bold"
+            className="ml-auto rounded-xl px-[22px] py-[11px] text-[13.5px] font-bold shadow-none"
           >
             {bottomSubmitLabel}
           </Button>

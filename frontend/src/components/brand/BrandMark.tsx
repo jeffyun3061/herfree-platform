@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import { BRAND_LOGO, pickBrandLogo } from '@/domain/brand/assets';
+import { PUBLIC_IMAGES } from '@/domain/assets/static';
 import { cn } from '@/lib/cn';
 
 type BrandMarkProps = {
@@ -12,12 +13,11 @@ type BrandMarkProps = {
 
 const ICON_SIZE = { sm: 28, md: 32, lg: 40 } as const;
 const AUTH_SIZE = { sm: 96, md: 120, lg: 140 } as const;
-const AUTH_LOGO_FRAME = {
-  sm: 'h-[4.5rem] w-[min(70vw,10.5rem)]',
-  md: 'h-[5.25rem] w-[min(74vw,12rem)]',
-  lg: 'h-[6.5rem] w-[min(78vw,14.5rem)]',
+const AUTH_LOGO_DIM = {
+  sm: { width: 168, height: 72 },
+  md: { width: 198, height: 84 },
+  lg: { width: 232, height: 98 },
 } as const;
-const AUTH_LOGO_SCALE = { sm: 'scale-[1.55]', md: 'scale-[1.65]', lg: 'scale-[1.75]' } as const;
 
 export function BrandMark({
   size = 'md',
@@ -28,22 +28,17 @@ export function BrandMark({
   const resolvedVariant = variant === 'wrtn' ? 'auth' : variant;
 
   if (resolvedVariant === 'auth') {
+    const dim = AUTH_LOGO_DIM[size];
     return (
-      <div
-        className={cn(
-          'relative flex shrink-0 items-center justify-center overflow-hidden',
-          AUTH_LOGO_FRAME[size],
-          className,
-        )}
-      >
+      <div className={cn('flex shrink-0 items-center justify-center', className)}>
         <Image
           src={BRAND_LOGO.hfreeWordmark}
           alt="h.free"
-          fill
+          width={dim.width}
+          height={dim.height}
           priority
           unoptimized
-          sizes="(max-width: 430px) 78vw, 232px"
-          className={cn('object-contain object-center', AUTH_LOGO_SCALE[size])}
+          className="h-auto w-auto max-w-[min(78vw,14.5rem)] object-contain"
         />
       </div>
     );
@@ -63,7 +58,7 @@ export function BrandMark({
     );
   }
 
-  const iconSrc = pickBrandLogo('hMark', 'light');
+  const iconSrc = PUBLIC_IMAGES.logoHApp;
   const iconDim = ICON_SIZE[size];
 
   if (!showText) {

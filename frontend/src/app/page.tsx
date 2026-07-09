@@ -38,7 +38,7 @@ function LoggedInHomePage() {
     { enabled: noticeBoardId !== null },
   );
   const homeCommunityPosts = useMemo(
-    () => communityPosts.content.filter((post) => post.boardType !== 'NOTICE').slice(0, 5),
+    () => communityPosts.content.filter((post) => post.boardType !== 'NOTICE').slice(0, 4),
     [communityPosts.content],
   );
 
