@@ -1,4 +1,5 @@
 import type { ApiEnvelope } from '@/domain/common/types';
+import { publishAppNotice } from '@/lib/app-notice';
 import { clearAuth, getAccessToken } from '@/lib/auth-storage';
 
 /**
@@ -104,6 +105,8 @@ function handleUnauthorized(hadToken: boolean, tokenAtRequest: string | null): v
   if (path.startsWith('/login') || path.startsWith('/signup')) return;
 
   clearAuth();
+  publishAppNotice('session_expired');
+
   const publicPath =
     path === '/' ||
     path.startsWith('/community') ||

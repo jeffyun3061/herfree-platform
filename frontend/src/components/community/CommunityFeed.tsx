@@ -20,7 +20,8 @@ import { Button } from '@/components/ui/Button';
 import { AdminPublishFab, AdminPublishLink } from '@/components/admin/AdminPublishLink';
 import { InlineTopActions } from '@/components/layout/InlineTopActions';
 import { getWritableBoards, isStaffOnlyBoardType } from '@/domain/board/types';
-import { getCommunityBoards, isSecretStoryBoardType, SECRET_STORY_BOARD_COPY } from '@/domain/board/privateBoard';
+import { getCommunityBoards, isSecretStoryBoardType } from '@/domain/board/privateBoard';
+import { SecretStoryBoardBanner } from '@/components/community/SecretStoryBoardBanner';
 import { validatePostSearchKeyword } from '@/domain/post/search';
 import { isStaff } from '@/domain/user/types';
 import { getErrorMessage } from '@/lib/api/client';
@@ -359,14 +360,7 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
         />
       ) : (
         <div className="px-5">
-          {isSecretStoryBoard && (
-            <div className="mt-4 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3">
-              <p className="text-sm font-semibold text-ink">{SECRET_STORY_BOARD_COPY.bannerTitle}</p>
-              <p className="mt-1.5 text-xs leading-relaxed text-wrtn-muted">
-                {SECRET_STORY_BOARD_COPY.bannerDescription}
-              </p>
-            </div>
-          )}
+          {isSecretStoryBoard && <SecretStoryBoardBanner className="mt-4" />}
 
           {!isLoadingAll && !listError && (
             <div className="mt-2 flex items-center justify-between gap-3">

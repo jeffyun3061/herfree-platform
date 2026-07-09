@@ -8,6 +8,7 @@ import { usePostDetail, usePostMutation } from '@/hooks/usePosts';
 import { useAuth } from '@/hooks/useAuth';
 import Link from 'next/link';
 import { SymptomBoardRedirectBanner } from '@/components/community/SymptomBoardRedirectBanner';
+import { SecretStoryBoardBanner } from '@/components/community/SecretStoryBoardBanner';
 import { getCommunityBoardTabLabel } from '@/domain/board/privateBoard';
 import { cn } from '@/lib/cn';
 import { CommunityPhotoAttach } from '@/components/community/CommunityPhotoAttach';
@@ -339,6 +340,12 @@ function WritePostForm() {
             </div>
           </div>
         </div>
+
+        {isSecretStoryWrite && (
+          <div className="px-5 pt-4">
+            <SecretStoryBoardBanner />
+          </div>
+        )}
 
         <div className="px-5 pt-[18px]">
           <div className="flex items-center gap-1.5">

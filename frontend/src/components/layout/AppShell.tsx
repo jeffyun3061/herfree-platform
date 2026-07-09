@@ -9,6 +9,7 @@ import { PageHeaderProvider } from '@/contexts/PageHeaderContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useBackNavigationGuard } from '@/hooks/useBackNavigationGuard';
 import { shouldShowBottomNav, shouldShowShellHeader } from '@/lib/navigation';
+import { AppNoticeToast } from '@/components/ui/AppNoticeToast';
 import { cn } from '@/lib/cn';
 
 type AppShellProps = {
@@ -33,6 +34,7 @@ export function AppShell({ children }: AppShellProps) {
           {showHeader && !showNav && <SiteFooter />}
         </div>
         {showNav && <BottomNav />}
+        <AppNoticeToast />
       </div>
     </PageHeaderProvider>
   );

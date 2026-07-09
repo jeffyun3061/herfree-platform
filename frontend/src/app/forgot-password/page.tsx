@@ -48,7 +48,11 @@ export default function ForgotPasswordPage() {
         </div>
         <h2 className="text-xl font-bold text-ink">비밀번호를 잊으셨나요?</h2>
         <p className="mt-2 text-sm leading-relaxed text-wrtn-muted">
-          가입한 이메일을 입력해 주세요. 비밀번호 재설정 링크를 보내 드립니다.
+          가입한 이메일을 입력해 주세요. 등록된 이메일이면 비밀번호 재설정 안내 메일을 보내 드립니다.
+        </p>
+        <p className="mt-2 text-xs leading-relaxed text-wrtn-muted">
+          로컬 개발 환경에서는 메일 대신 백엔드 콘솔에 재설정 링크가 출력됩니다. 운영 환경에서는
+          SMTP 설정 후 실제 메일이 발송됩니다.
         </p>
 
         <form onSubmit={(e) => void handleSubmit(e)} className="mt-6">
@@ -70,7 +74,8 @@ export default function ForgotPasswordPage() {
             >
               {successMessage}
               <p className="mt-2 text-xs text-wrtn-muted">
-                로컬 개발 환경에서는 백엔드 콘솔 로그에 재설정 링크가 출력됩니다.
+                메일이 보이지 않으면 스팸함을 확인해 주세요. 로컬에서는 백엔드 터미널 로그의
+                resetUrl을 사용하세요.
               </p>
             </div>
           )}

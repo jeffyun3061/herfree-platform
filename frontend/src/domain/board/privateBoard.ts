@@ -55,6 +55,7 @@ export const COMMUNITY_TAB_BOARD_TYPES = [
   { boardType: 'PHOBIA', label: '포비아/대기' },
   { boardType: 'SUPPORT', label: '위로/응원' },
   { boardType: 'PRODUCT_REVIEW', label: '제품후기' },
+  { boardType: 'SECRET_STORY', label: '비밀사연' },
 ] as const;
 
 const COMMUNITY_TAB_TYPE_ORDER = COMMUNITY_TAB_BOARD_TYPES.map((tab) => tab.boardType);
