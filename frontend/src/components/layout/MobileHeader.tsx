@@ -110,7 +110,7 @@ export function MobileHeader() {
                   <UserIcon />
                 </HeaderIconLink>
               ) : (
-                <Link href="/login" className="text-[13px] font-medium text-[#15201D]">
+                <Link href="/login" className="text-[13px] font-medium text-[#15201D]" aria-label="로그인">
                   로그인
                 </Link>
               )}

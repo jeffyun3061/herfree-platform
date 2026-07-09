@@ -63,6 +63,10 @@ function MenuLink({
   );
 }
 
+function normalizeBoardLabel(label: string) {
+  return label.replace(/게시판|방/g, '').trim() || label;
+}
+
 export function MobileMenu({ open, onClose }: MobileMenuProps) {
   const router = useRouter();
   const { isLoggedIn, user, logout } = useAuth();
@@ -132,16 +136,19 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
             <section className="space-y-2.5">
               <SectionTitle>게시판 바로가기</SectionTitle>
               <div className="flex flex-wrap gap-2">
-                {communityBoards.map((board) => (
-                  <Link
-                    key={board.id}
-                    href={`/community/${board.id}`}
-                    onClick={onClose}
-                    className="rounded-full border border-[#D9CBB5] bg-white px-3 py-2 text-[12px] font-bold text-[#33413B]"
-                  >
-                    {getCommunityBoardTabLabel(board.boardType) ?? board.name}
-                  </Link>
-                ))}
+                {communityBoards.map((board) => {
+                  const label = normalizeBoardLabel(getCommunityBoardTabLabel(board.boardType) ?? board.name);
+                  return (
+                    <Link
+                      key={board.id}
+                      href={`/community/${board.id}`}
+                      onClick={onClose}
+                      className="rounded-full border border-[#D9CBB5] bg-white px-3 py-2 text-[12px] font-bold text-[#33413B]"
+                    >
+                      {label}
+                    </Link>
+                  );
+                })}
               </div>
             </section>
           )}
@@ -157,7 +164,9 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
                   className="flex items-center justify-between rounded-[13px] px-3 py-3 text-[13px] font-bold text-[#293530] hover:bg-white"
                 >
                   {item.label}
-                  <span className="text-[#A99468]">›</span>
+                  <span className="text-[#A99468]" aria-hidden>
+                    ›
+                  </span>
                 </Link>
               ))}
             </div>
