@@ -91,7 +91,7 @@ body {
   }
 
   .app-phone-shell .home-dashboard-screen {
-    @apply px-4 pt-7 lg:px-4 lg:pb-10 lg:pt-7;
+    @apply px-4 pb-28 pt-14 lg:px-4 lg:pb-10 lg:pt-7;
   }
 
   .app-phone-shell .community-screen {

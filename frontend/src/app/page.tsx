@@ -90,7 +90,10 @@ function LoggedInHomePage() {
             afterCommunity={
               <div className="flex flex-col gap-2">
                 <QuickAccessSection layout="home" onChecklistClick={() => router.push('/record')} />
-                <MedicalDisclaimer compact />
+                <MedicalDisclaimer
+                  compact
+                  className="rounded-[14px] border-0 bg-[#F5EFDF] px-4 py-3.5 text-[11.5px] leading-[1.65] text-[#8A6B2A]"
+                />
               </div>
             }
           />

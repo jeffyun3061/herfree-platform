@@ -12,14 +12,11 @@ type JournalCommunityCardProps = {
   maxPosts?: number;
 };
 
-function PostAvatar({ nickname }: { nickname: string }) {
-  const initial = nickname === '익명' ? '유' : nickname.trim().charAt(0) || '유';
+const AVATAR_EMOJIS = ['🌙', '🌿', '✨', '🍃', '💬', '🌸'] as const;
 
-  return (
-    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#173E38] text-xs font-bold text-[#F3EAD8] ring-1 ring-white/10">
-      {initial}
-    </span>
-  );
+function postEmoji(nickname: string, postId: number): string {
+  const seed = nickname.charCodeAt(0) + postId;
+  return AVATAR_EMOJIS[seed % AVATAR_EMOJIS.length] ?? '🌿';
 }
 
 function postSnippet(post: Post): string {
@@ -32,62 +29,55 @@ export function JournalCommunityCard({ posts, isLoading, maxPosts = 5 }: Journal
   const previewPosts = posts.slice(0, maxPosts);
 
   return (
-    <section className="rounded-[24px] border border-[#123A33] bg-[#062923] px-4 py-4 shadow-[0_20px_42px_-30px_rgba(7,37,31,.82)] sm:px-5 sm:py-5">
-      <div className="mb-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#163D36] text-[#F2C86B] ring-1 ring-white/10" aria-hidden>
-            <svg
-              viewBox="0 0 24 24"
-              className="h-4 w-4"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-            >
-              <path
-                d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5Z"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </span>
-          <div>
-            <h2 className="hf-display text-[21px] font-extrabold leading-none text-[#FFFDF8]">커뮤니티</h2>
-            <p className="mt-1.5 text-[11px] font-medium text-[#B8C9C0]">방금 올라온 이야기</p>
-          </div>
-        </div>
-        <Link
-          href="/community"
-          className="rounded-full bg-[#173E38] px-3 py-1.5 text-[11px] font-bold text-[#F4E7CD] transition-colors hover:bg-[#1B4A42]"
-        >
-          더보기 &gt;
+    <section className="flex flex-col gap-3">
+      <div className="flex items-center justify-between px-1">
+        <h2 className="text-[16px] font-bold tracking-[-0.01em] text-[#1E2621]">커뮤니티</h2>
+        <Link href="/community" className="text-[12.5px] font-semibold text-[#15695E]">
+          더보기 ›
         </Link>
       </div>
 
       {isLoading ? (
-        <LoadingSpinner label="커뮤니티 불러오는 중..." />
+        <div className="rounded-[20px] bg-[#07251F] px-5 py-8">
+          <LoadingSpinner label="커뮤니티 불러오는 중..." />
+        </div>
       ) : previewPosts.length === 0 ? (
-        <p className="text-sm text-[#B7C6BD]">아직 글이 없습니다. 첫 이야기를 남겨보세요.</p>
+        <div className="rounded-[20px] bg-[#07251F] px-5 py-8 text-center text-sm text-white/70">
+          아직 글이 없습니다. 첫 이야기를 남겨보세요.
+        </div>
       ) : (
-        <ul className="rounded-[19px] bg-[#0A302A] px-3 ring-1 ring-white/[0.08]">
+        <div className="rounded-[20px] bg-[#07251F] px-5 py-1.5 shadow-[0_16px_36px_-26px_rgba(7,37,31,.7)]">
           {previewPosts.map((post, index) => (
-            <li key={post.id} className={cn(index > 0 && 'border-t border-white/[0.09]')}>
-              <Link href={`/community/posts/${post.id}`} className="group flex items-center gap-3 py-2.5">
-                <PostAvatar nickname={post.authorNickname} />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-baseline justify-between gap-2">
-                    <span className="truncate text-[11px] font-bold text-[#FFFDF8]">{post.authorNickname}</span>
-                    <span className="shrink-0 text-[10px] text-[#A8BDB4]">
-                      {formatRelativeTime(post.createdAt)}
-                    </span>
-                  </div>
-                  <p className="mt-0.5 line-clamp-1 text-[13.5px] font-semibold leading-snug text-[#F1F7F2] group-hover:text-white">
-                    {postSnippet(post)}
-                  </p>
+            <Link
+              key={post.id}
+              href={`/community/posts/${post.id}`}
+              className={cn(
+                'group flex items-start gap-2.5 py-[13px] transition-opacity hover:opacity-90',
+                index > 0 && 'border-t border-white/[0.08]',
+              )}
+            >
+              <span
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/[0.08] text-[13px]"
+                aria-hidden
+              >
+                {postEmoji(post.authorNickname, post.id)}
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="truncate text-[12.5px] font-semibold text-white">
+                    {post.authorNickname}
+                  </span>
+                  <span className="shrink-0 text-[10.5px] text-white/40">
+                    {formatRelativeTime(post.createdAt)}
+                  </span>
                 </div>
-              </Link>
-            </li>
+                <p className="mt-0.5 truncate text-[12px] text-white/62 group-hover:text-white/80">
+                  {postSnippet(post)}
+                </p>
+              </div>
+            </Link>
           ))}
-        </ul>
+        </div>
       )}
     </section>
   );

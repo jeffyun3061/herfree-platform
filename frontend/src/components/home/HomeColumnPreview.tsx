@@ -2,8 +2,7 @@
 
 import Link from 'next/link';
 import { useContentList } from '@/hooks/useContents';
-import { getContentPreview } from '@/domain/content/types';
-import { formatDate } from '@/domain/common/format';
+import { PUBLIC_IMAGES } from '@/domain/assets/static';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { cn } from '@/lib/cn';
 
@@ -12,61 +11,69 @@ type HomeColumnPreviewProps = {
   className?: string;
 };
 
+const THUMB_OVERLAYS = [
+  'linear-gradient(180deg, rgba(20,40,44,.12) 0%, rgba(9,32,30,.55) 100%)',
+  'linear-gradient(180deg, rgba(46,34,14,.12) 0%, rgba(74,47,16,.55) 100%)',
+  'linear-gradient(180deg, rgba(50,20,14,.12) 0%, rgba(74,24,16,.55) 100%)',
+] as const;
+
+const THUMB_POSITIONS = ['50% 20%', '50% 40%', '50% 60%'] as const;
+
 export function HomeColumnPreview({ maxItems = 3, className }: HomeColumnPreviewProps) {
   const { contentPage, isLoading } = useContentList(undefined, maxItems);
   const items = contentPage.content.slice(0, maxItems);
 
   return (
-    <section
-      className={cn(
-        'rounded-[1.25rem] border border-[#ECE5D8] bg-white px-4 py-4 shadow-[0_1px_2px_rgba(20,30,25,.04),0_14px_30px_-24px_rgba(20,30,25,.22)] sm:px-5 sm:py-5',
-        className,
-      )}
-    >
-      <div className="mb-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-[#0B3B36]" aria-hidden>
-            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
-              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" strokeLinecap="round" strokeLinejoin="round" />
-              <path
-                d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </span>
-          <h2 className="font-display text-base font-bold text-[#1E2621]">추천 칼럼</h2>
-        </div>
-        <Link
-          href="/contents"
-          className="text-[11px] font-medium text-[#8A9089] transition-colors hover:text-[#0B3B36]"
-        >
-          더보기 &gt;
+    <section className={cn('flex flex-col gap-3', className)}>
+      <div className="flex items-center justify-between px-1">
+        <h2 className="text-[16px] font-bold tracking-[-0.01em] text-[#1E2621]">추천 칼럼</h2>
+        <Link href="/contents" className="text-[12.5px] font-semibold text-[#15695E]">
+          더보기 ›
         </Link>
       </div>
 
-      {isLoading ? (
-        <LoadingSpinner label="칼럼 불러오는 중..." />
-      ) : items.length === 0 ? (
-        <p className="text-sm text-[#8A9089]">등록된 칼럼이 없습니다.</p>
-      ) : (
-        <ul>
-          {items.map((item, index) => (
-            <li key={item.id} className={cn(index > 0 && 'border-t border-[#F2ECE1]')}>
-              <Link href={`/contents/${item.id}`} className="group block py-3">
-                <span className="text-[10px] font-semibold text-[#15695E]">{item.category}</span>
-                <p className="mt-1 line-clamp-1 text-[13.5px] font-semibold text-[#1E2621] group-hover:text-[#0B3B36]">
+      <div className="overflow-hidden rounded-[18px] border border-[#EADFCB] bg-[#FBF6EA] shadow-[0_14px_32px_-26px_rgba(7,37,31,.4)]">
+        {isLoading ? (
+          <div className="px-4 py-8">
+            <LoadingSpinner label="칼럼 불러오는 중..." />
+          </div>
+        ) : items.length === 0 ? (
+          <p className="px-4 py-8 text-center text-sm text-[#8A9089]">등록된 칼럼이 없습니다.</p>
+        ) : (
+          items.map((item, index) => (
+            <Link
+              key={item.id}
+              href={`/contents/${item.id}`}
+              className={cn(
+                'group flex items-center gap-3.5 px-4 py-3.5 transition-opacity hover:opacity-90',
+                index > 0 && 'border-t border-[#EFE6D5]',
+              )}
+            >
+              <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl">
+                <img
+                  src={item.imageUrl ?? PUBLIC_IMAGES.journalDashboardCard}
+                  alt=""
+                  className="absolute inset-0 h-full w-full object-cover"
+                  style={{ objectPosition: THUMB_POSITIONS[index % THUMB_POSITIONS.length] }}
+                />
+                <div
+                  className="absolute inset-0"
+                  style={{ background: THUMB_OVERLAYS[index % THUMB_OVERLAYS.length] }}
+                />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] font-bold text-[#15695E]">{item.category}</p>
+                <p className="mt-1 line-clamp-2 text-[13.5px] font-semibold leading-snug text-[#1E2621] group-hover:text-[#0B3B36]">
                   {item.title}
                 </p>
-                <p className="mt-0.5 line-clamp-2 text-[12px] leading-snug text-[#5C645A]">
-                  {getContentPreview(item.content, 80)}
-                </p>
-                <p className="mt-1 text-[10px] text-[#B4B2A6]">{formatDate(item.createdAt)}</p>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
+              </div>
+              <span className="shrink-0 text-[#CBD0C7]" aria-hidden>
+                ›
+              </span>
+            </Link>
+          ))
+        )}
+      </div>
     </section>
   );
 }

@@ -70,13 +70,13 @@ export function QuickAccessSection({ layout = 'row', onChecklistClick }: QuickAc
             <>
               <span
                 className={cn(
-                  'flex items-center justify-center border border-[#ECE5D8] bg-[#F6F1E8] text-[#0B3B36] shadow-[0_6px_16px_-10px_rgba(20,30,25,.2)]',
-                  isHome ? 'h-14 w-14 rounded-[18px]' : 'quick-access-circle',
+                  'flex items-center justify-center border border-[#EADFCB] bg-[#FBF6EA] text-[#0B3B36] shadow-[0_6px_16px_-14px_rgba(7,37,31,.4)]',
+                  isHome ? 'h-[58px] w-[58px] rounded-[18px]' : 'quick-access-circle',
                 )}
               >
                 <item.Icon />
               </span>
-              <span className="text-center text-[11px] font-medium leading-[1.35] text-[#5C645A]">
+              <span className="text-center text-[10.5px] font-medium leading-[1.3] text-[#5C645A]">
                 {item.title}
               </span>
             </>

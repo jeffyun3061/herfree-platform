@@ -27,38 +27,38 @@ type JournalPersonalDashboardProps = {
 };
 
 function HomeNoticeStrip({ post, isLoading }: { post: Post | null; isLoading: boolean }) {
+  const href = post ? `/community/posts/${post.id}` : '/notice';
+
   return (
-    <section className="rounded-[18px] border border-[#E3D7C3] bg-[#FFF9EE] px-4 py-3 shadow-[0_14px_30px_-26px_rgba(7,37,31,.45)]">
-      <div className="flex items-center gap-3">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#0B3B36] text-[15px] font-black text-[#F4D27E] shadow-[0_10px_22px_-16px_rgba(11,59,54,.8)]">
-          !
-        </span>
-        {isLoading ? (
-          <div className="min-w-0 flex-1">
-            <div className="h-3 w-16 rounded-full bg-[#EEE5D7]" />
-            <div className="mt-2 h-3 w-48 rounded-full bg-[#F3ECE1]" />
+    <Link
+      href={href}
+      className="flex items-center gap-3 rounded-2xl border border-[#EADFCB] bg-[#FBF6EA] px-4 py-3.5 shadow-[0_10px_24px_-22px_rgba(7,37,31,.35)] transition-opacity hover:opacity-95"
+    >
+      <span className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-[#07251F] text-[15px] font-bold text-[#F0C778]">
+        !
+      </span>
+      {isLoading ? (
+        <div className="min-w-0 flex-1">
+          <div className="h-3 w-16 rounded-full bg-[#EEE5D7]" />
+          <div className="mt-2 h-3 w-48 rounded-full bg-[#F3ECE1]" />
+        </div>
+      ) : (
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-[7px]">
+            <span className="text-[10px] font-bold tracking-[0.06em] text-[#15695E]">공지</span>
+            {post ? (
+              <span className="text-[10.5px] text-[#B4B2A6]">{formatRelativeTime(post.createdAt)}</span>
+            ) : null}
           </div>
-        ) : post ? (
-          <Link href={`/community/posts/${post.id}`} className="group min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold tracking-[0.12em] text-[#9B7430]">NOTICE</span>
-              <span className="text-[10px] text-[#9A9187]">{formatRelativeTime(post.createdAt)}</span>
-            </div>
-            <p className="mt-0.5 truncate text-[13px] font-bold text-[#1E2621] group-hover:text-[#0B3B36]">
-              {post.title}
-            </p>
-          </Link>
-        ) : (
-          <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-bold tracking-[0.12em] text-[#9B7430]">NOTICE</p>
-            <p className="mt-0.5 text-[13px] font-bold text-[#1E2621]">새 공지가 올라오면 이곳에 보여드릴게요.</p>
-          </div>
-        )}
-        <Link href={post ? `/community/posts/${post.id}` : '/notice'} className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[11px] font-bold text-[#0B3B36] shadow-[0_8px_18px_-16px_rgba(7,37,31,.45)]">
-          보기
-        </Link>
-      </div>
-    </section>
+          <p className="mt-0.5 truncate text-[13px] font-semibold text-[#1E2621]">
+            {post?.title ?? '새 공지가 올라오면 이곳에 보여드릴게요.'}
+          </p>
+        </div>
+      )}
+      <span className="shrink-0 text-[#C3B79E]" aria-hidden>
+        ›
+      </span>
+    </Link>
   );
 }
 
