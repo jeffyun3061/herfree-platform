@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { MobileMenu } from '@/components/layout/MobileMenu';
+import { ShellMenuIcon, ShellSearchIcon, ShellUserIcon } from '@/components/layout/ShellTopIcons';
 import { BrandMark } from '@/components/brand/BrandMark';
 import { usePageHeaderContext } from '@/contexts/PageHeaderContext';
 import { useAuth } from '@/hooks/useAuth';
@@ -28,32 +29,6 @@ function HeaderIconLink({
     >
       {children}
     </Link>
-  );
-}
-
-function SearchIcon() {
-  return (
-    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <circle cx="11" cy="11" r="7" />
-      <path d="M20 20l-3.4-3.4" />
-    </svg>
-  );
-}
-
-function UserIcon() {
-  return (
-    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M20 21a8 8 0 0 0-16 0" />
-      <circle cx="12" cy="8" r="4" />
-    </svg>
-  );
-}
-
-function MenuIcon() {
-  return (
-    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" aria-hidden>
-      <path d="M4 7h16M4 12h16M4 17h16" />
-    </svg>
   );
 }
 
@@ -99,18 +74,23 @@ export function MobileHeader() {
           </Link>
         </div>
 
-        <div className="flex shrink-0 items-center gap-4">
+        <div className="flex shrink-0 items-center gap-[18px]">
           {showHeaderActions ? (
             <>
               <HeaderIconLink href="/community/search" label="통합 검색">
-                <SearchIcon />
+                <ShellSearchIcon />
               </HeaderIconLink>
               {isLoggedIn ? (
                 <HeaderIconLink href="/mypage" label="마이페이지">
-                  <UserIcon />
+                  <ShellUserIcon />
                 </HeaderIconLink>
               ) : (
-                <Link href="/login" className="text-[13px] font-medium text-[#15201D]" aria-label="로그인">
+                <Link
+                  href="/login"
+                  className="text-[13px] font-medium text-[#15201D]"
+                  aria-label="로그인"
+                  title="로그인"
+                >
                   로그인
                 </Link>
               )}
@@ -119,8 +99,9 @@ export function MobileHeader() {
                 onClick={() => setMenuOpen(true)}
                 className="flex h-8 w-8 items-center justify-center text-[#15201D]"
                 aria-label="메뉴"
+                title="메뉴"
               >
-                <MenuIcon />
+                <ShellMenuIcon />
               </button>
             </>
           ) : null}

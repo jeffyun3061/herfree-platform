@@ -103,8 +103,10 @@ export function BoardTabBar({ boards, selectedBoardId, onSelect }: BoardTabBarPr
                 aria-selected={active}
                 onClick={() => onSelect(board.id)}
                 className={cn(
-                  'community-chip shrink-0 whitespace-nowrap',
-                  active ? 'community-chip-active' : 'community-chip-inactive',
+                  'shrink-0 whitespace-nowrap rounded-full border-[0.5px] px-[15px] py-2 text-[12.5px] font-medium',
+                  active
+                    ? 'border-[#0B3B36] bg-[#0B3B36] text-white'
+                    : 'border-[#ECE5D8] bg-white text-[#5C645A]',
                 )}
               >
                 {label}

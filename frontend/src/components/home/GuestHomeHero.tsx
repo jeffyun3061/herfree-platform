@@ -61,10 +61,7 @@ export function GuestHomeHero() {
       </div>
 
       <div className="absolute bottom-[42px] left-0 right-0 px-[26px]">
-        <p className="mb-2 text-[12px] font-bold text-white/86 [text-shadow:0_1px_10px_rgba(7,37,31,.45)]">
-          우리들의 이야기
-        </p>
-        <h1 className="hf-display text-[32px] font-extrabold leading-[1.28] text-white [text-shadow:0_2px_18px_rgba(7,37,31,.42)]">
+        <h1 className="hf-display text-[30px] font-extrabold leading-[1.4] tracking-[-0.01em] text-white [text-shadow:0_2px_18px_rgba(7,37,31,.4)]">
           편하게
           <br />
           들어오세요

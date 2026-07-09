@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "powershell -NoProfile -ExecutionPolicy Bypass -File ../scripts/dev-frontend.ps1",
+    "dev:clean": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"if (Test-Path .next) { Remove-Item -Recurse -Force .next }; npm run dev\"",
     "dev:next": "next dev -H 0.0.0.0 -p 3000",
     "build": "next build",
     "start": "next start -H 0.0.0.0",

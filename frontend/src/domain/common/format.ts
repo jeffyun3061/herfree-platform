@@ -53,3 +53,10 @@ export function formatPrice(price: number | null): string {
   if (price == null) return '가격 정보 없음';
   return `${price.toLocaleString('ko-KR')}원`;
 }
+
+export function formatMemberDays(isoString: string | null | undefined): string {
+  if (!isoString) return '헤르프리 회원';
+  const diffMs = Date.now() - new Date(isoString).getTime();
+  const days = Math.max(1, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
+  return `가입 ${days}일째`;
+}

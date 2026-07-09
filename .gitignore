@@ -51,3 +51,6 @@ Thumbs.db
 
 # Uploads / local files
 files/
+
+# Designer preview extracts (local reference only)
+.preview-*.txt

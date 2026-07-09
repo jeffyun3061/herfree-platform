@@ -220,14 +220,14 @@ export default function CommunitySearchPage() {
       <section className="flex-1 overflow-y-auto px-5 py-[18px]">
         {!query && (
           <div>
-            <p className="mb-3 text-[12px] font-bold text-[#9A9F94]">추천 검색어</p>
+            <p className="mb-3 text-[12px] font-semibold text-[#9A9F94]">추천 검색어</p>
             <div className="flex flex-wrap gap-2">
               {RECOMMENDED_KEYWORDS.map((item) => (
                 <button
                   key={item}
                   type="button"
                   onClick={() => setKeyword(item)}
-                  className="rounded-full border border-[#EADFCB] bg-[#FBF6EA] px-3.5 py-2 text-[12.5px] font-bold text-[#5C645A]"
+                  className="rounded-full border border-[#EADFCB] bg-[#FBF6EA] px-3.5 py-2 text-[12.5px] font-medium text-[#5C645A]"
                 >
                   {item}
                 </button>
@@ -242,13 +242,10 @@ export default function CommunitySearchPage() {
           </div>
         ) : query && results.length === 0 ? (
           <div className="px-5 py-[60px] text-center">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#FBF6EA] text-[#9A9F94]">
-              <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                <circle cx="11" cy="11" r="7" />
-                <path d="M20 20l-3.4-3.4" />
-              </svg>
-            </div>
-            <h2 className="mt-4 text-[14px] font-bold text-[#65706B]">‘{keyword.trim()}’에 대한 결과가 없어요</h2>
+            <div className="mx-auto mb-3 text-[34px]">🔍</div>
+            <h2 className="text-[13.5px] font-medium text-[#68716B]">
+              ‘{keyword.trim()}’에 대한 결과가 없어요
+            </h2>
             <p className="mt-1.5 text-[12px] leading-[1.6] text-[#9A9F94]">다른 키워드로 검색해보세요</p>
           </div>
         ) : query ? (

@@ -6,11 +6,12 @@ import { RequireAuth } from '@/components/auth/RequireAuth';
 import { useBoards } from '@/hooks/useBoards';
 import { usePostDetail, usePostMutation } from '@/hooks/usePosts';
 import { useAuth } from '@/hooks/useAuth';
-import { TopBar } from '@/components/layout/TopBar';
+import Link from 'next/link';
 import { SymptomBoardRedirectBanner } from '@/components/community/SymptomBoardRedirectBanner';
+import { getCommunityBoardTabLabel } from '@/domain/board/privateBoard';
+import { cn } from '@/lib/cn';
 import { CommunityPhotoAttach } from '@/components/community/CommunityPhotoAttach';
 import { CommunityWriteTipsSheet } from '@/components/community/CommunityWriteTipsSheet';
-import { Textarea } from '@/components/ui/Textarea';
 import { Button } from '@/components/ui/Button';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { getWritableBoards, isStaffOnlyBoardType } from '@/domain/board/types';
@@ -57,6 +58,7 @@ function WritePostForm() {
   const [validationError, setValidationError] = useState<string | null>(null);
   const [initialized, setInitialized] = useState(false);
   const [tipsOpen, setTipsOpen] = useState(false);
+  const [titleFocused, setTitleFocused] = useState(false);
   const [adminSubmitError, setAdminSubmitError] = useState<string | null>(null);
   const [isAdminSubmitting, setIsAdminSubmitting] = useState(false);
 
@@ -237,7 +239,7 @@ function WritePostForm() {
         ? privateMeta.writeLabel
         : isSecretStoryWrite
           ? SECRET_STORY_BOARD_COPY.writeLabel
-          : '커뮤니티 글쓰기';
+          : '새 글 쓰기';
   const titlePlaceholder = isSecretStoryWrite
     ? '사연 제목을 입력해 주세요'
     : privateMeta
@@ -255,46 +257,108 @@ function WritePostForm() {
         : '상담하고 싶은 내용을 편하게 적어 주세요. 관리자만 열람할 수 있습니다.'
       : selectedBoard?.boardType === 'QUESTION'
         ? '궁금한 점을 구체적으로 적어 주세요. 다른 회원들이 댓글로 답해 줄 수 있습니다.'
-        : '경험, 질문, 위로의 말을 자유롭게 적어 주세요.';
+        : '같은 경험을 가진 사람들에게 하고 싶은 이야기를 편하게 적어주세요. 담담하게, 솔직하게.';
+
+  const backHref = boardId > 0 ? `/community/${boardId}` : '/community';
+  const submitLabel = isStaffAdminEdit
+    ? '저장'
+    : isEditMode
+      ? '수정'
+      : '등록';
+  const bottomSubmitLabel = isSubmitting || isAdminSubmitting
+    ? '저장 중…'
+    : isStaffAdminEdit
+      ? '운영자 수정 저장'
+      : isEditMode
+        ? '수정하기'
+        : '등록하기';
+  const boardPickerDisabled = isEditMode || lockedPrivateBoard;
 
   return (
-    <div className="min-h-screen bg-wrtn-bg">
-      <TopBar
-        title={writeTitle}
-        showBack
-        backHref={boardId > 0 ? `/community/${boardId}` : '/community'}
-      />
-      <form onSubmit={(e) => void handleSubmit(e)} className="space-y-6 px-4 py-5">
-        {isSymptomBoard && !isEditMode && <SymptomBoardRedirectBanner />}
-
-        <div className="wrtn-field">
-          <label htmlFor="board" className="wrtn-label">
-            게시물 종류<span className="wrtn-required">*</span>
-          </label>
-          <select
-            id="board"
-            value={boardId}
-            disabled={isEditMode || lockedPrivateBoard}
-            onChange={(e) => setBoardId(Number(e.target.value))}
-            className="wrtn-select disabled:opacity-60"
+    <div className="flex min-h-screen flex-col bg-white pb-10 pt-14">
+      <header className="flex items-center justify-between border-b border-[#EFE9DD] px-[18px] pb-3.5 pt-0.5">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <Link
+            href={backHref}
+            aria-label="뒤로 가기"
+            className="shrink-0 text-[22px] leading-none text-[#6E7671]"
           >
-            {writableBoards.map((board) => (
-              <option key={board.id} value={board.id}>
-                {board.name}
-              </option>
-            ))}
-          </select>
+            ‹
+          </Link>
+          <h1 className="truncate text-[15px] font-bold text-[#15201D]">{writeTitle}</h1>
+        </div>
+        <button
+          type="submit"
+          form="community-write-form"
+          disabled={isSubmitting || isAdminSubmitting || boardId <= 0}
+          className="shrink-0 text-[13.5px] font-bold text-[#0B3B36] disabled:opacity-40"
+        >
+          {submitLabel}
+        </button>
+      </header>
+
+      <form
+        id="community-write-form"
+        onSubmit={(e) => void handleSubmit(e)}
+        className="flex flex-1 flex-col"
+      >
+        {isSymptomBoard && !isEditMode && (
+          <div className="px-5 pt-4">
+            <SymptomBoardRedirectBanner />
+          </div>
+        )}
+
+        <div className="px-5 pt-[18px]">
+          <p className="mb-2.5 text-[12px] font-semibold text-[#9A9F94]">게시판 선택</p>
+          <div className="-mx-5 overflow-x-auto px-5 pb-1 scrollbar-hide">
+            <div className="flex w-max gap-2">
+              {writableBoards.map((board) => {
+                const active = board.id === boardId;
+                const label =
+                  (getCommunityBoardTabLabel(board.boardType) ?? board.name)
+                    .replace(/게시판|방/g, '')
+                    .trim() || board.name;
+
+                return (
+                  <button
+                    key={board.id}
+                    type="button"
+                    disabled={boardPickerDisabled}
+                    onClick={() => setBoardId(board.id)}
+                    className={cn(
+                      'shrink-0 whitespace-nowrap rounded-full border-[0.5px] px-[15px] py-2 text-[12.5px] font-medium transition-colors disabled:opacity-60',
+                      active
+                        ? 'border-[#0B3B36] bg-[#0B3B36] text-white'
+                        : 'border-[#ECE5D8] bg-white text-[#5C645A]',
+                    )}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
 
-        <div className="wrtn-field">
+        <div className="px-5 pt-[18px]">
           <div className="flex items-center gap-1.5">
-            <label htmlFor="title" className="wrtn-label">
-              게시물 주제<span className="wrtn-required">*</span>
-            </label>
+            <input
+              id="title"
+              value={title}
+              maxLength={POST_TITLE_MAX_LENGTH}
+              onChange={(e) => setTitle(e.target.value)}
+              onFocus={() => setTitleFocused(true)}
+              onBlur={() => setTitleFocused(false)}
+              placeholder={titlePlaceholder}
+              className={cn(
+                'w-full border-none bg-transparent px-0.5 py-2 text-[16px] font-semibold text-[#1E2621] outline-none',
+                titleFocused ? 'border-b border-[#0B3B36]' : 'border-b border-[#E6DECF]',
+              )}
+            />
             <button
               type="button"
               onClick={() => setTipsOpen(true)}
-              className="flex h-5 w-5 items-center justify-center rounded-full bg-wrtn-bg text-wrtn-muted hover:text-primary"
+              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[#9A9F94] hover:text-[#0B3B36]"
               aria-label="글쓰기 예시 보기"
             >
               <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2">
@@ -303,61 +367,69 @@ function WritePostForm() {
               </svg>
             </button>
           </div>
-          <input
-            id="title"
-            value={title}
-            maxLength={POST_TITLE_MAX_LENGTH}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder={titlePlaceholder}
-            className="wrtn-input"
-          />
-          <p className="wrtn-char-count">
+          <p className="mt-1 text-right text-[11px] text-[#9A9F94]">
             {title.length}/{titleCounterMax}
           </p>
         </div>
 
         {!isMaskedWrite && (
-          <CommunityPhotoAttach imageUrl={imageUrl} onChange={setImageUrl} disabled={isSubmitting} />
+          <div className="px-5 pt-4">
+            <CommunityPhotoAttach imageUrl={imageUrl} onChange={setImageUrl} disabled={isSubmitting} />
+          </div>
         )}
 
-        <Textarea
-          label="본문"
-          required
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder={contentPlaceholder}
-        />
-
-        {!isMaskedWrite && (
-          <label className="flex items-center gap-3 rounded-xl border border-wrtn-border bg-white px-4 py-3.5 text-sm text-ink">
-            <input
-              type="checkbox"
-              checked={isAnonymous}
-              onChange={(e) => setIsAnonymous(e.target.checked)}
-              className="h-4 w-4 rounded border-wrtn-border text-primary focus:ring-primary"
-            />
-            익명으로 작성
+        <div className="flex-1 px-5 pt-3.5">
+          <label htmlFor="content" className="sr-only">
+            본문
           </label>
-        )}
+          <textarea
+            id="content"
+            required
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder={contentPlaceholder}
+            className="min-h-[200px] w-full resize-y rounded-[14px] border border-[#ECE5D8] bg-[#F8F4EC] p-[15px] text-[13.5px] leading-[1.7] text-[#1E2621] placeholder:text-[#B4B2A6] outline-none focus:border-[#0B3B36]/35"
+          />
+        </div>
 
-        {validationError && <ErrorMessage message={validationError} />}
-        {adminSubmitError && <ErrorMessage message={adminSubmitError} />}
-        {error && <ErrorMessage message={error} />}
+        <div className="mt-auto flex items-center gap-2.5 px-5 pt-3">
+          {!isMaskedWrite && (
+            <label className="flex cursor-pointer items-center gap-1.5 text-[12px] text-[#6E766F]">
+              <input
+                type="checkbox"
+                checked={isAnonymous}
+                onChange={(e) => setIsAnonymous(e.target.checked)}
+                className="sr-only"
+              />
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke={isAnonymous ? '#0B3B36' : '#9FB6AC'}
+                strokeWidth="2"
+                aria-hidden
+              >
+                <rect x="5" y="11" width="14" height="9" rx="2" />
+                <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+              </svg>
+              익명으로 작성
+            </label>
+          )}
+          <Button
+            type="submit"
+            disabled={isSubmitting || isAdminSubmitting || boardId <= 0}
+            className="ml-auto rounded-xl px-[22px] py-[11px] text-[13.5px] font-bold"
+          >
+            {bottomSubmitLabel}
+          </Button>
+        </div>
 
-        <Button
-          type="submit"
-          fullWidth
-          size="lg"
-          disabled={isSubmitting || isAdminSubmitting || boardId <= 0}
-        >
-          {isSubmitting || isAdminSubmitting
-            ? '저장 중…'
-            : isStaffAdminEdit
-              ? '운영자 수정 저장'
-              : isEditMode
-                ? '수정하기'
-                : '등록하기'}
-        </Button>
+        <div className="space-y-3 px-5 pt-4">
+          {validationError && <ErrorMessage message={validationError} />}
+          {adminSubmitError && <ErrorMessage message={adminSubmitError} />}
+          {error && <ErrorMessage message={error} />}
+        </div>
       </form>
 
       <CommunityWriteTipsSheet open={tipsOpen} onClose={() => setTipsOpen(false)} />

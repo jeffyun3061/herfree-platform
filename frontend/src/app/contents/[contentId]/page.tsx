@@ -4,11 +4,10 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useMemo } from 'react';
 import { useContentDetail, useContentList } from '@/hooks/useContents';
-import { Badge } from '@/components/ui/Badge';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { MedicalDisclaimer } from '@/components/layout/MedicalDisclaimer';
-import { estimateReadMinutes, getContentPreview, getContentTypeLabel } from '@/domain/content/types';
+import { estimateReadMinutes, getContentPreview } from '@/domain/content/types';
 import { PUBLIC_IMAGES } from '@/domain/assets/static';
 import { getErrorMessage } from '@/lib/api/client';
 
@@ -39,9 +38,9 @@ export default function ContentDetailPage() {
 
   return (
     <>
-      <article className="mx-auto max-w-app pb-20 lg:pb-10">
-        <section className="overflow-hidden bg-[#07251F] shadow-[0_22px_48px_-34px_rgba(7,37,31,.7)] lg:rounded-[26px]">
-          <div className="relative min-h-[230px]">
+      <article className="mx-auto max-w-app pb-[60px] lg:pb-10">
+        <section className="overflow-hidden bg-[#07251F]">
+          <div className="relative h-[230px]">
             <img
               src={content.imageUrl || PUBLIC_IMAGES.homeHero}
               alt=""
@@ -51,32 +50,29 @@ export default function ContentDetailPage() {
             <Link
               href="/contents"
               aria-label="칼럼 목록으로 돌아가기"
-              className="absolute left-4 top-6 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-black/18 text-[28px] leading-none text-white backdrop-blur-sm"
+              className="absolute left-4 top-[54px] z-10 text-[24px] leading-none text-white"
             >
               ‹
             </Link>
-            <div className="relative flex min-h-[250px] flex-col justify-end px-[22px] pb-[18px] pt-16 text-white">
-              <div className="mb-3 flex items-center gap-2">
-                <Badge variant="gold">{content.category}</Badge>
-                <span className="rounded-full bg-white/16 px-2.5 py-1 text-[11px] font-semibold text-white/82">
-                  {getContentTypeLabel(content.contentType)}
-                </span>
-              </div>
-              <h1 className="hf-display text-[22px] font-extrabold leading-[1.45] drop-shadow-[0_2px_14px_rgba(7,37,31,.4)]">
+            <div className="absolute inset-x-0 bottom-[18px] px-[22px] text-white">
+              <span className="inline-block rounded-[7px] bg-white/[0.92] px-2.5 py-1 text-[10.5px] font-bold text-[#04342C]">
+                {content.category}
+              </span>
+              <h1 className="hf-display mt-3 text-[22px] font-extrabold leading-[1.45] tracking-[-0.01em] drop-shadow-[0_2px_14px_rgba(7,37,31,.4)]">
                 {content.title}
               </h1>
             </div>
           </div>
         </section>
 
-        <div className="flex items-center gap-2 px-6 pt-3 text-[11px] text-[#A6ABA0]">
+        <div className="flex items-center gap-2 px-6 pt-[14px] text-[11px] text-[#A6ABA0]">
           <span>{new Date(content.createdAt).toLocaleDateString('ko-KR')}</span>
           <span className="h-0.5 w-0.5 rounded-full bg-[#CBD0C7]" />
           <span>{estimateReadMinutes(content.content)}분 읽기</span>
         </div>
 
-        <div className="px-6 pt-5">
-          <div className="whitespace-pre-wrap text-[14.5px] leading-[2.05] text-[#2C342E]">
+        <div className="px-6 pt-[18px]">
+          <div className="whitespace-pre-wrap text-[14px] leading-[1.95] text-[#2C342E]">
             {content.content}
           </div>
         </div>
@@ -89,17 +85,17 @@ export default function ContentDetailPage() {
           href="https://open.kakao.com/o/srMDr6gi"
           target="_blank"
           rel="noreferrer"
-          className="mx-5 mt-5 flex rounded-[16px] bg-[#0B3B36] px-5 py-[18px] shadow-[0_14px_30px_-18px_rgba(11,59,54,.6)]"
+          className="mx-6 mt-[14px] flex items-center gap-3 rounded-[16px] bg-[#07251F] px-5 py-[18px]"
         >
           <span className="min-w-0 flex-1">
-            <span className="block text-[14px] font-extrabold text-white">
+            <span className="block text-[13.5px] font-bold text-white">
               더 깊은 이야기가 필요하다면
             </span>
-            <span className="mt-1 block text-[12.5px] text-white/72">
-              1:1 비밀상담으로 편하게 나눠보세요.
+            <span className="mt-[3px] block text-[12px] text-white/72">
+              1:1 비밀상담으로 편하게 나눠보세요
             </span>
           </span>
-          <span className="text-[22px] text-[#F0C778]">›</span>
+          <span className="text-[20px] text-[#F0C778]">›</span>
         </a>
 
         <section className="px-5 pt-7">

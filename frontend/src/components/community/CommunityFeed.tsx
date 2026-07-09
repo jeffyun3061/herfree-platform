@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useBoards } from '@/hooks/useBoards';
+import { useJournalPublicHomeStats } from '@/hooks/useJournal';
 import { usePostList } from '@/hooks/usePosts';
 import { BoardTabBar } from '@/components/community/BoardTabBar';
 import { CommunityFab } from '@/components/community/CommunityFab';
@@ -19,7 +20,7 @@ import { Button } from '@/components/ui/Button';
 import { AdminPublishFab, AdminPublishLink } from '@/components/admin/AdminPublishLink';
 import { InlineTopActions } from '@/components/layout/InlineTopActions';
 import { getWritableBoards, isStaffOnlyBoardType } from '@/domain/board/types';
-import { getCommunityBoards, getCommunityBoardTabLabel, isSecretStoryBoardType, SECRET_STORY_BOARD_COPY } from '@/domain/board/privateBoard';
+import { getCommunityBoards, isSecretStoryBoardType, SECRET_STORY_BOARD_COPY } from '@/domain/board/privateBoard';
 import { validatePostSearchKeyword } from '@/domain/post/search';
 import { isStaff } from '@/domain/user/types';
 import { getErrorMessage } from '@/lib/api/client';
@@ -37,35 +38,48 @@ function LockIcon() {
   );
 }
 
-function CommunityLockedPreview({ loginHref, boardLabel }: { loginHref: string; boardLabel?: string }) {
+function CommunityLockedPreview({
+  totalStories,
+  memberCount,
+}: {
+  totalStories: number;
+  memberCount: number | null | undefined;
+}) {
+  const storyCount = totalStories > 0 ? totalStories : 128;
+  const memberLine =
+    memberCount && memberCount > 0
+      ? `${memberCount.toLocaleString('ko-KR')}명의 회원과 함께하는`
+      : '회원과 함께하는';
+
   return (
     <div className="pb-10">
       <section className="mx-5 mt-[18px] overflow-hidden rounded-[18px] bg-white px-[18px] pt-[18px] shadow-[0_1px_2px_rgba(20,30,25,.04),0_16px_34px_-24px_rgba(20,30,25,.22)]">
-        <p className="mb-2 text-[11.5px] font-semibold text-[#15695E]">
-          {boardLabel ? `${boardLabel} · FAQ` : '질문 · FAQ'}
-        </p>
-        <h3 className="mb-3 text-[16.5px] font-bold leading-[1.45] tracking-normal text-[#15201D]">
+        <p className="mb-2 text-[11.5px] font-semibold text-[#15695E]">질문 · FAQ ›</p>
+        <h3 className="mb-3 text-[16.5px] font-bold leading-[1.45] tracking-[-0.01em] text-[#15201D]">
           오늘 받은 결과, 다들 어떻게 받아들이셨어요?
         </h3>
-        <div className="flex items-center gap-2.5 border-b border-[#F0EADF] pb-3.5">
-          <div className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-[#EDF2EC] text-sm">
-            h
+        <div className="flex items-center gap-[9px] border-b border-[#F0EADF] pb-3.5">
+          <div className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-[#EDF2EC] text-[14px]">
+            🌙
           </div>
           <div className="min-w-0">
-            <p className="text-[12.5px] font-semibold text-[#2C342E]">익명사용자</p>
+            <p className="text-[12.5px] font-semibold text-[#2C342E]">새벽두시</p>
             <p className="mt-0.5 text-[10.5px] text-[#A6ABA0]">2026.06.26 13:03 · 조회 61</p>
           </div>
-          <span className="ml-auto whitespace-nowrap text-[11px] text-[#A6ABA0]">댓글 0</span>
+          <span className="ml-auto inline-flex shrink-0 items-center gap-1 text-[11px] text-[#A6ABA0]">
+            <ReplyIcon />
+            댓글 0
+          </span>
         </div>
-        <div className="relative py-5 pb-8">
+        <div className="relative py-5 pb-[34px]">
           <div aria-hidden className="pointer-events-none select-none opacity-55 blur-[5px]">
-            <div className="mb-2.5 h-2.5 w-[96%] rounded-full bg-[#E5DECF]" />
-            <div className="mb-2.5 h-2.5 w-[88%] rounded-full bg-[#E5DECF]" />
-            <div className="mb-2.5 h-2.5 w-[92%] rounded-full bg-[#E5DECF]" />
-            <div className="h-2.5 w-[60%] rounded-full bg-[#E5DECF]" />
+            <div className="mb-[11px] h-[11px] w-[96%] rounded-md bg-[#E5DECF]" />
+            <div className="mb-[11px] h-[11px] w-[88%] rounded-md bg-[#E5DECF]" />
+            <div className="mb-[11px] h-[11px] w-[92%] rounded-md bg-[#E5DECF]" />
+            <div className="h-[11px] w-[60%] rounded-md bg-[#E5DECF]" />
           </div>
           <div className="absolute inset-0 flex items-center justify-center">
-            <span className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-[#6E7671]">
+            <span className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-[#68716B]">
               <LockIcon />
               가입하면 바로 글을 볼 수 있어요
             </span>
@@ -73,31 +87,41 @@ function CommunityLockedPreview({ loginHref, boardLabel }: { loginHref: string; 
         </div>
       </section>
 
-      <section className="mx-5 mt-6 px-1.5 text-center">
+      <section className="mx-5 mt-[26px] px-1.5 text-center">
         <p className="text-[16px] font-bold leading-[1.6] text-[#15201D]">
-          같은 경험을 가진 사람들의
+          {memberLine}
           <br />
-          <span className="text-[#15695E]">비공개 커뮤니티</span>를
+          <span className="text-[#15695E]">헤르프리 비공개 커뮤니티</span>에
           <br />
-          함께 둘러보세요
+          함께해 보세요.
         </p>
-        <p className="mt-3 text-[12.5px] leading-[1.75] text-[#9A9F94]">
-          일상과 고민을 나누는 익명 공간에서
+        <p className="mt-[13px] text-[12.5px] leading-[1.75] text-[#9A9F94]">
+          같은 경험을 가진 사람들이 일상과 고민을
           <br />
-          비슷한 마음을 조용히 확인할 수 있어요.
+          나누는 익명 공간이에요.
         </p>
-        <p className="mt-5 text-[13px] text-[#6E7671]">가입하면 커뮤니티 글을 바로 볼 수 있어요.</p>
+        <p className="mt-5 text-[13px] text-[#68716B]">
+          가입하면 {storyCount.toLocaleString('ko-KR')}개의 이야기를 볼 수 있어요
+        </p>
         <Link
           href="/signup?from=/community"
-          className="mt-4 flex h-12 items-center justify-center rounded-[14px] bg-[#0B3B36] text-[14.5px] font-bold text-white shadow-[0_14px_30px_-14px_rgba(11,59,54,.6)]"
+          className="mt-4 flex h-[52px] items-center justify-center rounded-[14px] bg-[#0B3B36] text-[14.5px] font-bold text-white shadow-[0_14px_30px_-14px_rgba(11,59,54,.6)]"
         >
           30초 만에 가입하기
         </Link>
-        <Link href={loginHref} className="mt-4 block text-[12.5px] text-[#A6ABA0]">
-          이미 계정이 있다면 로그인
+        <Link href="/" className="mt-4 block text-[12.5px] text-[#A6ABA0]">
+          ← 처음으로
         </Link>
       </section>
     </div>
+  );
+}
+
+function ReplyIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#B4B2A6" strokeWidth="2" strokeLinecap="round" aria-hidden>
+      <path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.9-.9L3 21l1.9-5.6A8.5 8.5 0 1 1 21 11.5z" />
+    </svg>
   );
 }
 
@@ -177,6 +201,10 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
     postListPeriodQuery(sort, period),
     { enabled: isReady && isLoggedIn },
   );
+  const { postPage: guestPostPage } = usePostList(undefined, 1, '', 'createdAt,desc', undefined, {
+    enabled: isReady && !isLoggedIn,
+  });
+  const { data: homeStats } = useJournalPublicHomeStats();
 
   const communityBoards = useMemo(() => getCommunityBoards(boards), [boards]);
 
@@ -287,20 +315,19 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
       ? `/community/write?boardId=${selectedBoardId}`
       : '/community/write';
 
-  const loginHref = `/login?from=${encodeURIComponent(writeHref)}`;
 
   const isLoadingAll = isLoggedIn && (boardsLoading || isLoading);
   const listError = isLoggedIn ? (boardsError ?? error) : null;
-  const selectedBoardLabel = selectedBoard
-    ? getCommunityBoardTabLabel(selectedBoard.boardType) ?? selectedBoard.name
-    : undefined;
+  const guestStoryCount = guestPostPage.totalElements || guestPostPage.content.length;
 
   return (
     <div className="community-screen mx-auto max-w-app pb-24 lg:max-w-none">
-      <div className="flex items-start justify-between gap-3 px-5 pt-7 lg:pt-8">
+      <div className="flex items-start justify-between gap-3 px-5 pt-[58px]">
         <div className="min-w-0">
-          <h2 className="hf-display text-[25px] font-extrabold leading-tight text-[#15201D]">커뮤니티</h2>
-          <p className="mt-1.5 text-[12.5px] leading-relaxed text-[#8B9590]">
+          <h2 className="hf-display text-[24px] font-extrabold leading-tight tracking-[-0.01em] text-[#15201D]">
+            커뮤니티
+          </h2>
+          <p className="mt-[5px] text-[12.5px] leading-relaxed text-[#9A9F94]">
             같은 경험을 가진 사람들의 이야기가 모이는 곳
           </p>
         </div>
@@ -326,7 +353,10 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
       )}
 
       {!isReady || !isLoggedIn ? (
-        <CommunityLockedPreview boardLabel={selectedBoardLabel} loginHref={loginHref} />
+        <CommunityLockedPreview
+          totalStories={guestStoryCount}
+          memberCount={homeStats?.totalUsers}
+        />
       ) : (
         <div className="px-5">
           {isSecretStoryBoard && (
@@ -339,15 +369,10 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
           )}
 
           {!isLoadingAll && !listError && (
-            <div className="mt-3 flex items-center justify-between gap-3">
+            <div className="mt-2 flex items-center justify-between gap-3">
               <p className="text-[11.5px] text-[#9A9F94]">
                 총 {postPage.totalElements.toLocaleString('ko-KR')}개의 이야기
               </p>
-              {!isNoticeBoard && (
-                <Link href="/community/search" className="text-[11.5px] font-semibold text-[#15695E] lg:hidden">
-                  검색
-                </Link>
-              )}
             </div>
           )}
 
@@ -429,7 +454,7 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
             <CommunityPageSizeSelect value={pageSize} onChange={handlePageSizeChange} />
           )}
 
-          {canCommunityWrite && <CommunityFab href={writeHref} />}
+          {canCommunityWrite && <CommunityFab href={writeHref} ariaLabel="커뮤니티 글쓰기" />}
           {isNoticeBoard && <AdminPublishFab tab="notices" label="공지 올리기" />}
         </div>
       )}

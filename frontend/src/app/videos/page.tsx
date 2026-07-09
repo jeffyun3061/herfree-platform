@@ -19,50 +19,59 @@ export default function VideosPage() {
     boards.forEach((board) => map.set(board.id, board.name.replace(/게시판/, '')));
     return map;
   }, [boards]);
-  const latestVideoId = useMemo(() => {
+
+  const featuredVideoId = useMemo(() => {
     if (videoPage.content.length === 0) return null;
+    const featured = videoPage.content.find((video) => video.isFeatured);
+    if (featured) return featured.id;
     return videoPage.content.reduce((latest, video) => {
       const latestTime = new Date(latest.createdAt).getTime();
       const videoTime = new Date(video.createdAt).getTime();
       return videoTime > latestTime ? video : latest;
     }, videoPage.content[0]).id;
   }, [videoPage.content]);
-  const latestVideo = useMemo(() => {
-    if (latestVideoId == null) return null;
-    return videoPage.content.find((video) => video.id === latestVideoId) ?? null;
-  }, [latestVideoId, videoPage.content]);
+
+  const featuredVideo = useMemo(() => {
+    if (featuredVideoId == null) return null;
+    return videoPage.content.find((video) => video.id === featuredVideoId) ?? null;
+  }, [featuredVideoId, videoPage.content]);
+
   const restVideos = useMemo(
-    () => videoPage.content.filter((video) => video.id !== latestVideoId),
-    [latestVideoId, videoPage.content],
+    () => videoPage.content.filter((video) => video.id !== featuredVideoId),
+    [featuredVideoId, videoPage.content],
   );
 
   return (
     <>
       <div className="media-screen mx-auto max-w-app pb-24 lg:max-w-none">
-        <div className="flex items-start justify-between gap-3 px-5 pt-7 lg:pt-8">
+        <div className="flex items-start justify-between gap-3 px-5 pt-[58px]">
           <div className="min-w-0">
-            <h1 className="hf-display text-[25px] font-extrabold leading-tight text-[#15201D]">헤르프리 영상</h1>
-            <p className="mt-1.5 text-[12.5px] text-[#8B9590]">
-              유튜브 채널에서 다뤄온 이야기들
-            </p>
+            <h1 className="hf-display text-[24px] font-semibold leading-tight text-[#15201D]">헤르프리 영상</h1>
+            <p className="mt-[5px] text-[12.5px] text-[#9A9F94]">유튜브 채널에서 다뤄온 이야기들</p>
           </div>
           <InlineTopActions />
         </div>
 
         <div className="mx-5 mt-4 hidden items-start justify-end gap-3 lg:flex">
-          <div className="shrink-0">
-            <AdminPublishLink tab="videos" label="영상 등록" />
-          </div>
+          <AdminPublishLink tab="videos" label="영상 등록" />
         </div>
 
+        {!isLoading && !error && videoPage.content.length > 0 && (
+          <p className="px-5 pt-[18px] text-[11.5px] text-[#9A9F94]">
+            총 {videoPage.totalElements.toLocaleString('ko-KR')}개의 영상
+          </p>
+        )}
+
         {isLoading ? (
-          <div className="mt-[18px] flex flex-col gap-3.5 px-5">
+          <div className="mt-[14px] flex flex-col gap-3.5 px-5">
             {[1, 2, 3].map((i) => (
               <VideoFeedCardSkeleton key={i} />
             ))}
           </div>
         ) : error ? (
-          <div className="px-5 pt-5"><ErrorMessage message={getErrorMessage(error)} /></div>
+          <div className="px-5 pt-5">
+            <ErrorMessage message={getErrorMessage(error)} />
+          </div>
         ) : videoPage.content.length === 0 ? (
           <div className="px-5 pt-5">
             <EmptyState
@@ -71,21 +80,20 @@ export default function VideosPage() {
             />
           </div>
         ) : (
-          <div className="mt-[18px] space-y-4 px-5">
-            {latestVideo && (
+          <div className="mx-auto mt-[14px] max-w-app space-y-3.5 px-5">
+            {featuredVideo && (
               <VideoFeedCard
-                video={latestVideo}
+                video={featuredVideo}
                 featured
                 categoryLabel={
-                  latestVideo.relatedBoardId != null
-                    ? boardNameById.get(latestVideo.relatedBoardId) ?? null
+                  featuredVideo.relatedBoardId != null
+                    ? boardNameById.get(featuredVideo.relatedBoardId) ?? null
                     : null
                 }
               />
             )}
-
             {restVideos.length > 0 && (
-              <div className="grid gap-3.5 sm:grid-cols-2">
+              <div className="flex flex-col gap-3.5">
                 {restVideos.map((video) => (
                   <VideoFeedCard
                     key={video.id}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { PRODROMAL_OPTIONS, formatTriggerLabels, type JournalRecord } from '@/domain/journal/types';
 import {
   formatConditionSummary,
@@ -152,8 +152,8 @@ function RoutineBadge({ record }: { record: JournalRecord }) {
   );
 }
 
-/** 디자이너 개선판 "기록 상세" 화면 구성의 오버레이 버전. */
-function JournalRecordDetailSheet({
+/** 디자이너 개선판 "기록 상세" 전체화면. */
+function JournalRecordDetailScreen({
   record,
   onClose,
   onEdit,
@@ -164,127 +164,141 @@ function JournalRecordDetailSheet({
 }) {
   const prodromes = record.prodromalSymptoms ?? [];
 
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   return (
     <div
-      className="fixed inset-0 z-50 overflow-y-auto bg-black/40 px-4 py-6"
+      className="fixed inset-0 z-50 overflow-y-auto bg-[#F3EDE3]"
       role="dialog"
       aria-modal="true"
       aria-label="기록 상세"
     >
-      <div className="mx-auto flex min-h-full w-full max-w-app items-end sm:items-center">
-        <div className="w-full space-y-3.5 rounded-[24px] bg-[#F3EDE3] p-4 shadow-[0_30px_80px_-36px_rgba(7,37,31,.65)]">
-          <div className="flex items-center gap-2 px-1">
-            <button
-              type="button"
-              onClick={onClose}
-              className="text-[22px] leading-none text-[#5C645A]"
-              aria-label="기록 상세 닫기"
-            >
-              ‹
-            </button>
-            <span className="text-[16px] font-bold text-[#1E2621]">기록 상세</span>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2 px-1">
-            <span className="text-[17px] font-bold text-[#1E2621]">
-              {formatDateTitle(record.recordDate)}
-            </span>
-            <span className="text-[12px] text-[#B4B2A6]">{formatWeekday(record.recordDate)}</span>
-            <RoutineBadge record={record} />
-            {record.hadSymptoms && (
-              <span className="rounded-[7px] bg-[#F6E0D2] px-2 py-[3px] text-[10.5px] font-bold text-[#8A3D1E]">
-                재발
-              </span>
-            )}
-          </div>
-
-          <div className="rounded-[20px] bg-white p-5 shadow-[0_1px_2px_rgba(20,30,25,.04),0_14px_32px_-24px_rgba(20,30,25,.2)]">
-            <h3 className="mb-1.5 text-[14px] font-bold text-[#1E2621]">기본 컨디션</h3>
-            <div className="flex items-center justify-between py-[11px]">
-              <span className="text-[13px] text-[#5C645A]">😴 수면</span>
-              <span className="text-[13.5px] font-semibold text-[#1E2621]">
-                {formatSleepLabel(record)}
-              </span>
-            </div>
-            <div className="flex items-center justify-between border-t-[0.5px] border-[#F2ECE1] py-[11px]">
-              <span className="text-[13px] text-[#5C645A]">💊 영양제</span>
-              <span
-                className={cn(
-                  'text-[13.5px] font-semibold',
-                  record.supplementTaken ? 'text-[#1D7A5E]' : 'text-[#C0512F]',
-                )}
-              >
-                {record.supplementTaken ? '복용' : '빠뜨림'}
-              </span>
-            </div>
-            <div className="flex items-center justify-between border-t-[0.5px] border-[#F2ECE1] py-[11px]">
-              <span className="text-[13px] text-[#5C645A]">🧠 스트레스</span>
-              <span className="text-[13.5px] font-semibold text-[#1E2621]">
-                {formatStressLabel(record.stressLevel)}
-              </span>
-            </div>
-          </div>
-
-          <div className="rounded-[20px] bg-white p-5 shadow-[0_1px_2px_rgba(20,30,25,.04),0_14px_32px_-24px_rgba(20,30,25,.2)]">
-            <h3 className="mb-3 text-[14px] font-bold text-[#1E2621]">전조증상</h3>
-            {prodromes.length > 0 ? (
-              <div className="flex flex-wrap gap-[7px]">
-                {prodromes.map((value) => (
-                  <span
-                    key={value}
-                    className="rounded-[9px] border border-[#1D9E75] bg-[#E3F1EA] px-[13px] py-[7px] text-[12px] font-medium text-[#04342C]"
-                  >
-                    {prodromeLabel(value)}
-                  </span>
-                ))}
-              </div>
-            ) : (
-              <p className="text-[13px] text-[#9A9F94]">없었어요</p>
-            )}
-          </div>
-
-          <div className="rounded-[20px] bg-white p-5 shadow-[0_1px_2px_rgba(20,30,25,.04),0_14px_32px_-24px_rgba(20,30,25,.2)]">
-            <h3 className="mb-3 text-[14px] font-bold text-[#1E2621]">증상</h3>
-            {record.hadSymptoms && (record.severity ?? 0) > 0 ? (
-              <div className="flex items-center gap-2.5">
-                <span
-                  className="rounded-[8px] px-[11px] py-1 text-[11.5px] font-bold text-white"
-                  style={{ background: severityColor(record.severity) }}
-                >
-                  심각도 {record.severity}
-                </span>
-                <span className="text-[13.5px] font-semibold text-[#1E2621]">
-                  {severityLabel(record.severity)}
-                </span>
-              </div>
-            ) : (
-              <p className="text-[13px] text-[#9A9F94]">없었어요</p>
-            )}
-          </div>
-
-          <div className="rounded-[20px] bg-white p-5 shadow-[0_1px_2px_rgba(20,30,25,.04),0_14px_32px_-24px_rgba(20,30,25,.2)]">
-            <h3 className="mb-3 text-[14px] font-bold text-[#1E2621]">메모</h3>
-            <div
-              className={cn(
-                'min-h-[60px] whitespace-pre-line rounded-[12px] border-[0.5px] border-[#ECE5D8] bg-[#F8F4EC] px-[13px] py-[13px] text-[13px] leading-[1.6]',
-                record.memo ? 'text-[#3C443E]' : 'text-[#B4B2A6]',
-              )}
-            >
-              {record.memo || '메모 없음'}
-            </div>
-          </div>
-
+      <div className="mx-auto flex w-full max-w-app flex-col gap-3.5 px-4 pb-10 pt-[56px]">
+        <div className="flex items-center gap-2 px-1">
           <button
             type="button"
-            onClick={() => {
-              onClose();
-              onEdit(record);
-            }}
-            className="w-full rounded-[14px] bg-[#0B3B36] px-4 py-[15px] text-center text-[14.5px] font-bold text-white"
+            onClick={onClose}
+            className="text-[22px] leading-none text-[#5C645A]"
+            aria-label="기록 상세 닫기"
           >
-            수정하기
+            ‹
           </button>
+          <span className="text-[16px] font-bold text-[#1E2621]">기록 상세</span>
         </div>
+
+        <div className="flex flex-wrap items-center gap-2 px-1">
+          <span className="text-[17px] font-bold text-[#1E2621]">
+            {formatDateTitle(record.recordDate)}
+          </span>
+          <span className="text-[12px] text-[#B4B2A6]">{formatWeekday(record.recordDate)}</span>
+          <RoutineBadge record={record} />
+          {record.hadSymptoms && (
+            <span className="rounded-[7px] bg-[#F6E0D2] px-2 py-[3px] text-[10.5px] font-bold text-[#8A3D1E]">
+              재발
+            </span>
+          )}
+        </div>
+
+        <div className="rounded-[20px] bg-white p-5 shadow-[0_1px_2px_rgba(20,30,25,.04),0_14px_32px_-24px_rgba(20,30,25,.2)]">
+          <h3 className="mb-1.5 text-[14px] font-bold text-[#1E2621]">기본 컨디션</h3>
+          <div className="flex items-center justify-between py-[11px]">
+            <span className="text-[13px] text-[#5C645A]">😴 수면</span>
+            <span className="text-[13.5px] font-semibold text-[#1E2621]">
+              {formatSleepLabel(record)}
+            </span>
+          </div>
+          <div className="flex items-center justify-between border-t-[0.5px] border-[#F2ECE1] py-[11px]">
+            <span className="text-[13px] text-[#5C645A]">💊 영양제</span>
+            <span
+              className={cn(
+                'text-[13.5px] font-semibold',
+                record.supplementTaken ? 'text-[#1D7A5E]' : 'text-[#C0512F]',
+              )}
+            >
+              {record.supplementTaken ? '복용' : '빠뜨림'}
+            </span>
+          </div>
+          <div className="flex items-center justify-between border-t-[0.5px] border-[#F2ECE1] py-[11px]">
+            <span className="text-[13px] text-[#5C645A]">🧠 스트레스</span>
+            <span className="text-[13.5px] font-semibold text-[#1E2621]">
+              {formatStressLabel(record.stressLevel)}
+            </span>
+          </div>
+        </div>
+
+        <div className="rounded-[20px] bg-white p-5 shadow-[0_1px_2px_rgba(20,30,25,.04),0_14px_32px_-24px_rgba(20,30,25,.2)]">
+          <h3 className="mb-3 text-[14px] font-bold text-[#1E2621]">전조증상</h3>
+          {prodromes.length > 0 ? (
+            <div className="flex flex-wrap gap-[7px]">
+              {prodromes.map((value) => (
+                <span
+                  key={value}
+                  className="rounded-[9px] border border-[#1D9E75] bg-[#E3F1EA] px-[13px] py-[7px] text-[12px] font-medium text-[#04342C]"
+                >
+                  {prodromeLabel(value)}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="text-[13px] text-[#9A9F94]">없었어요</p>
+          )}
+        </div>
+
+        <div className="rounded-[20px] bg-white p-5 shadow-[0_1px_2px_rgba(20,30,25,.04),0_14px_32px_-24px_rgba(20,30,25,.2)]">
+          <h3 className="mb-3 text-[14px] font-bold text-[#1E2621]">증상</h3>
+          {record.hadSymptoms && (record.severity ?? 0) > 0 ? (
+            <div className="flex items-center gap-2.5">
+              <span
+                className="rounded-[8px] px-[11px] py-1 text-[11.5px] font-bold text-white"
+                style={{ background: severityColor(record.severity) }}
+              >
+                심각도 {record.severity}
+              </span>
+              <span className="text-[13.5px] font-semibold text-[#1E2621]">
+                {severityLabel(record.severity)}
+              </span>
+            </div>
+          ) : (
+            <p className="text-[13px] text-[#9A9F94]">없었어요</p>
+          )}
+        </div>
+
+        <div className="rounded-[20px] bg-white p-5 shadow-[0_1px_2px_rgba(20,30,25,.04),0_14px_32px_-24px_rgba(20,30,25,.2)]">
+          <h3 className="mb-3 text-[14px] font-bold text-[#1E2621]">메모</h3>
+          <div
+            className={cn(
+              'min-h-[60px] whitespace-pre-line rounded-[12px] border-[0.5px] border-[#ECE5D8] bg-[#F8F4EC] px-[13px] py-[13px] text-[13px] leading-[1.6]',
+              record.memo ? 'text-[#3C443E]' : 'text-[#B4B2A6]',
+            )}
+          >
+            {record.memo || '메모 없음'}
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => {
+            onClose();
+            onEdit(record);
+          }}
+          className="w-full rounded-[14px] bg-[#0B3B36] px-4 py-[15px] text-center text-[14.5px] font-bold text-white"
+        >
+          수정하기
+        </button>
       </div>
     </div>
   );
@@ -577,7 +591,7 @@ export function JournalHistoryList({
         </div>
       )}
       {selectedRecord && (
-        <JournalRecordDetailSheet
+        <JournalRecordDetailScreen
           record={selectedRecord}
           onClose={() => setSelectedRecordId(null)}
           onEdit={onEdit}

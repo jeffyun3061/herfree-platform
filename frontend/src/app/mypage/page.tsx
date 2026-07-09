@@ -18,7 +18,7 @@ import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { LoggedOutMyPagePromptCard } from '@/components/mypage/LoggedOutMyPagePrompt';
 import { isAdmin, isStaff } from '@/domain/user/types';
-import { formatDate } from '@/domain/common/format';
+import { formatMemberDays } from '@/domain/common/format';
 import { KAKAO_CONSULT_URL } from '@/domain/consult/constants';
 import { PUBLIC_IMAGES } from '@/domain/assets/static';
 import { findBoardByType } from '@/domain/board/types';
@@ -72,7 +72,7 @@ function MenuRow({
       </span>
       <span className="flex items-center gap-1.5 text-xs text-[#A6ABA3]">
         {trailing}
-        {!danger && <span className="text-[#C7CECB]">›</span>}
+        {!danger && <span className="text-[#CBD0C7]">›</span>}
       </span>
     </>
   );
@@ -125,17 +125,6 @@ export default function MyPage() {
 
   if (!isLoggedIn) return <LoggedOutMyPagePromptCard />;
 
-  if (!isLoggedIn) {
-    return (
-      <div className="flex flex-col items-center gap-4 px-4 py-16 text-center">
-        <p className="text-sm text-muted">로그인 후 마이페이지를 이용할 수 있습니다.</p>
-        <Link href="/login?from=%2Fmypage">
-          <Button>로그인</Button>
-        </Link>
-      </div>
-    );
-  }
-
   const handleNicknameUpdate = async () => {
     if (!nickname.trim()) {
       setProfileError('닉네임을 입력해 주세요.');
@@ -168,91 +157,81 @@ export default function MyPage() {
 
   const peaceDays = journalDashboard?.relapseFreeDays ?? 0;
   const recordedDays = journalDashboard?.timelineDays?.filter((day) => day.recorded).length ?? 0;
-  const memberSince = activity?.memberSince ? formatDate(activity.memberSince) : null;
+  const memberDaysLabel = formatMemberDays(activity?.memberSince);
 
   return (
     <>
-      <div className="pb-8 lg:pb-10">
+      <div className="pb-[96px] lg:pb-10">
         <section className="relative h-[172px] overflow-hidden">
           <img
             src={PUBLIC_IMAGES.homeHero}
             alt=""
             className="absolute inset-0 h-full w-full object-cover object-[50%_40%]"
           />
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,37,31,.45)_0%,rgba(7,37,31,.25)_50%,rgba(243,237,227,.96)_100%)]" />
-          <div className="absolute right-4 top-[46px] text-white drop-shadow-[0_1px_8px_rgba(7,37,31,.35)]">
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,37,31,.45)_0%,rgba(7,37,31,.25)_50%,rgba(243,237,227,.95)_100%)]" />
+          <div className="absolute right-5 top-[52px] text-white">
             <InlineTopActions className="text-white" />
           </div>
-          <div className="absolute bottom-4 left-0 right-0 flex items-center gap-3 px-[22px]">
-            <span className="flex h-[58px] w-[58px] shrink-0 items-center justify-center rounded-full bg-white/92 text-[26px] shadow-[0_8px_18px_-8px_rgba(0,0,0,.3)]">
+          <div className="absolute bottom-[14px] left-0 right-0 flex items-center gap-[13px] px-[22px]">
+            <span className="flex h-[58px] w-[58px] shrink-0 items-center justify-center rounded-full bg-white/[0.92] text-[26px] shadow-[0_8px_18px_-8px_rgba(0,0,0,.3)]">
               🌙
             </span>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-[18px] font-extrabold tracking-[-0.01em] text-white drop-shadow-[0_1px_8px_rgba(7,37,31,.42)]">
+              <p className="truncate text-[18px] font-extrabold tracking-[-0.01em] text-white drop-shadow-[0_1px_8px_rgba(7,37,31,.4)]">
                 {user?.nickname ?? '헤르프리'}
               </p>
-              <p className="mt-0.5 text-[11.5px] text-white/85 drop-shadow-[0_1px_8px_rgba(7,37,31,.35)]">
-                {memberSince ? `${memberSince} 가입` : '헤르프리 회원'}
+              <p className="mt-0.5 text-[11.5px] text-white/85">
+                {activityLoading ? '활동 정보 확인 중' : memberDaysLabel}
               </p>
             </div>
           </div>
         </section>
 
-        <section className="-mt-2 mx-5 rounded-[18px] bg-white px-2 py-4 shadow-[0_1px_2px_rgba(20,30,25,.04),0_14px_30px_-24px_rgba(20,30,25,.22)]">
+        <section className="mx-5 mt-[14px] rounded-[18px] bg-white px-2.5 py-[18px] shadow-[0_1px_2px_rgba(20,30,25,.04),0_14px_30px_-24px_rgba(20,30,25,.22)]">
           <div className="grid grid-cols-3 divide-x divide-[#F0EADF]">
             <div className="text-center">
-              <p className="hf-display text-[23px] font-extrabold text-[#0B3B36]">
-                {peaceDays}
-              </p>
-              <p className="mt-1 text-[11px] text-[#9A9F94]">무증상 일수</p>
+              <p className="hf-display text-[23px] font-extrabold text-[#0B3B36]">{peaceDays}</p>
+              <p className="mt-[3px] text-[11px] text-[#9A9F94]">무증상 일수</p>
             </div>
             <div className="text-center">
-              <p className="hf-display text-[23px] font-extrabold text-[#0B3B36]">
-                {recordedDays}
-              </p>
-              <p className="mt-1 text-[11px] text-[#9A9F94]">기록한 날</p>
+              <p className="hf-display text-[23px] font-extrabold text-[#0B3B36]">{recordedDays}</p>
+              <p className="mt-[3px] text-[11px] text-[#9A9F94]">기록한 날</p>
             </div>
             <div className="text-center">
               <p className="hf-display text-[23px] font-extrabold text-[#0B3B36]">
                 {activityLoading ? '…' : activity?.totalPosts ?? 0}
               </p>
-              <p className="mt-1 text-[11px] text-[#9A9F94]">남긴 글</p>
+              <p className="mt-[3px] text-[11px] text-[#9A9F94]">남긴 글</p>
             </div>
           </div>
         </section>
 
-        <div className="mx-5 mt-[18px]">
-          <p className="mb-2 px-0.5 text-xs text-[#8B9590]">활동</p>
+        <div className="mx-5 mt-4">
           <div className="mypage-menu-card">
             <MenuRow
               icon="📝"
               label="내가 쓴 글"
-              sub="커뮤니티에 남긴 글"
+              sub="커뮤니티 · FAQ"
               trailing={activityLoading ? '…' : (activity?.totalPosts ?? 0)}
               onClick={() => setShowPosts((v) => !v)}
             />
+            <MenuRow icon="📓" label="내 기록 모아보기" sub="개인일지" href="/journal" />
+            <MenuRow icon="🔒" label="1:1 비밀 상담 내역" href="/consult" />
             <MenuRow
-              icon="💬"
-              label="받은 공감"
-              sub="내 글에 달린 반응"
-              trailing={activityLoading ? '…' : (activity?.receivedReactions ?? 0)}
-              href="/community"
+              icon="📢"
+              label="공지사항"
+              href={noticeBoard ? `/community/${noticeBoard.id}` : '/notice'}
             />
-            <MenuRow
-              icon="🔖"
-              label="스크랩한 글"
-              sub="나중에 다시 볼 글"
-              trailing={bookmarkCount}
-              href="/community"
-            />
+            <MenuRow icon="📄" label="이용약관" href="/terms" />
+            <MenuRow icon="🛡️" label="개인정보처리방침" href="/privacy" />
           </div>
         </div>
 
-        <div className="mx-5 mt-[18px]">
-          <p className="mb-2 px-0.5 text-xs text-[#8B9590]">설정</p>
+        <div className="mx-5 mt-4">
+          <p className="mb-2 px-0.5 text-[11px] font-semibold text-[#9A9F94]">계정</p>
           <div className="mypage-menu-card">
-            <div className="border-b border-[#EAEDEC] px-4 py-3.5">
-              <p className="mb-2 text-[13.5px] font-medium text-[#15201D]">닉네임 변경</p>
+            <div className="border-b border-[#F2ECE1] px-[17px] py-[15px]">
+              <p className="mb-2 text-[13.5px] font-semibold text-[#15201D]">닉네임 변경</p>
               <div className="flex items-center gap-2">
                 <div className="min-w-0 flex-1 [&_.wrtn-input]:mt-0">
                   <Input
@@ -271,15 +250,40 @@ export default function MyPage() {
                   저장
                 </Button>
               </div>
-              {profileError && <div className="mt-2"><ErrorMessage message={profileError} /></div>}
+              {profileError && (
+                <div className="mt-2">
+                  <ErrorMessage message={profileError} />
+                </div>
+              )}
             </div>
-            <MenuRow icon="📓" label="개인일지" sub="기록과 요약 확인" href="/journal" />
+            <MenuRow
+              icon="💬"
+              label="받은 공감"
+              sub="내 글에 달린 반응"
+              trailing={activityLoading ? '…' : (activity?.receivedReactions ?? 0)}
+              href="/community"
+            />
+            <MenuRow
+              icon="🔖"
+              label="스크랩한 글"
+              sub="나중에 다시 볼 글"
+              trailing={bookmarkCount}
+              href="/community"
+            />
+            <MenuRow
+              icon="💬"
+              label="카카오톡 상담 신청"
+              sub="오픈채팅으로 이동"
+              href={KAKAO_CONSULT_URL}
+              external
+              trailing={<span className="rounded bg-[#F4F6F5] px-1.5 py-0.5 text-[10px]">외부</span>}
+            />
           </div>
         </div>
 
         {isStaff(user?.role) && (
-          <div className="mx-5 mt-[18px]">
-            <p className="mb-2 px-0.5 text-xs text-[#8B9590]">운영자 메뉴</p>
+          <div className="mx-5 mt-4">
+            <p className="mb-2 px-0.5 text-[11px] font-semibold text-[#9A9F94]">운영</p>
             <div className="mypage-menu-card">
               <MenuRow icon="📊" label="운영 대시보드" sub="오늘 운영 지표" href="/admin?tab=dashboard" />
               <MenuRow icon="🚨" label="신고·숨김 관리" sub="신고 접수 확인" href="/admin?tab=reports" />
@@ -295,30 +299,17 @@ export default function MyPage() {
           </div>
         )}
 
-        <div className="mx-5 mt-[18px]">
-          <p className="mb-2 px-0.5 text-xs text-[#8B9590]">고객지원</p>
-          <div className="mypage-menu-card">
-            <MenuRow icon="❓" label="FAQ" sub="자주 묻는 질문" href="/qna" />
-            <MenuRow icon="🔒" label="1:1 비밀상담" sub="비공개 상담 안내" href="/consult" />
-            <MenuRow
-              icon="💬"
-              label="카카오톡 상담 신청"
-              sub="오픈채팅으로 이동"
-              href={KAKAO_CONSULT_URL}
-              external
-              trailing={<span className="ext-badge rounded bg-[#F4F6F5] px-1.5 py-0.5 text-[10px]">외부</span>}
-            />
-            <MenuRow icon="📢" label="공지사항" sub="서비스 안내" href={noticeBoard ? `/community/${noticeBoard.id}` : '/community'} />
-          </div>
-        </div>
-
-        <div className="mx-5 mt-[18px]">
-          <div className="mypage-menu-card">
-            <MenuRow icon="🚪" label="로그아웃" sub="현재 계정에서 나가기" danger onClick={() => void logout()} />
-          </div>
-        </div>
-
         <p className="mt-4 text-center">
+          <button
+            type="button"
+            className="text-[12.5px] text-[#A6ABA0] underline underline-offset-[3px]"
+            onClick={() => void logout()}
+          >
+            로그아웃
+          </button>
+        </p>
+
+        <p className="mt-3 text-center">
           <button
             type="button"
             className="text-[11px] text-[#C7CECB]"

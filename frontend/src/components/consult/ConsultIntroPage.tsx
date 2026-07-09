@@ -2,22 +2,18 @@
 
 import Link from 'next/link';
 import { KAKAO_CONSULT_URL } from '@/domain/consult/constants';
-import { BackButton } from '@/components/ui/BackButton';
 
 const consultFaqs = [
   {
-    question: '어떤 주제로 상담할 수 있나요?',
-    answer: '연애 고지, 재발 불안, 진단 초기처럼 혼자 정리하기 어려운 이야기를 편하게 남길 수 있어요.',
+    question: '어떤 주제든 괜찮나요?',
+    answer:
+      '연애고지, 재발 불안, 확진 초기 패닉 등 어떤 이야기도 괜찮아요. 의학적 진단이나 처방은 다루지 않아요.',
   },
   {
-    question: '신청하면 바로 시작하나요?',
-    answer: '상담 신청 버튼을 누르면 카카오톡 오픈채팅으로 이동합니다. 이동 후 카카오톡에서 대화를 이어가면 됩니다.',
+    question: '신청하면 바로 시작되나요?',
+    answer: '신청 후 순서대로 채팅방이 열려요. 보통 1~2일 내에 연결돼요.',
   },
-  {
-    question: '나중에 유료로 바뀌나요?',
-    answer: '현재는 초기 운영 기간으로 무료 상담 흐름을 유지하고 있어요. 정책이 바뀌면 미리 안내드릴게요.',
-  },
-];
+] as const;
 
 const consultInfo = [
   ['상담 방식', '카카오톡 오픈채팅'],
@@ -27,77 +23,81 @@ const consultInfo = [
 
 export function ConsultIntroPage() {
   return (
-    <main className="min-h-screen bg-[#F3EDE3] pb-24">
-      <header className="flex items-center gap-2.5 border-b border-[#E7DFD2] bg-[#F3EDE3]/95 px-[18px] pb-3.5 pt-14">
-        <BackButton size="sm" className="text-[#5C645A] hover:text-[#0B3B36]" />
-        <h1 className="text-[15px] font-bold text-[#1E2621]">1:1 비밀 상담</h1>
+    <main className="min-h-full bg-white pb-10">
+      <header className="flex items-center gap-2.5 border-b border-[#EFE9DD] px-[18px] pb-3.5 pt-14">
+        <Link
+          href="/"
+          aria-label="홈으로 돌아가기"
+          className="text-[22px] leading-none text-[#6E7671]"
+        >
+          ‹
+        </Link>
+        <h1 className="text-[15px] font-bold text-[#15201D]">1:1 비밀 상담</h1>
       </header>
 
-      <section className="relative mx-4 mt-4 overflow-hidden rounded-[26px] bg-[#04342C] px-5 py-[30px] text-white shadow-[0_22px_48px_-34px_rgba(7,37,31,.72)]">
+      <section className="relative overflow-hidden bg-[#04342C] px-6 py-[30px] text-white">
         <div className="absolute right-[-30px] top-[-30px] h-[140px] w-[140px] rounded-full bg-[radial-gradient(circle,rgba(240,199,120,.16)_0%,rgba(240,199,120,0)_70%)]" />
         <h2 className="hf-display relative text-[20px] font-semibold leading-[1.5] text-white">
           말 꺼내기 어려운 이야기,
           <br />
           1:1로 편하게.
         </h2>
-        <p className="relative mt-3 text-[12.5px] leading-[1.7] text-white/80">
-          13년의 경험에서 나온 실전 조언과 2급 심리상담 자격을 바탕으로, 공개하기 어려운 고민을
-          조용히 들어드립니다.
+        <p className="relative mt-3 text-[12.5px] leading-[1.7] text-white/78">
+          13년째 같은 시간을 살아내며 쌓은 경험과 2급 심리상담 자격을 바탕으로, 1:1로 깊은
+          이야기를 나눕니다.
         </p>
       </section>
 
-      <section className="mx-4 mt-[18px] flex items-start gap-2.5 rounded-[18px] border border-[#CFE6DA] bg-[#E3F1EA] px-4 py-3.5">
-        <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#0B3B36] text-[11px] font-bold text-white">
-          i
+      <section className="mx-5 mt-[18px] flex items-start gap-2.5 rounded-xl bg-[#E3F1EA] px-4 py-3.5">
+        <span className="shrink-0 text-[15px]" aria-hidden>
+          🔒
         </span>
         <p className="text-[12px] leading-[1.6] text-[#04342C]">
-          상담은 커뮤니티와 완전히 분리되어 운영돼요. 닉네임이나 게시글과 무관하게 100% 비공개로
+          이 상담은 커뮤니티와 완전히 분리되어 운영돼요. 닉네임·IP 정책과 무관하게 100% 비공개로
           진행됩니다.
         </p>
       </section>
 
-      <section className="mx-4 mt-[18px] rounded-[20px] border border-[#E7DFD2] bg-[#FFFCF7] px-4 py-1.5 shadow-[0_14px_30px_-28px_rgba(7,37,31,.35)]">
+      <section className="mx-5 mt-[18px] rounded-2xl border border-[#ECE5D8] px-[18px] py-1.5">
         {consultInfo.map(([label, value]) => (
           <div
             key={label}
             className="flex justify-between border-t border-[#F2ECE1] py-[11px] text-[13px] first:border-t-0"
           >
             <span className="text-[#9A9F94]">{label}</span>
-            <span className="font-semibold text-[#1E2621]">{value}</span>
+            <span className="font-semibold text-[#15201D]">{value}</span>
           </div>
         ))}
       </section>
 
-      <p className="mx-4 mt-2 text-[10.5px] text-[#C7826B]">* 초기 운영 기간 동안은 무료로 진행돼요.</p>
-
-      <section className="mx-4 mt-5 flex items-center gap-3 rounded-[20px] border border-[#E7DFD2] bg-[#FFFCF7] px-4 py-4 shadow-[0_14px_30px_-28px_rgba(7,37,31,.35)]">
-        <div className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-full bg-[#E3F1EA] text-[20px] font-bold text-[#0B3B36]">
-          h.
+      <section className="mx-5 mt-5 flex items-center gap-3">
+        <div className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-full bg-[#E3F1EA] text-[20px]">
+          🌿
         </div>
         <div>
-          <h2 className="text-[13.5px] font-bold text-[#1E2621]">헤르프리 상담자</h2>
+          <h2 className="text-[13.5px] font-bold text-[#15201D]">헤르프리 상담사</h2>
           <p className="mt-0.5 text-[11.5px] text-[#9A9F94]">13년의 경험 · 2급 심리상담 자격 보유</p>
         </div>
       </section>
 
-      <section className="mx-4 mt-6">
+      <section className="mx-5 mt-6">
         <p className="mb-1.5 text-[12px] font-semibold text-[#9A9F94]">자주 묻는 질문</p>
-        <div className="overflow-hidden rounded-[20px] border border-[#E7DFD2] bg-[#FFFCF7]">
+        <div>
           {consultFaqs.map((faq) => (
-            <article key={faq.question} className="border-t border-[#EFE9DD] px-4 py-[13px] first:border-t-0">
-              <h3 className="mb-1 text-[13px] font-semibold text-[#1E2621]">{faq.question}</h3>
-              <p className="text-[12px] leading-[1.65] text-[#5C645A]">{faq.answer}</p>
+            <article key={faq.question} className="border-t border-[#EFE9DD] py-[13px] first:border-t-0">
+              <h3 className="mb-[5px] text-[13px] font-semibold text-[#15201D]">{faq.question}</h3>
+              <p className="text-[12px] leading-[1.65] text-[#6E766F]">{faq.answer}</p>
             </article>
           ))}
         </div>
       </section>
 
-      <section className="px-4 pt-6">
+      <section className="px-5 pt-6">
         <a
           href={KAKAO_CONSULT_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex min-h-[52px] w-full items-center justify-center rounded-[14px] bg-[#0B3B36] text-[14.5px] font-bold text-white shadow-[0_14px_30px_-18px_rgba(7,37,31,.62)] transition-colors hover:bg-[#0F4F48]"
+          className="flex min-h-[48px] w-full items-center justify-center rounded-[14px] bg-[#0B3B36] px-4 py-[15px] text-center text-[14.5px] font-bold text-white"
         >
           상담 신청하기
         </a>

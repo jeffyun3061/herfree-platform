@@ -27,6 +27,7 @@ import {
   isSecretStoryBoardType,
   SECRET_STORY_BOARD_COPY,
 } from '@/domain/board/privateBoard';
+import { formatRelativeTime } from '@/domain/common/format';
 import { displayAuthorNickname } from '@/domain/post/types';
 import { isAdmin, isStaff } from '@/domain/user/types';
 import { getErrorMessage } from '@/lib/api/client';
@@ -215,7 +216,7 @@ export default function PostDetailPage() {
             href={backHref}
             className="flex min-w-0 items-center gap-2.5 text-[15px] font-bold text-[#15201D]"
           >
-            <span className="text-[24px] font-normal leading-none text-[#6E7671]">‹</span>
+            <span className="text-[22px] font-normal leading-none text-[#6E7671]">‹</span>
             커뮤니티
           </Link>
           <button
@@ -235,9 +236,9 @@ export default function PostDetailPage() {
             {copyMessage}
           </p>
         )}
-        <section className="px-5 pt-1">
+        <section className="px-5 pt-1.5">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-[7px] bg-[#E7F1EC] px-2.5 py-1 text-[10.5px] font-extrabold text-[#0B3B36]">
+            <span className="rounded-[7px] bg-[#E7F1EC] px-[9px] py-[3px] text-[10.5px] font-bold text-[#0B3B36]">
               {post.boardName}
             </span>
             {isMaskedPost && (
@@ -253,19 +254,24 @@ export default function PostDetailPage() {
             )}
           </div>
 
-          <h1 className="hf-display mt-[13px] text-[20px] font-extrabold leading-[1.45] tracking-normal text-[#15201D]">
+          <h1 className="hf-display mb-3 mt-[13px] text-[20px] font-extrabold leading-[1.45] tracking-[-0.01em] text-[#15201D]">
             {post.title}
           </h1>
 
-          <div className="mt-3 flex items-center gap-[9px] border-b border-[#EAE3D6] pb-4">
-            <span className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-[#EDF2EC] text-[14px] font-extrabold text-[#0B3B36]">
-              {displayAuthorNickname(post.authorNickname).charAt(0) || '익'}
+          <div className="flex items-center gap-[9px] border-b border-[#EAE3D6] pb-4">
+            <span
+              className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-[#EDF2EC] text-[14px]"
+              aria-hidden
+            >
+              🌿
             </span>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-[12.5px] font-bold text-[#2C342E]">
+              <p className="truncate text-[12.5px] font-semibold text-[#2C342E]">
                 {displayAuthorNickname(post.authorNickname)}
               </p>
-              <p className="mt-0.5 text-[11px] text-[#A6ABA0]">조회 {post.viewCount}</p>
+              <p className="mt-px text-[10.5px] text-[#A6ABA0]">
+                {formatRelativeTime(post.createdAt)}
+              </p>
             </div>
           </div>
 
@@ -342,13 +348,13 @@ export default function PostDetailPage() {
         )}
         <div
           className={cn(
-            'py-[18px] pb-1',
+            'pb-1 pt-[18px]',
             isContentMasked && 'rounded-[18px] bg-[#F8F4EC] px-4 py-4 text-center',
           )}
         >
           <p
             className={cn(
-              'whitespace-pre-wrap text-[14px] leading-[1.9]',
+              'whitespace-pre-wrap text-[13.5px] leading-[1.85]',
               isContentMasked ? 'text-[#7A847C]' : 'text-[#2C342E]',
             )}
           >
@@ -357,8 +363,13 @@ export default function PostDetailPage() {
         </div>
 
         {!isMaskedPost && !isContentMasked && (
-          <div className="mt-3 border-t border-[#EAE3D6] pt-4">
-            <ReactionBar targetType="POST" targetId={post.id} />
+          <div className="mt-3.5">
+            <ReactionBar
+              variant="detail"
+              targetType="POST"
+              targetId={post.id}
+              commentCount={commentPage.totalElements}
+            />
           </div>
         )}
         </section>
@@ -366,8 +377,9 @@ export default function PostDetailPage() {
         {showComments && (
         <section className="px-5 pt-[18px]">
           <div className="mb-3 flex items-center justify-between gap-3">
-            <h2 className="text-[13px] font-extrabold text-[#15201D]">
-              {isMaskedPost ? '운영자 답변' : '댓글'} {commentPage.totalElements}
+            <h2 className="text-[13px] font-bold text-[#15201D]">
+              {isMaskedPost ? '운영자 답변' : '댓글'}
+              {isMaskedPost ? ` ${commentPage.totalElements}` : ''}
             </h2>
             {commentPage.totalPages > 1 && (
               <span className="text-[11px] font-medium text-[#A6ABA0]">
@@ -435,10 +447,12 @@ export default function PostDetailPage() {
                 </p>
               )}
               <Textarea
-                placeholder={isMaskedPost ? '운영자 답변을 작성해 주세요.' : '댓글을 남겨 주세요.'}
+                placeholder={
+                  isMaskedPost ? '운영자 답변을 작성해 주세요.' : '따뜻한 댓글을 남겨주세요'
+                }
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
-                className="min-h-[42px] flex-1 rounded-[12px] border-[#ECE5D8] bg-[#F8F4EC] px-3.5 py-3 text-[12.5px]"
+                className="min-h-[42px] flex-1 rounded-[12px] border-[#ECE5D8] bg-[#F8F4EC] px-3.5 py-3 text-[12.5px] placeholder:text-[#B4B2A6]"
               />
               <Button
                 disabled={isSubmitting}

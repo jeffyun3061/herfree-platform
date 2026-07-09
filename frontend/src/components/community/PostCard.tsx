@@ -65,9 +65,10 @@ export function PostCard({ post, boardName }: PostCardProps) {
           <span>{post.authorNickname}</span>
           <MetaDot />
           <span>{formatRelativeTime(post.createdAt)}</span>
-          <MetaDot />
-          <span>공감 {post.reactionCount ?? 0}</span>
-          <span>댓글 {post.commentCount ?? 0}</span>
+          <span className="ml-auto flex items-center gap-3">
+            <span>♡ {post.reactionCount ?? 0}</span>
+            <span>💬 {post.commentCount ?? 0}</span>
+          </span>
         </div>
       </article>
     </Link>
