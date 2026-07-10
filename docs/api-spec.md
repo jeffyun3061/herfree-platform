@@ -83,6 +83,22 @@ DB·API는 UTC, 화면 표시는 브라우저 로컬(KST). 상세: [decision-log
 | POST | `/api/auth/signup` | 회원가입 | 비회원 |
 | POST | `/api/auth/login` | 로그인 | 비회원 |
 | POST | `/api/auth/logout` | 로그아웃 | 회원 |
+| POST | `/api/auth/oauth/{provider}` | 소셜 로그인 (`kakao` \| `google` \| `naver`) | 비회원 |
+| POST | `/api/auth/oauth/complete-profile` | 소셜 최초 가입 닉네임 완료 | 비회원 |
+
+### Auth — 소셜 로그인
+
+1. 프론트가 provider authorize URL로 이동 → callback에서 `code` 수신
+2. `POST /api/auth/oauth/{provider}` body: `{ "code", "redirectUri" }`
+3. 서버가 provider token 교환 후 Herfree JWT 발급 (기존 `LoginResponse`와 동일 필드)
+4. 닉네임 확정이 필요하면 `needsProfile: true` + `profileCompletionToken` (15분)
+5. `POST /api/auth/oauth/complete-profile` body: `{ "profileCompletionToken", "nickname" }`
+
+| HTTP | 조건 | message (예) |
+|------|------|----------------|
+| 409 | 동일 이메일로 이미 가입 | 이미 이메일로 가입한 계정이 있습니다. |
+| 401 | code 무효·provider 오류 | 소셜 로그인에 실패했습니다. |
+| 503 | provider 키 미설정 | 소셜 로그인 설정이 완료되지 않았습니다. |
 
 ### Auth — 로그인 실패·잠금
 

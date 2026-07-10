@@ -50,6 +50,20 @@ app:
   mail:
     mode: console
     from: noreply@herfree.local
+  # oauth client-secret → local-secrets.yml (gitignore). client-id/redirect-uri 는 여기 또는 env 로 덮어쓸 수 있음.
+  oauth:
+    kakao:
+      client-id: ${OAUTH_KAKAO_CLIENT_ID:}
+      client-secret: ${OAUTH_KAKAO_CLIENT_SECRET:}
+      redirect-uri: ${OAUTH_KAKAO_REDIRECT_URI:http://localhost:3000/auth/callback/kakao}
+    google:
+      client-id: ${OAUTH_GOOGLE_CLIENT_ID:}
+      client-secret: ${OAUTH_GOOGLE_CLIENT_SECRET:}
+      redirect-uri: ${OAUTH_GOOGLE_REDIRECT_URI:http://localhost:3000/auth/callback/google}
+    naver:
+      client-id: ${OAUTH_NAVER_CLIENT_ID:}
+      client-secret: ${OAUTH_NAVER_CLIENT_SECRET:}
+      redirect-uri: ${OAUTH_NAVER_REDIRECT_URI:http://localhost:3000/auth/callback/naver}
 
 springdoc:
   api-docs:

@@ -132,6 +132,7 @@ function isPublicAuthPath(path: string): boolean {
   return (
     path.startsWith('/api/auth/signup') ||
     path.startsWith('/api/auth/login') ||
+    path.startsWith('/api/auth/oauth') ||
     path.startsWith('/api/auth/password-reset')
   );
 }

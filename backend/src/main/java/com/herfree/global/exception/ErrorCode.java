@@ -36,6 +36,16 @@ public enum ErrorCode {
     // 자격증명 자체는 유효하지만 서비스 접근이 금지된 상태이기 때문이다.
     // 클라이언트는 이 코드를 받으면 "계정이 정지됐습니다" 안내를 표시한다.
     SUSPENDED_ACCOUNT(HttpStatus.FORBIDDEN, "정지된 계정입니다. 운영자에게 문의하세요."),
+    OAUTH_AUTHENTICATION_FAILED(HttpStatus.UNAUTHORIZED, "소셜 로그인에 실패했습니다. 다시 시도해 주세요."),
+    OAUTH_PROVIDER_NOT_CONFIGURED(HttpStatus.SERVICE_UNAVAILABLE, "소셜 로그인 설정이 완료되지 않았습니다."),
+    OAUTH_EMAIL_ALREADY_REGISTERED(
+            HttpStatus.CONFLICT,
+            "이미 이메일로 가입한 계정이 있습니다. 이메일 로그인을 이용해 주세요."
+    ),
+    OAUTH_PROFILE_TOKEN_INVALID(
+            HttpStatus.BAD_REQUEST,
+            "소셜 가입을 이어서 진행할 수 없습니다. 다시 로그인해 주세요."
+    ),
 
     // 사용자(User) — 회원 조회·권한 관련 오류
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다."),

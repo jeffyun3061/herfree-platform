@@ -1,10 +1,13 @@
 import type {
   LoginRequest,
   LoginResult,
+  OAuthCompleteProfileRequest,
+  OAuthLoginResult,
   PasswordResetConfirmRequest,
   PasswordResetRequest,
   SignupRequest,
 } from '@/domain/auth/types';
+import type { OAuthProvider } from '@/domain/auth/oauth';
 import { request } from '@/lib/api/client';
 
 export function signup(input: SignupRequest): Promise<void> {
@@ -13,6 +16,24 @@ export function signup(input: SignupRequest): Promise<void> {
 
 export function login(input: LoginRequest): Promise<LoginResult> {
   return request<LoginResult>('/api/auth/login', { method: 'POST', body: input });
+}
+
+export function oauthLogin(
+  provider: OAuthProvider,
+  code: string,
+  redirectUri: string,
+): Promise<OAuthLoginResult> {
+  return request<OAuthLoginResult>(`/api/auth/oauth/${provider}`, {
+    method: 'POST',
+    body: { code, redirectUri },
+  });
+}
+
+export function completeOAuthProfile(input: OAuthCompleteProfileRequest): Promise<LoginResult> {
+  return request<LoginResult>('/api/auth/oauth/complete-profile', {
+    method: 'POST',
+    body: input,
+  });
 }
 
 export function logout(): Promise<void> {

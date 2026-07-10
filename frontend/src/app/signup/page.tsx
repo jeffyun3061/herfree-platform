@@ -9,6 +9,7 @@ import { TopBar } from '@/components/layout/TopBar';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
+import { SocialLoginSection } from '@/components/auth/SocialLoginButtons';
 import { validateSignup } from '@/domain/auth/validate';
 import { getErrorMessage } from '@/lib/api/client';
 
@@ -70,7 +71,15 @@ function SignupForm() {
         <p className="mt-2 text-sm text-[#5C645A]">익명 커뮤니티와 개인 기록을 한 곳에서 관리할 수 있어요.</p>
       </div>
 
-      <form onSubmit={(e) => void handleSubmit(e)} className="mt-8 flex flex-1 flex-col gap-4">
+      <SocialLoginSection
+        returnUrl={resolveReturnUrl(searchParams.get('from'))}
+        mode="signup"
+        className="mt-6"
+      />
+
+      <section className="rounded-[20px] border border-[#ECE5D8] bg-white p-5 shadow-[0_1px_2px_rgba(20,30,25,.04),0_12px_28px_-22px_rgba(20,30,25,.18)]">
+        <h2 className="mb-4 text-[13px] font-extrabold text-[#15695E]">이메일로 가입</h2>
+      <form onSubmit={(e) => void handleSubmit(e)} className="flex flex-1 flex-col gap-4">
         <Input
           label="이메일"
           type="email"
@@ -154,6 +163,7 @@ function SignupForm() {
           </Link>
         </p>
       </form>
+      </section>
       </div>
     </div>
   );

@@ -1,17 +1,25 @@
 package com.herfree.domain.auth.controller;
 
 import com.herfree.domain.auth.dto.request.LoginRequest;
+import com.herfree.domain.auth.dto.request.OAuthCompleteProfileRequest;
+import com.herfree.domain.auth.dto.request.OAuthLoginRequest;
 import com.herfree.domain.auth.dto.request.PasswordResetConfirmRequest;
 import com.herfree.domain.auth.dto.request.PasswordResetRequest;
 import com.herfree.domain.auth.dto.request.SignupRequest;
 import com.herfree.domain.auth.dto.response.LoginResponse;
+import com.herfree.domain.auth.dto.response.OAuthLoginResponse;
+import com.herfree.domain.auth.entity.OAuthProvider;
 import com.herfree.domain.auth.service.AuthService;
+import com.herfree.domain.auth.service.OAuthAuthService;
 import com.herfree.domain.auth.service.PasswordResetService;
+import com.herfree.global.exception.BusinessException;
+import com.herfree.global.exception.ErrorCode;
 import com.herfree.global.response.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,6 +33,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthService authService;
+    private final OAuthAuthService oauthAuthService;
     private final PasswordResetService passwordResetService;
 
     // 회원가입 — 성공 시 201 Created를 반환한다.
@@ -55,6 +64,24 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success("로그아웃되었습니다.", null));
     }
 
+    @PostMapping("/oauth/{provider}")
+    public ResponseEntity<ApiResponse<OAuthLoginResponse>> oauthLogin(
+            @PathVariable String provider,
+            @Valid @RequestBody OAuthLoginRequest request
+    ) {
+        OAuthProvider oauthProvider = parseProvider(provider);
+        OAuthLoginResponse response = oauthAuthService.loginWithCode(oauthProvider, request);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @PostMapping("/oauth/complete-profile")
+    public ResponseEntity<ApiResponse<LoginResponse>> completeOAuthProfile(
+            @Valid @RequestBody OAuthCompleteProfileRequest request
+    ) {
+        LoginResponse response = oauthAuthService.completeProfile(request);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
     @PostMapping("/password-reset/request")
     public ResponseEntity<ApiResponse<Void>> requestPasswordReset(
             @Valid @RequestBody PasswordResetRequest request
@@ -70,5 +97,13 @@ public class AuthController {
     ) {
         passwordResetService.confirmReset(request);
         return ResponseEntity.ok(ApiResponse.success("비밀번호가 재설정되었습니다. 새 비밀번호로 로그인해 주세요.", null));
+    }
+
+    private OAuthProvider parseProvider(String provider) {
+        try {
+            return OAuthProvider.fromPath(provider);
+        } catch (IllegalArgumentException ex) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT, "지원하지 않는 소셜 로그인입니다.");
+        }
     }
 }

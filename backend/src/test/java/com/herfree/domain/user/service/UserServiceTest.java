@@ -4,6 +4,7 @@ import com.herfree.domain.board.entity.Board;
 import com.herfree.domain.comment.entity.Comment;
 import com.herfree.domain.comment.entity.CommentStatus;
 import com.herfree.domain.comment.repository.CommentRepository;
+import com.herfree.domain.auth.repository.UserOAuthAccountRepository;
 import com.herfree.domain.journal.repository.JournalRecordRepository;
 import com.herfree.domain.post.entity.Post;
 import com.herfree.domain.post.entity.PostStatus;
@@ -48,6 +49,9 @@ class UserServiceTest {
 
     @Mock
     private JournalRecordRepository journalRecordRepository;
+
+    @Mock
+    private UserOAuthAccountRepository userOAuthAccountRepository;
 
     @InjectMocks
     private UserService userService;
@@ -100,6 +104,7 @@ class UserServiceTest {
         assertThat(profile.getBio()).isNull();
         assertThat(profile.isPublic()).isFalse();
         verify(journalRecordRepository).deleteAllByUserId(userId);
+        verify(userOAuthAccountRepository).deleteAllByUserId(userId);
     }
 
     @Test

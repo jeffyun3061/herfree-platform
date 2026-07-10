@@ -10,7 +10,7 @@ import {
   useState,
 } from 'react';
 import type { ReactNode } from 'react';
-import type { LoginRequest, SignupRequest } from '@/domain/auth/types';
+import type { LoginRequest, OAuthLoginResult, SignupRequest } from '@/domain/auth/types';
 import type { SessionUser } from '@/domain/user/types';
 import * as authApi from '@/lib/api/auth';
 import * as usersApi from '@/lib/api/users';
@@ -27,11 +27,12 @@ import {
 
 type AuthContextValue = {
   user: SessionUser | null;
-  // localStorage 복원이 끝나기 전에는 로그인 여부를 판단할 수 없으므로 준비 상태를 별도 제공한다
   isReady: boolean;
   isLoggedIn: boolean;
   login: (input: LoginRequest) => Promise<void>;
   signup: (input: SignupRequest) => Promise<void>;
+  completeOAuthLogin: (result: OAuthLoginResult) => void;
+  completeOAuthProfile: (profileCompletionToken: string, nickname: string) => Promise<void>;
   logout: () => Promise<void>;
   withdraw: () => Promise<void>;
   updateNickname: (nickname: string) => Promise<void>;
@@ -99,6 +100,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     void restore();
   }, []);
 
+  const establishSession = useCallback((result: {
+    accessToken: string;
+    userId: number;
+    nickname: string;
+    role: SessionUser['role'];
+  }) => {
+    ++restoreGenRef.current;
+    setAccessToken(result.accessToken);
+    const session = toSessionUser(result);
+    setSessionUser(session);
+    setUser(session);
+  }, []);
+
   const login = useCallback(async (input: LoginRequest) => {
     clearAuth();
     setUser(null);
@@ -106,13 +120,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     bumpAuthEpoch();
 
     const result = await authApi.login(input);
-    ++restoreGenRef.current;
-
-    setAccessToken(result.accessToken);
-    const session = toSessionUser(result);
-    setSessionUser(session);
-    setUser(session);
-  }, []);
+    establishSession(result);
+  }, [establishSession]);
 
   const signup = useCallback(async (input: SignupRequest) => {
     clearAuth();
@@ -123,13 +132,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await authApi.signup(input);
 
     const result = await authApi.login({ email: input.email, password: input.password });
-    ++restoreGenRef.current;
+    establishSession(result);
+  }, [establishSession]);
 
-    setAccessToken(result.accessToken);
-    const session = toSessionUser(result);
-    setSessionUser(session);
-    setUser(session);
-  }, []);
+  const completeOAuthLogin = useCallback((result: OAuthLoginResult) => {
+    if (
+      result.needsProfile ||
+      !result.accessToken ||
+      result.userId == null ||
+      !result.nickname ||
+      !result.role
+    ) {
+      return;
+    }
+
+    clearAuth();
+    setUser(null);
+    ++restoreGenRef.current;
+    bumpAuthEpoch();
+    establishSession({
+      accessToken: result.accessToken,
+      userId: result.userId,
+      nickname: result.nickname,
+      role: result.role,
+    });
+  }, [establishSession]);
+
+  const completeOAuthProfile = useCallback(async (profileCompletionToken: string, nickname: string) => {
+    clearAuth();
+    setUser(null);
+    ++restoreGenRef.current;
+    bumpAuthEpoch();
+
+    const result = await authApi.completeOAuthProfile({ profileCompletionToken, nickname });
+    establishSession(result);
+  }, [establishSession]);
 
   const logout = useCallback(async () => {
     try {
@@ -163,11 +200,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLoggedIn: user !== null,
       login,
       signup,
+      completeOAuthLogin,
+      completeOAuthProfile,
       logout,
       withdraw,
       updateNickname,
     }),
-    [user, isReady, login, signup, logout, withdraw, updateNickname],
+    [user, isReady, login, signup, completeOAuthLogin, completeOAuthProfile, logout, withdraw, updateNickname],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -29,3 +29,19 @@ export type LoginResult = {
   nickname: string;
   role: UserRole;
 };
+
+export type OAuthLoginResult = {
+  needsProfile: boolean;
+  profileCompletionToken?: string | null;
+  accessToken?: string | null;
+  tokenType?: string | null;
+  expiresIn?: number | null;
+  userId?: number | null;
+  nickname?: string | null;
+  role?: UserRole | null;
+};
+
+export type OAuthCompleteProfileRequest = {
+  profileCompletionToken: string;
+  nickname: string;
+};

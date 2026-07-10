@@ -132,6 +132,21 @@ AI 기능 도입 시 **메인 DB는 MySQL 8을 유지**한다. 대화 메타·�
 | `created_at` | DATETIME | 생성일 |
 | `updated_at` | DATETIME | 수정일 |
 
+### 6.2.1 user_oauth_accounts
+
+소셜 로그인 연동 정보. 한 사용자에 provider별 1건.
+
+| 컬럼 | 타입 | 설명 |
+|------|------|------|
+| `id` | BIGINT PK | 연동 ID |
+| `user_id` | BIGINT FK | 사용자 ID |
+| `provider` | VARCHAR(20) | `KAKAO`, `GOOGLE`, `NAVER` |
+| `provider_user_id` | VARCHAR(255) | provider 측 사용자 ID |
+| `created_at` | DATETIME | 생성일 |
+| `updated_at` | DATETIME | 수정일 |
+
+UNIQUE (`provider`, `provider_user_id`)
+
 ### 6.3 boards
 
 게시판 정보를 저장한다.

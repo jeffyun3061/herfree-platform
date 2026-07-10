@@ -13,6 +13,9 @@ import org.springframework.stereotype.Component;
 @Component
 public class JwtTokenProvider {
 
+    private static final String PROFILE_COMPLETION_PURPOSE = "oauth_profile";
+    private static final long PROFILE_COMPLETION_EXPIRATION_SECONDS = 900L;
+
     private final JwtProperties jwtProperties;
     private final SecretKey secretKey;
 
@@ -35,6 +38,32 @@ public class JwtTokenProvider {
                 .expiration(Date.from(expiry))
                 .signWith(secretKey)
                 .compact();
+    }
+
+    public String createProfileCompletionToken(String userId) {
+        Instant now = Instant.now();
+        Instant expiry = now.plusSeconds(PROFILE_COMPLETION_EXPIRATION_SECONDS);
+
+        return Jwts.builder()
+                .subject(userId)
+                .claim("purpose", PROFILE_COMPLETION_PURPOSE)
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(expiry))
+                .signWith(secretKey)
+                .compact();
+    }
+
+    public Long validateProfileCompletionToken(String token) {
+        try {
+            Claims claims = parseClaims(token);
+            String purpose = claims.get("purpose", String.class);
+            if (!PROFILE_COMPLETION_PURPOSE.equals(purpose)) {
+                throw new JwtException("Invalid profile completion token");
+            }
+            return Long.parseLong(claims.getSubject());
+        } catch (JwtException | NumberFormatException ex) {
+            throw new JwtException("Invalid profile completion token", ex);
+        }
     }
 
     public boolean validateToken(String token) {

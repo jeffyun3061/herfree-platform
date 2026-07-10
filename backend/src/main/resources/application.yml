@@ -80,6 +80,19 @@ app:
   mail:
     mode: ${APP_MAIL_MODE:console}
     from: ${APP_MAIL_FROM:noreply@herfree.kr}
+  oauth:
+    kakao:
+      client-id: ${OAUTH_KAKAO_CLIENT_ID:}
+      client-secret: ${OAUTH_KAKAO_CLIENT_SECRET:}
+      redirect-uri: ${OAUTH_KAKAO_REDIRECT_URI:http://localhost:3000/auth/callback/kakao}
+    google:
+      client-id: ${OAUTH_GOOGLE_CLIENT_ID:}
+      client-secret: ${OAUTH_GOOGLE_CLIENT_SECRET:}
+      redirect-uri: ${OAUTH_GOOGLE_REDIRECT_URI:http://localhost:3000/auth/callback/google}
+    naver:
+      client-id: ${OAUTH_NAVER_CLIENT_ID:}
+      client-secret: ${OAUTH_NAVER_CLIENT_SECRET:}
+      redirect-uri: ${OAUTH_NAVER_REDIRECT_URI:http://localhost:3000/auth/callback/naver}
   auth-rate-limit:
     enabled: ${APP_AUTH_RATE_LIMIT_ENABLED:true}
 
