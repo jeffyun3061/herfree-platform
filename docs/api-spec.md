@@ -81,6 +81,7 @@ DB·API는 UTC, 화면 표시는 브라우저 로컬(KST). 상세: [decision-log
 | Method | URL | 설명 | 권한 |
 |--------|-----|------|------|
 | POST | `/api/auth/signup` | 회원가입 | 비회원 |
+| GET | `/api/auth/nickname/check?nickname=` | 닉네임 사용 가능 여부 조회 | 비회원 |
 | POST | `/api/auth/login` | 로그인 | 비회원 |
 | POST | `/api/auth/logout` | 로그아웃 | 회원 |
 | POST | `/api/auth/oauth/{provider}` | 소셜 로그인 (`kakao` \| `google` \| `naver`) | 비회원 |
@@ -93,6 +94,16 @@ DB·API는 UTC, 화면 표시는 브라우저 로컬(KST). 상세: [decision-log
 3. 서버가 provider token 교환 후 Herfree JWT 발급 (기존 `LoginResponse`와 동일 필드)
 4. 닉네임 확정이 필요하면 `needsProfile: true` + `profileCompletionToken` (15분)
 5. `POST /api/auth/oauth/complete-profile` body: `{ "profileCompletionToken", "nickname" }`
+
+**닉네임 중복 확인** (`GET /api/auth/nickname/check`)
+
+```json
+{ "available": true }
+```
+
+| 필드 | 설명 |
+|------|------|
+| `available` | `true`면 가입·프로필 완료에 사용 가능 |
 
 | HTTP | 조건 | message (예) |
 |------|------|----------------|
@@ -206,6 +217,7 @@ Refresh Token·재발급·토큰 블랙리스트는 운영 고도화 항목으�
 | 필드 | 설명 |
 |------|------|
 | `imageUrl` | 선택. S3 업로드 완료 후 공개 URL. 수정 시 `null`이면 기존 이미지 유지, 빈 문자열이면 제거 |
+| `authorIpMasked` | 목록·상세 공통. 작성 시점 IP 마스킹 값 (예: `123.45.*`). 비공개 게시판 마스킹 시 `null` |
 | `readable` | **상세 응답 전용.** 현재 사용자가 본문 전체를 열람할 수 있으면 `true`, 아니면 `false`. 비밀사연·문의·1:1 상담 등 마스킹 대상 게시판에서 권한 없을 때 `false` |
 
 #### 비밀사연(`SECRET_STORY`)·비공개 게시판 마스킹

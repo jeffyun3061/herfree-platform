@@ -7,6 +7,7 @@ import com.herfree.domain.auth.dto.request.PasswordResetConfirmRequest;
 import com.herfree.domain.auth.dto.request.PasswordResetRequest;
 import com.herfree.domain.auth.dto.request.SignupRequest;
 import com.herfree.domain.auth.dto.response.LoginResponse;
+import com.herfree.domain.auth.dto.response.NicknameCheckResponse;
 import com.herfree.domain.auth.dto.response.OAuthLoginResponse;
 import com.herfree.domain.auth.entity.OAuthProvider;
 import com.herfree.domain.auth.service.AuthService;
@@ -19,10 +20,12 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 // 인증 관련 엔드포인트 — SecurityConfig에서 /api/auth/** 경로 전체를 permitAll로 열어둔다.
@@ -44,6 +47,13 @@ public class AuthController {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(ApiResponse.success("회원가입이 완료됐습니다.", null));
+    }
+
+    @GetMapping("/nickname/check")
+    public ResponseEntity<ApiResponse<NicknameCheckResponse>> checkNickname(
+            @RequestParam String nickname
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(authService.checkNicknameAvailability(nickname)));
     }
 
     // 로그인 — JWT accessToken을 응답에 포함한다.

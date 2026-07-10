@@ -26,6 +26,7 @@ import {
   isMaskedBoardType,
 } from '@/domain/board/privateBoard';
 import { formatRelativeTime } from '@/domain/common/format';
+import { formatAuthorIpLabel } from '@/domain/post/ipDisplay';
 import { displayAuthorNickname } from '@/domain/post/types';
 import { isAdmin, isStaff } from '@/domain/user/types';
 import { getErrorMessage } from '@/lib/api/client';
@@ -312,6 +313,9 @@ export default function PostDetailPage() {
               </p>
               <p className="mt-px text-[10.5px] text-[#A6ABA0]">
                 {formatRelativeTime(post.createdAt)}
+                {formatAuthorIpLabel(post.authorIpMasked)
+                  ? ` · ${formatAuthorIpLabel(post.authorIpMasked)}`
+                  : ''}
               </p>
             </div>
           </div>

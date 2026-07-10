@@ -8,6 +8,7 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
@@ -37,7 +38,9 @@ public class KakaoOAuthClient implements OAuthClient {
         MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
         form.add("grant_type", "authorization_code");
         form.add("client_id", config.clientId());
-        form.add("client_secret", config.clientSecret());
+        if (StringUtils.hasText(config.clientSecret())) {
+            form.add("client_secret", config.clientSecret());
+        }
         form.add("redirect_uri", redirectUri);
         form.add("code", code);
 

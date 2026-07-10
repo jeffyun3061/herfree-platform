@@ -21,7 +21,8 @@ public record PostResponse(
         Instant createdAt,
         boolean isMyPost,
         boolean readable,
-        boolean staffReplied
+        boolean staffReplied,
+        String authorIpMasked
 ) {
     public static PostResponse of(Post post, String authorNickname, Long currentUserId, UserRole viewerRole) {
         return of(post, authorNickname, currentUserId, viewerRole, false);
@@ -54,6 +55,7 @@ public record PostResponse(
                 : AnonymousNicknamePolicy.displayNickname(post.isAnonymous(), isMyPost, authorNickname);
         String title = mask ? PrivateBoardPolicy.MASKED_TITLE : post.getTitle();
         String preview = mask ? "" : toPreview(post.getContent());
+        String authorIpMasked = mask ? null : post.getAuthorIpMasked();
 
         return new PostResponse(
                 post.getId(),
@@ -69,7 +71,8 @@ public record PostResponse(
                 post.getCreatedAt(),
                 isMyPost,
                 readable,
-                staffReplied
+                staffReplied,
+                authorIpMasked
         );
     }
 

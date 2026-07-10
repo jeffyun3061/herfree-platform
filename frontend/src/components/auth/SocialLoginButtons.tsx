@@ -79,14 +79,6 @@ const PROVIDERS: Array<{
   },
 ];
 
-function AuthDivider() {
-  return (
-    <div className="auth-divider">
-      <span>또는 이메일로</span>
-    </div>
-  );
-}
-
 export function SocialLoginButtons({
   returnUrl,
   mode = 'login',
@@ -137,15 +129,17 @@ export function SocialLoginButtons({
   );
 }
 
-export function SocialLoginSection({
+export function SocialLoginBelowEmail({
   returnUrl,
   mode = 'login',
   className,
 }: SocialLoginButtonsProps) {
   return (
     <div className={className}>
-      <SocialLoginButtons returnUrl={returnUrl} mode={mode} />
-      <AuthDivider />
+      <div className="auth-divider">
+        <span>또는 소셜로</span>
+      </div>
+      <SocialLoginButtons returnUrl={returnUrl} mode={mode} className="mt-5" />
     </div>
   );
 }

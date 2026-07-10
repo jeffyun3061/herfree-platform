@@ -14,6 +14,11 @@ export function signup(input: SignupRequest): Promise<void> {
   return request<void>('/api/auth/signup', { method: 'POST', body: input });
 }
 
+export function checkNicknameAvailability(nickname: string): Promise<{ available: boolean }> {
+  const params = new URLSearchParams({ nickname });
+  return request<{ available: boolean }>(`/api/auth/nickname/check?${params.toString()}`);
+}
+
 export function login(input: LoginRequest): Promise<LoginResult> {
   return request<LoginResult>('/api/auth/login', { method: 'POST', body: input });
 }

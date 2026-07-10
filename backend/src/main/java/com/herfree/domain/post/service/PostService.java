@@ -32,7 +32,9 @@ import com.herfree.global.util.PostSearchKeywordPolicy;
 import com.herfree.global.util.PostVisibilityPolicy;
 import com.herfree.global.storage.PostImageStorageService;
 import com.herfree.domain.reaction.repository.ReactionRepository;
+import com.herfree.global.util.AuthorIpMaskPolicy;
 import com.herfree.global.util.BoardWritePolicy;
+import com.herfree.global.util.ClientIpExtractor;
 import com.herfree.global.util.PrivateBoardPolicy;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -42,6 +44,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -62,7 +65,7 @@ public class PostService {
     private final ReactionRepository reactionRepository;
 
     @Transactional
-    public PostDetailResponse createPost(Long userId, PostCreateRequest request) {
+    public PostDetailResponse createPost(Long userId, PostCreateRequest request, HttpServletRequest httpRequest) {
         Board board = boardRepository.findById(request.boardId())
                 .orElseThrow(BoardNotFoundException::new);
 
@@ -77,6 +80,8 @@ public class PostService {
                 ? PostVisibility.MEMBERS_ONLY
                 : request.visibility();
 
+        String authorIpMasked = AuthorIpMaskPolicy.mask(ClientIpExtractor.extract(httpRequest));
+
         Post post = Post.builder()
                 .board(board)
                 .user(user)
@@ -84,6 +89,7 @@ public class PostService {
                 .content(request.content())
                 .visibility(visibility)
                 .isAnonymous(request.isAnonymous())
+                .authorIpMasked(authorIpMasked)
                 .build();
 
         postRepository.save(post);

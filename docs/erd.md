@@ -189,6 +189,7 @@ UNIQUE (`provider`, `provider_user_id`)
 | `status` | VARCHAR | ACTIVE, HIDDEN, DELETED |
 | `visibility` | VARCHAR | PUBLIC, MEMBERS_ONLY, PRIVATE |
 | `is_anonymous` | BOOLEAN | 익명 여부 |
+| `author_ip_masked` | VARCHAR NULL | 작성 시점 IP 마스킹 값 (예: `123.45.*`) |
 | `sort_order` | INT | 관리자 수동 정렬 (DESC, 공지 큐레이션) |
 | `is_pinned` | BOOLEAN | 공지 상단 고정 |
 | `created_at` | DATETIME | 생성일 |

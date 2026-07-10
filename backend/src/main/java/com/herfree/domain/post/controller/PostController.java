@@ -102,9 +102,10 @@ public class PostController {
     @PostMapping
     public ResponseEntity<ApiResponse<PostDetailResponse>> createPost(
             @AuthenticationPrincipal Long userId,
-            @Valid @RequestBody PostCreateRequest request
+            @Valid @RequestBody PostCreateRequest request,
+            HttpServletRequest httpRequest
     ) {
-        PostDetailResponse response = postService.createPost(userId, request);
+        PostDetailResponse response = postService.createPost(userId, request, httpRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
     }
 

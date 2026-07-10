@@ -5,8 +5,7 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-import { GuestPeaceCta } from '@/components/home/GuestPeaceCta';
-import { BrandMark } from '@/components/brand/BrandMark';
+import { LoggedOutFeaturePrompt } from '@/components/auth/LoggedOutFeaturePrompt';
 import { InlineTopActions } from '@/components/layout/InlineTopActions';
 
 import { JournalRecordFromQuery } from '@/components/journal/JournalRecordFromQuery';
@@ -366,13 +365,12 @@ function JournalPageContent() {
           </>
 
         ) : (
-          <div className="mx-auto max-w-app space-y-3">
-            <div className="flex items-center justify-between px-1 pt-2">
-              <BrandMark size="sm" showText={false} />
-              <InlineTopActions />
-            </div>
-            <GuestPeaceCta />
-          </div>
+          <LoggedOutFeaturePrompt
+            title="개인일지"
+            subtitle="날짜별로 기록을 모아봐요"
+            body="가입하면 매일의 컨디션을 기록하고 흐름을 볼 수 있어요"
+            signupFrom="/journal"
+          />
         )}
 
 

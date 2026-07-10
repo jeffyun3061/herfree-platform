@@ -4,12 +4,13 @@ import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
-import { BrandMark } from '@/components/brand/BrandMark';
-import { TopBar } from '@/components/layout/TopBar';
+import { AuthScreenShell } from '@/components/auth/AuthScreenShell';
+import { SocialLoginBelowEmail } from '@/components/auth/SocialLoginButtons';
+import { SignupAgreementFields, isRequiredSignupAgreed, type SignupAgreementState } from '@/components/auth/SignupAgreementFields';
+import { NicknameFieldWithCheck } from '@/components/auth/NicknameFieldWithCheck';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
-import { SocialLoginSection } from '@/components/auth/SocialLoginButtons';
 import { validateSignup } from '@/domain/auth/validate';
 import { getErrorMessage } from '@/lib/api/client';
 
@@ -27,18 +28,27 @@ function SignupForm() {
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
   const [nickname, setNickname] = useState('');
-  const [agreeTerms, setAgreeTerms] = useState(false);
-  const [agreePrivacy, setAgreePrivacy] = useState(false);
+  const [agreements, setAgreements] = useState<SignupAgreementState>({
+    agreeTerms: false,
+    agreePrivacy: false,
+    agreeAge: false,
+    agreeMarketing: false,
+  });
+  const [nicknameAvailable, setNicknameAvailable] = useState<boolean | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const allRequiredAgreed = agreeTerms && agreePrivacy;
+  const allRequiredAgreed = isRequiredSignupAgreed(agreements);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!allRequiredAgreed) {
       setError('필수 약관에 동의해 주세요.');
+      return;
+    }
+    if (nicknameAvailable !== true) {
+      setError('닉네임 중복확인을 먼저 해 주세요.');
       return;
     }
     const errors = validateSignup({ email, password, passwordConfirm, nickname });
@@ -60,26 +70,12 @@ function SignupForm() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F3EDE3]">
-      <TopBar title="회원가입" showBack />
-      <div className="auth-screen !min-h-0 bg-transparent pt-6">
-      <div className="flex flex-col items-center text-center">
-        <BrandMark variant="auth" size="lg" />
-        <h1 className="hf-display mt-8 text-[26px] font-extrabold leading-tight text-[#1E2621]">
-          함께 시작해요
-        </h1>
-        <p className="mt-2 text-sm text-[#5C645A]">익명 커뮤니티와 개인 기록을 한 곳에서 관리할 수 있어요.</p>
-      </div>
-
-      <SocialLoginSection
-        returnUrl={resolveReturnUrl(searchParams.get('from'))}
-        mode="signup"
-        className="mt-6"
-      />
-
-      <section className="rounded-[20px] border border-[#ECE5D8] bg-white p-5 shadow-[0_1px_2px_rgba(20,30,25,.04),0_12px_28px_-22px_rgba(20,30,25,.18)]">
-        <h2 className="mb-4 text-[13px] font-extrabold text-[#15695E]">이메일로 가입</h2>
-      <form onSubmit={(e) => void handleSubmit(e)} className="flex flex-1 flex-col gap-4">
+    <AuthScreenShell
+      backHref="/"
+      title="헤르프리에 오신 걸 환영해요"
+      subtitle="익명 커뮤니티와 개인 기록을 한 곳에서 관리할 수 있어요."
+    >
+      <form onSubmit={(e) => void handleSubmit(e)} className="mt-7 flex flex-col gap-4">
         <Input
           label="이메일"
           type="email"
@@ -109,48 +105,14 @@ function SignupForm() {
           onChange={(e) => setPasswordConfirm(e.target.value)}
           error={fieldErrors.passwordConfirm}
         />
-        <Input
-          label="닉네임"
-          required
-          value={nickname}
-          onChange={(e) => setNickname(e.target.value)}
-          maxLength={20}
-          placeholder="커뮤니티에 표시될 이름"
+        <NicknameFieldWithCheck
+          nickname={nickname}
+          onNicknameChange={setNickname}
           error={fieldErrors.nickname}
+          onAvailabilityChange={setNicknameAvailable}
         />
 
-        <div className="mt-2 space-y-3 rounded-[18px] border border-[#ECE5D8] bg-white p-4 shadow-card">
-          <label className="flex items-start gap-3 text-sm text-[#1E2621]">
-            <input
-              type="checkbox"
-              checked={agreeTerms}
-              onChange={(e) => setAgreeTerms(e.target.checked)}
-              className="mt-0.5 h-4 w-4 rounded border-[#ECE5D8] text-[#0B3B36] focus:ring-[#0B3B36]"
-            />
-            <span>
-              <span className="font-medium text-[#0B3B36]">[필수]</span>{' '}
-              <Link href="/terms" className="underline underline-offset-2">
-                이용약관
-              </Link>
-              에 동의합니다.
-            </span>
-          </label>
-          <label className="flex items-start gap-3 text-sm text-[#1E2621]">
-            <input
-              type="checkbox"
-              checked={agreePrivacy}
-              onChange={(e) => setAgreePrivacy(e.target.checked)}
-              className="mt-0.5 h-4 w-4 rounded border-[#ECE5D8] text-[#0B3B36] focus:ring-[#0B3B36]"
-            />
-            <span>
-              <span className="font-medium text-[#0B3B36]">[필수]</span>{' '}
-              <Link href="/privacy" className="underline underline-offset-2">
-                개인정보처리방침
-              </Link>
-              에 동의합니다.
-            </span>
-          </label>
-        </div>
+        <SignupAgreementFields value={agreements} onChange={setAgreements} />
 
         {error && <ErrorMessage message={error} />}
         <Button type="submit" fullWidth size="lg" disabled={isSubmitting || !allRequiredAgreed}>
@@ -163,9 +125,13 @@ function SignupForm() {
           </Link>
         </p>
       </form>
-      </section>
-      </div>
-    </div>
+
+      <SocialLoginBelowEmail
+        returnUrl={resolveReturnUrl(searchParams.get('from'))}
+        mode="signup"
+        className="mt-7"
+      />
+    </AuthScreenShell>
   );
 }
 

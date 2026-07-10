@@ -84,6 +84,16 @@ class AuthServiceTest {
     }
 
     @Test
+    @DisplayName("닉네임 중복 확인 API는 사용 가능 여부를 반환한다")
+    void checkNicknameAvailability_returnsAvailability() {
+        given(userProfileRepository.existsByNickname("새닉네임")).willReturn(false);
+        assertThat(authService.checkNicknameAvailability("새닉네임").available()).isTrue();
+
+        given(userProfileRepository.existsByNickname("기존닉네임")).willReturn(true);
+        assertThat(authService.checkNicknameAvailability("기존닉네임").available()).isFalse();
+    }
+
+    @Test
     @DisplayName("이메일이 중복이면 DuplicateEmailException이 발생한다")
     void signup_duplicateEmail_throws() {
         // given — 이미 존재하는 이메일

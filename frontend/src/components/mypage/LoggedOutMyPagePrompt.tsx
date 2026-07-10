@@ -1,42 +1,14 @@
 'use client';
 
-import Link from 'next/link';
-
-function LockIcon() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F0C778" strokeWidth="2" aria-hidden>
-      <rect x="5" y="11" width="14" height="9" rx="2" />
-      <path d="M8 11V7a4 4 0 0 1 8 0v4" />
-    </svg>
-  );
-}
+import { LoggedOutFeaturePrompt } from '@/components/auth/LoggedOutFeaturePrompt';
 
 export function LoggedOutMyPagePromptCard() {
   return (
-    <div className="pb-10">
-      <div className="px-5 pt-[62px]">
-        <h2 className="hf-display text-[24px] font-semibold tracking-[-0.01em] text-[#15201D]">마이페이지</h2>
-        <p className="mt-[5px] text-[12.5px] text-[#9A9F94]">내 활동과 기록을 한곳에서 관리해요</p>
-      </div>
-
-      <div className="flex flex-col items-center px-8 pt-[60px] text-center">
-        <div className="mb-[18px] flex h-[54px] w-[54px] items-center justify-center rounded-full bg-[#0B3B36] shadow-[0_10px_22px_-10px_rgba(11,59,54,.6)]">
-          <LockIcon />
-        </div>
-        <p className="text-[16px] font-bold text-[#15201D]">회원만 이용할 수 있어요</p>
-        <p className="mt-2 max-w-[280px] text-[12.5px] leading-[1.7] text-[#6E766F]">
-          가입하면 나의 기록과 활동을 한곳에서 볼 수 있어요
-        </p>
-        <Link
-          href="/signup?from=/mypage"
-          className="mt-6 whitespace-nowrap rounded-[14px] bg-[#0B3B36] px-8 py-[15px] text-[14.5px] font-bold text-white shadow-[0_14px_30px_-14px_rgba(11,59,54,.6)]"
-        >
-          30초 만에 가입하기
-        </Link>
-        <Link href="/" className="mt-[18px] text-[12.5px] text-[#A6ABA0]">
-          ← 처음으로
-        </Link>
-      </div>
-    </div>
+    <LoggedOutFeaturePrompt
+      title="마이페이지"
+      subtitle="내 활동과 기록을 한곳에서 관리해요"
+      body="가입하면 나의 기록과 활동을 한곳에서 볼 수 있어요"
+      signupFrom="/mypage"
+    />
   );
 }

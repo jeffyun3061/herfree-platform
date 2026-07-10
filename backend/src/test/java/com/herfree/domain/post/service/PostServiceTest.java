@@ -25,6 +25,7 @@ import com.herfree.global.util.PostListPeriod;
 import com.herfree.global.util.PostListSort;
 import com.herfree.global.exception.BusinessException;
 import com.herfree.global.storage.PostImageStorageService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -47,6 +48,7 @@ import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
@@ -113,12 +115,15 @@ class PostServiceTest {
         given(userProfileRepository.findByUserId(userId)).willReturn(Optional.of(profile));
 
         // when
-        PostDetailResponse response = postService.createPost(userId, request);
+        HttpServletRequest httpRequest = mock(HttpServletRequest.class);
+        given(httpRequest.getRemoteAddr()).willReturn("203.0.113.10");
+        PostDetailResponse response = postService.createPost(userId, request, httpRequest);
 
         // then — 작성된 게시글의 제목과 내용이 요청과 일치하는지 확인한다
         assertThat(response.title()).isEqualTo(request.title());
         assertThat(response.content()).isEqualTo(request.content());
         assertThat(response.isMyPost()).isTrue();
+        assertThat(response.authorIpMasked()).isEqualTo("203.0.*");
     }
 
     @Test
@@ -149,7 +154,7 @@ class PostServiceTest {
         given(userProfileRepository.findByUserId(userId)).willReturn(Optional.of(profile));
 
         // when
-        PostDetailResponse response = postService.createPost(userId, request);
+        PostDetailResponse response = postService.createPost(userId, request, null);
 
         // then — 본인 익명 글은 '익명(나)'로 표시한다
         assertThat(response.isMyPost()).isTrue();

@@ -3,6 +3,7 @@ package com.herfree.domain.auth.service;
 import com.herfree.domain.auth.dto.request.LoginRequest;
 import com.herfree.domain.auth.dto.request.SignupRequest;
 import com.herfree.domain.auth.dto.response.LoginResponse;
+import com.herfree.domain.auth.dto.response.NicknameCheckResponse;
 import com.herfree.domain.auth.exception.InvalidLoginCredentialsException;
 import com.herfree.domain.auth.exception.LoginLockedException;
 import com.herfree.domain.auth.exception.SuspendedAccountException;
@@ -79,6 +80,18 @@ public class AuthService {
 
         userProfileRepository.save(profile);
         recordAnalyticsEvent("signup_completed", user.getId());
+    }
+
+    @Transactional(readOnly = true)
+    public NicknameCheckResponse checkNicknameAvailability(String nickname) {
+        String trimmed = nickname == null ? "" : nickname.trim();
+        if (trimmed.length() < 2 || trimmed.length() > 20) {
+            return new NicknameCheckResponse(false);
+        }
+        if (ReservedNicknamePolicy.isReserved(trimmed)) {
+            return new NicknameCheckResponse(false);
+        }
+        return new NicknameCheckResponse(!userProfileRepository.existsByNickname(trimmed));
     }
 
     // 로그인 — 이메일로 사용자를 찾고, 비밀번호를 검증한 뒤 JWT를 발급한다.

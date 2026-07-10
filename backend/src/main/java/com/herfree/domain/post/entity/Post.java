@@ -69,6 +69,10 @@ public class Post extends BaseTimeEntity {
     @Column(nullable = false)
     private boolean isAnonymous;
 
+    // 작성 시점 클라이언트 IP 마스킹 값 (예: 123.45.*) — 커뮤니티 표시용
+    @Column(name = "author_ip_masked", length = 24)
+    private String authorIpMasked;
+
     @Column(nullable = false)
     private int sortOrder;
 
@@ -77,7 +81,7 @@ public class Post extends BaseTimeEntity {
 
     @Builder
     private Post(Board board, User user, String title, String content,
-                 PostVisibility visibility, boolean isAnonymous) {
+                 PostVisibility visibility, boolean isAnonymous, String authorIpMasked) {
         this.board = board;
         this.user = user;
         this.title = title;
@@ -87,6 +91,7 @@ public class Post extends BaseTimeEntity {
         this.status = PostStatus.ACTIVE;
         this.visibility = (visibility != null) ? visibility : PostVisibility.PUBLIC;
         this.isAnonymous = isAnonymous;
+        this.authorIpMasked = authorIpMasked;
         this.sortOrder = 0;
         this.isPinned = false;
     }

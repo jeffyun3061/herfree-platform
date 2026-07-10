@@ -32,12 +32,7 @@ public class OAuthClientRegistry {
     }
 
     public void assertConfigured(OAuthProvider provider) {
-        OAuthProperties.Provider config = switch (provider) {
-            case KAKAO -> properties.kakao();
-            case GOOGLE -> properties.google();
-            case NAVER -> properties.naver();
-        };
-        if (config == null || !config.isConfigured()) {
+        if (!properties.isProviderConfigured(provider)) {
             throw new OAuthProviderNotConfiguredException();
         }
     }
