@@ -53,7 +53,7 @@ export function GuestHomeHero() {
       <div className="absolute right-[22px] top-[44px] flex shrink-0 items-center gap-4">
           <Link
             href="/login"
-            className="text-[13.5px] font-semibold text-white/92 drop-shadow-[0_1px_7px_rgba(7,37,31,.55)]"
+            className="text-[13.5px] font-semibold text-white [text-shadow:0_1px_8px_rgba(7,37,31,.55)]"
           >
             로그인
           </Link>
@@ -73,7 +73,7 @@ export function GuestHomeHero() {
           <br />
           들어오세요
         </h1>
-        <p className="mt-3 max-w-[300px] text-[13.5px] font-medium leading-[1.7] text-white/92">
+        <p className="mt-3 max-w-[300px] text-[13px] font-medium leading-[1.7] text-white [text-shadow:0_1px_10px_rgba(7,37,31,.5)]">
           우리들의 이야기가 모이는 공간입니다.
         </p>
       </div>

@@ -44,10 +44,10 @@ export default function VideosPage() {
   return (
     <>
       <div className="media-screen mx-auto max-w-app pb-24 lg:max-w-none">
-        <div className="flex items-start justify-between gap-3 px-5 pt-[58px]">
+        <div className="hf-screen-header">
           <div className="min-w-0">
             <h1 className="hf-display text-[24px] font-semibold leading-tight text-[#15201D]">헤르프리 영상</h1>
-            <p className="mt-[5px] text-[12.5px] text-[#9A9F94]">유튜브 채널에서 다뤄온 이야기들</p>
+            <p className="mt-[5px] text-[13px] hf-text-subtle">유튜브 채널에서 다뤄온 이야기들</p>
           </div>
           <InlineTopActions />
         </div>

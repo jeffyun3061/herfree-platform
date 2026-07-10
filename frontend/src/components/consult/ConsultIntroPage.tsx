@@ -6,12 +6,11 @@ import { KAKAO_CONSULT_URL } from '@/domain/consult/constants';
 const consultFaqs = [
   {
     question: '어떤 주제든 괜찮나요?',
-    answer:
-      '연애고지, 재발 불안, 확진 초기 패닉 등 어떤 이야기도 괜찮아요. 의학적 진단이나 처방은 다루지 않아요.',
+    answer: '연애고지, 재발 불안, 확진 초기 등 어떤 이야기도 괜찮아요. 의학적 진단·처방은 다루지 않아요.',
   },
   {
     question: '신청하면 바로 시작되나요?',
-    answer: '신청 후 순서대로 채팅방이 열려요. 보통 1~2일 내에 연결돼요.',
+    answer: '신청 순서대로 채팅방이 열려요. 보통 1~2일 안에 연결돼요.',
   },
 ] as const;
 
@@ -24,7 +23,10 @@ const consultInfo = [
 export function ConsultIntroPage() {
   return (
     <main className="min-h-full bg-white pb-10">
-      <header className="flex items-center gap-2.5 border-b border-[#EFE9DD] px-[18px] pb-3.5 pt-14">
+      <header
+        className="flex items-center gap-2.5 border-b border-[#EFE9DD] px-[18px] pb-3.5"
+        style={{ paddingTop: 'var(--hf-page-pt)' }}
+      >
         <Link
           href="/"
           aria-label="홈으로 돌아가기"
@@ -36,15 +38,17 @@ export function ConsultIntroPage() {
       </header>
 
       <section className="relative overflow-hidden bg-[#04342C] px-6 py-[30px] text-white">
-        <div className="absolute right-[-30px] top-[-30px] h-[140px] w-[140px] rounded-full bg-[radial-gradient(circle,rgba(240,199,120,.16)_0%,rgba(240,199,120,0)_70%)]" />
-        <h2 className="hf-display relative text-[20px] font-semibold leading-[1.5] text-white">
+        <div
+          className="pointer-events-none absolute -z-0 right-[-40px] top-[-40px] h-[120px] w-[120px] rounded-full bg-[radial-gradient(circle,rgba(240,199,120,.08)_0%,rgba(240,199,120,0)_70%)]"
+          aria-hidden
+        />
+        <h2 className="hf-display relative z-10 text-[20px] font-semibold leading-[1.5] text-white [text-shadow:0_1px_10px_rgba(0,0,0,.25)]">
           말 꺼내기 어려운 이야기,
           <br />
           1:1로 편하게.
         </h2>
-        <p className="relative mt-3 text-[12.5px] leading-[1.7] text-white/78">
-          13년째 같은 시간을 살아내며 쌓은 경험과 2급 심리상담 자격을 바탕으로, 1:1로 깊은
-          이야기를 나눕니다.
+        <p className="relative z-10 mt-3 text-[13px] leading-[1.7] text-white/85 [text-shadow:0_1px_8px_rgba(0,0,0,.2)]">
+          13년 경험과 2급 심리상담 자격을 바탕으로, 1:1로 깊은 이야기를 나눕니다.
         </p>
       </section>
 
@@ -52,9 +56,8 @@ export function ConsultIntroPage() {
         <span className="shrink-0 text-[15px]" aria-hidden>
           🔒
         </span>
-        <p className="text-[12px] leading-[1.6] text-[#04342C]">
-          이 상담은 커뮤니티와 완전히 분리되어 운영돼요. 닉네임·IP 정책과 무관하게 100% 비공개로
-          진행됩니다.
+        <p className="text-[13px] leading-[1.6] text-[#04342C]">
+          커뮤니티와 분리된 100% 비공개 상담이에요. 닉네임·IP 정책과 무관하게 운영됩니다.
         </p>
       </section>
 
@@ -64,7 +67,7 @@ export function ConsultIntroPage() {
             key={label}
             className="flex justify-between border-t border-[#F2ECE1] py-[11px] text-[13px] first:border-t-0"
           >
-            <span className="text-[#9A9F94]">{label}</span>
+            <span className="hf-text-subtle">{label}</span>
             <span className="font-semibold text-[#15201D]">{value}</span>
           </div>
         ))}
@@ -76,17 +79,17 @@ export function ConsultIntroPage() {
         </div>
         <div>
           <h2 className="text-[13.5px] font-bold text-[#15201D]">헤르프리 상담사</h2>
-          <p className="mt-0.5 text-[11.5px] text-[#9A9F94]">13년의 경험 · 2급 심리상담 자격 보유</p>
+          <p className="mt-0.5 text-[13px] hf-text-subtle">13년 경험 · 2급 심리상담 자격</p>
         </div>
       </section>
 
       <section className="mx-5 mt-6">
-        <p className="mb-1.5 text-[12px] font-semibold text-[#9A9F94]">자주 묻는 질문</p>
+        <p className="mb-1.5 text-[13px] font-semibold hf-text-subtle">자주 묻는 질문</p>
         <div>
           {consultFaqs.map((faq) => (
             <article key={faq.question} className="border-t border-[#EFE9DD] py-[13px] first:border-t-0">
               <h3 className="mb-[5px] text-[13px] font-semibold text-[#15201D]">{faq.question}</h3>
-              <p className="text-[12px] leading-[1.65] text-[#6E766F]">{faq.answer}</p>
+              <p className="text-[13px] leading-[1.65] text-[#6E766F]">{faq.answer}</p>
             </article>
           ))}
         </div>

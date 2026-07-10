@@ -55,7 +55,7 @@ function CommunityLockedPreview({
   return (
     <div className="pb-10">
       <section className="mx-5 mt-[18px] overflow-hidden rounded-[18px] bg-white px-[18px] pt-[18px] shadow-[0_1px_2px_rgba(20,30,25,.04),0_16px_34px_-24px_rgba(20,30,25,.22)]">
-        <p className="mb-2 text-[11.5px] font-semibold text-[#15695E]">질문 · FAQ ›</p>
+        <p className="mb-2 text-[12px] font-semibold text-[#15695E]">질문 · FAQ ›</p>
         <h3 className="mb-3 text-[16.5px] font-bold leading-[1.45] tracking-[-0.01em] text-[#15201D]">
           오늘 받은 결과, 다들 어떻게 받아들이셨어요?
         </h3>
@@ -65,9 +65,9 @@ function CommunityLockedPreview({
           </div>
           <div className="min-w-0">
             <p className="text-[12.5px] font-semibold text-[#2C342E]">새벽두시</p>
-            <p className="mt-0.5 text-[10.5px] text-[#A6ABA0]">2026.06.26 13:03 · 조회 61</p>
+            <p className="mt-0.5 text-[12px] hf-text-muted">2026.06.26 13:03 · 조회 61</p>
           </div>
-          <span className="ml-auto inline-flex shrink-0 items-center gap-1 text-[11px] text-[#A6ABA0]">
+          <span className="ml-auto inline-flex shrink-0 items-center gap-1 text-[12px] hf-text-muted">
             <ReplyIcon />
             댓글 0
           </span>
@@ -96,7 +96,7 @@ function CommunityLockedPreview({
           <br />
           함께해 보세요.
         </p>
-        <p className="mt-[13px] text-[12.5px] leading-[1.75] text-[#9A9F94]">
+        <p className="mt-[13px] text-[13px] leading-[1.75] hf-text-subtle">
           같은 경험을 가진 사람들이 일상과 고민을
           <br />
           나누는 익명 공간이에요.
@@ -110,7 +110,7 @@ function CommunityLockedPreview({
         >
           30초 만에 가입하기
         </Link>
-        <Link href="/" className="mt-4 block text-[12.5px] text-[#A6ABA0]">
+        <Link href="/" className="mt-4 block text-[13px] hf-text-muted">
           ← 처음으로
         </Link>
       </section>
@@ -120,7 +120,7 @@ function CommunityLockedPreview({
 
 function ReplyIcon() {
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#B4B2A6" strokeWidth="2" strokeLinecap="round" aria-hidden>
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7C8279" strokeWidth="2" strokeLinecap="round" aria-hidden>
       <path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.9-.9L3 21l1.9-5.6A8.5 8.5 0 1 1 21 11.5z" />
     </svg>
   );
@@ -244,12 +244,12 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
 
   return (
     <div className="community-screen mx-auto max-w-app pb-24 lg:max-w-none">
-      <div className="flex items-start justify-between gap-3 px-5 pt-[58px]">
+      <div className="hf-screen-header">
         <div className="min-w-0">
           <h2 className="hf-display text-[24px] font-extrabold leading-tight tracking-[-0.01em] text-[#15201D]">
             커뮤니티
           </h2>
-          <p className="mt-[5px] text-[12.5px] leading-relaxed text-[#9A9F94]">
+          <p className="mt-[5px] text-[13px] leading-relaxed hf-text-subtle">
             같은 경험을 가진 사람들의 이야기가 모이는 곳
           </p>
         </div>

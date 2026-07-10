@@ -47,10 +47,10 @@ function ContentsPageContent() {
   return (
     <>
       <div className="content-screen mx-auto max-w-app pb-24 lg:max-w-none">
-        <div className="flex items-start justify-between gap-3 px-5 pt-7 lg:pt-8">
+        <div className="hf-screen-header">
           <div className="min-w-0">
             <h1 className="hf-display text-[24px] font-semibold leading-tight text-[#15201D]">칼럼</h1>
-            <p className="mt-1.5 text-[12.5px] text-[#8B9590]">경험에서 나온 이야기</p>
+            <p className="mt-1.5 text-[13px] hf-text-muted">경험에서 나온 이야기</p>
           </div>
           <InlineTopActions />
         </div>

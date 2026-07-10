@@ -151,7 +151,7 @@ function LoginForm() {
         </Link>
       </p>
 
-      <p className="mt-5 text-center text-[11px] leading-relaxed text-[#9A9F94]">
+      <p className="mt-5 text-center text-[13px] leading-relaxed hf-text-subtle">
         로그인하면{' '}
         <Link href="/terms" className="underline underline-offset-2">
           이용약관

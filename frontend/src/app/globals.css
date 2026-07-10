@@ -39,6 +39,11 @@
   --journal-flow-axis: #e3e6e4;
   --journal-risk-high: #e74c3c;
   --journal-risk-medium: #e67e22;
+  /* 2차 QA — 비회원 화면 공통 */
+  --hf-page-pt: 2.125rem; /* 34px */
+  --hf-text-muted: #7c8279;
+  --hf-text-subtle: #9a9f94;
+  --hf-text-placeholder: #9aa096;
 }
 
 body {
@@ -65,6 +70,19 @@ body {
 @layer components {
   .hf-display {
     font-family: 'Source Han Serif KR', 'Noto Serif KR', Georgia, serif;
+  }
+
+  .hf-screen-header {
+    @apply flex items-start justify-between gap-3 px-5;
+    padding-top: var(--hf-page-pt);
+  }
+
+  .hf-text-muted {
+    color: var(--hf-text-muted);
+  }
+
+  .hf-text-subtle {
+    color: var(--hf-text-subtle);
   }
 
   .page-container {
@@ -100,12 +118,12 @@ body {
   }
 
   .app-phone-shell .community-screen {
-    @apply px-4 pt-6 lg:px-4 lg:pb-12 lg:pt-6;
+    @apply px-4 pt-0 lg:px-4 lg:pb-12 lg:pt-6;
   }
 
   .app-phone-shell .content-screen,
   .app-phone-shell .media-screen {
-    @apply px-4 pt-6 lg:px-4 lg:pb-12 lg:pt-6;
+    @apply px-0 pt-0 lg:px-4 lg:pb-12 lg:pt-6;
   }
 
   /* 관리자 통계: 앱 폭 1열 → 웹 패널 2열 */
@@ -421,7 +439,7 @@ body {
   }
 
   .community-feed-tag {
-    @apply shrink-0 rounded-[7px] px-2 py-0.5 text-[10.5px] font-bold;
+    @apply shrink-0 rounded-[7px] px-2 py-0.5 text-[12px] font-bold;
   }
 
   .community-feed-row__title {
@@ -429,7 +447,8 @@ body {
   }
 
   .community-feed-row__meta {
-    @apply flex items-center gap-2 text-[11px] font-medium text-[#A6ABA0];
+    @apply flex items-center gap-2 text-[12px] font-medium;
+    color: var(--hf-text-muted);
   }
 
   .video-feed-card {
@@ -469,7 +488,8 @@ body {
   }
 
   .video-feed-card__meta {
-    @apply flex flex-wrap items-center gap-2 text-[11px] text-[#A6ABA3];
+    @apply flex flex-wrap items-center gap-2 text-[12px];
+    color: var(--hf-text-muted);
   }
 
   .column-feed-card {
@@ -509,7 +529,8 @@ body {
   }
 
   .column-feed-card__meta {
-    @apply flex flex-wrap items-center gap-2 text-[11px] text-[#A6ABA3];
+    @apply flex flex-wrap items-center gap-2 text-[12px];
+    color: var(--hf-text-muted);
   }
 
   .consult-hero {

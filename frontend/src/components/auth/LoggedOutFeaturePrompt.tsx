@@ -25,25 +25,27 @@ export function LoggedOutFeaturePrompt({
   signupFrom,
 }: LoggedOutFeaturePromptProps) {
   return (
-    <div className="pb-10">
-      <div className="px-5 pt-[62px]">
-        <h2 className="hf-display text-[24px] font-semibold tracking-[-0.01em] text-[#15201D]">{title}</h2>
-        <p className="mt-[5px] text-[12.5px] text-[#9A9F94]">{subtitle}</p>
+    <div className="flex min-h-[calc(100dvh-5rem)] flex-col pb-10">
+      <div className="hf-screen-header">
+        <div className="min-w-0">
+          <h2 className="hf-display text-[24px] font-semibold tracking-[-0.01em] text-[#15201D]">{title}</h2>
+          <p className="mt-[5px] text-[13px] hf-text-subtle">{subtitle}</p>
+        </div>
       </div>
 
-      <div className="flex flex-col items-center px-8 pt-[60px] text-center">
+      <div className="flex flex-1 flex-col items-center justify-center px-8 text-center">
         <div className="mb-[18px] flex h-[54px] w-[54px] items-center justify-center rounded-full bg-[#0B3B36] shadow-[0_10px_22px_-10px_rgba(11,59,54,.6)]">
           <LockIcon />
         </div>
         <p className="text-[16px] font-bold text-[#15201D]">회원만 이용할 수 있어요</p>
-        <p className="mt-2 max-w-[280px] text-[12.5px] leading-[1.7] text-[#6E766F]">{body}</p>
+        <p className="mt-2 max-w-[280px] text-[13px] leading-[1.7] text-[#6E766F]">{body}</p>
         <Link
           href={`/signup?from=${encodeURIComponent(signupFrom)}`}
           className="mt-6 whitespace-nowrap rounded-[14px] bg-[#0B3B36] px-8 py-[15px] text-[14.5px] font-bold text-white shadow-[0_14px_30px_-14px_rgba(11,59,54,.6)]"
         >
           30초 만에 가입하기
         </Link>
-        <Link href="/" className="mt-[18px] text-[12.5px] text-[#A6ABA0]">
+        <Link href="/" className="mt-[18px] text-[13px] hf-text-muted">
           ← 처음으로
         </Link>
       </div>

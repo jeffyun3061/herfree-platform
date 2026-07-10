@@ -15,12 +15,12 @@ export default function QnaPage({ searchParams }: QnaPageProps) {
 
   return (
     <div className="content-screen mx-auto max-w-app pb-[96px] lg:max-w-none">
-      <div className="flex items-start justify-between gap-3 px-5 pt-[58px] lg:pt-[58px]">
+      <div className="hf-screen-header lg:pt-[34px]">
         <div className="min-w-0">
           <h1 className="hf-display m-0 text-[24px] font-extrabold leading-tight tracking-[-0.01em] text-[#15201D]">
             자주 묻는 질문
           </h1>
-          <p className="mt-[5px] text-[12.5px] leading-relaxed text-[#9A9F94]">
+          <p className="mt-[5px] text-[13px] leading-relaxed hf-text-subtle">
             많이 물어보신 것들을 먼저 모아봤어요
           </p>
         </div>

@@ -18,7 +18,7 @@ export function AuthScreenShell({
 }: AuthScreenShellProps) {
   return (
     <div className="min-h-screen bg-[#F3EDE3]">
-      <div className="auth-screen !min-h-0 bg-transparent px-5 pb-10 pt-[54px]">
+      <div className="auth-screen !min-h-0 bg-transparent px-5 pb-10" style={{ paddingTop: 'var(--hf-page-pt)' }}>
         <div className="px-1">
           <Link
             href={backHref}

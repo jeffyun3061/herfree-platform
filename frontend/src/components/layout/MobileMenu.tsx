@@ -31,13 +31,13 @@ const GUIDE_LINKS = [
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <p className="px-1 text-[10.5px] font-extrabold uppercase tracking-[0.16em] text-[#9B8B70]">
+    <p className="px-1 text-[12px] font-extrabold uppercase tracking-[0.16em] text-[#9B8B70]">
       {children}
     </p>
   );
 }
 
-function MenuLink({
+function MenuListLink({
   href,
   label,
   onClose,
@@ -54,11 +54,16 @@ function MenuLink({
       onClick={onClose}
       className={
         emphasis
-          ? 'rounded-[14px] bg-[#0B3B36] px-3.5 py-3 text-[13px] font-extrabold text-white shadow-[0_12px_22px_-18px_rgba(11,59,54,.9)]'
-          : 'rounded-[14px] border border-[#E4D8C4] bg-white px-3.5 py-3 text-[13px] font-bold text-[#1E2621] shadow-[0_10px_20px_-18px_rgba(20,30,25,.24)]'
+          ? 'flex items-center justify-between rounded-[13px] bg-[#0B3B36] px-3 py-3.5 text-[13px] font-extrabold text-white'
+          : 'flex items-center justify-between rounded-[13px] px-3 py-3.5 text-[13px] font-semibold text-[#293530] hover:bg-white'
       }
     >
       {label}
+      {!emphasis ? (
+        <span className="hf-text-muted" aria-hidden>
+          ›
+        </span>
+      ) : null}
     </Link>
   );
 }
@@ -111,17 +116,17 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
               <CloseIcon />
             </button>
           </div>
-          <p className="mt-3 text-[12px] leading-[1.55] text-[#6D746D]">
-            익명 커뮤니티, 개인일지, 검증된 정보를 한곳에서 이어서 볼 수 있어요.
+          <p className="mt-3 text-[13px] leading-[1.55] text-[#6D746D]">
+            익명 커뮤니티, 개인일지, 검증된 정보를 한곳에서 볼 수 있어요.
           </p>
         </div>
 
         <nav className="flex-1 space-y-5 overflow-y-auto px-4 py-5">
           <section className="space-y-2.5">
             <SectionTitle>서비스</SectionTitle>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="rounded-[18px] border border-[#E2D4BE] bg-[#FBF6ED] p-2">
               {MAIN_LINKS.map((item) => (
-                <MenuLink
+                <MenuListLink
                   key={item.href}
                   href={item.href}
                   label={item.label}
@@ -175,7 +180,7 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
           {isAdmin && (
             <section className="space-y-2.5">
               <SectionTitle>운영</SectionTitle>
-              <MenuLink href="/admin?tab=dashboard" label="관리자 대시보드" onClose={onClose} />
+              <MenuListLink href="/admin?tab=dashboard" label="관리자 대시보드" onClose={onClose} />
             </section>
           )}
         </nav>
@@ -199,9 +204,9 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-2">
-              <MenuLink href="/login" label="로그인" onClose={onClose} />
-              <MenuLink href="/signup" label="회원가입" onClose={onClose} emphasis />
+            <div className="space-y-2">
+              <MenuListLink href="/login" label="로그인" onClose={onClose} />
+              <MenuListLink href="/signup" label="회원가입" onClose={onClose} emphasis />
             </div>
           )}
         </div>
