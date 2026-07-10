@@ -8,7 +8,7 @@ spring:
       - optional:file:./backend/local-secrets.yml
 
   datasource:
-    url: jdbc:mysql://localhost:3306/herfree_db?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    url: jdbc:mysql://localhost:3306/herfree_db?serverTimezone=UTC&characterEncoding=UTF-8
     username: herfree_user
     password: herfree_pass
 

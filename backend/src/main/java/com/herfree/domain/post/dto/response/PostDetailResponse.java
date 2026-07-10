@@ -5,7 +5,7 @@ import com.herfree.domain.post.entity.PostVisibility;
 import com.herfree.domain.user.entity.UserRole;
 import com.herfree.global.util.AnonymousNicknamePolicy;
 import com.herfree.global.util.PrivateBoardPolicy;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 // 게시글 상세 응답 DTO — 목록 응답에 content, visibility, isMyPost 필드를 추가한다
 public record PostDetailResponse(
@@ -22,8 +22,8 @@ public record PostDetailResponse(
         boolean readable,
         String imageUrl,
         boolean staffReplied,
-        LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        Instant createdAt,
+        Instant updatedAt
 ) {
     public static PostDetailResponse of(Post post, String authorNickname, boolean isMyPost, String imageUrl) {
         return of(post, authorNickname, isMyPost, imageUrl, false, null, null);

@@ -12,7 +12,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -60,11 +60,11 @@ public class Report {
     private User processedBy;
 
     @Column
-    private LocalDateTime processedAt;
+    private Instant processedAt;
 
     @CreatedDate
     @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 
     @Builder
     private Report(User reporter, ReportTargetType targetType, Long targetId,
@@ -83,13 +83,13 @@ public class Report {
     public void accept(User admin) {
         this.status = ReportStatus.ACCEPTED;
         this.processedBy = admin;
-        this.processedAt = LocalDateTime.now();
+        this.processedAt = Instant.now();
     }
 
     // 신고 기각 처리 — accept와 동일한 방식으로 처리자를 기록한다
     public void reject(User admin) {
         this.status = ReportStatus.REJECTED;
         this.processedBy = admin;
-        this.processedAt = LocalDateTime.now();
+        this.processedAt = Instant.now();
     }
 }

@@ -146,6 +146,11 @@ public class PostService {
             Pageable pageable,
             PostListPeriod period
     ) {
+        // 비회원 통합·게시판 검색 차단 — 커뮤니티 목록 잠금과 동일 정책
+        if (userId == null && StringUtils.hasText(keyword)) {
+            return Page.empty(pageable);
+        }
+
         PostListSort sort = PostListSort.from(pageable);
         // @Query ORDER BY는 repository 내부에 있으므로 Pageable sort(engagementScore 등)를 그대로 넘기면
         // Post 엔티티에 없는 속성으로 추가 정렬이 붙어 500이 난다.

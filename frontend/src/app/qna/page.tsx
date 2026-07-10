@@ -27,25 +27,6 @@ export default function QnaPage({ searchParams }: QnaPageProps) {
         <InlineTopActions />
       </div>
 
-      <nav className="mt-[18px] flex gap-2 overflow-x-auto px-5 pb-1 pr-10 scrollbar-hide" aria-label="FAQ 카테고리">
-        {FAQ_GROUPS.map((group) => {
-          const selected = activeCategory === group.category;
-          return (
-            <Link
-              key={group.category}
-              href={`/qna?category=${encodeURIComponent(group.category)}#faq-category-${encodeURIComponent(group.category)}`}
-              className={
-                selected
-                  ? 'community-chip community-chip-active'
-                  : 'community-chip community-chip-inactive'
-              }
-            >
-              {group.category}
-            </Link>
-          );
-        })}
-      </nav>
-
       <section className="mt-[18px] flex flex-col gap-[22px] px-5">
         {FAQ_GROUPS.map((group, groupIndex) => (
           <section
@@ -99,7 +80,7 @@ export default function QnaPage({ searchParams }: QnaPageProps) {
 
       <Link
         href="/consult"
-        className="mx-5 mt-6 flex items-center gap-3 rounded-[16px] bg-[#0B3B36] px-[19px] py-[17px] leading-normal shadow-[0_14px_30px_-18px_rgba(11,59,54,.6)]"
+        className="mx-5 mt-[24px] flex items-center gap-3 rounded-[16px] bg-[#0B3B36] px-[19px] py-[17px] leading-normal shadow-[0_14px_30px_-18px_rgba(11,59,54,.6)]"
       >
         <span className="flex-1">
           <span className="block text-[13.5px] font-bold text-white">원하는 답을 못 찾으셨나요?</span>

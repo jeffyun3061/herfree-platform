@@ -2,7 +2,7 @@ package com.herfree.domain.user.repository;
 
 import com.herfree.domain.user.entity.User;
 import com.herfree.domain.user.entity.UserStatus;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -44,5 +44,5 @@ public interface UserRepository extends JpaRepository<User, Long> {
             @Param("deletedStatus") UserStatus deletedStatus,
             Pageable pageable);
 
-    long countByCreatedAtAfter(LocalDateTime since);
+    long countByCreatedAtAfter(Instant since);
 }

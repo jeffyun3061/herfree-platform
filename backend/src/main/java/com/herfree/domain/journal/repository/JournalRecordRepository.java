@@ -2,12 +2,13 @@ package com.herfree.domain.journal.repository;
 
 import com.herfree.domain.journal.entity.JournalRecord;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -37,7 +38,7 @@ public interface JournalRecordRepository extends JpaRepository<JournalRecord, Lo
 
     long countByHadSymptomsTrue();
 
-    long countByCreatedAtAfter(LocalDateTime since);
+    long countByCreatedAtAfter(Instant since);
 
     long countByRecordDateBetween(LocalDate from, LocalDate to);
 
@@ -50,4 +51,8 @@ public interface JournalRecordRepository extends JpaRepository<JournalRecord, Lo
 
     @Query("SELECT COUNT(DISTINCT r.user.id) FROM JournalRecord r WHERE r.recordDate = :date")
     long countDistinctUsersByRecordDate(@Param("date") LocalDate date);
+
+    @Modifying(clearAutomatically = true)
+    @Query("DELETE FROM JournalRecord r WHERE r.user.id = :userId")
+    void deleteAllByUserId(@Param("userId") Long userId);
 }

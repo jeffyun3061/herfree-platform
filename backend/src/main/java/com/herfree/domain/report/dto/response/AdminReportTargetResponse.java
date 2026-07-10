@@ -1,14 +1,14 @@
 package com.herfree.domain.report.dto.response;
 
 import com.herfree.domain.report.entity.ReportTargetType;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 public record AdminReportTargetResponse(
         ReportTargetType targetType,
         Long targetId,
         long reportCount,
         boolean urgent,
-        LocalDateTime lastReportedAt,
+        Instant lastReportedAt,
         String targetTitle,
         String targetPreview,
         String targetStatus,

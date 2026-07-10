@@ -1,7 +1,7 @@
 package com.herfree.domain.video.repository;
 
 import com.herfree.domain.video.entity.Video;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -23,7 +23,7 @@ public interface VideoRepository extends JpaRepository<Video, Long> {
 
     Optional<Video> findTopByOrderBySortOrderDesc();
 
-    long countByCreatedAtAfter(LocalDateTime since);
+    long countByCreatedAtAfter(Instant since);
 
     @Query("""
             SELECT v FROM Video v

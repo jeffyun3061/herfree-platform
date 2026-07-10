@@ -2,7 +2,7 @@ package com.herfree.domain.post.dto.response;
 
 import com.herfree.domain.post.entity.Post;
 import com.herfree.domain.post.entity.PostStatus;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 public record AdminNoticeResponse(
         Long id,
@@ -11,7 +11,7 @@ public record AdminNoticeResponse(
         PostStatus status,
         int sortOrder,
         boolean isPinned,
-        LocalDateTime createdAt
+        Instant createdAt
 ) {
     public static AdminNoticeResponse from(Post post) {
         return new AdminNoticeResponse(

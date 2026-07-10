@@ -24,7 +24,8 @@ Herfree Platform의 데이터베이스는 커뮤니티 중심 서비스 운영�
 | 본문·상세 | `TEXT` | 게시글·댓글·신고 상세 |
 | enum성 코드 | `VARCHAR(50)` | role, status, board_type 등 |
 | 불리언 | `TINYINT(1)` 또는 `BOOLEAN` | JPA `boolean` 매핑 |
-| 일시 | `DATETIME(6)` | `created_at`, `updated_at` |
+| 일시 | `DATETIME(6)` | `created_at`, `updated_at` — **UTC** (`Instant`) 저장 |
+| 달력 날짜 | `DATE` | `journal_records.record_date` — **KST** 달력 기준 |
 | 금액(원) | `INT` | 제품 `price` |
 
 ## 1.2 Soft delete

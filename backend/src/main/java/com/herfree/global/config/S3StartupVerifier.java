@@ -21,10 +21,8 @@ public class S3StartupVerifier {
 
     @EventListener(ApplicationReadyEvent.class)
     public void verifyBucketOnStartup() {
-        if (!StringUtils.hasText(s3Properties.bucket())
-                || !StringUtils.hasText(s3Properties.accessKey())
-                || !StringUtils.hasText(s3Properties.secretKey())) {
-            log.warn("S3 startup check skipped — bucket or credentials missing in config");
+        if (!StringUtils.hasText(s3Properties.bucket()) || !StringUtils.hasText(s3Properties.region())) {
+            log.warn("S3 startup check skipped — bucket or region missing in config");
             return;
         }
 

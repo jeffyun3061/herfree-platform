@@ -4,7 +4,7 @@ import com.herfree.domain.post.entity.Post;
 import com.herfree.domain.user.entity.UserRole;
 import com.herfree.global.util.AnonymousNicknamePolicy;
 import com.herfree.global.util.PrivateBoardPolicy;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 // 게시글 목록 응답 DTO — 목록에서는 content를 제외해 페이로드 크기를 줄인다
 public record PostResponse(
@@ -18,7 +18,7 @@ public record PostResponse(
         int viewCount,
         int commentCount,
         int reactionCount,
-        LocalDateTime createdAt,
+        Instant createdAt,
         boolean isMyPost,
         boolean readable,
         boolean staffReplied

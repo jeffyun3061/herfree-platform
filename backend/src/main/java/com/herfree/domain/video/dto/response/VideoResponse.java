@@ -1,7 +1,7 @@
 package com.herfree.domain.video.dto.response;
 
 import com.herfree.domain.video.entity.Video;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 public record VideoResponse(
         Long id,
@@ -14,7 +14,7 @@ public record VideoResponse(
         boolean isVisible,
         int sortOrder,
         boolean isFeatured,
-        LocalDateTime createdAt
+        Instant createdAt
 ) {
     public static VideoResponse from(Video video) {
         return new VideoResponse(

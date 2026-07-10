@@ -403,6 +403,22 @@
 
 ---
 
+## ADR-017: API·DB 타임스탬프 UTC 저장
+
+- **상태:** 승인
+- **날짜:** 2026-07-10
+- **배경:** 게시글·회원·신고·백업 등 시각을 DB에서 일관 관리하려면 단일 기준(UTC)이 필요. EC2/RDS/로컬 간 혼선 방지.
+- **결정:**
+  - `created_at` / `updated_at` 등 **시각 필드** → Java `Instant`, MySQL `DATETIME(6)` **UTC** 저장, API 응답 `…Z`
+  - JDBC `serverTimezone=UTC`, API 컨테이너 `TZ=UTC`, JVM `-Duser.timezone=UTC`
+  - **개인일지 `record_date`** 는 사용자 달력 날짜 → `LocalDate` + `AppTimeZone.todayKst()` (KST)
+  - EC2 **호스트** OS 타임존은 운영 가독성을 위해 `Asia/Seoul` (앱 로직과 분리)
+  - 기존 KST 벽시계 데이터 → Flyway `V27__migrate_timestamps_to_utc.sql`
+- **대안:** 전역 KST `LocalDateTime` 유지(다중 리전·백업 비교에 불리)
+- **영향:** `AppTimeZone`, `BaseTimeEntity`, DTO·Repository·`deployment-aws.md`, docker JDBC URL
+
+---
+
 ## 변경 이력
 
 
@@ -411,6 +427,7 @@
 
 |------|-----------|
 
+| 2026-07-10 | ADR: API·DB 타임스탬프 UTC, 일지 record_date KST 유지 |
 | 2026-06-03 | ADR-001~012: Java 17, JWT, MySQL/H2, Docker/RDS, ddl-auto, 패키지·auth/user 분리, 배포·프론트 |
 | 2026-06-03 | ADR-012~014: PostgreSQL 미채택, AI FastAPI·Vector DB 로드맵, Spring/FastAPI 역할; compose 경로 루트 통합 |
 

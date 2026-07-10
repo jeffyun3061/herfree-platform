@@ -4,6 +4,7 @@ import com.herfree.domain.comment.entity.CommentStatus;
 import com.herfree.domain.comment.entity.Comment;
 import com.herfree.domain.comment.repository.CommentRepository;
 import com.herfree.domain.board.repository.BoardRepository;
+import com.herfree.domain.journal.repository.JournalRecordRepository;
 import com.herfree.domain.post.dto.response.PostResponse;
 import com.herfree.domain.post.entity.Post;
 import com.herfree.domain.post.entity.PostStatus;
@@ -21,7 +22,7 @@ import com.herfree.domain.user.exception.UserNotFoundException;
 import com.herfree.domain.user.repository.UserProfileRepository;
 import com.herfree.domain.user.repository.UserRepository;
 import com.herfree.global.util.ReservedNicknamePolicy;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -38,6 +39,7 @@ public class UserService {
     private final CommentRepository commentRepository;
     private final ReactionRepository reactionRepository;
     private final BoardRepository boardRepository;
+    private final JournalRecordRepository journalRecordRepository;
 
     // 내 정보 조회 — DELETED 상태 계정은 조회 불가
     // 탈퇴한 회원의 JWT가 만료 전에 재사용될 경우를 방어하기 위해
@@ -98,6 +100,8 @@ public class UserService {
             comment.anonymize();
         }
 
+        journalRecordRepository.deleteAllByUserId(userId);
+
         profile.maskOnWithdraw(userId);
         user.withdraw();
     }
@@ -111,11 +115,11 @@ public class UserService {
                         userId, board.getId(), PostStatus.ACTIVE))
                 .orElse(0);
         long receivedReactions = reactionRepository.countReactionsOnUserPosts(userId);
-        LocalDateTime lastPostAt = postRepository
+        Instant lastPostAt = postRepository
                 .findFirstByUserIdAndStatusOrderByCreatedAtDesc(userId, PostStatus.ACTIVE)
                 .map(Post::getCreatedAt)
                 .orElse(null);
-        LocalDateTime memberSince = userRepository.findById(userId)
+        Instant memberSince = userRepository.findById(userId)
                 .map(User::getCreatedAt)
                 .orElse(null);
 

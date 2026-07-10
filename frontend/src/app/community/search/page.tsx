@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import { useAuth } from '@/hooks/useAuth';
 import { usePostList } from '@/hooks/usePosts';
 import { useContentList } from '@/hooks/useContents';
 import { FAQ_GROUPS } from '@/domain/faq/content';
@@ -114,17 +115,41 @@ function ResultGroup({
   );
 }
 
+function GuestCommunitySearchLock({ loginFrom }: { loginFrom: string }) {
+  return (
+    <div className="px-4 py-8 text-center">
+      <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-[18px]">
+        🔒
+      </div>
+      <p className="text-[13.5px] font-semibold text-[#1E2621]">커뮤니티 검색은 회원 전용이에요</p>
+      <p className="mt-1.5 text-[12px] leading-[1.6] text-[#9A9F94]">
+        칼럼·FAQ는 계속 검색할 수 있어요.
+      </p>
+      <Link
+        href={`/login?from=${loginFrom}`}
+        className="mt-4 inline-flex h-11 items-center justify-center rounded-[12px] bg-[#0B3B36] px-6 text-[13px] font-bold text-white"
+      >
+        로그인하고 검색하기
+      </Link>
+    </div>
+  );
+}
+
 export default function CommunitySearchPage() {
   const router = useRouter();
   const pathname = usePathname();
+  const { isLoggedIn, isReady } = useAuth();
   const [keyword, setKeyword] = useState('');
   const query = normalize(keyword);
+  const loginFrom = encodeURIComponent(pathname);
 
   const { postPage, isLoading: postsLoading } = usePostList(
     undefined,
     20,
     query,
     'createdAt,desc',
+    undefined,
+    { enabled: isReady && isLoggedIn && Boolean(query) },
   );
   const { contentPage, isLoading: contentsLoading } = useContentList(undefined, 30);
 
@@ -251,14 +276,21 @@ export default function CommunitySearchPage() {
         ) : query ? (
           <div className="flex flex-col gap-[22px]">
             <p className="text-[11.5px] font-medium text-[#9A9F94]">총 {results.length}개의 결과</p>
+            {!isLoggedIn ? (
+              <ResultGroup title={RESULT_GROUP_LABELS.community}>
+                <GuestCommunitySearchLock loginFrom={loginFrom} />
+              </ResultGroup>
+            ) : null}
             {(['community', 'content', 'faq'] as const).map((type) =>
-              groupedResults[type].length > 0 ? (
-                <ResultGroup key={type} title={RESULT_GROUP_LABELS[type]}>
-                  {groupedResults[type].map((result) => (
-                    <ResultRow key={result.id} result={result} query={query} />
-                  ))}
-                </ResultGroup>
-              ) : null,
+              type === 'community' && !isLoggedIn
+                ? null
+                : groupedResults[type].length > 0 ? (
+                    <ResultGroup key={type} title={RESULT_GROUP_LABELS[type]}>
+                      {groupedResults[type].map((result) => (
+                        <ResultRow key={result.id} result={result} query={query} />
+                      ))}
+                    </ResultGroup>
+                  ) : null,
             )}
           </div>
         ) : null}

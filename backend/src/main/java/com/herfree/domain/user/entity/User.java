@@ -9,7 +9,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -50,7 +50,7 @@ public class User extends BaseTimeEntity {
     private UserStatus status;
 
     @Column
-    private LocalDateTime suspendedUntil;
+    private Instant suspendedUntil;
 
     @Column(length = 100)
     private String suspensionReason;
@@ -82,7 +82,7 @@ public class User extends BaseTimeEntity {
         suspend(null, null, null);
     }
 
-    public void suspend(LocalDateTime suspendedUntil, String reason, String note) {
+    public void suspend(Instant suspendedUntil, String reason, String note) {
         this.status = UserStatus.SUSPENDED;
         this.suspendedUntil = suspendedUntil;
         this.suspensionReason = reason;
@@ -111,7 +111,7 @@ public class User extends BaseTimeEntity {
         this.status = status;
     }
 
-    public boolean isSuspensionExpired(LocalDateTime now) {
+    public boolean isSuspensionExpired(Instant now) {
         return this.status == UserStatus.SUSPENDED
                 && this.suspendedUntil != null
                 && !this.suspendedUntil.isAfter(now);

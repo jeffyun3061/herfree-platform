@@ -17,7 +17,7 @@ import com.herfree.domain.user.entity.UserStatus;
 import com.herfree.domain.user.repository.UserRepository;
 import com.herfree.global.config.PasswordResetProperties;
 import com.herfree.global.util.TokenHashUtil;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
@@ -78,7 +78,7 @@ class PasswordResetServiceTest {
         PasswordResetToken token = PasswordResetToken.create(
                 user,
                 TokenHashUtil.sha256Hex(rawToken),
-                LocalDateTime.now().plusMinutes(30));
+                Instant.now().plusSeconds(30 * 60));
 
         given(passwordResetTokenRepository.findByTokenHashAndUsedAtIsNull(TokenHashUtil.sha256Hex(rawToken)))
                 .willReturn(Optional.of(token));
@@ -98,7 +98,7 @@ class PasswordResetServiceTest {
         PasswordResetToken token = PasswordResetToken.create(
                 user,
                 TokenHashUtil.sha256Hex(rawToken),
-                LocalDateTime.now().minusMinutes(1));
+                Instant.now().minusSeconds(60));
 
         given(passwordResetTokenRepository.findByTokenHashAndUsedAtIsNull(TokenHashUtil.sha256Hex(rawToken)))
                 .willReturn(Optional.of(token));

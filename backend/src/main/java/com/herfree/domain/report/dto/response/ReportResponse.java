@@ -3,7 +3,7 @@ package com.herfree.domain.report.dto.response;
 import com.herfree.domain.report.entity.Report;
 import com.herfree.domain.report.entity.ReportStatus;
 import com.herfree.domain.report.entity.ReportTargetType;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 public record ReportResponse(
         Long id,
@@ -14,8 +14,8 @@ public record ReportResponse(
         String detail,
         ReportStatus status,
         Long processedById,
-        LocalDateTime processedAt,
-        LocalDateTime createdAt
+        Instant processedAt,
+        Instant createdAt
 ) {
     public static ReportResponse from(Report report) {
         return new ReportResponse(

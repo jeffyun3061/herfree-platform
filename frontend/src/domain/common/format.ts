@@ -1,4 +1,5 @@
 // 날짜·숫자 표시 규칙을 한곳에 모은 순수 함수 모음
+// API createdAt 등은 UTC ISO 문자열(…Z) — new Date()가 브라우저 로컬(KST)로 변환한다
 
 export function formatDate(isoString: string): string {
   const date = new Date(isoString);

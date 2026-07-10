@@ -3,7 +3,7 @@ package com.herfree.domain.report.repository;
 import com.herfree.domain.report.entity.Report;
 import com.herfree.domain.report.entity.ReportStatus;
 import com.herfree.domain.report.entity.ReportTargetType;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -41,5 +41,5 @@ public interface ReportRepository extends JpaRepository<Report, Long> {
 
     long countByStatus(ReportStatus status);
 
-    long countByStatusAndCreatedAtAfter(ReportStatus status, LocalDateTime since);
+    long countByStatusAndCreatedAtAfter(ReportStatus status, Instant since);
 }

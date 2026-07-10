@@ -2,7 +2,7 @@ package com.herfree.domain.comment.dto.response;
 
 import com.herfree.domain.comment.entity.Comment;
 import com.herfree.domain.comment.entity.CommentStatus;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 public record AdminCommunityCommentResponse(
         Long id,
@@ -11,7 +11,7 @@ public record AdminCommunityCommentResponse(
         String contentPreview,
         CommentStatus status,
         String authorNickname,
-        LocalDateTime createdAt
+        Instant createdAt
 ) {
     private static final int PREVIEW_MAX = 80;
 

@@ -1,7 +1,7 @@
 package com.herfree.domain.analytics.repository;
 
 import com.herfree.domain.analytics.entity.AppEventLog;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -9,7 +9,7 @@ import org.springframework.data.repository.query.Param;
 
 public interface AppEventLogRepository extends JpaRepository<AppEventLog, Long> {
 
-    long countByOccurredAtAfter(LocalDateTime since);
+    long countByOccurredAtAfter(Instant since);
 
     @Query("""
             SELECT e.eventName AS eventName, COUNT(e) AS count
@@ -18,7 +18,7 @@ public interface AppEventLogRepository extends JpaRepository<AppEventLog, Long> 
             GROUP BY e.eventName
             ORDER BY COUNT(e) DESC
             """)
-    List<EventCountRow> countByEventNameSince(@Param("since") LocalDateTime since);
+    List<EventCountRow> countByEventNameSince(@Param("since") Instant since);
 
     interface EventCountRow {
         String getEventName();

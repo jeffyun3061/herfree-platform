@@ -21,7 +21,6 @@ type JournalPersonalDashboardProps = {
   communityPosts?: Post[];
   communityLoading?: boolean;
   routinePulse?: boolean;
-  hasTodayRecord?: boolean;
   showCommunity?: boolean;
   afterCommunity?: React.ReactNode;
 };

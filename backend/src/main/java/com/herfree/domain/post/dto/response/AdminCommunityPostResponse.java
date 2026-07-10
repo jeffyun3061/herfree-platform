@@ -2,7 +2,7 @@ package com.herfree.domain.post.dto.response;
 
 import com.herfree.domain.post.entity.Post;
 import com.herfree.domain.post.entity.PostStatus;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 public record AdminCommunityPostResponse(
         Long id,
@@ -10,7 +10,7 @@ public record AdminCommunityPostResponse(
         String boardName,
         PostStatus status,
         String authorNickname,
-        LocalDateTime createdAt
+        Instant createdAt
 ) {
     public static AdminCommunityPostResponse from(Post post, String authorNickname) {
         return new AdminCommunityPostResponse(

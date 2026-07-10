@@ -11,7 +11,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -50,10 +50,10 @@ public class AppEventLog {
     private String userAgentHash;
 
     @Column(nullable = false)
-    private LocalDateTime occurredAt;
+    private Instant occurredAt;
 
     @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 
     @Builder
     private AppEventLog(
@@ -72,13 +72,13 @@ public class AppEventLog {
         this.sessionHash = sessionHash;
         this.ipHash = ipHash;
         this.userAgentHash = userAgentHash;
-        this.occurredAt = LocalDateTime.now();
+        this.occurredAt = Instant.now();
     }
 
     @PrePersist
     void prePersist() {
         if (createdAt == null) {
-            createdAt = LocalDateTime.now();
+            createdAt = Instant.now();
         }
         if (occurredAt == null) {
             occurredAt = createdAt;

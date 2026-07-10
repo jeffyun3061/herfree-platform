@@ -1,13 +1,12 @@
 package com.herfree.domain.post.repository;
 
 import com.herfree.domain.post.entity.Post;
+import com.herfree.global.common.AppTimeZone;
 import com.herfree.global.util.PostEngagementScore;
 import com.herfree.global.util.PostListPeriod;
 import com.herfree.global.util.PostListSort;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,8 +20,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 @RequiredArgsConstructor
 public class PostFulltextSearchRepository {
-
-    private static final DateTimeFormatter MYSQL_DATETIME = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private static final String NOTICE_PREFIX = """
             ORDER BY CASE WHEN b.board_type = 'NOTICE' THEN 0 ELSE 1 END,
@@ -96,7 +93,7 @@ public class PostFulltextSearchRepository {
 
     private void applyWeeklySinceParam(PostListSort sort, PostListPeriod period, Map<String, Object> params) {
         if (period == PostListPeriod.WEEK && sort != PostListSort.LATEST) {
-            params.put("since", MYSQL_DATETIME.format(period.weekSince()));
+            params.put("since", AppTimeZone.formatMysqlUtc(period.weekSince()));
         }
     }
 

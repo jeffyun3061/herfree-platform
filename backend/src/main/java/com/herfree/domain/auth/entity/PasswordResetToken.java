@@ -11,7 +11,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -35,19 +35,19 @@ public class PasswordResetToken extends BaseTimeEntity {
     private String tokenHash;
 
     @Column(name = "expires_at", nullable = false)
-    private LocalDateTime expiresAt;
+    private Instant expiresAt;
 
     @Column(name = "used_at")
-    private LocalDateTime usedAt;
+    private Instant usedAt;
 
     @Builder
-    private PasswordResetToken(User user, String tokenHash, LocalDateTime expiresAt) {
+    private PasswordResetToken(User user, String tokenHash, Instant expiresAt) {
         this.user = user;
         this.tokenHash = tokenHash;
         this.expiresAt = expiresAt;
     }
 
-    public static PasswordResetToken create(User user, String tokenHash, LocalDateTime expiresAt) {
+    public static PasswordResetToken create(User user, String tokenHash, Instant expiresAt) {
         return PasswordResetToken.builder()
                 .user(user)
                 .tokenHash(tokenHash)
@@ -56,7 +56,7 @@ public class PasswordResetToken extends BaseTimeEntity {
     }
 
     public boolean isExpired() {
-        return LocalDateTime.now().isAfter(expiresAt);
+        return Instant.now().isAfter(expiresAt);
     }
 
     public boolean isUsed() {
@@ -64,6 +64,6 @@ public class PasswordResetToken extends BaseTimeEntity {
     }
 
     public void markUsed() {
-        this.usedAt = LocalDateTime.now();
+        this.usedAt = Instant.now();
     }
 }

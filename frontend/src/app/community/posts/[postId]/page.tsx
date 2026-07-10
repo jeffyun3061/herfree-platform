@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { usePostDetail, usePostMutation } from '@/hooks/usePosts';
 import { useComments } from '@/hooks/useComments';
@@ -29,6 +29,7 @@ import { formatRelativeTime } from '@/domain/common/format';
 import { displayAuthorNickname } from '@/domain/post/types';
 import { isAdmin, isStaff } from '@/domain/user/types';
 import { getErrorMessage } from '@/lib/api/client';
+import { navigateBack } from '@/lib/navigateBack';
 import { cn } from '@/lib/cn';
 import * as adminApi from '@/lib/api/admin';
 
@@ -38,13 +39,25 @@ type PendingConfirm =
   | { type: 'hide-post' }
   | { type: 'hide-comment'; commentId: number };
 
-function PostDetailBackHeader({ href }: { href: string }) {
+function PostDetailBackHeader({
+  backHref,
+  pathname,
+}: {
+  backHref: string;
+  pathname: string;
+}) {
+  const router = useRouter();
+
   return (
     <div className="flex items-center gap-2.5 px-4 pb-3.5 pt-[54px]">
-      <Link href={href} className="flex min-w-0 items-center gap-2.5 text-[15px] font-bold text-[#15201D]">
+      <button
+        type="button"
+        onClick={() => navigateBack(router, { pathname, fallbackHref: backHref })}
+        className="flex min-w-0 items-center gap-2.5 text-[15px] font-bold text-[#15201D]"
+      >
         <span className="text-[22px] font-normal leading-none text-[#6E7671]">‹</span>
         커뮤니티
-      </Link>
+      </button>
     </div>
   );
 }
@@ -66,6 +79,7 @@ function normalizeBoardTagLabel(boardType: string | undefined, boardName: string
 export default function PostDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const pathname = usePathname();
   const postId = Number(params.postId);
   const { isLoggedIn, isReady, user } = useAuth();
   const { boards } = useBoards();
@@ -173,7 +187,7 @@ export default function PostDetailPage() {
   if (!isLoggedIn) {
     return (
       <div className="mx-auto max-w-app pb-20">
-        <PostDetailBackHeader href="/community" />
+        <PostDetailBackHeader backHref="/community" pathname={pathname} />
         <div className="px-5">
           <CommunityGuestPostPanel loginFrom={encodeURIComponent(`/community/posts/${postId}`)} />
         </div>
@@ -239,13 +253,14 @@ export default function PostDetailPage() {
     <>
       <article className="mx-auto max-w-app pb-20 lg:pb-8">
         <div className="flex items-center justify-between gap-3 px-4 pb-3.5 pt-[54px]">
-          <Link
-            href={backHref}
+          <button
+            type="button"
+            onClick={() => navigateBack(router, { pathname, fallbackHref: backHref })}
             className="flex min-w-0 items-center gap-2.5 text-[15px] font-bold text-[#15201D]"
           >
             <span className="text-[22px] font-normal leading-none text-[#6E7671]">‹</span>
             커뮤니티
-          </Link>
+          </button>
           <button
             type="button"
             onClick={() => void handleCopyLink()}

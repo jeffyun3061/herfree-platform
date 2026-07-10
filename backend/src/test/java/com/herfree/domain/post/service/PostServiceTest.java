@@ -5,6 +5,7 @@ import com.herfree.domain.board.repository.BoardRepository;
 import com.herfree.domain.comment.repository.CommentRepository;
 import com.herfree.domain.post.dto.request.PostCreateRequest;
 import com.herfree.domain.post.dto.response.PostDetailResponse;
+import com.herfree.domain.post.dto.response.PostResponse;
 import com.herfree.domain.post.entity.Post;
 import com.herfree.domain.post.entity.PostStatus;
 import com.herfree.domain.post.entity.PostVisibility;
@@ -47,6 +48,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 // PostService의 핵심 비즈니스 로직만 격리해 검증한다.
 // DB·Spring 컨텍스트 없이 Mockito Mock만으로 테스트하므로 실행 속도가 빠르다.
@@ -307,17 +309,36 @@ class PostServiceTest {
     @Test
     @DisplayName("게시글 목록 조회 시 keyword는 trim 후 FULLTEXT 검색에 전달된다")
     void getPosts_withKeyword_delegatesToFulltextSearch() {
+        Long userId = 1L;
         Pageable pageable = PageRequest.of(0, 15);
         Page<Post> emptyPage = new PageImpl<>(List.of(), pageable, 0);
         Board board = buildWritableBoard();
+        User user = User.builder()
+                .email("user@test.com")
+                .password("pw")
+                .role(UserRole.USER)
+                .status(UserStatus.ACTIVE)
+                .build();
         given(boardRepository.findById(1L)).willReturn(Optional.of(board));
+        given(userRepository.findById(userId)).willReturn(Optional.of(user));
         given(postFulltextSearchRepository.searchBoardPosts(eq(1L), eq("검색어"), any(), any(), eq(pageable)))
                 .willReturn(emptyPage);
 
-        postService.getPosts(1L, "  검색어  ", pageable, null, "week");
+        postService.getPosts(1L, "  검색어  ", pageable, userId, "week");
 
         verify(postFulltextSearchRepository).searchBoardPosts(
                 1L, "검색어", PostListSort.LATEST, PostListPeriod.WEEK, pageable);
+    }
+
+    @Test
+    @DisplayName("비회원 keyword 검색은 빈 목록을 반환한다")
+    void getPosts_guestKeywordSearch_returnsEmpty() {
+        Pageable pageable = PageRequest.of(0, 15);
+
+        Page<PostResponse> result = postService.getPosts(null, "재발", pageable, null, "week");
+
+        assertThat(result.getTotalElements()).isZero();
+        verifyNoInteractions(postFulltextSearchRepository);
     }
 
     @Test

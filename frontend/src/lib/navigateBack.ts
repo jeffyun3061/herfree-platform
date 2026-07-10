@@ -110,6 +110,23 @@ function resetStack(pathname: string) {
   writeStack([pathname]);
 }
 
+/** UI ‹ 뒤로: 현재 항목을 빼고 부모 경로로 이동 (히스토리 push 방지) */
+function popStackTo(pathname: string) {
+  const stack = readStack();
+  if (stack.length === 0) {
+    writeStack([pathname]);
+    return;
+  }
+
+  const index = stack.lastIndexOf(pathname);
+  if (index >= 0) {
+    writeStack(stack.slice(0, index + 1));
+    return;
+  }
+
+  writeStack([...stack.slice(0, -1), pathname]);
+}
+
 type NavigateBackOptions = {
   pathname?: string;
   search?: string;
@@ -128,12 +145,14 @@ export function navigateBack(
   const fallback = fallbackHref ?? resolveContextualBackTarget(currentPath, currentSearch);
 
   if (backHref) {
-    router.push(backHref);
+    popStackTo(backHref);
+    router.replace(backHref);
     return;
   }
 
   if (fallback !== '/' && currentPath !== fallback) {
-    router.push(fallback);
+    popStackTo(fallback);
+    router.replace(fallback);
     return;
   }
 

@@ -2,7 +2,7 @@ package com.herfree.domain.comment.repository;
 
 import com.herfree.domain.comment.entity.Comment;
 import com.herfree.domain.comment.entity.CommentStatus;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,7 +21,7 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 
     long countByStatus(CommentStatus status);
 
-    long countByStatusAndCreatedAtAfter(CommentStatus status, LocalDateTime since);
+    long countByStatusAndCreatedAtAfter(CommentStatus status, Instant since);
 
     @Query("""
             SELECT c FROM Comment c

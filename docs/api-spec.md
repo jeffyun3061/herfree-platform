@@ -65,6 +65,15 @@ Base path: `/api` · 인증: `Authorization: Bearer {accessToken}` (공개 API �
 | 409 | 중복(닉네임·이메일·신고·반응 등) |
 | 429 | 로그인 연속 실패 잠금·과도한 요청 |
 
+### 날짜·시간 (전역)
+
+| 필드 | 형식 | 예시 |
+|------|------|------|
+| `createdAt`, `updatedAt`, 기타 시각 | ISO-8601 **UTC** (`Instant`) | `"2026-06-16T05:30:00Z"` |
+| `recordDate` (개인일지) | ISO-8601 **날짜** (KST 달력) | `"2026-06-16"` |
+
+DB·API는 UTC, 화면 표시는 브라우저 로컬(KST). 상세: [decision-log.md](decision-log.md) ADR-017.
+
 ---
 
 ## 8.1 Auth API
@@ -99,6 +108,13 @@ Refresh Token·재발급·토큰 블랙리스트는 운영 고도화 항목으�
 | PATCH | `/api/users/me/profile` | 프로필 수정 | 회원 |
 | DELETE | `/api/users/me` | 회원 탈퇴 | 회원 |
 | GET | `/api/users/me/posts` | 내가 작성한 글 조회 | 회원 |
+
+**`DELETE /api/users/me` 처리 내용**
+
+- 계정 상태 `DELETED` 전환
+- 프로필 닉네임·소개 익명화 (`withdrawn_{userId}`)
+- 작성 게시글·댓글 익명 처리 (커뮤니티 맥락 보존)
+- **`journal_records` 전건 물리 삭제** (개인 건강 메모 파기)
 
 ---
 
@@ -429,7 +445,7 @@ Refresh Token·재발급·토큰 블랙리스트는 운영 고도화 항목으�
 | 필드 | 형식 | 예시 |
 |------|------|------|
 | `recordDate`, `date` | ISO-8601 **날짜 문자열** (`JournalRecordResponse.recordDate`) | `"2026-06-16"` |
-| `createdAt`, `updatedAt` | ISO-8601 로컬 문자열 | `"2026-06-16T14:30:00"` |
+| `createdAt`, `updatedAt` | ISO-8601 **UTC** (`Instant`) | `"2026-06-16T05:30:00Z"` |
 
 응답 DTO는 `LocalDate` 대신 **문자열**로 내려 배열 직렬화(`[2026,6,16]`)를 방지한다.
 

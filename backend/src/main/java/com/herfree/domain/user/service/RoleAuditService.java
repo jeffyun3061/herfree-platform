@@ -5,7 +5,7 @@ import com.herfree.domain.user.entity.RoleAuditLog;
 import com.herfree.domain.user.entity.UserRole;
 import com.herfree.domain.user.entity.UserStatus;
 import com.herfree.domain.user.repository.RoleAuditLogRepository;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,7 +50,7 @@ public class RoleAuditService {
             UserStatus newStatus,
             String reason,
             String note,
-            LocalDateTime suspendedUntil
+            Instant suspendedUntil
     ) {
         roleAuditLogRepository.save(RoleAuditLog.builder()
                 .actorId(actorId)

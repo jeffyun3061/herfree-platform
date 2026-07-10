@@ -19,8 +19,9 @@ import com.herfree.domain.video.repository.VideoRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
+import com.herfree.global.common.AppTimeZone;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.HexFormat;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
@@ -74,8 +75,8 @@ public class AnalyticsService {
     // 관리자 대시보드는 개인 데이터가 아니라 서비스 상태를 보는 화면이다.
     @Transactional(readOnly = true)
     public AdminStatsResponse getAdminStats() {
-        LocalDateTime sevenDaysAgo = LocalDateTime.now().minusDays(7);
-        LocalDateTime todayStart = LocalDate.now().atStartOfDay();
+        Instant sevenDaysAgo = Instant.now().minus(7, ChronoUnit.DAYS);
+        Instant todayStart = AppTimeZone.startOfTodayKst();
 
         var topEvents = eventLogRepository.countByEventNameSince(sevenDaysAgo).stream()
                 .limit(8)

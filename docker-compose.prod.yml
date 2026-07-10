@@ -10,7 +10,7 @@ services:
       MYSQL_USER: ${MYSQL_USER:-herfree_user}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      TZ: Asia/Seoul
+      TZ: UTC
     volumes:
       - herfree_mysql_prod_data:/var/lib/mysql
       - ./infra/scripts/backup:/backup
@@ -34,7 +34,8 @@ services:
         condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: prod
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-herfree_db}?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+      TZ: UTC
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-herfree_db}?serverTimezone=UTC&characterEncoding=UTF-8
       SPRING_DATASOURCE_USERNAME: ${MYSQL_USER:-herfree_user}
       SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
@@ -46,6 +47,13 @@ services:
       S3_SECRET_KEY: ${S3_SECRET_KEY:-${AWS_SECRET_ACCESS_KEY:-}}
       S3_PUBLIC_BASE_URL: ${S3_PUBLIC_BASE_URL:-}
       ADMIN_BOOTSTRAP_ENABLED: "false"
+      APP_MAIL_MODE: ${APP_MAIL_MODE:-smtp}
+      APP_MAIL_FROM: ${APP_MAIL_FROM:-noreply@herfree.kr}
+      SPRING_MAIL_HOST: ${SPRING_MAIL_HOST:-}
+      SPRING_MAIL_PORT: ${SPRING_MAIL_PORT:-587}
+      SPRING_MAIL_USERNAME: ${SPRING_MAIL_USERNAME:-}
+      SPRING_MAIL_PASSWORD: ${SPRING_MAIL_PASSWORD:-}
+      PASSWORD_RESET_FRONTEND_BASE_URL: ${PASSWORD_RESET_FRONTEND_BASE_URL:-}
     ports:
       # Nginx(호스트 또는 별도 컨테이너)가 127.0.0.1:8080 으로 프록시한다
       - "127.0.0.1:8080:8080"

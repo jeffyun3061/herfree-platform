@@ -25,6 +25,7 @@ import com.herfree.domain.user.repository.UserRepository;
 import com.herfree.domain.video.entity.Video;
 import com.herfree.domain.video.repository.VideoRepository;
 import java.math.BigDecimal;
+import com.herfree.global.common.AppTimeZone;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -370,7 +371,7 @@ public class DemoDataSeedRunner implements ApplicationRunner {
     }
 
     private void seedJournalRecords(List<User> users) {
-        LocalDate today = LocalDate.now();
+        LocalDate today = AppTimeZone.todayKst();
         List<String> triggerPool = List.of("STRESS", "SLEEP_DEFICIT", "ALCOHOL", "OVERWORK", "MENSTRUATION");
         List<String> symptomPool = List.of("NUMBNESS", "FATIGUE", "WARMTH", "ITCHING");
 

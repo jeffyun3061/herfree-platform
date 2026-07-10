@@ -3,7 +3,7 @@ package com.herfree.domain.post.repository;
 import com.herfree.domain.comment.entity.CommentStatus;
 import com.herfree.domain.post.entity.Post;
 import com.herfree.domain.post.entity.PostStatus;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
@@ -30,7 +30,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     long countByStatus(PostStatus status);
 
-    long countByStatusAndCreatedAtAfter(PostStatus status, LocalDateTime since);
+    long countByStatusAndCreatedAtAfter(PostStatus status, Instant since);
 
     long countByUserIdAndStatus(Long userId, PostStatus status);
 
@@ -113,7 +113,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             @Param("boardId") Long boardId,
             @Param("keyword") String keyword,
             @Param("viewerId") Long viewerId,
-            @Param("since") LocalDateTime since,
+            @Param("since") Instant since,
             Pageable pageable);
 
     @Query("""
@@ -155,7 +155,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             @Param("boardId") Long boardId,
             @Param("keyword") String keyword,
             @Param("viewerId") Long viewerId,
-            @Param("since") LocalDateTime since,
+            @Param("since") Instant since,
             @Param("commentStatus") CommentStatus commentStatus,
             Pageable pageable);
 

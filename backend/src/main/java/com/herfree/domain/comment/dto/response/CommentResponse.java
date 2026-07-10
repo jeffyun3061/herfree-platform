@@ -2,7 +2,7 @@ package com.herfree.domain.comment.dto.response;
 
 import com.herfree.domain.comment.entity.Comment;
 import com.herfree.global.util.AnonymousNicknamePolicy;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 // 댓글 응답 DTO — Entity를 직접 노출하지 않아 민감 필드 유출을 방지한다
 public record CommentResponse(
@@ -15,7 +15,7 @@ public record CommentResponse(
         Long parentId,
         // 현재 로그인 사용자가 작성자인지 — 삭제 버튼 표시에 사용한다
         boolean isMyComment,
-        LocalDateTime createdAt
+        Instant createdAt
 ) {
     public static CommentResponse of(Comment comment, String authorNickname, Long currentUserId) {
         boolean isMyComment = currentUserId != null

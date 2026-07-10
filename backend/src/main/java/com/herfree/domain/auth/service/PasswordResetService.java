@@ -10,7 +10,8 @@ import com.herfree.domain.user.entity.UserStatus;
 import com.herfree.domain.user.repository.UserRepository;
 import com.herfree.global.config.PasswordResetProperties;
 import com.herfree.global.util.TokenHashUtil;
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -63,8 +64,8 @@ public class PasswordResetService {
 
         String rawToken = UUID.randomUUID().toString();
         String tokenHash = TokenHashUtil.sha256Hex(rawToken);
-        LocalDateTime expiresAt = LocalDateTime.now()
-                .plusMinutes(passwordResetProperties.tokenExpirationMinutes());
+        Instant expiresAt = Instant.now()
+                .plus(passwordResetProperties.tokenExpirationMinutes(), ChronoUnit.MINUTES);
 
         passwordResetTokenRepository.save(
                 PasswordResetToken.create(user, tokenHash, expiresAt));

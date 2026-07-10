@@ -2,7 +2,7 @@ package com.herfree.domain.content.dto.response;
 
 import com.herfree.domain.content.entity.Content;
 import com.herfree.domain.content.entity.ContentStatus;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 public record ContentResponse(
         Long id,
@@ -15,8 +15,8 @@ public record ContentResponse(
         ContentStatus status,
         int sortOrder,
         boolean isPinned,
-        LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        Instant createdAt,
+        Instant updatedAt
 ) {
     public static ContentResponse from(Content content) {
         return new ContentResponse(

@@ -4,7 +4,7 @@ import com.herfree.domain.user.entity.User;
 import com.herfree.domain.user.entity.UserProfile;
 import com.herfree.domain.user.entity.UserRole;
 import com.herfree.domain.user.entity.UserStatus;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 public record AdminUserResponse(
         Long id,
@@ -12,9 +12,9 @@ public record AdminUserResponse(
         String nickname,
         UserRole role,
         UserStatus status,
-        LocalDateTime suspendedUntil,
+        Instant suspendedUntil,
         String suspensionReason,
-        LocalDateTime createdAt
+        Instant createdAt
 ) {
     public static AdminUserResponse of(User user, UserProfile profile) {
         return new AdminUserResponse(

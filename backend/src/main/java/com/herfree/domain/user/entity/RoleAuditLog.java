@@ -8,7 +8,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -57,10 +57,10 @@ public class RoleAuditLog {
     private String note;
 
     @Column(name = "suspended_until")
-    private LocalDateTime suspendedUntil;
+    private Instant suspendedUntil;
 
     @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 
     @Builder
     private RoleAuditLog(
@@ -73,8 +73,8 @@ public class RoleAuditLog {
             UserStatus newStatus,
             String reason,
             String note,
-            LocalDateTime suspendedUntil,
-            LocalDateTime createdAt
+            Instant suspendedUntil,
+            Instant createdAt
     ) {
         this.actorId = actorId;
         this.targetUserId = targetUserId;
@@ -86,6 +86,6 @@ public class RoleAuditLog {
         this.reason = reason;
         this.note = note;
         this.suspendedUntil = suspendedUntil;
-        this.createdAt = createdAt != null ? createdAt : LocalDateTime.now();
+        this.createdAt = createdAt != null ? createdAt : Instant.now();
     }
 }

@@ -1,7 +1,7 @@
 package com.herfree.domain.report.repository;
 
 import com.herfree.domain.report.entity.ReportTargetType;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 public interface ReportTargetSummary {
 
@@ -11,5 +11,5 @@ public interface ReportTargetSummary {
 
     long getReportCount();
 
-    LocalDateTime getLastReportedAt();
+    Instant getLastReportedAt();
 }

@@ -23,7 +23,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Service
 @RequiredArgsConstructor
@@ -96,7 +96,7 @@ public class AuthService {
         // filter()로 ACTIVE만 통과시키면 SUSPENDED와 DELETED가 모두 UserNotFoundException을 던져
         // 클라이언트가 계정 정지 여부를 알 수 없다. 상태별로 예외를 분리해야 한다.
         if (user.getStatus() == UserStatus.SUSPENDED) {
-            if (user.isSuspensionExpired(LocalDateTime.now())) {
+            if (user.isSuspensionExpired(Instant.now())) {
                 user.activate();
             } else {
                 throw new SuspendedAccountException();

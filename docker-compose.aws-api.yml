@@ -1,0 +1,40 @@
+# AWS EC2 — API only (RDS MySQL). MySQL 컨테이너 없음.
+# 사용: SPRING_DATASOURCE_* 를 .env.prod 에 RDS 값으로 채운 뒤
+#   docker compose -f docker-compose.aws-api.yml --env-file .env.prod up -d --build
+services:
+  api:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.backend
+    container_name: herfree-api-prod
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      TZ: UTC
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_ACCESS_EXPIRATION: ${JWT_ACCESS_EXPIRATION:-3600}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
+      S3_BUCKET: ${S3_BUCKET:-${AWS_S3_BUCKET:-}}
+      S3_REGION: ${S3_REGION:-${AWS_REGION:-ap-northeast-2}}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-${AWS_ACCESS_KEY_ID:-}}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-${AWS_SECRET_ACCESS_KEY:-}}
+      S3_PUBLIC_BASE_URL: ${S3_PUBLIC_BASE_URL:-}
+      ADMIN_BOOTSTRAP_ENABLED: "false"
+      APP_MAIL_MODE: ${APP_MAIL_MODE:-smtp}
+      APP_MAIL_FROM: ${APP_MAIL_FROM:-noreply@herfree.kr}
+      SPRING_MAIL_HOST: ${SPRING_MAIL_HOST:-}
+      SPRING_MAIL_PORT: ${SPRING_MAIL_PORT:-587}
+      SPRING_MAIL_USERNAME: ${SPRING_MAIL_USERNAME:-}
+      SPRING_MAIL_PASSWORD: ${SPRING_MAIL_PASSWORD:-}
+      PASSWORD_RESET_FRONTEND_BASE_URL: ${PASSWORD_RESET_FRONTEND_BASE_URL:-}
+    ports:
+      - "127.0.0.1:8080:8080"
+    networks:
+      - herfree-internal
+
+networks:
+  herfree-internal:
+    driver: bridge

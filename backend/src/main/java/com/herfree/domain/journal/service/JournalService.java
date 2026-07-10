@@ -30,6 +30,7 @@ import com.herfree.domain.report.repository.ReportRepository;
 import com.herfree.domain.user.entity.User;
 import com.herfree.domain.user.exception.UserNotFoundException;
 import com.herfree.domain.user.repository.UserRepository;
+import com.herfree.global.common.AppTimeZone;
 import java.math.BigDecimal;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -201,7 +202,7 @@ public class JournalService {
     }
 
     public JournalReviewSummaryResponse getReviewSummary(Long userId) {
-        LocalDate today = LocalDate.now();
+        LocalDate today = AppTimeZone.todayKst();
         LocalDate periodStart = today.minusDays(REVIEW_PERIOD_DAYS - 1L);
         List<JournalRecord> records = journalRecordRepository
                 .findByUserIdAndRecordDateBetweenOrderByRecordDateDesc(userId, periodStart, today);
@@ -277,7 +278,7 @@ public class JournalService {
     }
 
     public JournalDashboardResponse getDashboard(Long userId) {
-        LocalDate today = LocalDate.now();
+        LocalDate today = AppTimeZone.todayKst();
         YearMonth month = YearMonth.from(today);
 
         Optional<JournalRecord> todayEntity = journalRecordRepository.findByUserIdAndRecordDate(userId, today);
@@ -342,13 +343,13 @@ public class JournalService {
 
     @Transactional(readOnly = true)
     public JournalPublicHomeStatsResponse getPublicHomeStats() {
-        long usersToday = journalRecordRepository.countDistinctUsersByRecordDate(LocalDate.now());
+        long usersToday = journalRecordRepository.countDistinctUsersByRecordDate(AppTimeZone.todayKst());
         long totalUsers = userRepository.count();
         return new JournalPublicHomeStatsResponse(usersToday, totalUsers);
     }
 
     public JournalInsightsResponse getCommunityInsights() {
-        LocalDate since = LocalDate.now().minusMonths(INSIGHT_LOOKBACK_MONTHS);
+        LocalDate since = AppTimeZone.todayKst().minusMonths(INSIGHT_LOOKBACK_MONTHS);
         List<JournalRecord> records = journalRecordRepository.findRecentSymptomRecords(
                 since, PageRequest.of(0, 500));
 
@@ -396,7 +397,7 @@ public class JournalService {
     }
 
     public AdminJournalStatsResponse getAdminStats() {
-        LocalDate today = LocalDate.now();
+        LocalDate today = AppTimeZone.todayKst();
         JournalInsightsResponse communityInsights = getCommunityInsights();
         long totalRecords = journalRecordRepository.count();
         long totalUsers = journalRecordRepository.countDistinctUsers();

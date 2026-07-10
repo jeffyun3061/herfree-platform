@@ -16,7 +16,8 @@ import com.herfree.domain.user.repository.UserRepository;
 import com.herfree.global.util.StaffRolePolicy;
 import java.util.List;
 import java.util.Map;
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -119,7 +120,7 @@ public class AdminUserService {
             throw new RoleChangeNotAllowedException();
         }
 
-        LocalDateTime suspendedUntil = resolveSuspendedUntil(request);
+        Instant suspendedUntil = resolveSuspendedUntil(request);
         UserStatus previous = target.getStatus();
         target.suspend(suspendedUntil, request.reason().trim(), normalizeNote(request.note()));
         roleAuditService.logStatusChange(
@@ -187,14 +188,14 @@ public class AdminUserService {
         return AdminUserResponse.of(user, profile);
     }
 
-    private LocalDateTime resolveSuspendedUntil(RestrictUserRequest request) {
+    private Instant resolveSuspendedUntil(RestrictUserRequest request) {
         if (request.permanent()) {
             return null;
         }
         if (request.days() == null) {
             throw new RoleChangeNotAllowedException();
         }
-        return LocalDateTime.now().plusDays(request.days());
+        return Instant.now().plus(request.days(), ChronoUnit.DAYS);
     }
 
     private String normalizeNote(String note) {

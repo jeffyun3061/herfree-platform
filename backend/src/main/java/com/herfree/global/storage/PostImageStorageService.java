@@ -183,14 +183,6 @@ public class PostImageStorageService {
         if (!StringUtils.hasText(s3Properties.bucket()) || !StringUtils.hasText(s3Properties.region())) {
             throw new BusinessException(ErrorCode.S3_NOT_CONFIGURED);
         }
-        if (!hasStaticCredentials()) {
-            throw new BusinessException(ErrorCode.S3_NOT_CONFIGURED);
-        }
-    }
-
-    private boolean hasStaticCredentials() {
-        return StringUtils.hasText(s3Properties.accessKey())
-                && StringUtils.hasText(s3Properties.secretKey());
     }
 
     private BusinessException mapS3Failure(SdkException ex, String action) {
@@ -206,9 +198,6 @@ public class PostImageStorageService {
             };
         }
         log.warn("S3 {} failed: {}", action, ex.getMessage());
-        if (!hasStaticCredentials()) {
-            return new BusinessException(ErrorCode.S3_NOT_CONFIGURED);
-        }
         return new BusinessException(ErrorCode.S3_UPLOAD_FAILED);
     }
 

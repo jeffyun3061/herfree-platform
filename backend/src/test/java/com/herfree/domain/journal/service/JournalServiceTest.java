@@ -15,6 +15,7 @@ import com.herfree.domain.post.repository.PostRepository;
 import com.herfree.domain.report.repository.ReportRepository;
 import com.herfree.domain.user.entity.User;
 import com.herfree.domain.user.repository.UserRepository;
+import com.herfree.global.common.AppTimeZone;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -62,7 +63,7 @@ class JournalServiceTest {
     @DisplayName("오늘 기록이 없으면 NOT_RECORDED 상태와 안내 문구를 반환한다")
     void getDashboard_notRecorded() {
         Long userId = 1L;
-        LocalDate today = LocalDate.now();
+        LocalDate today = AppTimeZone.todayKst();
 
         given(journalRecordRepository.findByUserIdAndRecordDate(userId, today)).willReturn(Optional.empty());
         given(journalRecordRepository.findByUserIdAndHadSymptomsTrueOrderByRecordDateDesc(
@@ -88,7 +89,7 @@ class JournalServiceTest {
     @DisplayName("오늘 증상 없이 안정적이면 STABLE 상태 요약을 반환한다")
     void getDashboard_stableToday() {
         Long userId = 1L;
-        LocalDate today = LocalDate.now();
+        LocalDate today = AppTimeZone.todayKst();
         User user = User.builder().email("a@b.com").password("pw").build();
         ReflectionTestUtils.setField(user, "id", userId);
 
@@ -131,7 +132,7 @@ class JournalServiceTest {
     @DisplayName("오늘 재발 기록이 있으면 RELAPSE 상태를 반환한다")
     void getDashboard_relapseToday() {
         Long userId = 1L;
-        LocalDate today = LocalDate.now();
+        LocalDate today = AppTimeZone.todayKst();
         User user = User.builder().email("a@b.com").password("pw").build();
         ReflectionTestUtils.setField(user, "id", userId);
 
@@ -168,7 +169,7 @@ class JournalServiceTest {
     @DisplayName("7시간 이상 수면이면 수면 루틴이 완료로 집계된다")
     void getDashboard_sleepRoutineRequiresSevenHours() {
         Long userId = 1L;
-        LocalDate today = LocalDate.now();
+        LocalDate today = AppTimeZone.todayKst();
         User user = User.builder().email("a@b.com").password("pw").build();
         ReflectionTestUtils.setField(user, "id", userId);
 
@@ -203,7 +204,7 @@ class JournalServiceTest {
     @DisplayName("컨디션 기록은 mood·memo만 있어도 루틴 완료로 집계한다")
     void getDashboard_conditionRoutineCountsMoodAndMemo() {
         Long userId = 1L;
-        LocalDate today = LocalDate.now();
+        LocalDate today = AppTimeZone.todayKst();
         User user = User.builder().email("a@b.com").password("pw").build();
         ReflectionTestUtils.setField(user, "id", userId);
 
@@ -237,7 +238,7 @@ class JournalServiceTest {
     @DisplayName("최근 30일 리뷰 요약은 증상 일수·전조·트리거·심각도를 집계한다")
     void getReviewSummary_aggregates30Days() {
         Long userId = 1L;
-        LocalDate today = LocalDate.now();
+        LocalDate today = AppTimeZone.todayKst();
         User user = User.builder().email("a@b.com").password("pw").build();
         ReflectionTestUtils.setField(user, "id", userId);
 
@@ -284,7 +285,7 @@ class JournalServiceTest {
         ReflectionTestUtils.setField(user, "id", userId);
         JournalRecord record = JournalRecord.builder()
                 .user(user)
-                .recordDate(LocalDate.now())
+                .recordDate(AppTimeZone.todayKst())
                 .hadSymptoms(false)
                 .supplementTaken(false)
                 .exerciseDone(false)
@@ -306,7 +307,7 @@ class JournalServiceTest {
         ReflectionTestUtils.setField(otherOwner, "id", 2L);
         JournalRecord record = JournalRecord.builder()
                 .user(otherOwner)
-                .recordDate(LocalDate.now())
+                .recordDate(AppTimeZone.todayKst())
                 .hadSymptoms(false)
                 .supplementTaken(false)
                 .exerciseDone(false)

@@ -4,6 +4,7 @@ import com.herfree.domain.board.entity.Board;
 import com.herfree.domain.comment.entity.Comment;
 import com.herfree.domain.comment.entity.CommentStatus;
 import com.herfree.domain.comment.repository.CommentRepository;
+import com.herfree.domain.journal.repository.JournalRecordRepository;
 import com.herfree.domain.post.entity.Post;
 import com.herfree.domain.post.entity.PostStatus;
 import com.herfree.domain.post.entity.PostVisibility;
@@ -28,6 +29,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
@@ -43,6 +45,9 @@ class UserServiceTest {
 
     @Mock
     private CommentRepository commentRepository;
+
+    @Mock
+    private JournalRecordRepository journalRecordRepository;
 
     @InjectMocks
     private UserService userService;
@@ -94,6 +99,7 @@ class UserServiceTest {
         assertThat(profile.getNickname()).isEqualTo("withdrawn_1");
         assertThat(profile.getBio()).isNull();
         assertThat(profile.isPublic()).isFalse();
+        verify(journalRecordRepository).deleteAllByUserId(userId);
     }
 
     @Test

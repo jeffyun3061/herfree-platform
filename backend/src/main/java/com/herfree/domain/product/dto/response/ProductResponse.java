@@ -1,7 +1,7 @@
 package com.herfree.domain.product.dto.response;
 
 import com.herfree.domain.product.entity.Product;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 public record ProductResponse(
         Long id,
@@ -13,7 +13,7 @@ public record ProductResponse(
         String externalUrl,
         int clickCount,
         boolean isVisible,
-        LocalDateTime createdAt
+        Instant createdAt
 ) {
     public static ProductResponse from(Product product) {
         return new ProductResponse(

@@ -18,9 +18,10 @@ import { ErrorMessage } from '@/components/ui/ErrorMessage';
 
 function LoggedInHomePage() {
   const router = useRouter();
+  const HOME_COMMUNITY_PREVIEW_SIZE = 4;
   const { postPage: communityPosts, isLoading: communityLoading } = usePostList(
     undefined,
-    6,
+    20,
     '',
     'createdAt,desc',
   );
@@ -38,7 +39,10 @@ function LoggedInHomePage() {
     { enabled: noticeBoardId !== null },
   );
   const homeCommunityPosts = useMemo(
-    () => communityPosts.content.filter((post) => post.boardType !== 'NOTICE').slice(0, 4),
+    () =>
+      communityPosts.content
+        .filter((post) => post.boardType !== 'NOTICE')
+        .slice(0, HOME_COMMUNITY_PREVIEW_SIZE),
     [communityPosts.content],
   );
 
@@ -64,8 +68,6 @@ function LoggedInHomePage() {
     onAfterSave: refetchDashboard,
   });
 
-  const hasTodayRecord = Boolean(dashboard?.todayRecord);
-
   return (
     <div className="min-h-screen bg-[#F3EDE3] lg:pb-10">
       <div className="page-container home-dashboard-screen max-lg:pb-28">
@@ -86,7 +88,6 @@ function LoggedInHomePage() {
             communityPosts={homeCommunityPosts}
             communityLoading={communityLoading}
             routinePulse={routinePulse}
-            hasTodayRecord={hasTodayRecord}
             afterCommunity={
               <div className="flex flex-col gap-2">
                 <QuickAccessSection layout="home" onChecklistClick={() => router.push('/record')} />
