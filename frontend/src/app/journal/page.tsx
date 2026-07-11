@@ -251,12 +251,12 @@ function JournalPageContent() {
         ) : isLoggedIn ? (
 
           <>
-            <div className="mx-auto flex w-full max-w-app items-start justify-between gap-3 px-1 pt-2">
+            <div className="hf-screen-header mx-auto w-full max-w-app !px-1">
               <div>
-                <h1 className="hf-display text-[24px] font-extrabold tracking-[-0.01em] text-[#1E2621]">
+                <h1 className="hf-display text-[23px] font-extrabold tracking-[-0.01em] text-[#1E2621]">
                   개인일지
                 </h1>
-                <p className="mt-1 text-[12.5px] font-medium text-[#8A9089]">
+                <p className="mt-1 text-[12.5px] font-medium text-[#9A9F94]">
                   매일의 컨디션을 기록하고 흐름을 살펴봐요
                 </p>
               </div>

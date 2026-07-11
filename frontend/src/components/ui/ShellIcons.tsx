@@ -33,7 +33,9 @@ export function UserIcon({ className }: IconProps) {
 export function MenuIcon({ className }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" className={cn('h-5 w-5', className)} aria-hidden>
-      <path d="M4 7h16M4 12h16M4 17h16" {...stroke} />
+      <line x1="4" y1="7" x2="20" y2="7" {...stroke} />
+      <line x1="4" y1="12" x2="20" y2="12" {...stroke} />
+      <line x1="4" y1="17" x2="20" y2="17" {...stroke} />
     </svg>
   );
 }

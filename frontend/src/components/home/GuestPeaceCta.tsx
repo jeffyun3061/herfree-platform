@@ -22,7 +22,7 @@ export function GuestPeaceCta() {
             className="absolute inset-0 h-full w-full object-cover object-[50%_45%]"
           />
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,37,31,.08)_0%,rgba(7,37,31,.55)_100%)]" />
-          <div className="absolute left-4 top-4 rounded-full bg-white/16 px-3 py-1 text-[10px] font-extrabold uppercase text-white/86 backdrop-blur">
+          <div className="absolute left-4 top-4 rounded-full bg-white/20 px-3 py-1 text-[12px] font-extrabold uppercase text-white/[0.86] backdrop-blur [text-shadow:0_1px_8px_rgba(7,37,31,.35)]">
             Private journal
           </div>
           <div className="absolute bottom-4 left-4 right-4">
@@ -44,8 +44,8 @@ export function GuestPeaceCta() {
                 ['컨디션', '메모'],
               ].map(([label, value]) => (
                 <div key={label} className="rounded-[13px] bg-white px-2 py-2 text-center">
-                  <p className="text-[11px] font-extrabold text-[#0B3B36]">{value}</p>
-                  <p className="mt-1 text-[9.5px] text-[#7B837E]">{label}</p>
+                  <p className="text-[12px] font-extrabold text-[#0B3B36]">{value}</p>
+                  <p className="mt-1 text-[12px] text-[#7B837E]">{label}</p>
                 </div>
               ))}
             </div>

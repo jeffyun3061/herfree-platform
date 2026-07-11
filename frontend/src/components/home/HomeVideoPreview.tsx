@@ -35,7 +35,7 @@ export function HomeVideoPreview({ maxItems = 2, className }: HomeVideoPreviewPr
         </div>
         <Link
           href="/videos"
-          className="text-[11px] font-medium text-[#8A9089] transition-colors hover:text-[#0B3B36]"
+          className="text-[12px] font-medium hf-text-muted transition-colors hover:text-[#0B3B36]"
         >
           더보기 &gt;
         </Link>
@@ -58,7 +58,7 @@ export function HomeVideoPreview({ maxItems = 2, className }: HomeVideoPreviewPr
                     loading="lazy"
                   />
                   <div className="absolute inset-0 bg-black/20" />
-                  <span className="absolute inset-0 flex items-center justify-center text-[11px] text-white/90">
+                  <span className="absolute inset-0 flex items-center justify-center text-[12px] text-white/[0.9] [text-shadow:0_1px_8px_rgba(7,37,31,.45)]">
                     ▶
                   </span>
                 </div>
@@ -66,7 +66,7 @@ export function HomeVideoPreview({ maxItems = 2, className }: HomeVideoPreviewPr
                   <p className="line-clamp-2 text-[13.5px] font-semibold leading-snug text-[#1E2621] group-hover:text-[#0B3B36]">
                     {video.title}
                   </p>
-                  <p className="mt-1.5 text-[10.5px] text-[#8A9089]">
+                  <p className="mt-1.5 text-[12px] hf-text-muted">
                     YouTube · {formatRelativeTimeMedia(video.createdAt)}
                   </p>
                 </div>

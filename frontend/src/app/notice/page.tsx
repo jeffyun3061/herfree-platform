@@ -28,7 +28,7 @@ export default function NoticePage() {
       <PageHeader title="공지사항" showBack backHref="/mypage" mobileOnly />
       <main className="page-container mx-auto max-w-app pb-8 lg:max-w-content lg:pb-12">
       <section className="rounded-[26px] border border-[#E1D5C1] bg-[#FBF6ED] px-5 py-5 shadow-[0_18px_42px_-34px_rgba(7,37,31,.45)]">
-        <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-[#9B8B70]">
+        <p className="text-[12px] font-extrabold uppercase tracking-[0.18em] text-[#9B8B70]">
           Herfree Notice
         </p>
         <h1 className="hf-display mt-1 text-[25px] font-extrabold text-[#10231F]">
@@ -57,10 +57,10 @@ export default function NoticePage() {
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-extrabold tracking-[0.12em] text-[#9B7430]">
+                    <span className="text-[12px] font-extrabold tracking-[0.12em] text-[#9B7430]">
                       NOTICE
                     </span>
-                    <span className="text-[10.5px] text-[#9A9187]">
+                    <span className="text-[12px] hf-text-muted">
                       {formatRelativeTime(post.createdAt)}
                     </span>
                   </div>

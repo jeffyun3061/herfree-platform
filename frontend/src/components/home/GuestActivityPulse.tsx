@@ -34,10 +34,10 @@ export function GuestActivityPulse({ posts, isLoading }: GuestActivityPulseProps
         <h2 className="hf-display text-[19px] font-extrabold text-[#1E2621]">
           방금 올라온 이야기
         </h2>
-        <span className="inline-flex items-center gap-1 text-[10.5px] font-medium text-[#A6ABA0]">
+        <span className="inline-flex items-center gap-1 text-[12px] font-medium hf-text-muted">
           <svg
-            width="11"
-            height="11"
+            width="12"
+            height="12"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -70,7 +70,7 @@ export function GuestActivityPulse({ posts, isLoading }: GuestActivityPulseProps
                   <span className="truncate text-[12.5px] font-semibold text-[#2C342E]">
                     {post.authorNickname || 'herfree'}
                   </span>
-                  <span className="ml-auto shrink-0 text-[10.5px] text-[#B4B2A6]">
+                  <span className="ml-auto shrink-0 text-[12px] hf-text-muted">
                     {formatRelativeTime(post.createdAt)}
                   </span>
                 </div>
@@ -113,7 +113,7 @@ export function GuestActivityPulse({ posts, isLoading }: GuestActivityPulseProps
           <p className="mb-1.5 text-[15px] font-bold text-[#1E2621]">
             회원만 이용할 수 있는 공간이에요
           </p>
-          <p className="mb-[18px] text-[12.5px] leading-[1.6] text-[#5C645A]">
+          <p className="mb-[18px] text-[13px] leading-[1.6] text-[#5C645A]">
             가입하면 익명으로 올라온 이야기를
             <br />
             안전하게 확인할 수 있어요

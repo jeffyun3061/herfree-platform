@@ -72,7 +72,7 @@ function ResultRow({ result, query }: { result: SearchResult; query: string }) {
           <div className="mb-1.5 flex min-w-0 items-center gap-2">
             <span
               className={cn(
-                'shrink-0 rounded-[6px] px-2 py-0.5 text-[10px] font-extrabold',
+                'shrink-0 rounded-[6px] px-2 py-0.5 text-[12px] font-extrabold',
                 result.type === 'community' && 'bg-[#E7F1EC] text-[#0B3B36]',
                 result.type === 'content' && 'bg-[#F6E8C8] text-[#8A6B2A]',
                 result.type === 'faq' && 'bg-[#EFE8DA] text-[#15695E]',
@@ -208,7 +208,10 @@ export default function CommunitySearchPage() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-app flex-col bg-[#F3EDE3] pb-8 lg:max-w-content">
-      <div className="flex items-center gap-2 border-b border-[#EAE3D6] px-4 pb-3 pt-[52px]">
+      <div
+        className="flex items-center gap-2 border-b border-[#EAE3D6] px-4 pb-3"
+        style={{ paddingTop: 'var(--hf-page-pt)' }}
+      >
         <button
           type="button"
           onClick={() => navigateBack(router, { pathname, fallbackHref: '/community' })}
@@ -226,14 +229,14 @@ export default function CommunitySearchPage() {
             value={keyword}
             onChange={(event) => setKeyword(event.target.value)}
             placeholder="이야기 · 칼럼 · FAQ 검색"
-            className="min-w-0 flex-1 bg-transparent text-[14px] font-semibold text-[#1E2621] outline-none placeholder:text-[#9AA19C]"
+            className="min-w-0 flex-1 bg-transparent text-[14px] font-semibold text-[#1E2621] outline-none placeholder:text-[var(--hf-text-placeholder)]"
             autoFocus
           />
           {keyword && (
             <button
               type="button"
               onClick={() => setKeyword('')}
-              className="shrink-0 text-[15px] font-bold text-[#B4B2A6]"
+              className="shrink-0 text-[15px] font-bold hf-text-muted"
               aria-label="검색어 지우기"
             >
               ×
@@ -275,7 +278,7 @@ export default function CommunitySearchPage() {
           </div>
         ) : query ? (
           <div className="flex flex-col gap-[22px]">
-            <p className="text-[11.5px] font-medium text-[#9A9F94]">총 {results.length}개의 결과</p>
+            <p className="text-[12px] font-medium hf-text-subtle">총 {results.length}개의 결과</p>
             {!isLoggedIn ? (
               <ResultGroup title={RESULT_GROUP_LABELS.community}>
                 <GuestCommunitySearchLock loginFrom={loginFrom} />

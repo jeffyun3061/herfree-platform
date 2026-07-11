@@ -18,26 +18,26 @@ export function AuthScreenShell({
 }: AuthScreenShellProps) {
   return (
     <div className="min-h-screen bg-[#F3EDE3]">
-      <div className="auth-screen !min-h-0 bg-transparent px-5 pb-10" style={{ paddingTop: 'var(--hf-page-pt)' }}>
-        <div className="px-1">
+      <div className="flex min-h-screen flex-col px-0 pb-11 pt-[54px]">
+        <div className="px-3.5">
           <Link
             href={backHref}
-            className="inline-flex text-[24px] leading-none text-[#6E7671] transition-opacity hover:opacity-80"
+            className="inline-flex text-[24px] leading-none text-[#5C645A] transition-opacity hover:opacity-80"
             aria-label="이전 화면으로"
           >
             ‹
           </Link>
         </div>
 
-        <div className="flex flex-col items-center px-1 pt-[18px] text-center">
+        <div className="flex flex-col items-center px-6 pt-[18px] text-center">
           <BrandMark variant="auth" size="lg" />
-          <h1 className="hf-display mt-[18px] text-[23px] font-extrabold leading-tight tracking-[-0.01em] text-[#15201D]">
+          <h1 className="hf-display mt-[18px] text-[23px] font-extrabold leading-tight tracking-[-0.01em] text-[#1E2621]">
             {title}
           </h1>
           <p className="mt-2 text-[12.5px] leading-[1.7] text-[#9A9F94]">{subtitle}</p>
         </div>
 
-        {children}
+        <div className="px-6">{children}</div>
       </div>
     </div>
   );

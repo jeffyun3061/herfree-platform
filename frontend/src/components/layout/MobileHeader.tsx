@@ -23,7 +23,7 @@ function HeaderIconLink({
   return (
     <Link
       href={href}
-      className="flex h-8 w-8 items-center justify-center text-[#15201D]"
+      className="flex h-8 w-8 items-center justify-center text-[#3C443E]"
       aria-label={label}
       title={label}
     >
@@ -64,7 +64,7 @@ export function MobileHeader() {
               type="button"
               aria-label="뒤로 가기"
               onClick={handleBack}
-              className="-ml-1 flex h-10 w-10 shrink-0 items-center justify-center text-[#15201D]"
+              className="-ml-1 flex h-10 w-10 shrink-0 items-center justify-center text-[#3C443E]"
             >
               <BackIcon />
             </button>
@@ -87,7 +87,7 @@ export function MobileHeader() {
               ) : (
                 <Link
                   href="/login"
-                  className="text-[13px] font-medium text-[#15201D]"
+                  className="text-[13px] font-medium text-[#3C443E]"
                   aria-label="로그인"
                   title="로그인"
                 >
@@ -97,7 +97,7 @@ export function MobileHeader() {
               <button
                 type="button"
                 onClick={() => setMenuOpen(true)}
-                className="flex h-8 w-8 items-center justify-center text-[#15201D]"
+                className="flex h-8 w-8 items-center justify-center text-[#3C443E]"
                 aria-label="메뉴"
                 title="메뉴"
               >

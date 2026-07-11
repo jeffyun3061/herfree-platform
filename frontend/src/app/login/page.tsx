@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { AuthScreenShell } from '@/components/auth/AuthScreenShell';
-import { SocialLoginBelowEmail } from '@/components/auth/SocialLoginButtons';
+import { SocialLoginSection } from '@/components/auth/SocialLoginButtons';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
@@ -85,8 +85,8 @@ function LoginForm() {
   return (
     <AuthScreenShell
       backHref="/"
-      title="만나서 반갑습니다"
-      subtitle="기록과 커뮤니티를 이어서 이용해 보세요."
+      title="만나서 반가워요"
+      subtitle="오늘도 담담하게."
     >
       {sessionNotice && (
         <div
@@ -97,7 +97,9 @@ function LoginForm() {
         </div>
       )}
 
-      <form onSubmit={(e) => void handleSubmit(e)} className="mt-7 flex flex-col gap-4">
+      <SocialLoginSection returnUrl={returnUrl} mode="login" order="social-first" className="mt-7" />
+
+      <form onSubmit={(e) => void handleSubmit(e)} className="mt-7 flex flex-col gap-3.5">
         <Input
           label="이메일"
           type="email"
@@ -127,8 +129,8 @@ function LoginForm() {
             />
             아이디 저장
           </label>
-          <Link href="/forgot-password" className="text-[13px] font-semibold text-[#0B3B36]">
-            비밀번호 찾기
+          <Link href="/forgot-password" className="text-[12px] text-[#A6ABA0]">
+            비밀번호를 잊으셨나요?
           </Link>
         </div>
 
@@ -139,13 +141,11 @@ function LoginForm() {
         </Button>
       </form>
 
-      <SocialLoginBelowEmail returnUrl={returnUrl} mode="login" className="mt-7" />
-
-      <p className="mt-6 text-center text-[13px] text-[#5C645A]">
-        계정이 없으신가요?{' '}
+      <p className="mt-auto pt-6 text-center text-[12.5px] text-[#9A9F94]">
+        아직 계정이 없으신가요?{' '}
         <Link
           href={searchParams.get('from') ? `/signup?from=${encodeURIComponent(returnUrl)}` : '/signup'}
-          className="font-bold text-[#0B3B36]"
+          className="font-semibold text-[#0B3B36]"
         >
           회원가입
         </Link>

@@ -7,7 +7,7 @@ export default function PrivacyPage() {
       <PageHeader title="개인정보처리방침" showBack mobileOnly />
       <div className="page-container max-w-2xl py-8 lg:py-12">
         <h1 className="hidden text-2xl font-semibold text-ink lg:block">개인정보처리방침</h1>
-        <p className="mt-2 text-xs text-muted">시행일: 2026년 6월 13일</p>
+        <p className="mt-2 text-[12px] hf-text-muted">시행일: 2026년 6월 13일</p>
 
         <div className="prose-policy mt-8 space-y-6 text-sm leading-relaxed text-cream-foreground">
           <section>

@@ -50,12 +50,13 @@ export default function ContentDetailPage() {
             <Link
               href="/contents"
               aria-label="칼럼 목록으로 돌아가기"
-              className="absolute left-4 top-[54px] z-10 text-[24px] leading-none text-white"
+              className="absolute left-4 z-10 text-[24px] leading-none text-white"
+              style={{ top: 'var(--hf-page-pt)' }}
             >
               ‹
             </Link>
             <div className="absolute inset-x-0 bottom-[18px] px-[22px] text-white">
-              <span className="inline-block rounded-[7px] bg-white/[0.92] px-2.5 py-1 text-[10.5px] font-bold text-[#04342C]">
+              <span className="inline-block rounded-[7px] bg-white/[0.92] px-2.5 py-1 text-[12px] font-bold text-[#04342C]">
                 {content.category}
               </span>
               <h1 className="hf-display mt-3 text-[22px] font-extrabold leading-[1.45] tracking-[-0.01em] drop-shadow-[0_2px_14px_rgba(7,37,31,.4)]">
@@ -65,7 +66,7 @@ export default function ContentDetailPage() {
           </div>
         </section>
 
-        <div className="flex items-center gap-2 px-6 pt-[14px] text-[11px] text-[#A6ABA0]">
+        <div className="flex items-center gap-2 px-6 pt-[14px] text-[12px] hf-text-muted">
           <span>{new Date(content.createdAt).toLocaleDateString('ko-KR')}</span>
           <span className="h-0.5 w-0.5 rounded-full bg-[#CBD0C7]" />
           <span>{estimateReadMinutes(content.content)}분 읽기</span>
@@ -83,7 +84,7 @@ export default function ContentDetailPage() {
 
         <Link
           href="/consult"
-          className="mx-6 mt-[14px] flex items-center gap-3 rounded-[16px] bg-[#07251F] px-5 py-[18px]"
+          className="mx-4 mt-3 flex items-center gap-3 rounded-[16px] bg-[#07251F] px-4 py-3.5"
         >
           <span className="min-w-0 flex-1">
             <span className="block text-[13.5px] font-bold text-white">
@@ -99,7 +100,7 @@ export default function ContentDetailPage() {
         <section className="px-5 pt-7">
           <div className="mb-3 flex items-end justify-between gap-3">
             <div>
-              <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#9B8B70]">
+              <p className="text-[12px] font-extrabold uppercase tracking-[0.14em] text-[#9B8B70]">
                 Related
               </p>
               <h2 className="mt-1 text-[15px] font-extrabold text-[#15201D]">이어 읽기</h2>
@@ -121,7 +122,7 @@ export default function ContentDetailPage() {
                   href={`/contents/${item.id}`}
                   className="block border-t border-[#F2ECE1] px-4 py-3.5 first:border-t-0"
                 >
-                  <p className="text-[11px] font-extrabold text-[#15695E]">{item.category}</p>
+                  <p className="text-[12px] font-extrabold text-[#15695E]">{item.category}</p>
                   <h3 className="mt-1 line-clamp-2 text-[13.5px] font-bold leading-[1.45] text-[#15201D]">
                     {item.title}
                   </h3>

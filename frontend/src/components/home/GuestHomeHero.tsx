@@ -5,16 +5,9 @@ import { useState } from 'react';
 import { PUBLIC_IMAGES } from '@/domain/assets/static';
 import { BRAND_LOGO } from '@/domain/brand/assets';
 import { MobileMenu } from '@/components/layout/MobileMenu';
+import { ShellMenuIcon } from '@/components/layout/ShellTopIcons';
 import { PublicStaticImage } from '@/components/ui/PublicStaticImage';
 import Image from 'next/image';
-
-function MenuIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
-      <path d="M4 7h16M4 12h16M4 17h16" />
-    </svg>
-  );
-}
 
 export function GuestHomeHero() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -34,26 +27,25 @@ export function GuestHomeHero() {
         aria-hidden
       />
 
-      <div className="absolute left-4 top-[44px]">
-        <Link href="/" className="flex min-w-0 items-center gap-2" aria-label="헤르프리 홈">
+      <div className="absolute left-0 right-0 top-[52px] flex items-center justify-between px-[22px] py-1.5">
+        <Link href="/" className="flex min-w-0 items-center gap-[7px]" aria-label="헤르프리 홈">
           <Image
             src={BRAND_LOGO.hMarkOnDark}
             alt=""
-            width={31}
-            height={31}
-            className="h-[31px] w-[31px] rounded-full"
+            width={30}
+            height={30}
+            className="h-[30px] w-[30px] rounded-full"
             aria-hidden
           />
-          <span className="truncate text-[13px] font-extrabold text-white drop-shadow-[0_1px_7px_rgba(7,37,31,.55)]">
+          <span className="truncate text-[15px] font-semibold tracking-[-0.01em] text-white drop-shadow-[0_1px_7px_rgba(7,37,31,.55)]">
             헤르프리
           </span>
         </Link>
-      </div>
 
-      <div className="absolute right-[22px] top-[44px] flex shrink-0 items-center gap-4">
+        <div className="flex shrink-0 items-center gap-4">
           <Link
             href="/login"
-            className="text-[13.5px] font-semibold text-white [text-shadow:0_1px_8px_rgba(7,37,31,.55)]"
+            className="whitespace-nowrap text-[13.5px] font-medium text-white/92 [text-shadow:0_1px_8px_rgba(7,37,31,.55)]"
           >
             로그인
           </Link>
@@ -61,10 +53,11 @@ export function GuestHomeHero() {
             type="button"
             onClick={() => setMenuOpen(true)}
             aria-label="메뉴"
-            className="flex h-8 w-8 items-center justify-center text-white drop-shadow-[0_1px_7px_rgba(7,37,31,.55)]"
+            className="flex h-8 w-8 items-center justify-center text-white/92"
           >
-            <MenuIcon />
+            <ShellMenuIcon className="h-5 w-5" stroke="currentColor" />
           </button>
+        </div>
       </div>
 
       <div className="absolute bottom-[42px] left-0 right-0 px-[26px]">
@@ -73,7 +66,7 @@ export function GuestHomeHero() {
           <br />
           들어오세요
         </h1>
-        <p className="mt-3 max-w-[300px] text-[13px] font-medium leading-[1.7] text-white [text-shadow:0_1px_10px_rgba(7,37,31,.5)]">
+        <p className="mt-3 max-w-[300px] text-[13.5px] font-normal leading-[1.7] text-white/92 [text-shadow:0_1px_10px_rgba(7,37,31,.5)]">
           우리들의 이야기가 모이는 공간입니다.
         </p>
       </div>

@@ -31,7 +31,7 @@ export function GuestJournalPromo({ className }: GuestJournalPromoProps) {
     <section className={cn('px-4 pt-4', className)} aria-labelledby="journal-guest-lock-title">
       <div className="overflow-hidden rounded-[24px] border border-[#E7DFD2] bg-white shadow-[0_18px_42px_-30px_rgba(24,34,28,.45)]">
         <div className="bg-[#07251F] px-5 pb-6 pt-7 text-white">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/48">
+          <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-white/[0.72] [text-shadow:0_1px_8px_rgba(7,37,31,.35)]">
             Private journal
           </p>
           <h1
@@ -74,7 +74,7 @@ export function GuestJournalPromo({ className }: GuestJournalPromoProps) {
               >
                 회원만 이용할 수 있는 공간이에요
               </p>
-              <p className="mt-2 text-[12.5px] leading-[1.65] text-[#65706B]">
+              <p className="mt-2 text-[13px] leading-[1.65] text-[#65706B]">
                 개인 일지는 로그인한 본인만 열람할 수 있어요.
                 <br />
                 가입 후 안전하게 기록을 시작해 보세요.

@@ -17,7 +17,7 @@ export function InlineTopActions({
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const { isLoggedIn } = useAuth();
-  const inkClass = variant === 'onDark' ? 'text-white' : 'text-[#15201D]';
+  const inkClass = variant === 'onDark' ? 'text-white' : 'text-[#3C443E]';
   const iconButtonClass = `${iconButtonBase} ${inkClass}`;
 
   return (

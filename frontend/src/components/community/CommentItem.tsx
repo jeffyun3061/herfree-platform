@@ -50,11 +50,11 @@ export function CommentItem({
               <span className="text-[12px] font-semibold text-[#2C342E]">
                 {displayAuthorNickname(comment.authorNickname)}
               </span>
-              <span className="text-[10px] text-[#B4B2A6]">
+              <span className="text-[12px] text-[#B4B2A6]">
                 {formatRelativeTime(comment.createdAt)}
               </span>
             </div>
-            <p className="mt-[3px] whitespace-pre-wrap text-[12.5px] leading-[1.6] text-[#6E766F]">
+            <p className="mt-[3px] whitespace-pre-wrap text-[12.5px] leading-[1.6] text-[#5C645A]">
               {comment.content}
             </p>
           </div>

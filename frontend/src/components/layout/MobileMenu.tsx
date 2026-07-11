@@ -5,65 +5,73 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useBoards } from '@/hooks/useBoards';
 import { getCommunityBoards, getCommunityBoardTabLabel } from '@/domain/board/privateBoard';
-import { CloseIcon } from '@/components/ui/ShellIcons';
+import {
+  MenuBellIcon,
+  MenuColumnIcon,
+  MenuCommunityIcon,
+  MenuConsultIcon,
+  MenuDocIcon,
+  MenuFaqIcon,
+  MenuHomeIcon,
+  MenuJournalIcon,
+  MenuShieldIcon,
+  MenuUserIcon,
+} from '@/components/layout/MenuDrawerIcons';
 
 type MobileMenuProps = {
   open: boolean;
   onClose: () => void;
 };
 
-const MAIN_LINKS = [
-  { href: '/', label: '홈' },
-  { href: '/community', label: '커뮤니티' },
-  { href: '/journal', label: '개인일지' },
-  { href: '/contents', label: '칼럼' },
-  { href: '/videos', label: '영상' },
-  { href: '/qna', label: 'FAQ' },
-  { href: '/consult', label: '1:1 비밀상담' },
-  { href: '/mypage', label: '마이페이지' },
+const FEATURE_LINKS = [
+  { href: '/', label: '홈', Icon: MenuHomeIcon },
+  { href: '/community', label: '커뮤니티', Icon: MenuCommunityIcon },
+  { href: '/journal', label: '개인일지', Icon: MenuJournalIcon },
+  { href: '/contents', label: '칼럼', Icon: MenuColumnIcon },
+  { href: '/qna', label: '자주 묻는 질문(FAQ)', Icon: MenuFaqIcon },
+  { href: '/consult', label: '1:1 비밀 상담', Icon: MenuConsultIcon },
+  { href: '/mypage', label: '마이페이지', Icon: MenuUserIcon },
 ] as const;
 
 const GUIDE_LINKS = [
-  { href: '/notice', label: '공지사항' },
-  { href: '/terms', label: '이용약관' },
-  { href: '/privacy', label: '개인정보 처리방침' },
+  { href: '/notice', label: '공지사항', Icon: MenuBellIcon },
+  { href: '/terms', label: '이용약관', Icon: MenuDocIcon },
+  { href: '/privacy', label: '개인정보처리방침', Icon: MenuShieldIcon },
 ] as const;
 
-function SectionTitle({ children }: { children: React.ReactNode }) {
+function MenuSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <p className="px-1 text-[12px] font-extrabold uppercase tracking-[0.16em] text-[#9B8B70]">
+    <section className="px-[18px] pb-1.5 pt-[18px]">
+      <p className="px-1 pb-2 text-[12px] font-bold tracking-[0.06em] text-[#9A9F94]">{title}</p>
       {children}
-    </p>
+    </section>
   );
 }
 
-function MenuListLink({
+function MenuRow({
   href,
   label,
+  Icon,
   onClose,
-  emphasis = false,
 }: {
   href: string;
   label: string;
+  Icon: (props: { className?: string }) => JSX.Element;
   onClose: () => void;
-  emphasis?: boolean;
 }) {
   return (
     <Link
       href={href}
       onClick={onClose}
-      className={
-        emphasis
-          ? 'flex items-center justify-between rounded-[13px] bg-[#0B3B36] px-3 py-3.5 text-[13px] font-extrabold text-white'
-          : 'flex items-center justify-between rounded-[13px] px-3 py-3.5 text-[13px] font-semibold text-[#293530] hover:bg-white'
-      }
+      className="flex items-center gap-3 px-1.5 py-[11px]"
     >
-      {label}
-      {!emphasis ? (
-        <span className="hf-text-muted" aria-hidden>
-          ›
-        </span>
-      ) : null}
+      <span className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px] border border-[#EADFCB] bg-[#FBF6EA]">
+        <Icon />
+      </span>
+      <span className="flex-1 text-[13.5px] font-semibold text-[#1E2621]">{label}</span>
+      <span className="shrink-0 text-[#CBD0C7]" aria-hidden>
+        ›
+      </span>
     </Link>
   );
 }
@@ -89,124 +97,95 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 lg:hidden">
-      <button
-        type="button"
-        className="absolute inset-0 bg-[#071C18]/45 backdrop-blur-sm"
-        aria-label="메뉴 닫기"
-        onClick={onClose}
-      />
-      <aside className="absolute right-0 top-0 flex h-full w-[min(100%,21rem)] flex-col overflow-hidden bg-[#F3EDE3] shadow-2xl">
-        <div className="border-b border-[#E1D5C1] bg-[#FBF6ED] px-5 py-4">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#9B8B70]">
-                Herfree Menu
-              </p>
-              <h2 className="hf-display mt-1 text-[20px] font-extrabold text-[#10231F]">
-                전체 메뉴
-              </h2>
+    <div className="fixed inset-0 z-50 flex justify-end bg-[rgba(7,22,18,.45)] lg:hidden">
+      <button type="button" className="absolute inset-0" aria-label="메뉴 닫기" onClick={onClose} />
+      <aside
+        className="relative flex h-full w-[min(100%,300px)] flex-col overflow-y-auto bg-[#F3EDE3] shadow-[-18px_0_40px_-20px_rgba(7,37,31,.5)]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="bg-[#07251F] px-[22px] pb-[18px] pt-[54px]">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[rgba(243,237,227,.14)] text-[16px] font-bold text-[#F3EDE3]">
+                h.
+              </span>
+              <span className="hf-display text-[18px] font-extrabold text-[#F3EDE3]">헤르프리</span>
             </div>
             <button
               type="button"
               onClick={onClose}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-[#5C645A] shadow-sm"
+              className="p-1 text-[20px] leading-none text-white/70"
               aria-label="닫기"
             >
-              <CloseIcon />
+              ✕
             </button>
           </div>
-          <p className="mt-3 text-[13px] leading-[1.55] text-[#6D746D]">
-            익명 커뮤니티, 개인일지, 검증된 정보를 한곳에서 볼 수 있어요.
-          </p>
+          <p className="mt-2.5 text-[12px] text-white/55">익명 기반 비공개 커뮤니티</p>
         </div>
 
-        <nav className="flex-1 space-y-5 overflow-y-auto px-4 py-5">
-          <section className="space-y-2.5">
-            <SectionTitle>서비스</SectionTitle>
-            <div className="rounded-[18px] border border-[#E2D4BE] bg-[#FBF6ED] p-2">
-              {MAIN_LINKS.map((item) => (
-                <MenuListLink
-                  key={item.href}
-                  href={item.href}
-                  label={item.label}
-                  onClose={onClose}
-                  emphasis={item.href === '/journal'}
-                />
-              ))}
+        <MenuSection title="메뉴">
+          {FEATURE_LINKS.map((item) => (
+            <MenuRow key={item.href} href={item.href} label={item.label} Icon={item.Icon} onClose={onClose} />
+          ))}
+        </MenuSection>
+
+        {communityBoards.length > 0 && (
+          <MenuSection title="게시판">
+            <div className="flex flex-wrap gap-2 px-1 py-0.5">
+              {communityBoards.map((board) => {
+                const label = normalizeBoardLabel(getCommunityBoardTabLabel(board.boardType) ?? board.name);
+                return (
+                  <Link
+                    key={board.id}
+                    href={`/community/${board.id}`}
+                    onClick={onClose}
+                    className="rounded-full border border-[#EADFCB] bg-[#FBF6EA] px-3.5 py-2 text-[12.5px] font-medium text-[#3C443E]"
+                  >
+                    {label}
+                  </Link>
+                );
+              })}
             </div>
-          </section>
+          </MenuSection>
+        )}
 
-          {communityBoards.length > 0 && (
-            <section className="space-y-2.5">
-              <SectionTitle>게시판 바로가기</SectionTitle>
-              <div className="flex flex-wrap gap-2">
-                {communityBoards.map((board) => {
-                  const label = normalizeBoardLabel(getCommunityBoardTabLabel(board.boardType) ?? board.name);
-                  return (
-                    <Link
-                      key={board.id}
-                      href={`/community/${board.id}`}
-                      onClick={onClose}
-                      className="rounded-full border border-[#D9CBB5] bg-white px-3 py-2 text-[12px] font-bold text-[#33413B]"
-                    >
-                      {label}
-                    </Link>
-                  );
-                })}
-              </div>
-            </section>
-          )}
+        <MenuSection title="이용안내">
+          {GUIDE_LINKS.map((item) => (
+            <MenuRow key={item.href} href={item.href} label={item.label} Icon={item.Icon} onClose={onClose} />
+          ))}
+        </MenuSection>
 
-          <section className="space-y-2.5">
-            <SectionTitle>이용 안내</SectionTitle>
-            <div className="rounded-[18px] border border-[#E2D4BE] bg-[#FBF6ED] p-2">
-              {GUIDE_LINKS.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={onClose}
-                  className="flex items-center justify-between rounded-[13px] px-3 py-3 text-[13px] font-bold text-[#293530] hover:bg-white"
-                >
-                  {item.label}
-                  <span className="text-[#A99468]" aria-hidden>
-                    ›
-                  </span>
-                </Link>
-              ))}
-            </div>
-          </section>
+        {isAdmin && (
+          <MenuSection title="운영">
+            <MenuRow href="/admin?tab=dashboard" label="관리자 대시보드" Icon={MenuShieldIcon} onClose={onClose} />
+          </MenuSection>
+        )}
 
-          {isAdmin && (
-            <section className="space-y-2.5">
-              <SectionTitle>운영</SectionTitle>
-              <MenuListLink href="/admin?tab=dashboard" label="관리자 대시보드" onClose={onClose} />
-            </section>
-          )}
-        </nav>
-
-        <div className="border-t border-[#E1D5C1] bg-[#FBF6ED] p-4">
+        <div className="px-[22px] pb-[34px] pt-2 text-center">
           {isLoggedIn ? (
-            <div className="space-y-2">
-              <Link
-                href="/mypage"
-                onClick={onClose}
-                className="block rounded-[14px] bg-white px-3.5 py-3 text-[13px] font-extrabold text-[#1E2621]"
-              >
-                {user?.nickname ?? '회원'}님 계정 관리
-              </Link>
-              <button
-                type="button"
-                onClick={() => void handleLogout()}
-                className="w-full rounded-[14px] border border-[#E8C8BC] bg-white px-3.5 py-3 text-left text-[13px] font-bold text-[#C0512F]"
-              >
-                로그아웃
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => void handleLogout()}
+              className="text-[12.5px] text-[#A6ABA0] underline underline-offset-[3px]"
+            >
+              로그아웃
+            </button>
           ) : (
             <div className="space-y-2">
-              <MenuListLink href="/login" label="로그인" onClose={onClose} />
-              <MenuListLink href="/signup" label="회원가입" onClose={onClose} emphasis />
+              <Link
+                href="/login"
+                onClick={onClose}
+                className="block text-[12.5px] font-semibold text-[#0B3B36]"
+              >
+                로그인
+              </Link>
+              <Link
+                href="/signup"
+                onClick={onClose}
+                className="block text-[12.5px] text-[#A6ABA0] underline underline-offset-[3px]"
+              >
+                회원가입
+              </Link>
             </div>
           )}
         </div>

@@ -129,11 +129,25 @@ export function SocialLoginButtons({
   );
 }
 
-export function SocialLoginBelowEmail({
+export function SocialLoginSection({
   returnUrl,
   mode = 'login',
   className,
-}: SocialLoginButtonsProps) {
+  order = 'email-first',
+}: SocialLoginButtonsProps & {
+  order?: 'email-first' | 'social-first';
+}) {
+  if (order === 'social-first') {
+    return (
+      <div className={className}>
+        <SocialLoginButtons returnUrl={returnUrl} mode={mode} />
+        <div className="auth-divider mt-5">
+          <span>또는 이메일로</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={className}>
       <div className="auth-divider">
@@ -142,4 +156,9 @@ export function SocialLoginBelowEmail({
       <SocialLoginButtons returnUrl={returnUrl} mode={mode} className="mt-5" />
     </div>
   );
+}
+
+/** @deprecated Use SocialLoginSection */
+export function SocialLoginBelowEmail(props: SocialLoginButtonsProps) {
+  return <SocialLoginSection {...props} order="email-first" />;
 }

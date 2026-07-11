@@ -64,19 +64,19 @@ export function VideoFeedCard({ video, categoryLabel, featured }: VideoFeedCardP
           />
           <PlayBadge large={featured} />
           {featured && (
-            <span className="absolute right-3 top-3 rounded-full bg-[#F0C778] px-2.5 py-1 text-[11px] font-extrabold text-[#07251F]">
+            <span className="absolute right-3 top-3 rounded-full bg-[#F0C778] px-2.5 py-1 text-[12px] font-extrabold text-[#07251F]">
               {video.isFeatured ? '추천 영상' : '최신 영상'}
             </span>
           )}
           {!featured && (
-            <span className="absolute bottom-3 left-3 rounded-[7px] bg-white/90 px-2.5 py-1 text-[10.5px] font-extrabold text-[#04342C]">
+            <span className="absolute bottom-3 left-3 rounded-[7px] bg-white/90 px-2.5 py-1 text-[12px] font-extrabold text-[#04342C]">
               {tagLabel}
             </span>
           )}
         </div>
         <div className={cn('px-4 pb-4 pt-3.5', featured && 'px-4 pb-4 pt-3.5')}>
           {featured && (
-            <span className="mb-1.5 inline-block rounded-[7px] bg-[#E1F5EE] px-2 py-0.5 text-[10.5px] font-semibold text-[#04342C]">
+            <span className="mb-1.5 inline-block rounded-[7px] bg-[#E1F5EE] px-2 py-0.5 text-[12px] font-semibold text-[#04342C]">
               {tagLabel}
             </span>
           )}
@@ -88,7 +88,7 @@ export function VideoFeedCard({ video, categoryLabel, featured }: VideoFeedCardP
           >
             {video.title}
           </h2>
-          <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-[#A6ABA0]">
+          <div className="mt-2 flex flex-wrap items-center gap-2 text-[12px] hf-text-muted">
             <span>YouTube</span>
             <MetaDot />
             <span>{formatRelativeTimeMedia(video.createdAt)}</span>

@@ -49,7 +49,7 @@ export function Pagination({ page, totalPages, onPageChange }: PaginationProps) 
               <button type="button" onClick={() => changePage(0)} className="pagination-number">
                 1
               </button>
-              {visiblePages[0] > 1 && <span className="px-0.5 text-xs text-[#A6ABA0]">...</span>}
+              {visiblePages[0] > 1 && <span className="px-0.5 text-[12px] hf-text-muted">...</span>}
             </>
           )}
 
@@ -71,7 +71,7 @@ export function Pagination({ page, totalPages, onPageChange }: PaginationProps) 
           {visiblePages[visiblePages.length - 1] < totalPages - 1 && (
             <>
               {visiblePages[visiblePages.length - 1] < totalPages - 2 && (
-                <span className="px-0.5 text-xs text-[#A6ABA0]">...</span>
+                <span className="px-0.5 text-[12px] hf-text-muted">...</span>
               )}
               <button type="button" onClick={() => changePage(totalPages - 1)} className="pagination-number">
                 {totalPages}

@@ -82,9 +82,7 @@ function MemberStatusStrip({
             <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#6FE0B0] shadow-[0_0_8px_rgba(111,224,176,.8)]" />
             {activeUsersLabel}
           </p>
-          <p className="mt-[3px] text-[11px] text-white/55">
-            오늘 올라온 글 {todayStories.toLocaleString('ko-KR')}개
-          </p>
+          <p className="mt-[3px] text-[12px] text-white/55">오늘 올라온 글 {todayStories.toLocaleString('ko-KR')}개</p>
         </div>
       </div>
     </section>
@@ -131,11 +129,11 @@ function GuestCommunityPreview({
   return (
     <section className="px-5 pt-6">
       <div className="mb-4 flex items-center justify-between gap-3">
-        <h2 className="hf-display text-[19px] font-extrabold tracking-[-0.01em] text-[#1F2723]">
+        <h2 className="hf-display text-[19px] font-extrabold tracking-[-0.01em] text-[#1E2621]">
           방금 올라온 이야기
         </h2>
-        <span className="inline-flex shrink-0 items-center gap-1 text-[10.5px] font-medium text-[#A6ABA0]">
-          <LockIcon className="h-[11px] w-[11px] stroke-[#A6ABA0]" />
+        <span className="inline-flex shrink-0 items-center gap-1 text-[12px] font-medium text-[#A6ABA0]">
+          <LockIcon className="h-3 w-3 stroke-[#A6ABA0]" />
           회원 전용
         </span>
       </div>
@@ -158,8 +156,8 @@ function GuestCommunityPreview({
           <span className="mb-3.5 flex h-[46px] w-[46px] items-center justify-center rounded-full bg-[#0B3B36] text-[#F0C778] shadow-[0_10px_22px_-10px_rgba(11,59,54,.6)]">
             <LockIcon className="h-5 w-5" />
           </span>
-          <p className="text-[15px] font-bold text-[#1D2824]">회원만 볼 수 있는 공간이에요</p>
-          <p className="mt-1.5 text-[12.5px] leading-[1.6] text-[#68716B]">
+          <p className="text-[15px] font-bold text-[#1E2621]">회원만 볼 수 있는 공간이에요</p>
+          <p className="mt-1.5 text-[12.5px] leading-[1.6] text-[#5C645A]">
             가입하면 {lockStoryCount.toLocaleString('ko-KR')}개의 이야기를
             <br />
             바로 볼 수 있어요
@@ -184,10 +182,10 @@ function PreviewPostCard({ post }: { post: PreviewPost }) {
           {post.emoji}
         </span>
         <span className="truncate text-[13px] font-semibold text-[#2C342E]">{post.name}</span>
-        <span className="ml-auto shrink-0 text-[10.5px] text-[#B4B2A6]">{post.time}</span>
+        <span className="ml-auto shrink-0 text-[12px] hf-text-muted">{post.time}</span>
       </div>
       <p className="text-[13.5px] leading-[1.6] tracking-[-0.01em] text-[#2C342E]">{post.text}</p>
-      <div className="mt-[11px] flex items-center gap-3.5 text-[11px] text-[#A6ABA0]">
+      <div className="mt-[11px] flex items-center gap-3.5 text-[12px] text-[#A6ABA0]">
         <span className="inline-flex items-center gap-1">
           <HeartIcon />
           {post.warm}
@@ -247,7 +245,7 @@ function GuestQuickLinks() {
             <span className="flex h-14 w-14 items-center justify-center rounded-[18px] border border-[#ECE5D8] bg-white text-[#0B3B36] shadow-[0_6px_16px_-10px_rgba(20,30,25,.2)] transition-colors group-hover:bg-[#F8F1E6]">
               <QuickLinkIcon name={item.icon} />
             </span>
-            <span className="max-w-full truncate text-center text-[11px] font-medium leading-[1.35] text-[#68716B]">
+            <span className="max-w-full truncate text-center text-[12px] font-medium leading-[1.35] text-[#5C645A]">
               {item.label}
             </span>
           </Link>
@@ -296,7 +294,7 @@ function GuestQuietFooter() {
   return (
     <footer className="px-6 pb-2 pt-[26px] text-center">
       <p className="hf-display text-[14px] leading-[1.7] text-[#8A9089]">오늘도, 담담하게</p>
-      <p className="mt-2 text-[10.5px] text-[#B4B2A6]">헤르프리 · 익명 기반 비공개 커뮤니티</p>
+      <p className="mt-2 text-[12px] text-[#B4B2A6]">헤르프리 · 익명 기반 비공개 커뮤니티</p>
     </footer>
   );
 }

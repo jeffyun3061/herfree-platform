@@ -17,10 +17,10 @@ export default function QnaPage({ searchParams }: QnaPageProps) {
     <div className="content-screen mx-auto max-w-app pb-[96px] lg:max-w-none">
       <div className="hf-screen-header lg:pt-[34px]">
         <div className="min-w-0">
-          <h1 className="hf-display m-0 text-[24px] font-extrabold leading-tight tracking-[-0.01em] text-[#15201D]">
+          <h1 className="hf-display m-0 text-[24px] font-extrabold leading-tight tracking-[-0.01em] text-[#1E2621]">
             자주 묻는 질문
           </h1>
-          <p className="mt-[5px] text-[13px] leading-relaxed hf-text-subtle">
+          <p className="mt-[5px] whitespace-nowrap text-[12.5px] text-[#9A9F94]">
             많이 물어보신 것들을 먼저 모아봤어요
           </p>
         </div>
@@ -54,13 +54,13 @@ export default function QnaPage({ searchParams }: QnaPageProps) {
                       <span className="hf-display shrink-0 text-[15px] font-extrabold leading-[1.4] text-[#C9A24B]">
                         Q
                       </span>
-                      <span className="flex-1 text-[13.5px] font-semibold leading-[1.5] tracking-[-0.01em] text-[#15201D]">
+                      <span className="flex-1 text-[13.5px] font-semibold leading-[1.5] tracking-[-0.01em] text-[#1E2621]">
                         {item.question}
                       </span>
-                      <span className="mt-0.5 shrink-0 text-[13px] text-[#B4B2A6] group-open:hidden" aria-hidden>
+                      <span className="mt-0.5 shrink-0 text-[13px] hf-text-muted group-open:hidden" aria-hidden>
                         ⌄
                       </span>
-                      <span className="mt-0.5 hidden shrink-0 text-[13px] text-[#B4B2A6] group-open:inline" aria-hidden>
+                      <span className="mt-0.5 hidden shrink-0 text-[13px] hf-text-muted group-open:inline" aria-hidden>
                         ⌃
                       </span>
                     </summary>
@@ -68,7 +68,7 @@ export default function QnaPage({ searchParams }: QnaPageProps) {
                       <span className="hf-display shrink-0 text-[15px] font-extrabold leading-[1.4] text-[#15695E]">
                         A
                       </span>
-                      <p className="flex-1 text-[12.5px] leading-[1.75] text-[#6E766F]">{item.answer}</p>
+                      <p className="flex-1 text-[12.5px] leading-[1.75] text-[#5C645A]">{item.answer}</p>
                     </div>
                   </details>
                 );
@@ -80,7 +80,7 @@ export default function QnaPage({ searchParams }: QnaPageProps) {
 
       <Link
         href="/consult"
-        className="mx-5 mt-[24px] flex items-center gap-3 rounded-[16px] bg-[#0B3B36] px-[19px] py-[17px] leading-normal shadow-[0_14px_30px_-18px_rgba(11,59,54,.6)]"
+        className="mx-5 mt-6 flex items-center gap-3 rounded-[16px] bg-[#0B3B36] px-[19px] py-[17px] leading-normal shadow-[0_14px_30px_-18px_rgba(11,59,54,.6)]"
       >
         <span className="flex-1">
           <span className="block text-[13.5px] font-bold text-white">원하는 답을 못 찾으셨나요?</span>

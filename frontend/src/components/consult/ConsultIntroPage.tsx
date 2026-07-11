@@ -22,7 +22,7 @@ const consultInfo = [
 
 export function ConsultIntroPage() {
   return (
-    <main className="min-h-full bg-white pb-10">
+    <main className="min-h-full bg-white pb-8">
       <header
         className="flex items-center gap-2.5 border-b border-[#EFE9DD] px-[18px] pb-3.5"
         style={{ paddingTop: 'var(--hf-page-pt)' }}
@@ -30,24 +30,24 @@ export function ConsultIntroPage() {
         <Link
           href="/"
           aria-label="홈으로 돌아가기"
-          className="text-[22px] leading-none text-[#6E7671]"
+          className="text-[22px] leading-none text-[#5C645A]"
         >
           ‹
         </Link>
-        <h1 className="text-[15px] font-bold text-[#15201D]">1:1 비밀 상담</h1>
+        <h1 className="text-[15px] font-bold text-[#1E2621]">1:1 비밀 상담</h1>
       </header>
 
       <section className="relative overflow-hidden bg-[#04342C] px-6 py-[30px] text-white">
         <div
-          className="pointer-events-none absolute -z-0 right-[-40px] top-[-40px] h-[120px] w-[120px] rounded-full bg-[radial-gradient(circle,rgba(240,199,120,.08)_0%,rgba(240,199,120,0)_70%)]"
+          className="pointer-events-none absolute right-[-30px] top-[-30px] h-[140px] w-[140px] rounded-full bg-[radial-gradient(circle,rgba(240,199,120,.16)_0%,rgba(240,199,120,0)_70%)]"
           aria-hidden
         />
-        <h2 className="hf-display relative z-10 text-[20px] font-semibold leading-[1.5] text-white [text-shadow:0_1px_10px_rgba(0,0,0,.25)]">
+        <h2 className="hf-display relative z-10 mb-3 text-[20px] font-semibold leading-[1.5] text-white">
           말 꺼내기 어려운 이야기,
           <br />
           1:1로 편하게.
         </h2>
-        <p className="relative z-10 mt-3 text-[13px] leading-[1.7] text-white/85 [text-shadow:0_1px_8px_rgba(0,0,0,.2)]">
+        <p className="relative z-10 text-[12.5px] leading-[1.7] text-white/78">
           13년 경험과 2급 심리상담 자격을 바탕으로, 1:1로 깊은 이야기를 나눕니다.
         </p>
       </section>
@@ -56,7 +56,7 @@ export function ConsultIntroPage() {
         <span className="shrink-0 text-[15px]" aria-hidden>
           🔒
         </span>
-        <p className="text-[13px] leading-[1.6] text-[#04342C]">
+        <p className="text-[12px] leading-[1.6] text-[#04342C]">
           커뮤니티와 분리된 100% 비공개 상담이에요. 닉네임·IP 정책과 무관하게 운영됩니다.
         </p>
       </section>
@@ -67,8 +67,8 @@ export function ConsultIntroPage() {
             key={label}
             className="flex justify-between border-t border-[#F2ECE1] py-[11px] text-[13px] first:border-t-0"
           >
-            <span className="hf-text-subtle">{label}</span>
-            <span className="font-semibold text-[#15201D]">{value}</span>
+            <span className="text-[#9A9F94]">{label}</span>
+            <span className="font-semibold text-[#1E2621]">{value}</span>
           </div>
         ))}
       </section>
@@ -78,24 +78,24 @@ export function ConsultIntroPage() {
           🌿
         </div>
         <div>
-          <h2 className="text-[13.5px] font-bold text-[#15201D]">헤르프리 상담사</h2>
-          <p className="mt-0.5 text-[13px] hf-text-subtle">13년 경험 · 2급 심리상담 자격</p>
+          <h2 className="text-[13.5px] font-bold text-[#1E2621]">헤르프리 상담사</h2>
+          <p className="mt-0.5 text-[12px] text-[#9A9F94]">13년 경험 · 2급 심리상담 자격</p>
         </div>
       </section>
 
       <section className="mx-5 mt-6">
-        <p className="mb-1.5 text-[13px] font-semibold hf-text-subtle">자주 묻는 질문</p>
+        <p className="mb-1.5 text-[12px] font-semibold text-[#9A9F94]">자주 묻는 질문</p>
         <div>
           {consultFaqs.map((faq) => (
             <article key={faq.question} className="border-t border-[#EFE9DD] py-[13px] first:border-t-0">
-              <h3 className="mb-[5px] text-[13px] font-semibold text-[#15201D]">{faq.question}</h3>
-              <p className="text-[13px] leading-[1.65] text-[#6E766F]">{faq.answer}</p>
+              <h3 className="mb-[5px] text-[13px] font-semibold text-[#1E2621]">{faq.question}</h3>
+              <p className="text-[12px] leading-[1.65] text-[#5C645A]">{faq.answer}</p>
             </article>
           ))}
         </div>
       </section>
 
-      <section className="px-5 pt-6">
+      <section className="px-5 pb-0 pt-6">
         <a
           href={KAKAO_CONSULT_URL}
           target="_blank"
