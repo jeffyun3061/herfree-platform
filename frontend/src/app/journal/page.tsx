@@ -6,7 +6,7 @@ import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 import { LoggedOutFeaturePrompt } from '@/components/auth/LoggedOutFeaturePrompt';
-import { InlineTopActions } from '@/components/layout/InlineTopActions';
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
 
 import { JournalRecordFromQuery } from '@/components/journal/JournalRecordFromQuery';
 
@@ -238,7 +238,7 @@ function JournalPageContent() {
 
     <div className="bg-[#F3EDE3] pb-6 lg:pb-10">
 
-      <div className="page-container space-y-3">
+      <div className="mx-auto max-w-app space-y-3">
 
         {!isReady ? (
 
@@ -251,18 +251,12 @@ function JournalPageContent() {
         ) : isLoggedIn ? (
 
           <>
-            <div className="hf-screen-header mx-auto w-full max-w-app !px-1">
-              <div>
-                <h1 className="hf-display text-[23px] font-extrabold tracking-[-0.01em] text-[#1E2621]">
-                  개인일지
-                </h1>
-                <p className="mt-1 text-[12.5px] font-medium text-[#9A9F94]">
-                  매일의 컨디션을 기록하고 흐름을 살펴봐요
-                </p>
-              </div>
-              <InlineTopActions />
-            </div>
+            <ScreenHeader
+              title="개인일지"
+              subtitle="매일의 컨디션을 기록하고 흐름을 살펴봐요"
+            />
 
+            <div className="hf-page-x space-y-3">
             <Suspense fallback={null}>
 
               <JournalRecordFromQuery
@@ -361,6 +355,7 @@ function JournalPageContent() {
 
 
             <JournalRecordSheet {...wizardProps} />
+            </div>
 
           </>
 

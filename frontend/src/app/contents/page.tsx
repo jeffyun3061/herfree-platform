@@ -10,7 +10,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { CONTENT_CATEGORIES } from '@/domain/content/types';
 import { AdminPublishFab, AdminPublishLink } from '@/components/admin/AdminPublishLink';
-import { InlineTopActions } from '@/components/layout/InlineTopActions';
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { cn } from '@/lib/cn';
 
 function ContentsPageContent() {
@@ -47,13 +47,11 @@ function ContentsPageContent() {
   return (
     <>
       <div className="content-screen mx-auto max-w-app pb-24 lg:max-w-none">
-        <div className="hf-screen-header">
-          <div className="min-w-0">
-            <h1 className="hf-display text-[24px] font-semibold leading-tight text-[#15201D]">칼럼</h1>
-            <p className="mt-1.5 text-[13px] hf-text-muted">경험에서 나온 이야기</p>
-          </div>
-          <InlineTopActions />
-        </div>
+        <ScreenHeader
+          title="칼럼"
+          subtitle="경험에서 나온 이야기"
+          titleClassName="font-semibold text-[#15201D]"
+        />
 
         <div className="mx-5 mt-4 hidden items-start justify-end gap-3 lg:flex">
           <AdminPublishLink tab="contents" label="칼럼 올리기" />

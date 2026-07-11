@@ -61,7 +61,7 @@ function MemberStatusStrip({
   todayStories: number;
 }) {
   return (
-    <section className="relative z-10 mx-[18px] -mt-[22px] rounded-[18px] bg-[#07251F] px-[18px] py-[15px] text-white shadow-[0_18px_40px_-24px_rgba(7,37,31,.7)]">
+    <section className="relative z-10 mx-5 -mt-[22px] rounded-[18px] bg-[#07251F] px-5 py-[15px] text-white shadow-[0_18px_40px_-24px_rgba(7,37,31,.7)]">
       <div className="flex items-center gap-[13px]">
         <div className="flex items-center" aria-hidden>
           {MEMBER_AVATARS.map((avatar, index) => (

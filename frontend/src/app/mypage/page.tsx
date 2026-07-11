@@ -164,10 +164,12 @@ export default function MyPage() {
             className="absolute inset-0 h-full w-full object-cover object-[50%_40%]"
           />
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,37,31,.45)_0%,rgba(7,37,31,.25)_50%,rgba(243,237,227,.95)_100%)]" />
-          <div className="absolute right-5 top-[52px]">
-            <InlineTopActions variant="onDark" />
+          <div className="absolute inset-x-0 top-0 z-10 hf-screen-header-block">
+            <div className="flex justify-end">
+              <InlineTopActions variant="onDark" />
+            </div>
           </div>
-          <div className="absolute bottom-[14px] left-0 right-0 flex items-center gap-[13px] px-[22px]">
+          <div className="absolute bottom-[14px] left-0 right-0 flex items-center gap-[13px] hf-page-x">
             <span className="flex h-[58px] w-[58px] shrink-0 items-center justify-center rounded-full bg-white/[0.92] text-[26px] shadow-[0_8px_18px_-8px_rgba(0,0,0,.3)]">
               🌙
             </span>
@@ -182,7 +184,7 @@ export default function MyPage() {
           </div>
         </section>
 
-        <section className="mx-5 mt-[14px] rounded-[18px] bg-white px-2.5 py-[18px] shadow-[0_1px_2px_rgba(20,30,25,.04),0_14px_30px_-24px_rgba(20,30,25,.22)]">
+        <section className="hf-page-mx mt-[14px] rounded-[18px] bg-white px-2.5 py-[18px] shadow-[0_1px_2px_rgba(20,30,25,.04),0_14px_30px_-24px_rgba(20,30,25,.22)]">
           <div className="grid grid-cols-3">
             {[
               { value: peaceDays, label: '무증상 일수' },
@@ -203,7 +205,7 @@ export default function MyPage() {
           </div>
         </section>
 
-        <div className="mx-5 mt-4">
+        <div className="hf-page-mx mt-4">
           <div className="mypage-menu-card">
             <MenuRow
               icon="📝"
@@ -219,7 +221,7 @@ export default function MyPage() {
           </div>
         </div>
 
-        <div className="mx-5 mt-4">
+        <div className="hf-page-mx mt-4">
           <p className="mb-2 px-0.5 text-[11px] font-semibold text-[#9A9F94]">계정</p>
           <div className="mypage-menu-card">
             <div className="border-b border-[#F2ECE1] px-[17px] py-[15px]">
@@ -274,7 +276,7 @@ export default function MyPage() {
         </div>
 
         {isStaff(user?.role) && (
-          <div className="mx-5 mt-4">
+          <div className="hf-page-mx mt-4">
             <p className="mb-2 px-0.5 text-[11px] font-semibold text-[#9A9F94]">운영</p>
             <div className="mypage-menu-card">
               <MenuRow icon="📊" label="운영 대시보드" sub="오늘 운영 지표" href="/admin?tab=dashboard" />
@@ -291,11 +293,16 @@ export default function MyPage() {
           </div>
         )}
 
-        <p className="mx-5 mt-4 text-center">
+        <p className="hf-page-mx mt-4 text-center">
           <button
             type="button"
             className="text-[12.5px] text-[#A6ABA0] underline underline-offset-[3px]"
-            onClick={() => void logout()}
+            onClick={() => {
+              void (async () => {
+                await logout();
+                router.replace('/');
+              })();
+            }}
           >
             로그아웃
           </button>
@@ -312,7 +319,7 @@ export default function MyPage() {
         </p>
 
         {showPosts && (
-          <section className="mx-5 mt-6">
+          <section className="hf-page-mx mt-6">
             <h3 className="mb-3 text-base font-semibold text-[#15201D]">내가 쓴 글</h3>
             {postsLoading ? (
               <LoadingSpinner label="글 불러오는 중…" />

@@ -24,6 +24,7 @@ import {
   setAccessToken,
   setSessionUser,
 } from '@/lib/auth-storage';
+import { forceUnlockBodyScroll } from '@/lib/body-scroll-lock';
 
 type AuthContextValue = {
   user: SessionUser | null;
@@ -55,6 +56,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const restoreGenRef = useRef(0);
 
   // 첫 렌더 후 저장된 세션을 복원하고, 서버에 토큰 유효성을 확인한다.
+  useEffect(() => {
+    const onAuthCleared = () => {
+      ++restoreGenRef.current;
+      setUser(null);
+      forceUnlockBodyScroll();
+    };
+    window.addEventListener('herfree:auth-cleared', onAuthCleared);
+    return () => window.removeEventListener('herfree:auth-cleared', onAuthCleared);
+  }, []);
+
   useEffect(() => {
     const restore = async () => {
       const gen = ++restoreGenRef.current;
@@ -169,14 +180,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [establishSession]);
 
   const logout = useCallback(async () => {
-    try {
-      await authApi.logout();
-    } catch {
-      // 서버 호출이 실패해도 클라이언트 토큰은 반드시 폐기한다 (Stateless JWT 구조)
-    }
     ++restoreGenRef.current;
     clearAuth();
     setUser(null);
+    forceUnlockBodyScroll();
+
+    try {
+      await Promise.race([
+        authApi.logout(),
+        new Promise<void>((resolve) => {
+          window.setTimeout(resolve, 2500);
+        }),
+      ]);
+    } catch {
+      // 서버 호출이 실패해도 클라이언트 토큰은 반드시 폐기한다 (Stateless JWT 구조)
+    }
   }, []);
 
   const withdraw = useCallback(async () => {

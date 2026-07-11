@@ -7,6 +7,7 @@ import { PUBLIC_IMAGES } from '@/domain/assets/static';
 import { buildJournalShareText, shareJournalText } from '@/domain/journal/share';
 import { captureElementPngBlob } from '@/lib/domCapture';
 import { cn } from '@/lib/cn';
+import { lockBodyScroll, unlockBodyScroll } from '@/lib/body-scroll-lock';
 
 type JournalShareButtonProps = {
   dashboard: JournalDashboard | null;
@@ -296,11 +297,8 @@ export function JournalShareButton({ dashboard, className, variant = 'button' }:
 
   useEffect(() => {
     if (!open) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = prev;
-    };
+    lockBodyScroll();
+    return () => unlockBodyScroll();
   }, [open]);
 
   const setDone = (next: ShareActionStatus) => {

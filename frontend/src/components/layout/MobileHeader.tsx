@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { MobileMenu } from '@/components/layout/MobileMenu';
@@ -42,10 +42,16 @@ function BackIcon() {
 
 export function MobileHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, isReady } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
   const { header } = usePageHeaderContext() ?? {};
+
+  useEffect(() => {
+    if (!isLoggedIn) {
+      setMenuOpen(false);
+    }
+  }, [isLoggedIn]);
 
   const isTabRoot = pathname === '/' || Boolean(getMobileTabRootTitle(pathname));
   const shouldShowBack = Boolean(header?.showBack) || !isTabRoot;
@@ -74,17 +80,13 @@ export function MobileHeader() {
           </Link>
         </div>
 
-        <div className="flex shrink-0 items-center gap-[18px]">
+        <div className="flex h-8 shrink-0 items-center gap-[18px]">
           {showHeaderActions ? (
-            <>
-              <HeaderIconLink href="/community/search" label="통합 검색">
-                <ShellSearchIcon />
-              </HeaderIconLink>
-              {isLoggedIn ? (
-                <HeaderIconLink href="/mypage" label="마이페이지">
-                  <ShellUserIcon />
+            !isReady ? (
+              <>
+                <HeaderIconLink href="/community/search" label="통합 검색">
+                  <ShellSearchIcon />
                 </HeaderIconLink>
-              ) : (
                 <Link
                   href="/login"
                   className="text-[13px] font-medium text-[#3C443E]"
@@ -93,21 +95,43 @@ export function MobileHeader() {
                 >
                   로그인
                 </Link>
-              )}
-              <button
-                type="button"
-                onClick={() => setMenuOpen(true)}
-                className="flex h-8 w-8 items-center justify-center text-[#3C443E]"
-                aria-label="메뉴"
-                title="메뉴"
-              >
-                <ShellMenuIcon />
-              </button>
-            </>
+              </>
+            ) : (
+              <>
+                <HeaderIconLink href="/community/search" label="통합 검색">
+                  <ShellSearchIcon />
+                </HeaderIconLink>
+                {isLoggedIn ? (
+                  <HeaderIconLink href="/mypage" label="마이페이지">
+                    <ShellUserIcon />
+                  </HeaderIconLink>
+                ) : (
+                  <Link
+                    href="/login"
+                    className="text-[13px] font-medium text-[#3C443E]"
+                    aria-label="로그인"
+                    title="로그인"
+                  >
+                    로그인
+                  </Link>
+                )}
+                {isLoggedIn ? (
+                  <button
+                    type="button"
+                    onClick={() => setMenuOpen(true)}
+                    className="flex h-8 w-8 items-center justify-center text-[#3C443E]"
+                    aria-label="메뉴"
+                    title="메뉴"
+                  >
+                    <ShellMenuIcon />
+                  </button>
+                ) : null}
+              </>
+            )
           ) : null}
         </div>
       </header>
-      <MobileMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
+      {isReady ? <MobileMenu open={menuOpen} onClose={() => setMenuOpen(false)} /> : null}
     </>
   );
 }

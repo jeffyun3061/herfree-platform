@@ -11,6 +11,7 @@ import { recordToSheetForm, sheetFormToInput } from '@/domain/journal/recordForm
 import type { WizardEntryMode } from '@/domain/journal/wizard';
 import { JournalIcon } from '@/components/journal/JournalIcon';
 import { cn } from '@/lib/cn';
+import { lockBodyScroll, unlockBodyScroll } from '@/lib/body-scroll-lock';
 
 type JournalRecordSheetProps = {
   open: boolean;
@@ -173,11 +174,8 @@ export function JournalRecordSheet({
 
   useEffect(() => {
     if (!open) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = prev;
-    };
+    lockBodyScroll();
+    return () => unlockBodyScroll();
   }, [open]);
 
   if (!open) return null;
@@ -242,7 +240,7 @@ export function JournalRecordSheet({
 
   return (
     <div className="journal-record-screen bg-[#F3F6F4]">
-      <div className="mx-auto flex min-h-screen w-full max-w-app flex-col gap-3.5 px-4 pb-10 pt-14">
+      <div className="hf-page-top hf-page-x mx-auto flex min-h-screen w-full max-w-app flex-col gap-3.5 pb-10">
         <header className="flex items-center justify-between px-1">
           <button
             type="button"

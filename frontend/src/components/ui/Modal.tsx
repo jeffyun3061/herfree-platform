@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/cn';
+import { lockBodyScroll, unlockBodyScroll } from '@/lib/body-scroll-lock';
 
 type ModalProps = {
   open: boolean;
@@ -16,11 +17,8 @@ export function Modal({ open, title, onClose, children, className }: ModalProps)
   // 모달이 열려 있는 동안 배경 스크롤을 막아 모바일 UX를 유지한다
   useEffect(() => {
     if (!open) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = prev;
-    };
+    lockBodyScroll();
+    return () => unlockBodyScroll();
   }, [open]);
 
   if (!open) return null;

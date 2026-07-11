@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { FAQ_GROUPS } from '@/domain/faq/content';
-import { InlineTopActions } from '@/components/layout/InlineTopActions';
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
 
 type QnaPageProps = {
   searchParams?: {
@@ -15,19 +15,12 @@ export default function QnaPage({ searchParams }: QnaPageProps) {
 
   return (
     <div className="content-screen mx-auto max-w-app pb-[96px] lg:max-w-none">
-      <div className="hf-screen-header lg:pt-[34px]">
-        <div className="min-w-0">
-          <h1 className="hf-display m-0 text-[24px] font-extrabold leading-tight tracking-[-0.01em] text-[#1E2621]">
-            자주 묻는 질문
-          </h1>
-          <p className="mt-[5px] whitespace-nowrap text-[12.5px] text-[#9A9F94]">
-            많이 물어보신 것들을 먼저 모아봤어요
-          </p>
-        </div>
-        <InlineTopActions />
-      </div>
+      <ScreenHeader
+        title="자주 묻는 질문"
+        subtitle="많이 물어보신 것들을 먼저 모아봤어요"
+      />
 
-      <section className="mt-[18px] flex flex-col gap-[22px] px-5">
+      <section className="mt-[18px] flex flex-col gap-[22px] hf-page-x">
         {FAQ_GROUPS.map((group, groupIndex) => (
           <section
             key={group.category}

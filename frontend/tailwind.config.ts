@@ -93,6 +93,7 @@ const config: Config = {
           'sans-serif',
         ],
         display: [
+          'var(--font-display)',
           'Nanum Myeongjo',
           'AppleMyungjo',
           'Batang',

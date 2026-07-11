@@ -24,7 +24,9 @@ export function SiteFooter() {
             문의하기
           </Link>
         </nav>
-        <p className="mt-4 text-[10px] text-[#8A9089]">© {new Date().getFullYear()} Herfree. All rights reserved.</p>
+        <p className="mt-4 text-[10px] text-[#8A9089]" suppressHydrationWarning>
+          © {new Date().getFullYear()} Herfree. All rights reserved.
+        </p>
       </div>
     </footer>
   );

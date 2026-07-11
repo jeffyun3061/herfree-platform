@@ -7,7 +7,8 @@
  *
  * 디렉터리:
  * - public/brand/              로고 PNG
- * - public/fonts/suit/         SUIT woff2 (로드: src/styles/fonts/suit.css)
+ * - public/assets/           SUIT Variable woff2 (로드: src/styles/fonts/suit-variable.css)
+ * - public/fonts/suit/       SUIT 정적 woff2 (폴백)
  * - public/images/             홈·대시보드 배경
  * - public/icons/journal/record/  일지 PNG 아이콘
  * - public/icons/journal/      일지 SVG (clipboard 등)

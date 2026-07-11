@@ -1,18 +1,23 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import * as authApi from '@/lib/api/auth';
 import {
+  clearOAuthState,
   consumeOAuthReturnUrl,
-  consumeOAuthState,
   getOAuthRedirectUri,
   isOAuthProvider,
+  peekOAuthState,
 } from '@/domain/auth/oauth';
 import { getErrorMessage } from '@/lib/api/client';
+
+function oauthCallbackGuardKey(provider: string, code: string) {
+  return `herfree_oauth_handled_${provider}_${code}`;
+}
 
 function OAuthCallbackForm() {
   const router = useRouter();
@@ -20,8 +25,12 @@ function OAuthCallbackForm() {
   const searchParams = useSearchParams();
   const { completeOAuthLogin } = useAuth();
   const [error, setError] = useState<string | null>(null);
+  const startedRef = useRef(false);
 
   useEffect(() => {
+    if (startedRef.current) return;
+    startedRef.current = true;
+
     const run = async () => {
       const providerParam = params.provider;
       if (!isOAuthProvider(providerParam)) {
@@ -43,7 +52,13 @@ function OAuthCallbackForm() {
         return;
       }
 
-      const expectedState = consumeOAuthState(providerParam);
+      const guardKey = oauthCallbackGuardKey(providerParam, code);
+      if (sessionStorage.getItem(guardKey)) {
+        return;
+      }
+      sessionStorage.setItem(guardKey, '1');
+
+      const expectedState = peekOAuthState(providerParam);
       if (!expectedState || expectedState !== state) {
         setError('소셜 로그인 보안 검증에 실패했습니다. 다시 시도해 주세요.');
         return;
@@ -55,6 +70,8 @@ function OAuthCallbackForm() {
           code,
           getOAuthRedirectUri(providerParam),
         );
+
+        clearOAuthState(providerParam);
 
         if (result.needsProfile && result.profileCompletionToken) {
           const returnUrl = consumeOAuthReturnUrl();
@@ -68,6 +85,7 @@ function OAuthCallbackForm() {
         completeOAuthLogin(result);
         router.replace(consumeOAuthReturnUrl());
       } catch (err) {
+        sessionStorage.removeItem(guardKey);
         setError(getErrorMessage(err));
       }
     };

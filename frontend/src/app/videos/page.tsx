@@ -7,7 +7,7 @@ import { VideoFeedCard, VideoFeedCardSkeleton } from '@/components/video/VideoFe
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { AdminPublishFab, AdminPublishLink } from '@/components/admin/AdminPublishLink';
-import { InlineTopActions } from '@/components/layout/InlineTopActions';
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { getErrorMessage } from '@/lib/api/client';
 
 export default function VideosPage() {
@@ -44,13 +44,11 @@ export default function VideosPage() {
   return (
     <>
       <div className="media-screen mx-auto max-w-app pb-24 lg:max-w-none">
-        <div className="hf-screen-header">
-          <div className="min-w-0">
-            <h1 className="hf-display text-[24px] font-semibold leading-tight text-[#15201D]">헤르프리 영상</h1>
-            <p className="mt-[5px] text-[13px] hf-text-subtle">유튜브 채널에서 다뤄온 이야기들</p>
-          </div>
-          <InlineTopActions />
-        </div>
+        <ScreenHeader
+          title="헤르프리 영상"
+          subtitle="유튜브 채널에서 다뤄온 이야기들"
+          titleClassName="font-semibold text-[#15201D]"
+        />
 
         <div className="mx-5 mt-4 hidden items-start justify-end gap-3 lg:flex">
           <AdminPublishLink tab="videos" label="영상 등록" />

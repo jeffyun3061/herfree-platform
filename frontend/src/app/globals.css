@@ -1,5 +1,4 @@
-@import '../styles/fonts/suit.css';
-@import '../styles/fonts/source-han-serif.css';
+@import '../styles/fonts/suit-variable.css';
 
 @tailwind base;
 @tailwind components;
@@ -40,7 +39,9 @@
   --journal-risk-high: #e74c3c;
   --journal-risk-medium: #e67e22;
   /* 2차 QA — 비회원 화면 공통 */
-  --hf-page-pt: 2.125rem; /* 34px — PDF QA */
+  --hf-page-pt: max(12px, env(safe-area-inset-top, 12px));
+  --hf-page-pt-lg: 1.5rem; /* 24px — 데스크톱 폰 프레임 */
+  --hf-page-px: 1.25rem; /* 20px — 좌우 여백 통일 */
   --hf-ink: #1e2621;
   --hf-sub: #5c645a;
   --hf-text-muted: #7c8279;
@@ -50,7 +51,7 @@
 }
 
 body {
-  font-family: 'SUIT', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  font-family: 'SUIT Variable', 'SUIT', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
   font-weight: 400;
   background:
     radial-gradient(130% 90% at 50% -10%, #f1e9dc 0%, #e6dccb 55%, #d8cdb9 100%);
@@ -72,12 +73,61 @@ body {
 
 @layer components {
   .hf-display {
-    font-family: 'Source Han Serif KR', 'Noto Serif KR', Georgia, serif;
+    font-family: var(--font-display), 'Nanum Myeongjo', 'AppleMyungjo', 'Batang', Georgia, serif;
   }
 
-  .hf-screen-header {
-    @apply flex items-start justify-between gap-3 px-5;
+  .hf-page-x {
+    padding-left: var(--hf-page-px);
+    padding-right: var(--hf-page-px);
+  }
+
+  .hf-page-mx {
+    margin-left: var(--hf-page-px);
+    margin-right: var(--hf-page-px);
+  }
+
+  .hf-screen-header-block {
     padding-top: var(--hf-page-pt);
+    padding-left: var(--hf-page-px);
+    padding-right: var(--hf-page-px);
+  }
+
+  .hf-screen-header-block--flat {
+    padding-top: 0;
+  }
+
+  .hf-screen-header-row {
+    @apply flex flex-nowrap items-start justify-between gap-3;
+  }
+
+  /* @deprecated — ScreenHeader / hf-screen-header-block 사용 */
+  .hf-screen-header {
+    @apply hf-screen-header-block flex items-start justify-between gap-3;
+  }
+
+  .hf-page-top {
+    padding-top: var(--hf-page-pt);
+  }
+
+  .hf-screen-subtitle {
+    @apply mt-[5px] truncate whitespace-nowrap text-[12.5px] tracking-[-0.02em] text-[#9A9F94];
+  }
+
+  @media (min-width: 1024px) {
+    .hf-screen-header-block,
+    .hf-screen-header,
+    .hf-page-top {
+      padding-top: var(--hf-page-pt-lg);
+    }
+  }
+
+  .hf-menu-panel {
+    scrollbar-width: none;
+  }
+
+  .hf-menu-panel::-webkit-scrollbar {
+    width: 0;
+    height: 0;
   }
 
   .hf-text-muted {
@@ -124,17 +174,21 @@ body {
     @apply px-4 py-6 lg:max-w-none lg:px-4 lg:py-6;
   }
 
+  .app-phone-shell .page-container.home-dashboard-screen {
+    @apply px-0 py-0;
+  }
+
   .app-phone-shell .home-dashboard-screen {
-    @apply px-4 pb-28 pt-14 lg:px-4 lg:pb-10 lg:pt-7;
+    @apply px-0 pb-28 lg:pb-10;
   }
 
   .app-phone-shell .community-screen {
-    @apply px-4 pt-0 lg:px-4 lg:pb-12 lg:pt-6;
+    @apply px-0 pt-0 lg:pb-12;
   }
 
   .app-phone-shell .content-screen,
   .app-phone-shell .media-screen {
-    @apply px-0 pt-0 lg:px-4 lg:pb-12 lg:pt-6;
+    @apply px-0 pt-0 lg:pb-12;
   }
 
   /* 관리자 통계: 앱 폭 1열 → 웹 패널 2열 */

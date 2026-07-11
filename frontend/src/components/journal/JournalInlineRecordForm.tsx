@@ -138,22 +138,27 @@ export function JournalInlineRecordForm({
   isSubmitting,
   onSave,
 }: JournalInlineRecordFormProps) {
+  const [mounted, setMounted] = useState(false);
   const [form, setForm] = useState<JournalRecordInput>(() =>
-    recordToSheetForm(initialRecord, toDateInputValue(), initialRecord ? 'edit' : 'daily'),
+    recordToSheetForm(initialRecord, '', initialRecord ? 'edit' : 'daily'),
   );
   const [sleepHours, setSleepHours] = useState(form.sleepHours ?? 7);
   const [customProdromeText, setCustomProdromeText] = useState('');
 
   useEffect(() => {
-    const nextForm = recordToSheetForm(initialRecord, form.recordDate || toDateInputValue(), initialRecord ? 'edit' : 'daily');
+    setMounted(true);
+    const today = toDateInputValue();
+    const nextForm = recordToSheetForm(
+      initialRecord,
+      initialRecord?.recordDate || today,
+      initialRecord ? 'edit' : 'daily',
+    );
     setForm(nextForm);
     setSleepHours(nextForm.sleepHours ?? 7);
     setCustomProdromeText('');
-    // recordDate is intentionally not a dependency: user-selected date should not be reset while editing.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialRecord]);
 
-  const currentRecordDate = form.recordDate || toDateInputValue();
+  const currentRecordDate = form.recordDate || (mounted ? toDateInputValue() : '');
   const hasProdromal = (form.prodromalSymptoms ?? []).length > 0;
   const hasSymptoms = Boolean(form.hadSymptoms);
   const customProdromeValues = (form.prodromalSymptoms ?? []).filter((value) => !PRESET_PRODROME_VALUES.has(value));
@@ -180,6 +185,15 @@ export function JournalInlineRecordForm({
   const handleSave = async () => {
     await onSave(sheetFormToInput({ ...form, recordDate: currentRecordDate }, sleepHours));
   };
+
+  if (!mounted) {
+    return (
+      <section className="mx-auto w-full max-w-app space-y-3 px-1">
+        <div className="h-[52px] animate-pulse rounded-[12px] bg-[#E8DFD2]/80" aria-hidden />
+        <div className="h-[280px] animate-pulse rounded-[20px] bg-[#E8DFD2]/60" aria-hidden />
+      </section>
+    );
+  }
 
   return (
     <section className="mx-auto w-full max-w-app space-y-3">

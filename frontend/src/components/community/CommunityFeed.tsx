@@ -18,7 +18,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { Button } from '@/components/ui/Button';
 import { AdminPublishFab, AdminPublishLink } from '@/components/admin/AdminPublishLink';
-import { InlineTopActions } from '@/components/layout/InlineTopActions';
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { getWritableBoards, isStaffOnlyBoardType } from '@/domain/board/types';
 import { getCommunityBoards, isSecretStoryBoardType } from '@/domain/board/privateBoard';
 import { SecretStoryBoardBanner } from '@/components/community/SecretStoryBoardBanner';
@@ -53,8 +53,8 @@ function CommunityLockedPreview({
       : '회원과 함께하는';
 
   return (
-    <div className="pb-10">
-      <section className="mx-5 mt-[18px] overflow-hidden rounded-[18px] bg-white px-[18px] pt-[18px] shadow-[0_1px_2px_rgba(20,30,25,.04),0_16px_34px_-24px_rgba(20,30,25,.22)]">
+    <div className="hf-page-x pb-10">
+      <section className="mt-[18px] overflow-hidden rounded-[18px] bg-white px-[18px] pt-[18px] shadow-[0_1px_2px_rgba(20,30,25,.04),0_16px_34px_-24px_rgba(20,30,25,.22)]">
         <p className="mb-2 text-[12px] font-semibold text-[#15695E]">질문 · FAQ ›</p>
         <h3 className="mb-3 text-[16.5px] font-bold leading-[1.45] tracking-[-0.01em] text-[#1E2621]">
           오늘 받은 결과, 다들 어떻게 받아들이셨어요?
@@ -244,20 +244,14 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
 
   return (
     <div className="community-screen mx-auto max-w-app pb-24 lg:max-w-none">
-      <div className="hf-screen-header">
-        <div className="min-w-0">
-          <h2 className="hf-display text-[24px] font-extrabold leading-tight tracking-[-0.01em] text-[#1E2621]">
-            커뮤니티
-          </h2>
-          <p className="mt-[5px] text-[12.5px] leading-relaxed text-[#9A9F94]">
-            같은 경험을 가진 사람들의 이야기가 모이는 곳
-          </p>
-        </div>
-        <InlineTopActions />
-      </div>
+      <ScreenHeader
+        titleAs="h2"
+        title="커뮤니티"
+        subtitle="같은 경험을 가진 사람들의 이야기가 모이는 곳"
+      />
 
       {isLoggedIn && !boardsLoading && communityBoards.length > 0 && (
-        <div className="min-w-0 px-5 pt-4 pb-1">
+        <div className="hf-page-x min-w-0 pt-4 pb-1">
           <BoardTabBar
             boards={communityBoards}
             selectedBoardId={selectedBoardId}
@@ -273,7 +267,7 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
           memberCount={homeStats?.totalUsers}
         />
       ) : (
-        <div className="px-5">
+        <div className="hf-page-x">
           {isSecretStoryBoard && <SecretStoryBoardBanner className="mt-4" />}
 
           {!isLoadingAll && !listError && (

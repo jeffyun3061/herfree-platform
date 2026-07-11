@@ -73,12 +73,12 @@ export function BottomNav() {
               <Link
                 href={item.href}
                 className={cn(
-                  'flex min-h-[44px] flex-col items-center justify-center gap-0.5 px-1 py-1 text-[9.5px] transition-colors',
+                  'flex min-h-[44px] flex-col items-center justify-center gap-0.5 px-0.5 py-1 text-[9.5px] transition-colors',
                   active ? 'font-semibold text-white' : 'font-medium text-white/55',
                 )}
               >
                 <NavIcon href={item.href} />
-                {item.label}
+                <span className="whitespace-nowrap">{item.label}</span>
               </Link>
             </li>
           );

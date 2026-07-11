@@ -11,6 +11,7 @@ import {
 } from '@/domain/journal/routine';
 import { Pagination } from '@/components/common/Pagination';
 import { cn } from '@/lib/cn';
+import { lockBodyScroll, unlockBodyScroll } from '@/lib/body-scroll-lock';
 
 type JournalHistoryListProps = {
   records: JournalRecord[];
@@ -165,11 +166,8 @@ function JournalRecordDetailScreen({
   const prodromes = record.prodromalSymptoms ?? [];
 
   useEffect(() => {
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
+    lockBodyScroll();
+    return () => unlockBodyScroll();
   }, []);
 
   useEffect(() => {

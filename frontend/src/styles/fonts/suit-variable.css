@@ -1,0 +1,11 @@
+/**
+ * SUIT Variable — handoff `styles.css` / `public/assets/suit-variable.woff2`
+ * UI·본문 전용. 제목은 Nanum Myeongjo (.hf-display / font-display).
+ */
+@font-face {
+  font-family: 'SUIT Variable';
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+  src: url('/assets/suit-variable.woff2') format('woff2-variations');
+}

@@ -94,6 +94,16 @@ export function storeOAuthState(provider: OAuthProvider, state: string): void {
   sessionStorage.setItem(`${OAUTH_STATE_PREFIX}${provider}`, state);
 }
 
+export function peekOAuthState(provider: OAuthProvider): string | null {
+  if (typeof window === 'undefined') return null;
+  return sessionStorage.getItem(`${OAUTH_STATE_PREFIX}${provider}`);
+}
+
+export function clearOAuthState(provider: OAuthProvider): void {
+  if (typeof window === 'undefined') return;
+  sessionStorage.removeItem(`${OAUTH_STATE_PREFIX}${provider}`);
+}
+
 export function consumeOAuthState(provider: OAuthProvider): string | null {
   if (typeof window === 'undefined') return null;
   const key = `${OAUTH_STATE_PREFIX}${provider}`;

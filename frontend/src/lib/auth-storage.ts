@@ -69,4 +69,5 @@ export function clearAuth(): void {
   bumpAuthEpoch();
   window.localStorage.removeItem(ACCESS_TOKEN_KEY);
   window.localStorage.removeItem(SESSION_USER_KEY);
+  window.dispatchEvent(new CustomEvent('herfree:auth-cleared'));
 }

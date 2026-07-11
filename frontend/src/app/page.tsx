@@ -13,7 +13,7 @@ import { JournalPersonalDashboard } from '@/components/journal/JournalPersonalDa
 import { JournalRecordSheet } from '@/components/journal/JournalRecordSheet';
 import { QuickAccessSection } from '@/components/home/QuickAccessSection';
 import { MedicalDisclaimer } from '@/components/layout/MedicalDisclaimer';
-import { InlineTopActions } from '@/components/layout/InlineTopActions';
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 
 function LoggedInHomePage() {
@@ -70,13 +70,16 @@ function LoggedInHomePage() {
 
   return (
     <div className="min-h-screen bg-[#F3EDE3] lg:pb-10">
-      <div className="page-container home-dashboard-screen max-lg:pb-28">
-        <div className="mx-auto flex w-full max-w-app flex-col gap-[22px]">
-          <div className="flex items-center justify-between px-0.5">
-            <BrandMark size="md" showText={false} />
-            <InlineTopActions />
-          </div>
+      <div className="home-dashboard-screen mx-auto w-full max-w-app max-lg:pb-28 lg:pb-10">
+        <div className="flex w-full flex-col gap-[22px]">
+          <ScreenHeader
+            align="center"
+            titleAs="div"
+            title={<BrandMark size="md" showText={false} />}
+            titleClassName="text-[0px] leading-none"
+          />
 
+          <div className="hf-page-x">
           <JournalPersonalDashboard
             dashboard={dashboard ?? null}
             isLoading={dashboardLoading}
@@ -102,6 +105,7 @@ function LoggedInHomePage() {
           {(dashboardError || saveError) && (
             <ErrorMessage message={dashboardError ?? saveError ?? ''} />
           )}
+          </div>
         </div>
       </div>
 
