@@ -1,169 +1,110 @@
-# Herfree Platform — 개발 컨벤션
-
-백엔드(Spring Boot)와 프론트엔드(Next.js) 공통 개발 규칙. REST API 상세는 [api-spec.md](api-spec.md), 스키마는 [erd.md](erd.md), MVP 범위는 [requirements.md](requirements.md), 기술 선택은 [decision-log.md](decision-log.md)를 따른다.
-
----
-
-## Backend 규칙 (1–15)
-
-### 1. Layer 분리
-
-- Controller: HTTP 요청·응답·Validation 위임만.
-- Service: 비즈니스 규칙·트랜잭션 경계.
-- Repository: 데이터 접근만.
-- Entity: 도메인 상태·행위(도메인 메서드).
-
-### 2. 패키지 루트
-
-- 루트 패키지: `com.herfree`
-- 횡단 관심사: `global` (config, security, exception, response, common)
-- 기능 단위: `domain/{도메인}` — **auth**와 **user**는 별도 패키지로 분리한다.
-
-```txt
-backend/src/main/java/com/herfree
-├── domain
-│   ├── auth          # signup, login, logout, reissue, JWT 연동
-│   │   ├── controller
-│   │   ├── service
-│   │   ├── dto
-│   │   │   ├── request
-│   │   │   └── response
-│   │   └── exception
-│   ├── user          # users, user_profiles, me, nickname
-│   │   ├── controller
-│   │   ├── service
-│   │   ├── repository
-│   │   ├── entity
-│   │   ├── dto
-│   │   └── exception
-│   ├── board
-│   ├── post
-│   ├── comment
-│   ├── reaction
-│   ├── report
-│   ├── content
-│   ├── video
-│   └── product
-└── global
-    ├── config
-    ├── security
-    ├── exception
-    ├── response
-    └── common
-```
-
-### 3. Entity — Setter 남용 금지
-
-상태 변경은 `update()`, `hide()`, `delete()` 등 도메인 메서드로 표현한다.
-
-### 4. Soft delete
-
-게시글·댓글·콘텐츠·회원은 `status` 값 변경(`ACTIVE`, `HIDDEN`, `DELETED`, `SUSPENDED`)을 우선한다.
-
-### 5. DTO 분리
-
-- Entity를 API 응답으로 직접 반환하지 않는다.
-- Request: `{Domain}{Action}Request` (예: `PostCreateRequest`)
-- Response: `{Domain}Response`, `{Domain}DetailResponse`
-
-### 6. 메서드 네이밍
-
-동사를 구체적으로 사용: `create`, `get`, `find`, `update`, `delete`, `validate`, `hide`, `process`, `extract` 등. `doPost`, `handlePost` 금지.
-
-### 7. 예외
-
-- `RuntimeException` 직접 throw 금지.
-- `BusinessException` + `ErrorCode` + 도메인별 `*NotFoundException`, `*AccessDeniedException`.
-
-### 8. ApiResponse
-
-모든 REST 응답은 `success`, `message`, `data` 공통 형식 ([api-spec.md](api-spec.md)).
-
-### 9. REST URL
-
-- 동사 URL 금지 (`/api/createPost` ❌).
-- 리소스 복수형: `/api/posts`, `/api/posts/{postId}`.
-- 관리자: `/api/admin/**` prefix.
-
-### 10. 클래스 네이밍
-
-| 계층 | 패턴 | 예 |
-|------|------|-----|
-| Controller | `{Domain}Controller` | `PostController` |
-| Service | `{Domain}Service` | `PostService` |
-| Repository | `{Entity}Repository` | `PostRepository` |
-| Entity | 단수 명사 | `Post`, `User` |
-
-### 11. 환경·설정 파일
-
-- **커밋 금지:** `application-local.yml`, `application-prod.yml`(실값), `.env*`, JWT·DB 실비밀.
-- **커밋 허용:** `application.yml`(플레이스홀더), `application-local.yml.example`, `application-prod.yml.example`.
-- 로컬: example 복사 후 `spring.profiles.active=local`로 Docker MySQL(`herfree_db`) 연결.
-- 운영: `SPRING_PROFILES_ACTIVE=prod`, `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `JWT_SECRET` 환경 변수.
-
-### 12. Git 브랜치
-
-```txt
-main
-develop
-feature/*
-hotfix/*
-release/*
-```
-
-예: `feature/backend-auth`, `feature/docs-requirements`
-
-### 13. 커밋 메시지
-
-[Conventional Commits](https://www.conventionalcommits.org/) — **subject·PR 제목은 영어 only.**
-
-```txt
-feat(backend): implement post create API
-docs: define initial service requirements
-```
-
-한글 subject 금지. 상세: [CONTRIBUTING.md](CONTRIBUTING.md).
-
-### 14. 1차 구현 순서
-
-1. global — ApiResponse, ErrorCode, GlobalExceptionHandler, BaseTimeEntity, Security
-2. domain/auth — signup, login, logout, reissue
-3. domain/user — profile, me, nickname, withdraw
-4. board → post → comment → reaction → report
-5. admin API (숨김·신고·회원)
-6. content → video → product
-7. SpringDoc 동기화
-8. frontend 연동
-9. CI/CD (`deployment.md`)
-
-### 15. DB·마이그레이션
-
-- 메인 DB: MySQL 8 (로컬 Docker, 운영 RDS). H2 메인 DB 사용 안 함.
-- 로컬 `ddl-auto: update`는 gitignored local profile만.
-- 운영: Flyway + `ddl-auto: validate` 또는 `none`.
-- `erd.md` 변경 시 migration SQL 동시 갱신.
-
----
-
-## 프론트엔드 (요약)
-
-- App Router 기반 Next.js, TypeScript, Tailwind CSS
-- 모바일 웹 우선 반응형 UI
-- 비즈니스 규칙·타입: `src/domain/` (React/Next import 금지)
-- API·상태·폼: `src/hooks/` custom hook
-- 함수 컴포넌트 중심
-- API 계약: [api-spec.md](api-spec.md) ↔ `src/types` 동기화
-- 의료 정보 UI: [requirements.md](requirements.md) §14.3 안내 문구 상시 노출
-
----
-
-## 문서 동기화
-
-| 변경 유형 | 갱신 문서 |
-|-----------|-----------|
-| API 경로·DTO | `api-spec.md` |
-| 테이블·컬럼·인덱스 | `erd.md` + Flyway |
-| 아키텍처·의존성 | `decision-log.md` |
-| MVP 범위 | `requirements.md` |
-| 배포·시크릿 | `deployment.md` |
-
+# Herfree 개발 컨벤션
+
+Herfree는 Spring Boot 백엔드와 Next.js 프론트엔드가 함께 있는 서비스다.
+코드는 기능보다 운영 중 문제가 생겼을 때 추적하고 고칠 수 있는 구조를 우선한다.
+
+## 공통
+
+- 도메인 규칙은 한 곳에 모으고, 화면이나 컨트롤러에 흩뿌리지 않는다.
+- 사용자 입력은 DTO와 validation에서 먼저 거른다.
+- 예외는 의미 있는 도메인 예외와 `ErrorCode`로 표현한다.
+- 운영 설정, 비밀값, 로컬 설정은 커밋하지 않는다.
+- 큰 변경은 문서와 테스트를 같이 남긴다.
+
+## 백엔드
+
+### 패키지 구조
+
+```txt
+backend/src/main/java/com/herfree
+├─ domain
+│  ├─ auth
+│  ├─ user
+│  ├─ board
+│  ├─ post
+│  ├─ comment
+│  ├─ reaction
+│  ├─ report
+│  ├─ content
+│  └─ video
+└─ global
+   ├─ config
+   ├─ security
+   ├─ exception
+   ├─ response
+   └─ storage
+```
+
+### 계층 역할
+
+- Controller: HTTP 요청, 응답, validation만 담당한다.
+- Service: 비즈니스 규칙과 트랜잭션 경계를 담당한다.
+- Repository: 데이터 조회와 저장만 담당한다.
+- Entity: 도메인 상태와 상태 변경 메서드를 가진다.
+
+Controller에서 권한, 상태 변경, 복잡한 조회 조건을 직접 처리하지 않는다.
+
+### 예외와 응답
+
+- `RuntimeException`을 직접 던지지 않는다.
+- 사용자에게 보여줄 수 있는 오류는 `BusinessException`과 `ErrorCode`로 관리한다.
+- 내부 원인과 외부 응답 메시지를 분리한다.
+- 인증, 개인정보, 토큰 관련 오류는 계정 존재 여부나 내부 상태를 과하게 드러내지 않는다.
+
+### 데이터와 마이그레이션
+
+- 운영 DB 변경은 Flyway migration으로 남긴다.
+- 테이블, 인덱스, enum 의미가 바뀌면 `docs/erd.md` 또는 관련 문서를 갱신한다.
+- 운영에서는 `ddl-auto`에 의존하지 않는다.
+
+### 보안 기준
+
+- 비밀번호, JWT, refresh token, reset token, presigned URL은 로그에 남기지 않는다.
+- 비공개 게시판과 개인 기록은 항상 소유자 또는 운영자 권한을 확인한다.
+- 프록시 헤더는 신뢰 가능한 프록시에서 온 요청일 때만 사용한다.
+- 외부 저장소에서 파일을 읽을 때는 content type과 크기를 먼저 확인한다.
+- 운영 환경의 메일, 저장소, DB 오류는 조용히 성공으로 처리하지 않는다.
+
+## 프론트엔드
+
+### 구조
+
+- `src/app`: 라우트와 페이지 조립
+- `src/components`: 재사용 UI 컴포넌트
+- `src/domain`: 도메인 타입, validation, 순수 로직
+- `src/hooks`: API 호출과 화면 상태를 연결하는 hook
+- `src/lib`: API client, storage, 공통 유틸
+
+### 작성 기준
+
+- 화면 컴포넌트에는 가능한 한 도메인 규칙을 넣지 않는다.
+- API 요청/응답 타입은 `src/domain` 또는 관련 타입 파일과 맞춘다.
+- 토큰과 사용자 세션은 필요한 범위만 저장한다.
+- 접근 제한 화면은 단순히 숨기는 것에 그치지 않고 API 권한과 맞춘다.
+- 버튼, 입력, 오류 메시지는 로딩/실패 상태를 함께 고려한다.
+
+## 문서 갱신 기준
+
+| 변경 내용 | 같이 볼 문서 |
+| --- | --- |
+| API 경로, 요청, 응답 변경 | `docs/api-spec.md` |
+| 테이블, 컬럼, 인덱스 변경 | `docs/erd.md`, Flyway migration |
+| 운영 설정 변경 | `docs/deployment-aws.md`, `docs/operator-manual.md` |
+| 보안 정책 변경 | `docs/ops-security-checklist.md`, `docs/logging-policy.md` |
+| 큰 기술 결정 | `docs/decision-log.md` |
+
+## 로컬 확인 명령
+
+```powershell
+cd backend
+.\gradlew.bat test
+.\gradlew.bat build
+```
+
+```powershell
+cd frontend
+npm run lint
+npm run build
+```
+
+작업 범위가 작더라도 배포 전에는 백엔드와 프론트 전체 빌드를 모두 확인한다.

@@ -1,0 +1,14 @@
+<type>(<scope>): <요약>
+
+# 예시:
+# security(auth): 로그인 계정 열거 가능성 완화
+# fix(frontend): 회원가입 요청에 약관 동의값 포함
+# docs(ops): 운영 로그 관리 기준 정리
+#
+# type:
+# feat, fix, security, refactor, test, docs, chore, ci
+#
+# 본문은 필요한 경우에만 작성한다.
+# - 왜 변경했는지
+# - 운영 영향이 있는지
+# - 어떤 테스트를 확인했는지
