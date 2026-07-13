@@ -6,7 +6,7 @@ import { captureEvent, type AnalyticsEventName } from '@/lib/analytics';
 
 function eventForHref(href: string): AnalyticsEventName | null {
   if (href.includes('open.kakao.com')) return 'consult_click';
-  if (href.startsWith('/signup')) return 'signup_click';
+  if (href.startsWith('/signup')) return 'signup_started';
   if (href.startsWith('/login')) return 'login_click';
   if (href.startsWith('/journal')) return 'journal_start_click';
   if (href.startsWith('/community')) return 'community_open';

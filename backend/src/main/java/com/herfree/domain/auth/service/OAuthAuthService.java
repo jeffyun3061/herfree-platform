@@ -94,7 +94,7 @@ public class OAuthAuthService {
         userProfileRepository.save(userProfile);
 
         String profileCompletionToken = jwtTokenProvider.createProfileCompletionToken(String.valueOf(user.getId()));
-        recordAnalyticsEvent("oauth_signup_started", user.getId());
+        recordAnalyticsEvent(AnalyticsService.SIGNUP_STARTED, user.getId());
         return OAuthLoginResponse.needsProfile(profileCompletionToken, user.getId());
     }
 
@@ -127,7 +127,7 @@ public class OAuthAuthService {
 
         profile.updateNickname(nickname);
         userConsentAgreementService.recordSignupConsent(user, request.agreeAge(), request.agreeMarketing());
-        recordAnalyticsEvent("oauth_signup_completed", user.getId());
+        recordAnalyticsEvent(AnalyticsService.SIGNUP_COMPLETED, user.getId());
         return issueLoginResponse(user);
     }
 
@@ -151,7 +151,7 @@ public class OAuthAuthService {
                 user.getRole().name()
         );
 
-        recordAnalyticsEvent("oauth_login_completed", user.getId());
+        recordAnalyticsEvent(AnalyticsService.LOGIN_SUCCEEDED, user.getId());
 
         return new LoginResponse(
                 accessToken,

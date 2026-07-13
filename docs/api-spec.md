@@ -609,7 +609,7 @@ IP, User-Agent, sessionId는 원문이 아니라 `ANALYTICS_HASH_SALT` 기반 �
 | eventName | 의미 |
 |-----------|------|
 | `page_view` | 페이지 조회 |
-| `signup_click` | 회원가입 링크 클릭 |
+| `signup_started` | 회원가입 진입 또는 OAuth 프로필 완료 시작 |
 | `login_click` | 로그인 링크 클릭 |
 | `consult_click` | 카톡 상담 또는 상담 진입 클릭 |
 | `journal_start_click` | 기록 시작 클릭 |
@@ -618,7 +618,11 @@ IP, User-Agent, sessionId는 원문이 아니라 `ANALYTICS_HASH_SALT` 기반 �
 | `content_open` | 칼럼 진입 |
 | `video_open` | 영상 진입 |
 | `signup_completed` | 회원가입 성공. 백엔드에서 직접 기록 |
-| `login_completed` | 로그인 성공. 백엔드에서 직접 기록 |
+| `login_succeeded` | 로그인 성공. 백엔드에서 직접 기록 |
+| `post_created` | 게시글 작성 성공. 백엔드에서 직접 기록 |
+| `journal_created` | 새 일지 기록 작성 성공. 백엔드에서 직접 기록 |
+| `password_reset_requested` | 활성 계정의 비밀번호 재설정 메일 발송 요청 |
+| `admin_action` | 신고 처리, 게시글 숨김, 회원 제한 등 관리자 조치 집계 |
 
 **Response**
 

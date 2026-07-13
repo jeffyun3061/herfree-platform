@@ -2,6 +2,7 @@ package com.herfree.domain.journal.service;
 
 import com.herfree.domain.comment.entity.CommentStatus;
 import com.herfree.domain.comment.repository.CommentRepository;
+import com.herfree.domain.analytics.service.AnalyticsService;
 import com.herfree.domain.journal.dto.request.JournalRecordUpsertRequest;
 import com.herfree.domain.journal.dto.response.AdminJournalStatsResponse;
 import com.herfree.domain.journal.dto.response.JournalDashboardResponse;
@@ -117,6 +118,7 @@ public class JournalService {
     private final ReportRepository reportRepository;
     private final PostRepository postRepository;
     private final CommentRepository commentRepository;
+    private final AnalyticsService analyticsService;
 
     @Transactional
     public JournalRecordResponse upsertRecord(Long userId, JournalRecordUpsertRequest request) {
@@ -129,8 +131,9 @@ public class JournalService {
                 ? request.sleepHours()
                 : representativeSleepHours(request.avgSleep());
 
-        JournalRecord record = journalRecordRepository
-                .findByUserIdAndRecordDate(userId, request.recordDate())
+        Optional<JournalRecord> existingRecord = journalRecordRepository
+                .findByUserIdAndRecordDate(userId, request.recordDate());
+        JournalRecord record = existingRecord
                 .orElseGet(() -> JournalRecord.builder()
                         .user(user)
                         .recordDate(request.recordDate())
@@ -154,7 +157,11 @@ public class JournalService {
                 exerciseDone
         );
 
-        return JournalRecordResponse.from(journalRecordRepository.save(record));
+        JournalRecord saved = journalRecordRepository.save(record);
+        if (existingRecord.isEmpty()) {
+            recordAnalyticsEvent(AnalyticsService.JOURNAL_CREATED, userId);
+        }
+        return JournalRecordResponse.from(saved);
     }
 
     @Transactional
@@ -850,5 +857,11 @@ public class JournalService {
                         Math.round(entry.getValue() * 100f / sampleSize)
                 ))
                 .toList();
+    }
+
+    private void recordAnalyticsEvent(String eventName, Long userId) {
+        if (analyticsService != null) {
+            analyticsService.recordBackendEvent(eventName, userId);
+        }
     }
 }

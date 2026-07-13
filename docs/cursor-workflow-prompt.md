@@ -16,6 +16,8 @@ Cursor에서 Herfree 작업을 맡길 때 아래 내용을 그대로 붙여넣�
 - docs/ops-security-checklist.md
 - docs/logging-policy.md
 - docs/release-runbook.md
+- docs/developer-decision-checklist.md
+- docs/prelaunch-operations-plan.md
 
 커밋 메시지는 Conventional Commits 형식을 사용하고, 한글 요약을 허용합니다.
 예: security(auth): 로그인 계정 열거 가능성 완화
@@ -43,7 +45,8 @@ npm run build
 1. 변경 요약
 2. 확인한 테스트
 3. 운영 영향
-4. 남은 위험 또는 후속 작업
+4. 사용자가 직접 결정해야 하는 항목
+5. 남은 위험 또는 후속 작업
 
 이번 작업:
 여기에 원하는 작업을 적으세요.

@@ -85,7 +85,7 @@ public class AuthService {
 
         userProfileRepository.save(profile);
         userConsentAgreementService.recordSignupConsent(user, request.agreeAge(), request.agreeMarketing());
-        recordAnalyticsEvent("signup_completed", user.getId());
+        recordAnalyticsEvent(AnalyticsService.SIGNUP_COMPLETED, user.getId());
     }
 
     @Transactional(readOnly = true)
@@ -130,7 +130,7 @@ public class AuthService {
         }
 
         loginLockoutService.clearFailures(request.email());
-        recordAnalyticsEvent("login_completed", user.getId());
+        recordAnalyticsEvent(AnalyticsService.LOGIN_SUCCEEDED, user.getId());
 
         UserProfile profile = userProfileRepository.findByUserId(user.getId())
                 .orElseThrow(UserNotFoundException::new);

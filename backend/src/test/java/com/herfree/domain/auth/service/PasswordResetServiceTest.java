@@ -12,6 +12,7 @@ import com.herfree.domain.auth.dto.request.PasswordResetRequest;
 import com.herfree.domain.auth.entity.PasswordResetToken;
 import com.herfree.domain.auth.exception.InvalidPasswordResetTokenException;
 import com.herfree.domain.auth.repository.PasswordResetTokenRepository;
+import com.herfree.domain.analytics.service.AnalyticsService;
 import com.herfree.domain.user.entity.User;
 import com.herfree.domain.user.entity.UserStatus;
 import com.herfree.domain.user.repository.UserRepository;
@@ -42,6 +43,8 @@ class PasswordResetServiceTest {
     private PasswordResetProperties passwordResetProperties;
     @Mock
     private PasswordEncoder passwordEncoder;
+    @Mock
+    private AnalyticsService analyticsService;
 
     @InjectMocks
     private PasswordResetService passwordResetService;
@@ -64,6 +67,7 @@ class PasswordResetServiceTest {
 
         verify(passwordResetTokenRepository).save(any(PasswordResetToken.class));
         verify(passwordResetMailService).sendPasswordResetEmail(eq("user@test.com"), any(String.class));
+        verify(analyticsService).recordBackendEvent(AnalyticsService.PASSWORD_RESET_REQUESTED, user.getId());
     }
 
     @Test

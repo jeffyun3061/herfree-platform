@@ -36,19 +36,39 @@ import org.springframework.util.StringUtils;
 @RequiredArgsConstructor
 public class AnalyticsService {
 
+    public static final String PAGE_VIEW = "page_view";
+    public static final String SIGNUP_STARTED = "signup_started";
+    public static final String LOGIN_CLICK = "login_click";
+    public static final String CONSULT_CLICK = "consult_click";
+    public static final String JOURNAL_START_CLICK = "journal_start_click";
+    public static final String COMMUNITY_OPEN = "community_open";
+    public static final String QNA_OPEN = "qna_open";
+    public static final String CONTENT_OPEN = "content_open";
+    public static final String VIDEO_OPEN = "video_open";
+    public static final String SIGNUP_COMPLETED = "signup_completed";
+    public static final String LOGIN_SUCCEEDED = "login_succeeded";
+    public static final String POST_CREATED = "post_created";
+    public static final String JOURNAL_CREATED = "journal_created";
+    public static final String PASSWORD_RESET_REQUESTED = "password_reset_requested";
+    public static final String ADMIN_ACTION = "admin_action";
+
     // 허용 목록 밖 이벤트는 저장하지 않는다. 프론트 버그나 임의 호출로 로그 스키마가 오염되는 것을 막기 위함이다.
     private static final Set<String> ALLOWED_EVENTS = Set.of(
-            "page_view",
-            "signup_click",
-            "login_click",
-            "consult_click",
-            "journal_start_click",
-            "community_open",
-            "qna_open",
-            "content_open",
-            "video_open",
-            "signup_completed",
-            "login_completed"
+            PAGE_VIEW,
+            SIGNUP_STARTED,
+            LOGIN_CLICK,
+            CONSULT_CLICK,
+            JOURNAL_START_CLICK,
+            COMMUNITY_OPEN,
+            QNA_OPEN,
+            CONTENT_OPEN,
+            VIDEO_OPEN,
+            SIGNUP_COMPLETED,
+            LOGIN_SUCCEEDED,
+            POST_CREATED,
+            JOURNAL_CREATED,
+            PASSWORD_RESET_REQUESTED,
+            ADMIN_ACTION
     );
 
     private final AppEventLogRepository eventLogRepository;

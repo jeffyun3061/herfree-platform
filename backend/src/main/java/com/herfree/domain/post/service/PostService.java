@@ -3,6 +3,7 @@ package com.herfree.domain.post.service;
 import com.herfree.domain.board.entity.Board;
 import com.herfree.domain.board.exception.BoardNotFoundException;
 import com.herfree.domain.board.repository.BoardRepository;
+import com.herfree.domain.analytics.service.AnalyticsService;
 import com.herfree.domain.comment.entity.CommentStatus;
 import com.herfree.domain.comment.repository.CommentRepository;
 import com.herfree.domain.post.dto.request.PostCreateRequest;
@@ -65,6 +66,7 @@ public class PostService {
     private final PostImageStorageService postImageStorageService;
     private final ReactionRepository reactionRepository;
     private final ClientIpExtractor clientIpExtractor;
+    private final AnalyticsService analyticsService;
 
     @Transactional
     public PostDetailResponse createPost(Long userId, PostCreateRequest request, HttpServletRequest httpRequest) {
@@ -96,6 +98,7 @@ public class PostService {
 
         postRepository.save(post);
         savePostImageIfPresent(post, request.imageUrl());
+        recordAnalyticsEvent(AnalyticsService.POST_CREATED, userId);
 
         UserProfile profile = userProfileRepository.findByUserId(userId)
                 .orElseThrow(UserNotFoundException::new);
@@ -124,10 +127,9 @@ public class PostService {
                 ? resolveStaffRepliedMap(posts.getContent())
                 : Map.of();
         Map<Long, Integer> reactionCountMap = resolveReactionCountMap(posts.getContent());
+        Map<Long, UserProfile> profileMap = resolveProfileMap(posts.getContent());
         return posts.map(post -> {
-            String nickname = userProfileRepository.findByUserId(post.getUser().getId())
-                    .map(UserProfile::getNickname)
-                    .orElse("(알 수 없음)");
+            String nickname = resolveNickname(profileMap, post.getUser().getId());
             boolean staffReplied = staffRepliedMap.getOrDefault(post.getId(), false);
             int reactionCount = reactionCountMap.getOrDefault(post.getId(), 0);
             return PostResponse.of(post, nickname, userId, viewerRole, staffReplied, reactionCount);
@@ -289,6 +291,7 @@ public class PostService {
 
         BoardWritePolicy.assertCommunityWritable(post.getBoard());
         post.hide();
+        recordAnalyticsEvent(AnalyticsService.ADMIN_ACTION, null);
     }
 
     @Transactional
@@ -298,6 +301,7 @@ public class PostService {
 
         BoardWritePolicy.assertCommunityWritable(post.getBoard());
         post.restore();
+        recordAnalyticsEvent(AnalyticsService.ADMIN_ACTION, null);
     }
 
     @Transactional
@@ -307,6 +311,7 @@ public class PostService {
                 .orElseThrow(PostNotFoundException::new);
 
         post.delete();
+        recordAnalyticsEvent(AnalyticsService.ADMIN_ACTION, null);
     }
 
     @Transactional
@@ -320,6 +325,7 @@ public class PostService {
         }
         BoardWritePolicy.assertCommunityWritable(post.getBoard());
         post.update(request.title().trim(), request.content().trim(), post.isAnonymous());
+        recordAnalyticsEvent(AnalyticsService.ADMIN_ACTION, null);
     }
 
     @Transactional(readOnly = true)
@@ -332,11 +338,10 @@ public class PostService {
                 ? java.util.List.of(statusFilter)
                 : java.util.List.of(PostStatus.ACTIVE, PostStatus.HIDDEN);
 
-        return postRepository.searchCommunityPostsForAdmin(statuses, normalizeKeyword(keyword), pageable)
-                .map(post -> {
-                    String nickname = userProfileRepository.findByUserId(post.getUser().getId())
-                            .map(UserProfile::getNickname)
-                            .orElse("(알 수 없음)");
+        Page<Post> posts = postRepository.searchCommunityPostsForAdmin(statuses, normalizeKeyword(keyword), pageable);
+        Map<Long, UserProfile> profileMap = resolveProfileMap(posts.getContent());
+        return posts.map(post -> {
+                    String nickname = resolveNickname(profileMap, post.getUser().getId());
                     return AdminCommunityPostResponse.from(post, nickname);
                 });
     }
@@ -359,6 +364,22 @@ public class PostService {
         List<Long> ids = posts.stream().map(Post::getId).toList();
         Set<Long> replied = commentRepository.findPostIdsWithStaffReplies(ids, CommentStatus.ACTIVE);
         return ids.stream().collect(Collectors.toMap(id -> id, replied::contains));
+    }
+
+    private Map<Long, UserProfile> resolveProfileMap(List<Post> posts) {
+        if (posts.isEmpty()) {
+            return Map.of();
+        }
+        Set<Long> userIds = posts.stream()
+                .map(post -> post.getUser().getId())
+                .collect(Collectors.toSet());
+        return userProfileRepository.findByUser_IdIn(userIds).stream()
+                .collect(Collectors.toMap(profile -> profile.getUser().getId(), profile -> profile));
+    }
+
+    private String resolveNickname(Map<Long, UserProfile> profileMap, Long userId) {
+        UserProfile profile = profileMap.get(userId);
+        return profile == null ? "(알 수 없음)" : profile.getNickname();
     }
 
     private UserRole resolveViewerRole(Long userId) {
@@ -396,5 +417,11 @@ public class PostService {
                 .map(PostImage::getImageUrl)
                 .map(postImageStorageService::toDisplayUrl)
                 .orElse(null);
+    }
+
+    private void recordAnalyticsEvent(String eventName, Long userId) {
+        if (analyticsService != null) {
+            analyticsService.recordBackendEvent(eventName, userId);
+        }
     }
 }

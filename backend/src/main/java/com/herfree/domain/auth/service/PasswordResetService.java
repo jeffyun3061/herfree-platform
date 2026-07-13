@@ -5,6 +5,7 @@ import com.herfree.domain.auth.dto.request.PasswordResetRequest;
 import com.herfree.domain.auth.entity.PasswordResetToken;
 import com.herfree.domain.auth.exception.InvalidPasswordResetTokenException;
 import com.herfree.domain.auth.repository.PasswordResetTokenRepository;
+import com.herfree.domain.analytics.service.AnalyticsService;
 import com.herfree.domain.user.entity.User;
 import com.herfree.domain.user.entity.UserStatus;
 import com.herfree.domain.user.repository.UserRepository;
@@ -31,6 +32,7 @@ public class PasswordResetService {
     private final PasswordResetMailService passwordResetMailService;
     private final PasswordResetProperties passwordResetProperties;
     private final PasswordEncoder passwordEncoder;
+    private final AnalyticsService analyticsService;
 
     @Transactional
     public void requestReset(PasswordResetRequest request) {
@@ -72,6 +74,7 @@ public class PasswordResetService {
 
         String resetUrl = buildResetUrl(rawToken);
         passwordResetMailService.sendPasswordResetEmail(user.getEmail(), resetUrl);
+        recordAnalyticsEvent(AnalyticsService.PASSWORD_RESET_REQUESTED, user.getId());
     }
 
     private void invalidateActiveTokens(Long userId) {
@@ -87,5 +90,11 @@ public class PasswordResetService {
             baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
         }
         return baseUrl + "/reset-password?token=" + rawToken;
+    }
+
+    private void recordAnalyticsEvent(String eventName, Long userId) {
+        if (analyticsService != null) {
+            analyticsService.recordBackendEvent(eventName, userId);
+        }
     }
 }

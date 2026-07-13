@@ -4,6 +4,7 @@ import com.herfree.domain.comment.entity.Comment;
 import com.herfree.domain.comment.entity.CommentStatus;
 import com.herfree.domain.comment.exception.CommentNotFoundException;
 import com.herfree.domain.comment.repository.CommentRepository;
+import com.herfree.domain.analytics.service.AnalyticsService;
 import com.herfree.domain.post.entity.Post;
 import com.herfree.domain.post.entity.PostStatus;
 import com.herfree.domain.post.exception.PostNotFoundException;
@@ -41,6 +42,7 @@ public class ReportService {
     private final UserProfileRepository userProfileRepository;
     private final PostRepository postRepository;
     private final CommentRepository commentRepository;
+    private final AnalyticsService analyticsService;
 
     private static final int URGENT_REPORT_THRESHOLD = 10;
 
@@ -115,6 +117,7 @@ public class ReportService {
             report.reject(admin);
         }
 
+        recordAnalyticsEvent(AnalyticsService.ADMIN_ACTION, adminId);
         return ReportResponse.from(report);
     }
 
@@ -137,6 +140,7 @@ public class ReportService {
                 report.reject(admin);
             }
         }
+        recordAnalyticsEvent(AnalyticsService.ADMIN_ACTION, adminId);
         return reports.stream().map(ReportResponse::from).toList();
     }
 
@@ -213,5 +217,11 @@ public class ReportService {
             Long authorId,
             String authorNickname
     ) {
+    }
+
+    private void recordAnalyticsEvent(String eventName, Long userId) {
+        if (analyticsService != null) {
+            analyticsService.recordBackendEvent(eventName, userId);
+        }
     }
 }

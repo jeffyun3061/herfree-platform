@@ -4,14 +4,20 @@ import { getAccessToken } from '@/lib/auth-storage';
 
 export type AnalyticsEventName =
   | 'page_view'
-  | 'signup_click'
+  | 'signup_started'
   | 'login_click'
   | 'consult_click'
   | 'journal_start_click'
   | 'community_open'
   | 'qna_open'
   | 'content_open'
-  | 'video_open';
+  | 'video_open'
+  | 'signup_completed'
+  | 'login_succeeded'
+  | 'post_created'
+  | 'journal_created'
+  | 'password_reset_requested'
+  | 'admin_action';
 
 const SESSION_KEY = 'herfree_analytics_session';
 const POSTHOG_KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY?.trim();

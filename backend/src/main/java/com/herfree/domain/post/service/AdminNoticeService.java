@@ -3,6 +3,7 @@ package com.herfree.domain.post.service;
 import com.herfree.domain.board.entity.Board;
 import com.herfree.domain.board.exception.BoardNotFoundException;
 import com.herfree.domain.board.repository.BoardRepository;
+import com.herfree.domain.analytics.service.AnalyticsService;
 import com.herfree.domain.post.dto.request.NoticeCreateRequest;
 import com.herfree.domain.post.dto.request.NoticeCurationRequest;
 import com.herfree.domain.post.dto.request.NoticeUpdateRequest;
@@ -33,6 +34,7 @@ public class AdminNoticeService {
     private final PostRepository postRepository;
     private final BoardRepository boardRepository;
     private final UserRepository userRepository;
+    private final AnalyticsService analyticsService;
 
     @Transactional(readOnly = true)
     public Page<AdminNoticeResponse> getNotices(
@@ -73,13 +75,16 @@ public class AdminNoticeService {
                         .map(p -> p.getSortOrder() + 1)
                         .orElse(1));
 
-        return AdminNoticeResponse.from(postRepository.save(post));
+        AdminNoticeResponse response = AdminNoticeResponse.from(postRepository.save(post));
+        recordAnalyticsEvent(AnalyticsService.ADMIN_ACTION, adminId);
+        return response;
     }
 
     @Transactional
     public AdminNoticeResponse updateNotice(Long postId, NoticeUpdateRequest request) {
         Post post = findNoticeForAdmin(postId);
         post.update(request.title().trim(), request.content().trim(), false);
+        recordAnalyticsEvent(AnalyticsService.ADMIN_ACTION, null);
         return AdminNoticeResponse.from(post);
     }
 
@@ -91,6 +96,7 @@ public class AdminNoticeService {
         } else {
             post.hide();
         }
+        recordAnalyticsEvent(AnalyticsService.ADMIN_ACTION, null);
         return AdminNoticeResponse.from(post);
     }
 
@@ -103,6 +109,7 @@ public class AdminNoticeService {
         if (request.isPinned() != null) {
             post.setPinned(request.isPinned());
         }
+        recordAnalyticsEvent(AnalyticsService.ADMIN_ACTION, null);
         return AdminNoticeResponse.from(post);
     }
 
@@ -110,11 +117,18 @@ public class AdminNoticeService {
     public void deleteNotice(Long postId) {
         Post post = findNoticeForAdmin(postId);
         post.delete();
+        recordAnalyticsEvent(AnalyticsService.ADMIN_ACTION, null);
     }
 
     private Post findNoticeForAdmin(Long postId) {
         return postRepository
                 .findByIdAndBoard_BoardTypeAndStatusNot(postId, NOTICE_BOARD_TYPE, PostStatus.DELETED)
                 .orElseThrow(PostNotFoundException::new);
+    }
+
+    private void recordAnalyticsEvent(String eventName, Long userId) {
+        if (analyticsService != null) {
+            analyticsService.recordBackendEvent(eventName, userId);
+        }
     }
 }

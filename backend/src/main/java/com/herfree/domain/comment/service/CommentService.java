@@ -26,6 +26,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -92,12 +95,11 @@ public class CommentService {
             throw new CommentAccessDeniedException();
         }
 
-        return commentRepository
-                .findByPostIdAndStatusOrderByCreatedAtAsc(postId, CommentStatus.ACTIVE, pageable)
-                .map(comment -> {
-                    String nickname = userProfileRepository.findByUserId(comment.getUser().getId())
-                            .map(UserProfile::getNickname)
-                            .orElse("(알 수 없음)");
+        Page<Comment> comments = commentRepository
+                .findByPostIdAndStatusOrderByCreatedAtAsc(postId, CommentStatus.ACTIVE, pageable);
+        Map<Long, UserProfile> profileMap = resolveProfileMap(comments.getContent());
+        return comments.map(comment -> {
+                    String nickname = resolveNickname(profileMap, comment.getUser().getId());
                     return CommentResponse.of(comment, nickname, currentUserId);
                 });
     }
@@ -170,16 +172,31 @@ public class CommentService {
                 ? java.util.List.of(statusFilter)
                 : java.util.List.of(CommentStatus.ACTIVE, CommentStatus.HIDDEN);
 
-        return commentRepository.searchForAdmin(statuses, normalizeKeyword(keyword), pageable)
-                .map(comment -> {
-                    String nickname = userProfileRepository.findByUserId(comment.getUser().getId())
-                            .map(UserProfile::getNickname)
-                            .orElse("(알 수 없음)");
+        Page<Comment> comments = commentRepository.searchForAdmin(statuses, normalizeKeyword(keyword), pageable);
+        Map<Long, UserProfile> profileMap = resolveProfileMap(comments.getContent());
+        return comments.map(comment -> {
+                    String nickname = resolveNickname(profileMap, comment.getUser().getId());
                     return AdminCommunityCommentResponse.from(comment, nickname);
                 });
     }
 
     private String normalizeKeyword(String keyword) {
         return StringUtils.hasText(keyword) ? keyword.trim() : null;
+    }
+
+    private Map<Long, UserProfile> resolveProfileMap(java.util.List<Comment> comments) {
+        if (comments.isEmpty()) {
+            return Map.of();
+        }
+        Set<Long> userIds = comments.stream()
+                .map(comment -> comment.getUser().getId())
+                .collect(Collectors.toSet());
+        return userProfileRepository.findByUser_IdIn(userIds).stream()
+                .collect(Collectors.toMap(profile -> profile.getUser().getId(), profile -> profile));
+    }
+
+    private String resolveNickname(Map<Long, UserProfile> profileMap, Long userId) {
+        UserProfile profile = profileMap.get(userId);
+        return profile == null ? "(알 수 없음)" : profile.getNickname();
     }
 }

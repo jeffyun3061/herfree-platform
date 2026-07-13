@@ -1,6 +1,7 @@
 package com.herfree.domain.user.service;
 
 import com.herfree.domain.user.dto.request.UpdateUserRoleRequest;
+import com.herfree.domain.analytics.service.AnalyticsService;
 import com.herfree.domain.user.dto.request.UpdateUserStatusRequest;
 import com.herfree.domain.user.dto.request.ResetNicknameRequest;
 import com.herfree.domain.user.dto.request.RestrictUserRequest;
@@ -33,6 +34,7 @@ public class AdminUserService {
     private final UserRepository userRepository;
     private final UserProfileRepository userProfileRepository;
     private final RoleAuditService roleAuditService;
+    private final AnalyticsService analyticsService;
 
     @Transactional(readOnly = true)
     public Page<AdminUserResponse> getUsers(String keyword, Pageable pageable) {
@@ -67,6 +69,7 @@ public class AdminUserService {
         UserRole previous = target.getRole();
         target.changeRole(request.role());
         roleAuditService.logRoleChange(actorId, targetUserId, previous, request.role());
+        recordAnalyticsEvent(AnalyticsService.ADMIN_ACTION, actorId);
         return toResponse(target);
     }
 
@@ -102,6 +105,7 @@ public class AdminUserService {
         }
 
         roleAuditService.logStatusChange(actorId, targetUserId, previous, request.status());
+        recordAnalyticsEvent(AnalyticsService.ADMIN_ACTION, actorId);
         return toResponse(target);
     }
 
@@ -132,6 +136,7 @@ public class AdminUserService {
                 normalizeNote(request.note()),
                 suspendedUntil
         );
+        recordAnalyticsEvent(AnalyticsService.ADMIN_ACTION, actorId);
         return toResponse(target);
     }
 
@@ -159,6 +164,7 @@ public class AdminUserService {
                 request.reason().trim(),
                 normalizeNote(request.note())
         );
+        recordAnalyticsEvent(AnalyticsService.ADMIN_ACTION, actorId);
         return AdminUserResponse.of(target, profile);
     }
 
@@ -217,5 +223,11 @@ public class AdminUserService {
         }
         return userProfileRepository.findByUser_IdIn(userIds).stream()
                 .collect(Collectors.toMap(profile -> profile.getUser().getId(), Function.identity()));
+    }
+
+    private void recordAnalyticsEvent(String eventName, Long userId) {
+        if (analyticsService != null) {
+            analyticsService.recordBackendEvent(eventName, userId);
+        }
     }
 }

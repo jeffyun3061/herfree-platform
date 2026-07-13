@@ -7,7 +7,7 @@ import { fetchAdminStatsOverview } from '@/lib/api/admin';
 
 const EVENT_LABELS: Record<string, string> = {
   page_view: '페이지 조회',
-  signup_click: '회원가입 클릭',
+  signup_started: '회원가입 시작',
   login_click: '로그인 클릭',
   consult_click: '상담 클릭',
   journal_start_click: '기록 시작',
@@ -16,7 +16,11 @@ const EVENT_LABELS: Record<string, string> = {
   content_open: '칼럼 진입',
   video_open: '영상 진입',
   signup_completed: '가입 완료',
-  login_completed: '로그인 완료',
+  login_succeeded: '로그인 성공',
+  post_created: '글 작성',
+  journal_created: '일지 작성',
+  password_reset_requested: '재설정 요청',
+  admin_action: '관리자 조치',
 };
 
 function formatNumber(value: number): string {
