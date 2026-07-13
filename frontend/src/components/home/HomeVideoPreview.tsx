@@ -31,7 +31,7 @@ export function HomeVideoPreview({ maxItems = 2, className }: HomeVideoPreviewPr
               <path d="M10 9.5v5l4.5-2.5L10 9.5Z" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </span>
-          <h2 className="font-display text-base font-bold text-[#1E2621]">영상</h2>
+          <h2 className="hf-display text-base font-bold text-[#1E2621]">영상</h2>
         </div>
         <Link
           href="/videos"

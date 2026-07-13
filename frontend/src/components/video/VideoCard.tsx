@@ -58,7 +58,7 @@ export function VideoCard({ video, variant = 'grid', className }: VideoCardProps
           </div>
           <div className="flex flex-1 flex-col justify-center p-5 lg:p-7">
             <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-primary/70">Featured</p>
-            <h2 className="mt-2 line-clamp-2 font-display text-lg font-bold leading-snug text-ink lg:text-xl">
+            <h2 className="mt-2 line-clamp-2 hf-display text-lg font-bold leading-snug text-ink lg:text-xl">
               {video.title}
             </h2>
             {video.description ? (

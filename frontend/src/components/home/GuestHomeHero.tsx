@@ -2,9 +2,8 @@
 
 import Link from 'next/link';
 import { PUBLIC_IMAGES } from '@/domain/assets/static';
-import { BRAND_LOGO } from '@/domain/brand/assets';
+import { BrandMark } from '@/components/brand/BrandMark';
 import { PublicStaticImage } from '@/components/ui/PublicStaticImage';
-import Image from 'next/image';
 
 export function GuestHomeHero() {
   return (
@@ -24,13 +23,7 @@ export function GuestHomeHero() {
 
       <div className="absolute inset-x-0 top-[max(12px,env(safe-area-inset-top,12px))] z-10 hf-page-x flex items-center justify-between py-1">
         <Link href="/" className="shrink-0" aria-label="헤르프리 홈">
-          <Image
-            src={BRAND_LOGO.hMarkOnDark}
-            alt=""
-            width={30}
-            height={30}
-            className="h-[30px] w-[30px] rounded-full"
-          />
+          <BrandMark size="sm" variant="onDark" className="h-[30px] w-[30px]" />
         </Link>
 
         <Link

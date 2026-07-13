@@ -75,7 +75,7 @@ export function JournalAnonymousSummaryCard({
       >
         {!compact && (
           <div className="flex items-center justify-between border-b border-border/50 px-5 py-4">
-            <h3 className="font-display text-base font-bold text-ink">최근 30일 기록 요약</h3>
+            <h3 className="hf-display text-base font-bold text-ink">최근 30일 기록 요약</h3>
             <span className="text-lg text-sage" aria-hidden>
               🌿
             </span>

@@ -6,5 +6,5 @@ public interface OAuthClient {
 
     OAuthProvider provider();
 
-    OAuthProviderProfile fetchProfile(String code, String redirectUri);
+    OAuthProviderProfile fetchProfile(String code, String redirectUri, String state);
 }

@@ -17,6 +17,7 @@ import com.herfree.domain.user.exception.ReservedNicknameException;
 import com.herfree.domain.user.exception.UserNotFoundException;
 import com.herfree.domain.user.repository.UserProfileRepository;
 import com.herfree.domain.user.repository.UserRepository;
+import com.herfree.domain.user.service.UserConsentAgreementService;
 import com.herfree.global.security.JwtProperties;
 import com.herfree.global.security.JwtTokenProvider;
 import com.herfree.global.util.ReservedNicknamePolicy;
@@ -30,6 +31,9 @@ import java.time.Instant;
 @RequiredArgsConstructor
 public class AuthService {
 
+    private static final String DUMMY_PASSWORD_HASH =
+            "$2a$10$7EqJtq98hPqEX7fNZaFWoOgy6JwSjQpqXr3a6eJFo6TQqqDMljc4u";
+
     private final UserRepository userRepository;
     private final UserProfileRepository userProfileRepository;
     private final PasswordEncoder passwordEncoder;
@@ -37,6 +41,7 @@ public class AuthService {
     private final JwtProperties jwtProperties;
     private final LoginLockoutService loginLockoutService;
     private final AnalyticsService analyticsService;
+    private final UserConsentAgreementService userConsentAgreementService;
 
     // 회원가입 — User와 UserProfile을 같은 트랜잭션에서 함께 저장한다.
     // 프로필 저장이 실패하면 User도 롤백되어 孤立된 인증 레코드가 생기지 않는다.
@@ -79,6 +84,7 @@ public class AuthService {
                 .build();
 
         userProfileRepository.save(profile);
+        userConsentAgreementService.recordSignupConsent(user, request.agreeAge(), request.agreeMarketing());
         recordAnalyticsEvent("signup_completed", user.getId());
     }
 
@@ -99,15 +105,18 @@ public class AuthService {
     public LoginResponse login(LoginRequest request) {
         loginLockoutService.assertNotLocked(request.email());
 
-        // 이메일로 사용자 조회 — 존재하지 않으면 UserNotFoundException
-        // 보안 관점에서 "이메일이 없다"와 "비밀번호가 틀렸다"를 같은 흐름으로 처리하는 게 맞지만,
-        // 여기서는 UX 편의를 위해 분리한다. 실제 응답 메시지는 동일하게 유지한다.
-        User user = userRepository.findByEmail(request.email())
-                .orElseThrow(() -> failLogin(request.email()));
+        User user = userRepository.findByEmail(request.email()).orElse(null);
+        if (user == null) {
+            // 없는 계정도 BCrypt 검증 비용을 태워 계정 존재 여부의 시간 차이를 줄인다.
+            passwordEncoder.matches(request.password(), DUMMY_PASSWORD_HASH);
+            throw failLogin(request.email());
+        }
 
-        // SUSPENDED는 자격증명은 유효하지만 서비스 접근이 금지된 상태다.
-        // filter()로 ACTIVE만 통과시키면 SUSPENDED와 DELETED가 모두 UserNotFoundException을 던져
-        // 클라이언트가 계정 정지 여부를 알 수 없다. 상태별로 예외를 분리해야 한다.
+        if (!passwordEncoder.matches(request.password(), user.getPassword())) {
+            throw failLogin(request.email());
+        }
+
+        // 정지 여부는 비밀번호 검증 성공 뒤에만 알려 계정 탈취자에게 상태 정보를 덜 준다.
         if (user.getStatus() == UserStatus.SUSPENDED) {
             if (user.isSuspensionExpired(Instant.now())) {
                 user.activate();
@@ -116,16 +125,7 @@ public class AuthService {
             }
         }
 
-        // DELETED 계정은 탈퇴 처리된 것으로, 존재하지 않는 계정과 동일하게 처리한다.
-        // 탈퇴 계정 존재 여부를 공개하면 개인정보 유출이 될 수 있으므로
-        // UserNotFoundException과 동일한 메시지를 사용한다.
         if (user.getStatus() != UserStatus.ACTIVE) {
-            throw failLogin(request.email());
-        }
-
-        // PasswordEncoder.matches()는 요청 평문과 저장된 BCrypt 해시를 비교한다.
-        // 직접 해시를 만들어 비교하면 salt 처리가 누락되므로 반드시 이 메서드를 써야 한다.
-        if (!passwordEncoder.matches(request.password(), user.getPassword())) {
             throw failLogin(request.email());
         }
 

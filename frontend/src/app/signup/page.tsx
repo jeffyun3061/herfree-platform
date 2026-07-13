@@ -60,7 +60,7 @@ function SignupForm() {
     setError(null);
     setIsSubmitting(true);
     try {
-      await signup({ email, password, nickname });
+      await signup({ email, password, nickname, ...agreements });
       router.replace(resolveReturnUrl(searchParams.get('from')));
     } catch (err) {
       setError(getErrorMessage(err));

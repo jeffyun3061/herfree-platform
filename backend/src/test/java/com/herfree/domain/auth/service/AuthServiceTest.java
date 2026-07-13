@@ -12,6 +12,7 @@ import com.herfree.domain.user.entity.UserStatus;
 import com.herfree.domain.user.exception.DuplicateEmailException;
 import com.herfree.domain.user.repository.UserProfileRepository;
 import com.herfree.domain.user.repository.UserRepository;
+import com.herfree.domain.user.service.UserConsentAgreementService;
 import com.herfree.global.security.JwtProperties;
 import com.herfree.global.security.JwtTokenProvider;
 import org.junit.jupiter.api.DisplayName;
@@ -28,7 +29,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 // Mockito를 활용해 DB·JWT 의존성 없이 AuthService 비즈니스 로직만 검증한다.
@@ -54,6 +57,9 @@ class AuthServiceTest {
     @Mock
     private LoginLockoutService loginLockoutService;
 
+    @Mock
+    private UserConsentAgreementService userConsentAgreementService;
+
     @InjectMocks
     private AuthService authService;
 
@@ -61,7 +67,7 @@ class AuthServiceTest {
     @DisplayName("정상적인 회원가입 요청 시 User와 UserProfile이 저장된다")
     void signup_success() {
         // given
-        SignupRequest request = new SignupRequest("test@test.com", "password123!", "닉네임");
+        SignupRequest request = new SignupRequest("test@test.com", "password123!", "닉네임", true, true, true, false);
 
         // 이메일·닉네임 중복 없음
         given(userRepository.existsByEmail(request.email())).willReturn(false);
@@ -81,6 +87,7 @@ class AuthServiceTest {
         // then — User와 UserProfile이 각각 1번 저장되었는지 확인한다
         verify(userRepository).save(any(User.class));
         verify(userProfileRepository).save(any(UserProfile.class));
+        verify(userConsentAgreementService).recordSignupConsent(any(User.class), eq(true), eq(false));
     }
 
     @Test
@@ -97,7 +104,7 @@ class AuthServiceTest {
     @DisplayName("이메일이 중복이면 DuplicateEmailException이 발생한다")
     void signup_duplicateEmail_throws() {
         // given — 이미 존재하는 이메일
-        SignupRequest request = new SignupRequest("duplicate@test.com", "password123!", "닉네임");
+        SignupRequest request = new SignupRequest("duplicate@test.com", "password123!", "닉네임", true, true, true, false);
         given(userRepository.existsByEmail(request.email())).willReturn(true);
 
         // when & then — 이메일 중복 시 409 Conflict에 매핑된 예외가 발생한다
@@ -164,9 +171,24 @@ class AuthServiceTest {
     }
 
     @Test
+    @DisplayName("존재하지 않는 이메일도 더미 BCrypt 검증 후 동일한 로그인 실패 예외를 던진다")
+    void login_unknownEmail_usesDummyPasswordHash() {
+        LoginRequest request = new LoginRequest("missing@test.com", "wrong_password");
+
+        given(userRepository.findByEmail(request.email())).willReturn(Optional.empty());
+        given(loginLockoutService.isLocked(request.email())).willReturn(false);
+
+        assertThatThrownBy(() -> authService.login(request))
+                .isInstanceOf(InvalidLoginCredentialsException.class);
+
+        verify(passwordEncoder).matches(eq(request.password()), anyString());
+        verify(loginLockoutService).recordFailure(request.email());
+    }
+
+    @Test
     @DisplayName("예약 닉네임으로 회원가입하면 ReservedNicknameException이 발생한다")
     void signup_reservedNickname_throws() {
-        SignupRequest request = new SignupRequest("test@test.com", "password123!", "관리자");
+        SignupRequest request = new SignupRequest("test@test.com", "password123!", "관리자", true, true, true, false);
         given(userRepository.existsByEmail(request.email())).willReturn(false);
 
         assertThatThrownBy(() -> authService.signup(request))
@@ -187,9 +209,32 @@ class AuthServiceTest {
                 .build();
 
         given(userRepository.findByEmail(request.email())).willReturn(Optional.of(suspendedUser));
+        given(passwordEncoder.matches(request.password(), suspendedUser.getPassword())).willReturn(true);
 
-        // when & then — SUSPENDED 계정은 비밀번호 검증 전에 403 예외가 발생해야 한다
+        // when & then — SUSPENDED 계정은 비밀번호 검증 성공 후에만 403 예외가 발생해야 한다
         assertThatThrownBy(() -> authService.login(request))
                 .isInstanceOf(SuspendedAccountException.class);
+    }
+
+    @Test
+    @DisplayName("정지 계정이라도 비밀번호가 틀리면 정지 상태를 노출하지 않는다")
+    void login_suspendedAccount_wrongPassword_returnsInvalidCredentials() {
+        LoginRequest request = new LoginRequest("test@test.com", "wrong_password");
+
+        User suspendedUser = User.builder()
+                .email(request.email())
+                .password("encoded_password")
+                .role(UserRole.USER)
+                .status(UserStatus.SUSPENDED)
+                .build();
+
+        given(userRepository.findByEmail(request.email())).willReturn(Optional.of(suspendedUser));
+        given(passwordEncoder.matches(request.password(), suspendedUser.getPassword())).willReturn(false);
+        given(loginLockoutService.isLocked(request.email())).willReturn(false);
+
+        assertThatThrownBy(() -> authService.login(request))
+                .isInstanceOf(InvalidLoginCredentialsException.class);
+        verify(loginLockoutService).recordFailure(request.email());
+        verify(loginLockoutService, never()).clearFailures(request.email());
     }
 }

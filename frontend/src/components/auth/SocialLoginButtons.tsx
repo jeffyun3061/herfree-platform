@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import type { OAuthProvider } from '@/domain/auth/oauth';
-import { isOAuthClientConfigured, startOAuthLogin } from '@/domain/auth/oauth';
+import { getOAuthRedirectUriHint, isOAuthClientConfigured, startOAuthLogin } from '@/domain/auth/oauth';
 import { cn } from '@/lib/cn';
 
 type SocialLoginButtonsProps = {
@@ -89,8 +89,9 @@ export function SocialLoginButtons({
   const handleClick = (provider: OAuthProvider, label: string) => {
     setConfigError(null);
     if (!isOAuthClientConfigured(provider)) {
+      const redirectUri = getOAuthRedirectUriHint(provider);
       setConfigError(
-        `${label.split('로')[0]} 로그인 키가 아직 설정되지 않았어요. frontend/.env.local 과 backend/local-secrets.yml 을 확인해 주세요.`,
+        `${label.split('로')[0]} 로그인 키가 설정되지 않았어요. frontend/.env.local 과 backend/local-secrets.yml 을 확인해 주세요. 콘솔 Redirect URI: ${redirectUri}`,
       );
       return;
     }

@@ -22,7 +22,7 @@ public class PasswordResetMailService {
         if ("smtp".equalsIgnoreCase(mailProperties.mode())) {
             sendViaSmtp(toEmail, resetUrl);
         } else {
-            logPasswordResetLink(toEmail, resetUrl);
+            log.info("[password-reset] reset email suppressed in {} mode for to={}", mailProperties.mode(), toEmail);
         }
     }
 
@@ -30,7 +30,6 @@ public class PasswordResetMailService {
         JavaMailSender mailSender = mailSenderProvider.getIfAvailable();
         if (mailSender == null) {
             log.warn("SMTP mode이지만 JavaMailSender가 설정되지 않았습니다. 콘솔 모드로 대체합니다.");
-            logPasswordResetLink(toEmail, resetUrl);
             return;
         }
 
@@ -46,10 +45,6 @@ public class PasswordResetMailService {
             log.error("비밀번호 재설정 메일 발송 실패: {}", toEmail, e);
             throw new IllegalStateException("비밀번호 재설정 메일을 보내지 못했습니다.", e);
         }
-    }
-
-    private void logPasswordResetLink(String toEmail, String resetUrl) {
-        log.info("[password-reset] to={} resetUrl={}", toEmail, resetUrl);
     }
 
     private String buildEmailBody(String resetUrl) {

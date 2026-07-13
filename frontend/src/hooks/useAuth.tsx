@@ -33,7 +33,16 @@ type AuthContextValue = {
   login: (input: LoginRequest) => Promise<void>;
   signup: (input: SignupRequest) => Promise<void>;
   completeOAuthLogin: (result: OAuthLoginResult) => void;
-  completeOAuthProfile: (profileCompletionToken: string, nickname: string) => Promise<void>;
+  completeOAuthProfile: (
+    profileCompletionToken: string,
+    nickname: string,
+    agreements: {
+      agreeTerms: boolean;
+      agreePrivacy: boolean;
+      agreeAge: boolean;
+      agreeMarketing: boolean;
+    },
+  ) => Promise<void>;
   logout: () => Promise<void>;
   withdraw: () => Promise<void>;
   updateNickname: (nickname: string) => Promise<void>;
@@ -169,13 +178,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   }, [establishSession]);
 
-  const completeOAuthProfile = useCallback(async (profileCompletionToken: string, nickname: string) => {
+  const completeOAuthProfile = useCallback(async (
+    profileCompletionToken: string,
+    nickname: string,
+    agreements: {
+      agreeTerms: boolean;
+      agreePrivacy: boolean;
+      agreeAge: boolean;
+      agreeMarketing: boolean;
+    },
+  ) => {
     clearAuth();
     setUser(null);
     ++restoreGenRef.current;
     bumpAuthEpoch();
 
-    const result = await authApi.completeOAuthProfile({ profileCompletionToken, nickname });
+    const result = await authApi.completeOAuthProfile({ profileCompletionToken, nickname, ...agreements });
     establishSession(result);
   }, [establishSession]);
 

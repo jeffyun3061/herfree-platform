@@ -66,7 +66,7 @@ function OAuthSignupForm() {
     setIsSubmitting(true);
 
     try {
-      await completeOAuthProfile(profileCompletionToken, nickname.trim());
+      await completeOAuthProfile(profileCompletionToken, nickname.trim(), agreements);
       router.replace(resolveReturnUrl(searchParams.get('from')));
     } catch (err) {
       setError(getErrorMessage(err));

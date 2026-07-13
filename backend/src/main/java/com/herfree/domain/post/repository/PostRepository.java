@@ -166,6 +166,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             WHERE p.status = :status
             AND b.boardType = 'INQUIRY'
             AND b.id = :boardId
+            AND (:staff = true OR p.user.id = :viewerId)
             AND (:keyword IS NULL OR :keyword = '' OR LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%')))
             ORDER BY p.createdAt DESC
             """)
@@ -173,6 +174,8 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             @Param("status") PostStatus status,
             @Param("boardId") Long boardId,
             @Param("keyword") String keyword,
+            @Param("viewerId") Long viewerId,
+            @Param("staff") boolean staff,
             Pageable pageable);
 
     @Query("""
@@ -182,6 +185,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             WHERE p.status = :status
             AND b.boardType = 'PRIVATE_CONSULT'
             AND b.id = :boardId
+            AND (:staff = true OR p.user.id = :viewerId)
             AND (:keyword IS NULL OR :keyword = '' OR LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%')))
             ORDER BY p.createdAt DESC
             """)
@@ -189,6 +193,8 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             @Param("status") PostStatus status,
             @Param("boardId") Long boardId,
             @Param("keyword") String keyword,
+            @Param("viewerId") Long viewerId,
+            @Param("staff") boolean staff,
             Pageable pageable);
 
     @Query("""

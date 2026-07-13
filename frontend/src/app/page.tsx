@@ -74,12 +74,13 @@ function LoggedInHomePage() {
         <div className="flex w-full flex-col gap-[22px]">
           <ScreenHeader
             align="center"
+            inset="narrow"
             titleAs="div"
             title={<BrandMark size="md" showText={false} />}
             titleClassName="text-[0px] leading-none"
           />
 
-          <div className="hf-page-x">
+          <div className="hf-dashboard-x">
           <JournalPersonalDashboard
             dashboard={dashboard ?? null}
             isLoading={dashboardLoading}

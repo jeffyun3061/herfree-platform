@@ -40,9 +40,10 @@
 | 4 | `CORS_ALLOWED_ORIGINS` | `https://실제-vercel-도메인` (쉼표로 preview 추가 가능) | 빈 값이면 prod CORS **전부 차단** | ☐ |
 | 5 | `ADMIN_BOOTSTRAP_ENABLED` | **`false`** | compose 기본 `false` — env 덮어쓰지 않기 | ☐ |
 | 6 | `S3_BUCKET` / `S3_REGION` | 운영 버킷 | 이미지 업로드 smoke | ☐ |
-| 7 | `S3_ACCESS_KEY` / `S3_SECRET_KEY` | IAM 최소권한 또는 **비우고** VPS IAM 역할 | 키 git 없음 | ☐ |
-| 8 | MySQL 포트 | **외부 미개방** (compose 내부망만) | VPS `ufw`/보안그룹 | ☐ |
-| 9 | API 8080 | **외부 미개방**, Nginx 443만 공개 | `ss -tlnp` → 127.0.0.1:8080 | ☐ |
+| 7 | `TRUSTED_PROXY_CIDRS` | 직접 연결되는 Nginx/ALB CIDR만 | `X-Forwarded-For` 위조 방지, `0.0.0.0/0` 금지 | ☐ |
+| 8 | `S3_ACCESS_KEY` / `S3_SECRET_KEY` | IAM 최소권한 또는 **비우고** VPS IAM 역할 | 키 git 없음 | ☐ |
+| 9 | MySQL 포트 | **외부 미개방** (compose 내부망만) | VPS `ufw`/보안그룹 | ☐ |
+| 10 | API 8080 | **외부 미개방**, Nginx 443만 공개 | `ss -tlnp` → 127.0.0.1:8080 | ☐ |
 | 10 | HTTPS | `api.도메인` certbot/Let's Encrypt | 브라우저 자물쇠 | ☐ |
 
 ### Vercel (Production)

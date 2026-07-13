@@ -84,6 +84,16 @@ class ApiHttpStatusIntegrationTest {
     }
 
     @Test
+    @DisplayName("비회원도 닉네임 중복 확인 API를 호출할 수 있다")
+    void nicknameCheck_withoutAuth_returns200() throws Exception {
+        mockMvc.perform(get("/api/auth/nickname/check")
+                        .param("nickname", "publicnick01"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.available").isBoolean());
+    }
+
+    @Test
     @DisplayName("로그인 10회 연속 실패 시 429를 반환한다")
     void login_tooManyFailures_returns429() throws Exception {
         for (int i = 0; i < LoginLockoutService.MAX_FAILURES - 1; i++) {
@@ -111,7 +121,7 @@ class ApiHttpStatusIntegrationTest {
         mockMvc.perform(post("/api/auth/signup")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"email":"not-an-email","password":"Testpass123!","nickname":"tester01"}
+                                {"email":"not-an-email","password":"Testpass123!","nickname":"tester01","agreeTerms":true,"agreePrivacy":true,"agreeAge":true,"agreeMarketing":false}
                                 """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.success").value(false));
@@ -121,7 +131,7 @@ class ApiHttpStatusIntegrationTest {
     @DisplayName("회원가입 이메일 중복은 409를 반환한다")
     void signup_duplicateEmail_returns409() throws Exception {
         String body = """
-                {"email":"dup-status@example.com","password":"Testpass123!","nickname":"dupnick01"}
+                {"email":"dup-status@example.com","password":"Testpass123!","nickname":"dupnick01","agreeTerms":true,"agreePrivacy":true,"agreeAge":true,"agreeMarketing":false}
                 """;
 
         mockMvc.perform(post("/api/auth/signup")
@@ -143,7 +153,7 @@ class ApiHttpStatusIntegrationTest {
         mockMvc.perform(post("/api/auth/signup")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"email":"newuser@example.com","password":"Testpass123!","nickname":"admin"}
+                                {"email":"newuser@example.com","password":"Testpass123!","nickname":"admin","agreeTerms":true,"agreePrivacy":true,"agreeAge":true,"agreeMarketing":false}
                                 """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.success").value(false));

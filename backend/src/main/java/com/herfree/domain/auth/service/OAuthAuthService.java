@@ -21,6 +21,7 @@ import com.herfree.domain.user.exception.ReservedNicknameException;
 import com.herfree.domain.user.exception.UserNotFoundException;
 import com.herfree.domain.user.repository.UserProfileRepository;
 import com.herfree.domain.user.repository.UserRepository;
+import com.herfree.domain.user.service.UserConsentAgreementService;
 import com.herfree.global.security.JwtProperties;
 import com.herfree.global.security.JwtTokenProvider;
 import com.herfree.global.util.ReservedNicknamePolicy;
@@ -47,12 +48,17 @@ public class OAuthAuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final JwtProperties jwtProperties;
     private final AnalyticsService analyticsService;
+    private final UserConsentAgreementService userConsentAgreementService;
 
     @Transactional
     public OAuthLoginResponse loginWithCode(OAuthProvider provider, OAuthLoginRequest request) {
         oauthClientRegistry.assertConfigured(provider);
         OAuthClient client = oauthClientRegistry.requireClient(provider);
-        OAuthProviderProfile profile = client.fetchProfile(request.code(), request.redirectUri());
+        OAuthProviderProfile profile = client.fetchProfile(
+                request.code(),
+                request.redirectUri(),
+                request.state()
+        );
 
         Optional<UserOAuthAccount> linkedAccount = userOAuthAccountRepository
                 .findByProviderAndProviderUserId(provider, profile.providerUserId());
@@ -77,19 +83,6 @@ public class OAuthAuthService {
                 .provider(provider)
                 .providerUserId(profile.providerUserId())
                 .build());
-
-        String nickname = resolveInitialNickname(profile.nickname());
-        if (nickname != null) {
-            UserProfile userProfile = UserProfile.builder()
-                    .user(user)
-                    .nickname(nickname)
-                    .profileImageUrl(profile.profileImageUrl())
-                    .isPublic(true)
-                    .build();
-            userProfileRepository.save(userProfile);
-            recordAnalyticsEvent("oauth_signup_completed", user.getId());
-            return OAuthLoginResponse.completed(issueLoginResponse(user));
-        }
 
         String pendingNickname = generatePendingNickname();
         UserProfile userProfile = UserProfile.builder()
@@ -133,6 +126,7 @@ public class OAuthAuthService {
         }
 
         profile.updateNickname(nickname);
+        userConsentAgreementService.recordSignupConsent(user, request.agreeAge(), request.agreeMarketing());
         recordAnalyticsEvent("oauth_signup_completed", user.getId());
         return issueLoginResponse(user);
     }

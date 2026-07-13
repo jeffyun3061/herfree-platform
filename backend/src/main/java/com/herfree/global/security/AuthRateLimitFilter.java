@@ -2,6 +2,7 @@ package com.herfree.global.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.herfree.global.response.ErrorResponse;
+import com.herfree.global.util.ClientIpExtractor;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -31,6 +32,7 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
     private static final MediaType JSON_UTF8 = new MediaType("application", "json", StandardCharsets.UTF_8);
 
     private final ObjectMapper objectMapper;
+    private final ClientIpExtractor clientIpExtractor;
     private final Map<String, Window> windows = new ConcurrentHashMap<>();
 
     @Value("${app.auth-rate-limit.enabled:true}")
@@ -82,11 +84,7 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
     }
 
     private String resolveClientKey(HttpServletRequest request) {
-        String forwarded = request.getHeader("X-Forwarded-For");
-        if (forwarded != null && !forwarded.isBlank()) {
-            return forwarded.split(",")[0].trim();
-        }
-        return request.getRemoteAddr();
+        return clientIpExtractor.extract(request);
     }
 
     private static final class Window {

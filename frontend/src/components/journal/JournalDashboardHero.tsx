@@ -61,7 +61,7 @@ export function JournalDashboardHero({
                 <br />
                 나만의 평온 일수가 쌓여요
               </p>
-              <p className="mt-2 font-display text-[1.75rem] font-bold leading-tight text-white">
+              <p className="mt-2 hf-display text-[1.75rem] font-bold leading-tight text-white">
                 오늘부터 시작해요
               </p>
             </>
@@ -73,7 +73,7 @@ export function JournalDashboardHero({
                 지금의 <span className="font-semibold text-herfree-yellow">{relapseFreeDays}일</span>을
                 지켜냈어요
               </p>
-              <p className="mt-2 font-display font-extrabold leading-none text-white">
+              <p className="mt-2 hf-display font-extrabold leading-none text-white">
                 <span className="text-[2.75rem] text-herfree-yellow sm:text-[3rem]">
                   {relapseFreeDays}
                 </span>

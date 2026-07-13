@@ -1,6 +1,7 @@
 package com.herfree.domain.auth.dto.request;
 
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
@@ -23,6 +24,17 @@ public record SignupRequest(
         // 닉네임 최대 20자 — DB 컬럼(50자)보다 작게 제한해 UI 표시 문제를 방지한다
         @NotBlank(message = "닉네임을 입력해 주세요.")
         @Size(max = 20, message = "닉네임은 최대 20자까지 입력할 수 있습니다.")
-        String nickname
+        String nickname,
+
+        @AssertTrue(message = "이용약관에 동의해 주세요.")
+        boolean agreeTerms,
+
+        @AssertTrue(message = "개인정보처리방침에 동의해 주세요.")
+        boolean agreePrivacy,
+
+        @AssertTrue(message = "만 14세 이상 확인이 필요합니다.")
+        boolean agreeAge,
+
+        boolean agreeMarketing
 ) {
 }

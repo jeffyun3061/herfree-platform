@@ -90,10 +90,27 @@ DB·API는 UTC, 화면 표시는 브라우저 로컬(KST). 상세: [decision-log
 ### Auth — 소셜 로그인
 
 1. 프론트가 provider authorize URL로 이동 → callback에서 `code` 수신
-2. `POST /api/auth/oauth/{provider}` body: `{ "code", "redirectUri" }`
+2. `POST /api/auth/oauth/{provider}` body: `{ "code", "redirectUri", "state" }`
+   - `state`는 authorize 요청 시 프론트가 생성한 값과 동일해야 함 (네이버 토큰 교환 필수)
 3. 서버가 provider token 교환 후 Herfree JWT 발급 (기존 `LoginResponse`와 동일 필드)
 4. 닉네임 확정이 필요하면 `needsProfile: true` + `profileCompletionToken` (15분)
-5. `POST /api/auth/oauth/complete-profile` body: `{ "profileCompletionToken", "nickname" }`
+5. `POST /api/auth/oauth/complete-profile` body: `{ "profileCompletionToken", "nickname", "agreeTerms", "agreePrivacy", "agreeAge", "agreeMarketing" }`
+
+**회원가입 요청 body** (`POST /api/auth/signup`)
+
+```json
+{
+  "email": "user@example.com",
+  "password": "Password123!",
+  "nickname": "닉네임",
+  "agreeTerms": true,
+  "agreePrivacy": true,
+  "agreeAge": true,
+  "agreeMarketing": false
+}
+```
+
+필수 동의(`agreeTerms`, `agreePrivacy`, `agreeAge`)가 `true`가 아니면 가입이 거절된다. 가입 성공 시 약관/개인정보처리방침 버전과 동의 값은 `user_consent_agreements`에 저장된다.
 
 **닉네임 중복 확인** (`GET /api/auth/nickname/check`)
 

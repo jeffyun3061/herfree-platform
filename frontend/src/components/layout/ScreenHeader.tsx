@@ -12,6 +12,7 @@ type ScreenHeaderProps = {
   align?: 'start' | 'center';
   className?: string;
   topPadding?: boolean;
+  inset?: 'default' | 'narrow';
 };
 
 export function ScreenHeader({
@@ -23,11 +24,19 @@ export function ScreenHeader({
   align = 'start',
   className,
   topPadding = true,
+  inset = 'default',
 }: ScreenHeaderProps) {
   const TitleTag = titleAs;
 
   return (
-    <div className={cn('hf-screen-header-block', !topPadding && 'hf-screen-header-block--flat', className)}>
+    <div
+      className={cn(
+        'hf-screen-header-block',
+        inset === 'narrow' && 'hf-screen-header-block--narrow',
+        !topPadding && 'hf-screen-header-block--flat',
+        className,
+      )}
+    >
       <div className={cn('hf-screen-header-row', align === 'center' && 'items-center')}>
         <div className="min-w-0 flex-1">
           <TitleTag

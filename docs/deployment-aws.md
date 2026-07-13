@@ -118,6 +118,7 @@ chmod +x infra/scripts/ec2-bootstrap.sh infra/scripts/deploy-vps.sh
 cp .env.prod.example .env.prod
 # 편집: MYSQL_*, JWT_SECRET, CORS_ALLOWED_ORIGINS, S3_BUCKET
 # CORS_ALLOWED_ORIGINS = Amplify production URL (예: https://main.xxxxx.amplifyapp.com)
+# TRUSTED_PROXY_CIDRS = Nginx가 같은 EC2면 127.0.0.1/32, ALB 뒤면 ALB 서브넷 CIDR만 지정 (0.0.0.0/0 금지)
 # S3 키는 IAM Role 사용 시 비움
 ./infra/scripts/deploy-vps.sh
 ```
@@ -160,7 +161,7 @@ API 응답 `createdAt` 등은 ISO-8601 UTC (`…Z`) — 프론트는 브라우�
 
 ### 3.7 SMTP (비밀번호 재설정, 필수)
 
-운영에서 `APP_MAIL_MODE=console` 이면 재설정 URL이 **서버 로그에 평문**으로 남는다. 반드시 SMTP를 설정한다.
+운영에서 `APP_MAIL_MODE=console` 이면 재설정 요청은 안전하게 실패한다. 실제 서비스에서는 반드시 SMTP를 설정하고 수신 테스트를 통과시킨다.
 
 | 환경변수 | 예시 (AWS SES SMTP) |
 |----------|---------------------|

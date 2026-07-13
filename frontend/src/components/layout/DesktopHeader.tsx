@@ -23,7 +23,7 @@ export function DesktopHeader() {
     <header className="sticky top-0 z-50 hidden border-b border-[#E5DDCF]/70 bg-[#F3EDE3]/90 backdrop-blur-md lg:block">
       <div className="mx-auto flex h-[4.25rem] max-w-content items-center justify-between gap-8 px-10">
         <Link href="/" className="shrink-0" aria-label="홈">
-          <BrandMark size="md" />
+          <BrandMark size="md" showText={false} />
         </Link>
 
         <nav className="flex flex-1 items-center justify-center gap-8" aria-label="주요 메뉴">

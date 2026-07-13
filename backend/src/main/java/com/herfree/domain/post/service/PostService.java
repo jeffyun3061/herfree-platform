@@ -36,6 +36,7 @@ import com.herfree.global.util.AuthorIpMaskPolicy;
 import com.herfree.global.util.BoardWritePolicy;
 import com.herfree.global.util.ClientIpExtractor;
 import com.herfree.global.util.PrivateBoardPolicy;
+import com.herfree.global.util.StaffRolePolicy;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -63,6 +64,7 @@ public class PostService {
     private final UserProfileRepository userProfileRepository;
     private final PostImageStorageService postImageStorageService;
     private final ReactionRepository reactionRepository;
+    private final ClientIpExtractor clientIpExtractor;
 
     @Transactional
     public PostDetailResponse createPost(Long userId, PostCreateRequest request, HttpServletRequest httpRequest) {
@@ -80,7 +82,7 @@ public class PostService {
                 ? PostVisibility.MEMBERS_ONLY
                 : request.visibility();
 
-        String authorIpMasked = AuthorIpMaskPolicy.mask(ClientIpExtractor.extract(httpRequest));
+        String authorIpMasked = AuthorIpMaskPolicy.mask(clientIpExtractor.extract(httpRequest));
 
         Post post = Post.builder()
                 .board(board)
@@ -166,17 +168,21 @@ public class PostService {
             if (PrivateBoardPolicy.isOffCommunityBoard(board.getBoardType()) && userId == null) {
                 throw new PostAccessDeniedException();
             }
-            if (keyword != null) {
-                return postFulltextSearchRepository.searchBoardPosts(boardId, keyword, sort, period, paging);
-            }
+            boolean staff = StaffRolePolicy.isStaff(viewerRole);
             if (PrivateBoardPolicy.isInquiryBoard(board.getBoardType())) {
-                return postRepository.searchInquiryPosts(PostStatus.ACTIVE, boardId, null, paging);
+                return postRepository.searchInquiryPosts(PostStatus.ACTIVE, boardId, keyword, userId, staff, paging);
             }
             if (PrivateBoardPolicy.isSecretConsultBoard(board.getBoardType())) {
-                return postRepository.searchSecretConsultPosts(PostStatus.ACTIVE, boardId, null, paging);
+                return postRepository.searchSecretConsultPosts(PostStatus.ACTIVE, boardId, keyword, userId, staff, paging);
             }
             if (PrivateBoardPolicy.isSecretStoryBoard(board.getBoardType())) {
-                return postRepository.searchSecretStoryPosts(PostStatus.ACTIVE, boardId, null, paging);
+                if (keyword != null && !staff) {
+                    return Page.empty(paging);
+                }
+                return postRepository.searchSecretStoryPosts(PostStatus.ACTIVE, boardId, staff ? keyword : null, paging);
+            }
+            if (keyword != null) {
+                return postFulltextSearchRepository.searchBoardPosts(boardId, keyword, sort, period, paging);
             }
             return searchCommunityPosts(PostStatus.ACTIVE, boardId, null, userId, sort, period, paging);
         }

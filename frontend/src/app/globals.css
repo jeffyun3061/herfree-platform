@@ -42,6 +42,7 @@
   --hf-page-pt: max(12px, env(safe-area-inset-top, 12px));
   --hf-page-pt-lg: 1.5rem; /* 24px — 데스크톱 폰 프레임 */
   --hf-page-px: 1.25rem; /* 20px — 좌우 여백 통일 */
+  --hf-dashboard-px: 1rem; /* 16px — 로그인 홈·일지 시안 */
   --hf-ink: #1e2621;
   --hf-sub: #5c645a;
   --hf-text-muted: #7c8279;
@@ -79,6 +80,16 @@ body {
   .hf-page-x {
     padding-left: var(--hf-page-px);
     padding-right: var(--hf-page-px);
+  }
+
+  .hf-dashboard-x {
+    padding-left: var(--hf-dashboard-px);
+    padding-right: var(--hf-dashboard-px);
+  }
+
+  .hf-screen-header-block--narrow {
+    padding-left: var(--hf-dashboard-px);
+    padding-right: var(--hf-dashboard-px);
   }
 
   .hf-page-mx {

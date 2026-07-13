@@ -22,6 +22,7 @@ import com.herfree.domain.user.entity.UserRole;
 import com.herfree.domain.user.entity.UserStatus;
 import com.herfree.domain.user.repository.UserProfileRepository;
 import com.herfree.domain.user.repository.UserRepository;
+import com.herfree.domain.user.service.UserConsentAgreementService;
 import com.herfree.global.security.JwtProperties;
 import com.herfree.global.security.JwtTokenProvider;
 import java.util.Optional;
@@ -63,6 +64,9 @@ class OAuthAuthServiceTest {
     private JwtProperties jwtProperties;
 
     @Mock
+    private UserConsentAgreementService userConsentAgreementService;
+
+    @Mock
     private OAuthClient oauthClient;
 
     @InjectMocks
@@ -97,7 +101,7 @@ class OAuthAuthServiceTest {
                 .build();
 
         given(oauthClientRegistry.requireClient(OAuthProvider.KAKAO)).willReturn(oauthClient);
-        given(oauthClient.fetchProfile("code", "http://localhost:3000/auth/callback/kakao"))
+        given(oauthClient.fetchProfile("code", "http://localhost:3000/auth/callback/kakao", "state-1"))
                 .willReturn(OAuthProviderProfile.of("12345", null, "헤르프리유저", null));
         given(userOAuthAccountRepository.findByProviderAndProviderUserId(OAuthProvider.KAKAO, "12345"))
                 .willReturn(Optional.of(linked));
@@ -106,7 +110,7 @@ class OAuthAuthServiceTest {
 
         var response = oauthAuthService.loginWithCode(
                 OAuthProvider.KAKAO,
-                new OAuthLoginRequest("code", "http://localhost:3000/auth/callback/kakao")
+                new OAuthLoginRequest("code", "http://localhost:3000/auth/callback/kakao", "state-1")
         );
 
         assertThat(response.needsProfile()).isFalse();
@@ -118,13 +122,17 @@ class OAuthAuthServiceTest {
     @DisplayName("동일 이메일 가입 계정이 있으면 소셜 로그인을 거절한다")
     void loginWithCode_emailAlreadyRegistered_throwsConflict() {
         given(oauthClientRegistry.requireClient(OAuthProvider.GOOGLE)).willReturn(oauthClient);
-        given(oauthClient.fetchProfile(anyString(), anyString()))
+        given(oauthClient.fetchProfile(anyString(), anyString(), anyString()))
                 .willReturn(OAuthProviderProfile.of("google-sub", "demo@herfree.local", "데모", null));
         given(userOAuthAccountRepository.findByProviderAndProviderUserId(OAuthProvider.GOOGLE, "google-sub"))
                 .willReturn(Optional.empty());
         given(userRepository.existsByEmail("demo@herfree.local")).willReturn(true);
 
-        OAuthLoginRequest request = new OAuthLoginRequest("code", "http://localhost:3000/auth/callback/google");
+        OAuthLoginRequest request = new OAuthLoginRequest(
+                "code",
+                "http://localhost:3000/auth/callback/google",
+                "state-google"
+        );
         assertThatThrownBy(() -> oauthAuthService.loginWithCode(OAuthProvider.GOOGLE, request))
                 .isInstanceOf(OAuthEmailAlreadyRegisteredException.class);
     }
@@ -133,7 +141,7 @@ class OAuthAuthServiceTest {
     @DisplayName("닉네임 미확정 소셜 가입은 profileCompletionToken을 반환한다")
     void loginWithCode_newAccountWithoutNickname_needsProfile() {
         given(oauthClientRegistry.requireClient(OAuthProvider.NAVER)).willReturn(oauthClient);
-        given(oauthClient.fetchProfile(anyString(), anyString()))
+        given(oauthClient.fetchProfile(anyString(), anyString(), anyString()))
                 .willReturn(OAuthProviderProfile.of("naver-1", null, null, null));
         given(userOAuthAccountRepository.findByProviderAndProviderUserId(OAuthProvider.NAVER, "naver-1"))
                 .willReturn(Optional.empty());
@@ -149,7 +157,11 @@ class OAuthAuthServiceTest {
 
         var response = oauthAuthService.loginWithCode(
                 OAuthProvider.NAVER,
-                new OAuthLoginRequest("code", "http://localhost:3000/auth/callback/naver")
+                new OAuthLoginRequest(
+                        "code",
+                        "http://localhost:3000/auth/callback/naver",
+                        "state-naver"
+                )
         );
 
         assertThat(response.needsProfile()).isTrue();
@@ -180,10 +192,11 @@ class OAuthAuthServiceTest {
         given(jwtTokenProvider.createAccessToken("20", "USER")).willReturn("jwt-after-profile");
 
         var response = oauthAuthService.completeProfile(
-                new OAuthCompleteProfileRequest("profile-token", "새닉네임")
+                new OAuthCompleteProfileRequest("profile-token", "새닉네임", true, true, true, false)
         );
 
         assertThat(response.accessToken()).isEqualTo("jwt-after-profile");
         assertThat(profile.getNickname()).isEqualTo("새닉네임");
+        verify(userConsentAgreementService).recordSignupConsent(user, true, false);
     }
 }

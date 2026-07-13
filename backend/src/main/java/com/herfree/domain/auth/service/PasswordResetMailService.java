@@ -1,11 +1,15 @@
 package com.herfree.domain.auth.service;
 
+import com.herfree.domain.auth.exception.PasswordResetDeliveryException;
 import com.herfree.global.config.MailProperties;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import java.util.Arrays;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.core.env.Environment;
+import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -17,21 +21,25 @@ public class PasswordResetMailService {
 
     private final MailProperties mailProperties;
     private final ObjectProvider<JavaMailSender> mailSenderProvider;
+    private final Environment environment;
 
     public void sendPasswordResetEmail(String toEmail, String resetUrl) {
         if ("smtp".equalsIgnoreCase(mailProperties.mode())) {
             sendViaSmtp(toEmail, resetUrl);
         } else {
-            logPasswordResetLink(toEmail, resetUrl);
+            if (isProd()) {
+                log.error("Password reset mail delivery blocked: SMTP is not configured in prod.");
+                throw new PasswordResetDeliveryException();
+            }
+            log.info("[password-reset] reset email suppressed in {} mode for to={}", mailProperties.mode(), toEmail);
         }
     }
 
     private void sendViaSmtp(String toEmail, String resetUrl) {
         JavaMailSender mailSender = mailSenderProvider.getIfAvailable();
         if (mailSender == null) {
-            log.warn("SMTP mode이지만 JavaMailSender가 설정되지 않았습니다. 콘솔 모드로 대체합니다.");
-            logPasswordResetLink(toEmail, resetUrl);
-            return;
+            log.error("Password reset mail delivery blocked: JavaMailSender is missing.");
+            throw new PasswordResetDeliveryException();
         }
 
         try {
@@ -42,14 +50,14 @@ public class PasswordResetMailService {
             helper.setSubject("[헤르프리] 비밀번호 재설정 안내");
             helper.setText(buildEmailBody(resetUrl), false);
             mailSender.send(message);
-        } catch (MessagingException e) {
-            log.error("비밀번호 재설정 메일 발송 실패: {}", toEmail, e);
-            throw new IllegalStateException("비밀번호 재설정 메일을 보내지 못했습니다.", e);
+        } catch (MessagingException | MailException e) {
+            log.error("Password reset mail delivery failed for to={}", toEmail, e);
+            throw new PasswordResetDeliveryException();
         }
     }
 
-    private void logPasswordResetLink(String toEmail, String resetUrl) {
-        log.info("[password-reset] to={} resetUrl={}", toEmail, resetUrl);
+    private boolean isProd() {
+        return Arrays.asList(environment.getActiveProfiles()).contains("prod");
     }
 
     private String buildEmailBody(String resetUrl) {

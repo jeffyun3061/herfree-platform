@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 
 public record OAuthLoginRequest(
         @NotBlank String code,
-        @NotBlank String redirectUri
+        @NotBlank String redirectUri,
+        @NotBlank String state
 ) {
 }

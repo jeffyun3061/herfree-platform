@@ -27,10 +27,11 @@ export function oauthLogin(
   provider: OAuthProvider,
   code: string,
   redirectUri: string,
+  state: string,
 ): Promise<OAuthLoginResult> {
   return request<OAuthLoginResult>(`/api/auth/oauth/${provider}`, {
     method: 'POST',
-    body: { code, redirectUri },
+    body: { code, redirectUri, state },
   });
 }
 

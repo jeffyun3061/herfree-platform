@@ -427,7 +427,7 @@
 - **결정:**
   - OAuth 2.0 **Authorization Code** — callback은 Next.js `/auth/callback/{provider}`, code 교환·secret은 **Spring Boot**
   - provider 사용자 식별은 `user_oauth_accounts(provider, provider_user_id)` 에 저장
-  - 성공 시 기존과 동일한 **Herfree JWT** 발급 (localStorage)
+  - 성공 시 기존과 동일한 **Herfree JWT** 발급 (브라우저 세션 저장소)
   - 닉네임 미확정 시 `profileCompletionToken` (15분) → `/signup/oauth`
   - 동일 **실이메일**로 이미 이메일 가입한 경우 409 (계정 연동은 2차)
 - **대안:** Spring OAuth2 Client only(카카오·네이버 커스텀 필요), provider JWT를 그대로 API에 사용(권한·탈퇴 정책 분리 어려움)
@@ -447,5 +447,4 @@
 | 2026-07-10 | ADR: API·DB 타임스탬프 UTC, 일지 record_date KST 유지 |
 | 2026-06-03 | ADR-001~012: Java 17, JWT, MySQL/H2, Docker/RDS, ddl-auto, 패키지·auth/user 분리, 배포·프론트 |
 | 2026-06-03 | ADR-012~014: PostgreSQL 미채택, AI FastAPI·Vector DB 로드맵, Spring/FastAPI 역할; compose 경로 루트 통합 |
-
 

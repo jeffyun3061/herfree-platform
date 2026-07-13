@@ -4,6 +4,7 @@ import com.herfree.domain.post.dto.response.PostImageUploadUrlResponse;
 import com.herfree.global.config.S3Properties;
 import com.herfree.global.exception.BusinessException;
 import com.herfree.global.exception.ErrorCode;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
@@ -19,6 +20,8 @@ import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
@@ -57,6 +60,7 @@ public class PostImageStorageService {
                 .bucket(s3Properties.bucket())
                 .key(objectKey)
                 .contentType(contentType)
+                .contentLength((long) data.length)
                 .build();
 
         try {
@@ -79,6 +83,7 @@ public class PostImageStorageService {
                 .bucket(s3Properties.bucket())
                 .key(objectKey)
                 .contentType(contentType)
+                .contentLength(contentLength)
                 .build();
 
         PutObjectPresignRequest presignRequest = PutObjectPresignRequest.builder()
@@ -112,24 +117,31 @@ public class PostImageStorageService {
         String normalizedKey = normalizeObjectKey(objectKey);
         assertValidObjectKey(normalizedKey);
 
-        GetObjectRequest getRequest = GetObjectRequest.builder()
+        HeadObjectRequest headRequest = HeadObjectRequest.builder()
                 .bucket(s3Properties.bucket())
                 .key(normalizedKey)
                 .build();
 
         try {
-            var response = s3Client.getObject(getRequest);
-            byte[] bytes;
-            try {
-                bytes = response.readAllBytes();
-            } catch (java.io.IOException ex) {
-                throw new BusinessException(ErrorCode.S3_UPLOAD_FAILED);
+            HeadObjectResponse head = s3Client.headObject(headRequest);
+            validateImage(contentTypeOrFallback(head.contentType(), normalizedKey), head.contentLength());
+
+            GetObjectRequest getRequest = GetObjectRequest.builder()
+                    .bucket(s3Properties.bucket())
+                    .key(normalizedKey)
+                    .build();
+
+            try (var response = s3Client.getObject(getRequest)) {
+                byte[] bytes = response.readNBytes((int) MAX_BYTES + 1);
+                if (bytes.length > MAX_BYTES) {
+                    throw new BusinessException(ErrorCode.INVALID_IMAGE_SIZE);
+                }
+                String contentType = contentTypeOrFallback(response.response().contentType(), normalizedKey);
+                validateImage(contentType, bytes.length);
+                return new ImageObjectPayload(bytes, contentType);
             }
-            String contentType = response.response().contentType();
-            if (!StringUtils.hasText(contentType)) {
-                contentType = contentTypeFromKey(normalizedKey);
-            }
-            return new ImageObjectPayload(bytes, contentType);
+        } catch (IOException ex) {
+            throw new BusinessException(ErrorCode.S3_UPLOAD_FAILED);
         } catch (SdkException ex) {
             throw mapS3Failure(ex, "get");
         }
@@ -296,6 +308,10 @@ public class PostImageStorageService {
             return "image/webp";
         }
         return "application/octet-stream";
+    }
+
+    private String contentTypeOrFallback(String contentType, String objectKey) {
+        return StringUtils.hasText(contentType) ? contentType : contentTypeFromKey(objectKey);
     }
 
     public String resolveContentType(String rawContentType, String filename) {

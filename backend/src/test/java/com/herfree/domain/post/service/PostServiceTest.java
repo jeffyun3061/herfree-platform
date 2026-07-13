@@ -21,6 +21,7 @@ import com.herfree.domain.user.entity.UserStatus;
 import com.herfree.domain.user.repository.UserProfileRepository;
 import com.herfree.domain.user.repository.UserRepository;
 import com.herfree.domain.reaction.repository.ReactionRepository;
+import com.herfree.global.util.ClientIpExtractor;
 import com.herfree.global.util.PostListPeriod;
 import com.herfree.global.util.PostListSort;
 import com.herfree.global.exception.BusinessException;
@@ -84,6 +85,9 @@ class PostServiceTest {
     @Mock
     private ReactionRepository reactionRepository;
 
+    @Mock
+    private ClientIpExtractor clientIpExtractor;
+
     @InjectMocks
     private PostService postService;
 
@@ -116,7 +120,7 @@ class PostServiceTest {
 
         // when
         HttpServletRequest httpRequest = mock(HttpServletRequest.class);
-        given(httpRequest.getRemoteAddr()).willReturn("203.0.113.10");
+        given(clientIpExtractor.extract(httpRequest)).willReturn("203.0.113.10");
         PostDetailResponse response = postService.createPost(userId, request, httpRequest);
 
         // then — 작성된 게시글의 제목과 내용이 요청과 일치하는지 확인한다
@@ -347,6 +351,84 @@ class PostServiceTest {
     }
 
     @Test
+    @DisplayName("문의 게시판 목록은 일반 사용자에게 본인 글 범위로만 조회한다")
+    void getPosts_inquiryBoard_limitsToOwnerForUser() {
+        Long boardId = 10L;
+        Long userId = 1L;
+        Pageable pageable = PageRequest.of(0, 15);
+        Board board = buildBoard("INQUIRY");
+        User user = User.builder()
+                .email("user@test.com")
+                .password("pw")
+                .role(UserRole.USER)
+                .status(UserStatus.ACTIVE)
+                .build();
+        Page<Post> emptyPage = new PageImpl<>(List.of(), pageable, 0);
+
+        given(boardRepository.findById(boardId)).willReturn(Optional.of(board));
+        given(userRepository.findById(userId)).willReturn(Optional.of(user));
+        given(postRepository.searchInquiryPosts(
+                eq(PostStatus.ACTIVE), eq(boardId), eq("문의"), eq(userId), eq(false), any()))
+                .willReturn(emptyPage);
+
+        postService.getPosts(boardId, "문의", pageable, userId, "week");
+
+        verify(postRepository).searchInquiryPosts(
+                eq(PostStatus.ACTIVE), eq(boardId), eq("문의"), eq(userId), eq(false), any());
+        verifyNoInteractions(postFulltextSearchRepository);
+    }
+
+    @Test
+    @DisplayName("비공개 상담 게시판 목록은 운영자에게 전체 범위 조회를 허용한다")
+    void getPosts_privateConsultBoard_allowsStaffScope() {
+        Long boardId = 11L;
+        Long staffId = 2L;
+        Pageable pageable = PageRequest.of(0, 15);
+        Board board = buildBoard("PRIVATE_CONSULT");
+        User staff = User.builder()
+                .email("admin@test.com")
+                .password("pw")
+                .role(UserRole.ADMIN)
+                .status(UserStatus.ACTIVE)
+                .build();
+        Page<Post> emptyPage = new PageImpl<>(List.of(), pageable, 0);
+
+        given(boardRepository.findById(boardId)).willReturn(Optional.of(board));
+        given(userRepository.findById(staffId)).willReturn(Optional.of(staff));
+        given(postRepository.searchSecretConsultPosts(
+                eq(PostStatus.ACTIVE), eq(boardId), isNull(), eq(staffId), eq(true), any()))
+                .willReturn(emptyPage);
+
+        postService.getPosts(boardId, null, pageable, staffId, "week");
+
+        verify(postRepository).searchSecretConsultPosts(
+                eq(PostStatus.ACTIVE), eq(boardId), isNull(), eq(staffId), eq(true), any());
+    }
+
+    @Test
+    @DisplayName("비밀사연 일반 사용자 키워드 검색은 원문 추론을 막기 위해 빈 결과를 반환한다")
+    void getPosts_secretStoryKeywordForUser_returnsEmpty() {
+        Long boardId = 12L;
+        Long userId = 3L;
+        Pageable pageable = PageRequest.of(0, 15);
+        Board board = buildBoard("SECRET_STORY");
+        User user = User.builder()
+                .email("user2@test.com")
+                .password("pw")
+                .role(UserRole.USER)
+                .status(UserStatus.ACTIVE)
+                .build();
+
+        given(boardRepository.findById(boardId)).willReturn(Optional.of(board));
+        given(userRepository.findById(userId)).willReturn(Optional.of(user));
+
+        Page<PostResponse> result = postService.getPosts(boardId, "원문단서", pageable, userId, "week");
+
+        assertThat(result.getTotalElements()).isZero();
+        verifyNoInteractions(postFulltextSearchRepository);
+    }
+
+    @Test
     @DisplayName("검색어가 한 글자이면 BusinessException이 발생한다")
     void getPosts_withSingleCharKeyword_throws() {
         Pageable pageable = PageRequest.of(0, 15);
@@ -421,6 +503,12 @@ class PostServiceTest {
     private Board buildWritableBoard() {
         Board board = org.mockito.Mockito.mock(Board.class);
         given(board.getBoardType()).willReturn("FREE");
+        return board;
+    }
+
+    private Board buildBoard(String boardType) {
+        Board board = org.mockito.Mockito.mock(Board.class);
+        given(board.getBoardType()).willReturn(boardType);
         return board;
     }
 }

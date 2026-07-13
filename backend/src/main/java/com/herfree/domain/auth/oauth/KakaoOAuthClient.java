@@ -29,7 +29,7 @@ public class KakaoOAuthClient implements OAuthClient {
     }
 
     @Override
-    public OAuthProviderProfile fetchProfile(String code, String redirectUri) {
+    public OAuthProviderProfile fetchProfile(String code, String redirectUri, String state) {
         String accessToken = exchangeCode(code, redirectUri);
         return fetchUser(accessToken);
     }

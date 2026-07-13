@@ -17,25 +17,26 @@ export function bumpAuthEpoch(): number {
   return authEpoch;
 }
 
-// SSR 환경에서는 localStorage가 없으므로 항상 브라우저 여부를 먼저 확인한다
+// accessToken/sessionUser는 브라우저 종료 뒤 남지 않도록 sessionStorage에만 둔다.
+// rememberedEmail처럼 민감도가 낮은 편의 값만 localStorage에 남긴다.
 function isBrowser(): boolean {
   return typeof window !== 'undefined';
 }
 
 export function getAccessToken(): string | null {
   if (!isBrowser()) return null;
-  return window.localStorage.getItem(ACCESS_TOKEN_KEY);
+  return window.sessionStorage.getItem(ACCESS_TOKEN_KEY);
 }
 
 export function setAccessToken(token: string): void {
   if (!isBrowser()) return;
   bumpAuthEpoch();
-  window.localStorage.setItem(ACCESS_TOKEN_KEY, token);
+  window.sessionStorage.setItem(ACCESS_TOKEN_KEY, token);
 }
 
 export function getSessionUser(): SessionUser | null {
   if (!isBrowser()) return null;
-  const raw = window.localStorage.getItem(SESSION_USER_KEY);
+  const raw = window.sessionStorage.getItem(SESSION_USER_KEY);
   if (!raw) return null;
   try {
     return JSON.parse(raw) as SessionUser;
@@ -46,7 +47,7 @@ export function getSessionUser(): SessionUser | null {
 
 export function setSessionUser(user: SessionUser): void {
   if (!isBrowser()) return;
-  window.localStorage.setItem(SESSION_USER_KEY, JSON.stringify(user));
+  window.sessionStorage.setItem(SESSION_USER_KEY, JSON.stringify(user));
 }
 
 export function getRememberedEmail(): string | null {
@@ -67,6 +68,8 @@ export function clearRememberedEmail(): void {
 export function clearAuth(): void {
   if (!isBrowser()) return;
   bumpAuthEpoch();
+  window.sessionStorage.removeItem(ACCESS_TOKEN_KEY);
+  window.sessionStorage.removeItem(SESSION_USER_KEY);
   window.localStorage.removeItem(ACCESS_TOKEN_KEY);
   window.localStorage.removeItem(SESSION_USER_KEY);
   window.dispatchEvent(new CustomEvent('herfree:auth-cleared'));

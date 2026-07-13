@@ -44,7 +44,7 @@ class PasswordResetIntegrationTest {
         mockMvc.perform(post("/api/auth/signup")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"email":"%s","password":"%s","nickname":"%s"}
+                                {"email":"%s","password":"%s","nickname":"%s","agreeTerms":true,"agreePrivacy":true,"agreeAge":true,"agreeMarketing":false}
                                 """.formatted(email, oldPassword, nickname)))
                 .andExpect(status().isCreated());
 

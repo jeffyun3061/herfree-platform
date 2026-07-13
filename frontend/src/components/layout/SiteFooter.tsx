@@ -6,7 +6,7 @@ export function SiteFooter() {
   return (
     <footer className="border-t border-[#ECE5D8] bg-[#F3EDE3] px-4 py-8 lg:hidden">
       <div className="mx-auto max-w-app">
-        <BrandMark size="sm" />
+        <BrandMark size="sm" showText={false} />
         <p className="mt-2 text-xs leading-relaxed text-[#5C645A]">
           Herfree는 익명 기반 건강 커뮤니티입니다. 의료 진단이나 처방을 대신하지 않습니다.
         </p>

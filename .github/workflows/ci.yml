@@ -16,11 +16,18 @@ jobs:
           java-version: "17"
           distribution: "temurin"
           cache: gradle
-      - name: Backend test
+      - name: Backend build
         working-directory: backend
-        run: ./gradlew test --no-daemon
+        run: ./gradlew build --no-daemon
         env:
           JWT_SECRET: ci-test-jwt-secret-minimum-32-characters-long
+      - name: Security hygiene check
+        shell: bash
+        run: |
+          set -euo pipefail
+          ! git grep -n "logPasswordResetLink\|resetUrl=.*log\|readAllBytes" -- backend/src/main/java
+          ! git grep -n "0.0.0.0/0" -- . ':!docs/**' ':!.env.prod.example' ':!.github/**'
+          ! git grep -n "change_me_jwt_secret" -- . ':!.env.prod.example' ':!.github/**'
 
   frontend:
     runs-on: ubuntu-latest

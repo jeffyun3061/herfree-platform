@@ -241,8 +241,8 @@ export function JournalRecordWizard({
         {currentStepId === STEP_SYMPTOM && (
           <div className="space-y-6">
             <div>
-              <h2 className="text-xl font-semibold text-ink">오늘 증상 있었나요?</h2>
-              <p className="mt-2 text-sm text-muted">솔직하게 기록하면 패턴을 더 잘 파악할 수 있어요.</p>
+              <h2 className="text-[14px] font-bold text-[#1E2621]">증상이 있었나요?</h2>
+              <p className="mt-1 text-[11.5px] text-[#9A9F94]">솔직하게 기록하면 패턴을 더 잘 파악할 수 있어요.</p>
             </div>
             {!isToday && (
               <label className="block space-y-1.5">
@@ -413,7 +413,7 @@ export function JournalRecordWizard({
         {currentStepId === STEP_CONDITION && (
           <div className="space-y-6">
             <div>
-              <h2 className="text-xl font-semibold text-ink">오늘 컨디션은 어땠나요?</h2>
+              <h2 className="text-[14px] font-bold text-[#1E2621]">컨디션은 어땠나요?</h2>
               <p className="mt-2 text-sm text-muted">기분 또는 스트레스 중 하나 이상 선택해 주세요.</p>
             </div>
             <div className="flex gap-2">

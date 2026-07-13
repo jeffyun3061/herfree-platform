@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import Link from 'next/link';
 import type { JournalDashboard, JournalRecord, StressLevel } from '@/domain/journal/types';
 import { PUBLIC_IMAGES } from '@/domain/assets/static';
@@ -10,7 +10,6 @@ import {
   countRecordStreak,
   formatDashboardDateBadge,
 } from '@/domain/journal/routine';
-import { cn } from '@/lib/cn';
 
 type JournalDashboardCardProps = {
   dashboard: JournalDashboard | null;
@@ -22,17 +21,13 @@ type JournalDashboardCardProps = {
 
 type PreviewStatus = 'none' | 'prodrome' | 'symptom';
 
+const HOME_SUMMARY_DAYS = 90;
+
 const STRESS_LABELS: Record<StressLevel, string> = {
   LOW: '낮음',
   MEDIUM: '보통',
   HIGH: '높음',
 };
-
-const PREVIEW_STATUS_OPTIONS: Array<{ id: PreviewStatus; label: string }> = [
-  { id: 'none', label: '증상 없음' },
-  { id: 'prodrome', label: '전조 증상' },
-  { id: 'symptom', label: '증상 발현' },
-];
 
 const PREVIEW_STATUS_TONE: Record<
   PreviewStatus,
@@ -84,6 +79,22 @@ function calcSupplementRate(days: JournalDashboard['timelineDays']): number {
   return Math.round((taken / recorded.length) * 100);
 }
 
+function filterTimelineByDays(
+  days: JournalDashboard['timelineDays'],
+  periodDays: number,
+): JournalDashboard['timelineDays'] {
+  if (days.length === 0) return [];
+  const anchorDate = days[days.length - 1]?.date;
+  const anchor = new Date(`${anchorDate}T00:00:00`);
+  if (Number.isNaN(anchor.getTime())) return days.slice(-periodDays);
+  const cutoff = new Date(anchor);
+  cutoff.setDate(cutoff.getDate() - periodDays + 1);
+  const cutoffIso = `${cutoff.getFullYear()}-${String(cutoff.getMonth() + 1).padStart(2, '0')}-${String(
+    cutoff.getDate(),
+  ).padStart(2, '0')}`;
+  return days.filter((day) => day.date >= cutoffIso);
+}
+
 function buildPreviewSubStatus(
   status: PreviewStatus,
   record: JournalRecord | null,
@@ -111,17 +122,11 @@ export function JournalDashboardCard({
   const yearRelapses = dashboard?.yearRelapses ?? 0;
   const recordStreak = countRecordStreak(dashboard?.timelineDays);
 
-  const [previewStatus, setPreviewStatus] = useState<PreviewStatus>(() =>
-    derivePreviewStatus(focusRecord),
-  );
+  const status = derivePreviewStatus(focusRecord);
+  const statusTone = PREVIEW_STATUS_TONE[status];
 
-  useEffect(() => {
-    setPreviewStatus(derivePreviewStatus(focusRecord));
-  }, [focusRecord]);
-
-  const statusTone = PREVIEW_STATUS_TONE[previewStatus];
   const summaryMetrics = useMemo(() => {
-    const timelineDays = dashboard?.timelineDays ?? [];
+    const timelineDays = filterTimelineByDays(dashboard?.timelineDays ?? [], HOME_SUMMARY_DAYS);
     return [
       {
         value: `${calcSupplementRate(timelineDays)}`,
@@ -149,7 +154,6 @@ export function JournalDashboardCard({
   if (isLoading) {
     return (
       <div className="space-y-2">
-        <div className="h-8 animate-pulse rounded-full bg-[#E8DFD2]" aria-hidden />
         <section className="h-[360px] animate-pulse rounded-[24px] bg-[#D8CDB9]" aria-hidden />
       </div>
     );
@@ -157,27 +161,6 @@ export function JournalDashboardCard({
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center gap-2 px-0.5">
-        <span className="shrink-0 text-[10.5px] font-semibold text-[#B4B2A6]">상태 미리보기</span>
-        <div className="flex flex-1 gap-[3px] rounded-full bg-[#EBE2D1] p-[3px]">
-          {PREVIEW_STATUS_OPTIONS.map((option) => (
-            <button
-              key={option.id}
-              type="button"
-              onClick={() => setPreviewStatus(option.id)}
-              className={cn(
-                'flex-1 rounded-full px-1 py-1.5 text-center text-[11px] transition-colors',
-                previewStatus === option.id
-                  ? 'bg-[#0B3B36] font-bold text-white'
-                  : 'font-medium text-[#8A9089]',
-              )}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
       <section
         id="hf-dashboard-card"
         className="overflow-hidden rounded-[24px] shadow-[0_26px_52px_-30px_rgba(7,37,31,.65)]"
@@ -212,7 +195,7 @@ export function JournalDashboardCard({
                 {statusTone.title}
               </h2>
               <p className="mt-1.5 line-clamp-2 text-[12.5px] text-white/90 [text-shadow:0_1px_6px_rgba(0,0,0,.35)]">
-                {buildPreviewSubStatus(previewStatus, focusRecord, relapseFreeDays)}
+                {buildPreviewSubStatus(status, focusRecord, relapseFreeDays)}
               </p>
             </div>
           </div>
@@ -220,7 +203,7 @@ export function JournalDashboardCard({
 
         <div className="bg-[#07251F] px-[18px] pb-[18px] pt-4 text-white">
           <div className="mb-3.5 flex items-center justify-between gap-3">
-            <span className="text-[11.5px] text-white/60">개인일지 요약 · 최근 30일</span>
+            <span className="text-[11.5px] text-white/60">개인일지 요약 · 최근 {HOME_SUMMARY_DAYS}일</span>
             <Link href="/journal?tab=insights" className="text-[12px] font-medium text-[#F0C778]">
               자세히 ›
             </Link>

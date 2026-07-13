@@ -69,6 +69,7 @@ function OAuthCallbackForm() {
           providerParam,
           code,
           getOAuthRedirectUri(providerParam),
+          state,
         );
 
         clearOAuthState(providerParam);
@@ -86,7 +87,11 @@ function OAuthCallbackForm() {
         router.replace(consumeOAuthReturnUrl());
       } catch (err) {
         sessionStorage.removeItem(guardKey);
-        setError(getErrorMessage(err));
+        const message = getErrorMessage(err);
+        const redirectUri = getOAuthRedirectUri(providerParam);
+        setError(
+          `${message}\n\n콘솔 Redirect URI가 아래와 정확히 일치하는지 확인해 주세요:\n${redirectUri}`,
+        );
       }
     };
 
@@ -96,7 +101,7 @@ function OAuthCallbackForm() {
   if (error) {
     return (
       <div className="mx-auto flex min-h-screen max-w-app flex-col items-center justify-center bg-cream px-6">
-        <ErrorMessage message={error} />
+        <ErrorMessage message={error} className="whitespace-pre-wrap text-left" />
         <button
           type="button"
           onClick={() => router.replace('/login')}

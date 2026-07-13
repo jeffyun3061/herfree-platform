@@ -4,6 +4,10 @@ export type SignupRequest = {
   email: string;
   password: string;
   nickname: string;
+  agreeTerms: boolean;
+  agreePrivacy: boolean;
+  agreeAge: boolean;
+  agreeMarketing: boolean;
 };
 
 export type LoginRequest = {
@@ -44,4 +48,8 @@ export type OAuthLoginResult = {
 export type OAuthCompleteProfileRequest = {
   profileCompletionToken: string;
   nickname: string;
+  agreeTerms: boolean;
+  agreePrivacy: boolean;
+  agreeAge: boolean;
+  agreeMarketing: boolean;
 };

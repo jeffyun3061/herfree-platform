@@ -26,12 +26,12 @@ public class NaverOAuthClient implements OAuthClient {
     }
 
     @Override
-    public OAuthProviderProfile fetchProfile(String code, String redirectUri) {
-        String accessToken = exchangeCode(code, redirectUri);
+    public OAuthProviderProfile fetchProfile(String code, String redirectUri, String state) {
+        String accessToken = exchangeCode(code, redirectUri, state);
         return fetchUser(accessToken);
     }
 
-    private String exchangeCode(String code, String redirectUri) {
+    private String exchangeCode(String code, String redirectUri, String state) {
         String tokenUri = UriComponentsBuilder
                 .fromUriString("https://nid.naver.com/oauth2.0/token")
                 .queryParam("grant_type", "authorization_code")
@@ -39,7 +39,7 @@ public class NaverOAuthClient implements OAuthClient {
                 .queryParam("client_secret", config.clientSecret())
                 .queryParam("redirect_uri", redirectUri)
                 .queryParam("code", code)
-                .queryParam("state", "herfree")
+                .queryParam("state", state)
                 .build()
                 .toUriString();
 

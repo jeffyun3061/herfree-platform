@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo, useState } from 'react';
 import type {
   JournalDashboard,
   JournalInsights,
@@ -26,6 +27,14 @@ const FLOW_ROWS = [
   { key: 'prodrome', label: '전조증상', color: '#E0936B' },
   { key: 'symptom', label: '증상', color: '#CF5B36' },
 ] as const;
+
+const SUMMARY_PERIOD_OPTIONS = [
+  { id: '3m', label: '3개월', days: 90 },
+  { id: '6m', label: '6개월', days: 180 },
+  { id: '1y', label: '1년', days: 365 },
+] as const;
+
+type SummaryPeriod = (typeof SUMMARY_PERIOD_OPTIONS)[number]['id'];
 
 function clampPercent(value: number): number {
   return Math.min(100, Math.max(0, value));
@@ -69,25 +78,37 @@ function calcSupplementRate(days: JournalTimelineDay[]): number {
   return Math.round((taken / recorded.length) * 100);
 }
 
-function parseSleepHours(label: string | undefined): number | null {
-  if (!label || label.includes('기록 없음') || label.includes('기록 전')) return null;
-  const match = label.match(/([\d.]+)/);
-  return match ? Number.parseFloat(match[1]) : null;
+function filterTimelineByDays(days: JournalTimelineDay[], periodDays: number): JournalTimelineDay[] {
+  if (days.length === 0) return [];
+  const anchorDate = days[days.length - 1]?.date;
+  const anchor = new Date(`${anchorDate}T00:00:00`);
+  if (Number.isNaN(anchor.getTime())) return days.slice(-periodDays);
+  const cutoff = new Date(anchor);
+  cutoff.setDate(cutoff.getDate() - periodDays + 1);
+  const cutoffIso = `${cutoff.getFullYear()}-${String(cutoff.getMonth() + 1).padStart(2, '0')}-${String(
+    cutoff.getDate(),
+  ).padStart(2, '0')}`;
+  return days.filter((day) => day.date >= cutoffIso);
 }
 
-function normalizeText(value: string | null | undefined, fallback = '기록 전'): string {
-  if (!value || value.trim().length === 0) return fallback;
-  return value;
+function timelineStressTone(days: JournalTimelineDay[]): { percent: number; label: string; color: string } {
+  const recorded = days.filter((day) => day.recorded);
+  if (recorded.length === 0) return { percent: 0, label: '기록 전', color: '#C98A2E' };
+  const highCount = recorded.filter((day) => day.highStress).length;
+  const ratio = highCount / recorded.length;
+  if (ratio >= 0.45) return { percent: 82, label: '높음', color: '#CF5B36' };
+  if (ratio >= 0.2) return { percent: 52, label: '보통', color: '#C98A2E' };
+  return { percent: 24, label: '낮음', color: '#1D9E75' };
 }
 
-function stressTone(label: string): { percent: number; label: string; color: string } {
-  if (label.includes('낮')) return { percent: 24, label: '낮음', color: '#1D9E75' };
-  if (label.includes('높')) return { percent: 82, label: '높음', color: '#CF5B36' };
-  if (label.includes('보통')) return { percent: 52, label: '보통', color: '#C98A2E' };
-  return { percent: 0, label, color: '#C98A2E' };
+function timelineSleepLabel(days: JournalTimelineDay[]): { label: string; percent: number } {
+  const recorded = days.filter((day) => day.recorded);
+  if (recorded.length === 0) return { label: '기록 전', percent: 0 };
+  const goodSleep = recorded.filter((day) => !day.sleepDeficit).length;
+  const rate = Math.round((goodSleep / recorded.length) * 100);
+  return { label: `충분 ${rate}%`, percent: rate };
 }
 
-/** 개선판 기준 증상 정도 라벨 (안정 / 경미 / 보통 / 심함). */
 function symptomDegreeLabel(summary: JournalReviewSummary | null | undefined): string {
   const breakdown = summary?.severityBreakdown;
   if (!breakdown) return '안정';
@@ -174,7 +195,17 @@ export function JournalInsightsPanel({
   reviewSummaryLoading,
   onDaySelect,
 }: JournalInsightsPanelProps) {
+  const [summaryPeriod, setSummaryPeriod] = useState<SummaryPeriod>('6m');
   const loading = dashboardLoading || reviewSummaryLoading;
+
+  const timelineDays = useMemo(() => dashboard?.timelineDays ?? [], [dashboard?.timelineDays]);
+  const periodConfig =
+    SUMMARY_PERIOD_OPTIONS.find((option) => option.id === summaryPeriod) ?? SUMMARY_PERIOD_OPTIONS[1];
+  const periodDays = periodConfig.days;
+  const filteredDays = useMemo(
+    () => filterTimelineByDays(timelineDays, periodDays),
+    [timelineDays, periodDays],
+  );
 
   if (loading) {
     return (
@@ -197,19 +228,16 @@ export function JournalInsightsPanel({
     );
   }
 
-  const timelineDays = dashboard.timelineDays ?? [];
   const recentDays = timelineDays.slice(-14);
   const streak = countRecordStreak(timelineDays);
 
-  const periodDays = reviewSummary?.periodDays ?? 30;
-  const supplementRate = calcSupplementRate(timelineDays);
-  const avgSleep = normalizeText(reviewSummary?.avgSleepLabel);
-  const sleepHours = parseSleepHours(avgSleep);
-  const sleepPercent = sleepHours == null ? 0 : Math.round((sleepHours / 9) * 100);
-  const stress = stressTone(normalizeText(reviewSummary?.avgStressLabel));
-  const symptomDays = reviewSummary?.symptomDays ?? 0;
-  const recordedDays =
-    reviewSummary?.timelineDays?.length ?? timelineDays.filter((day) => day.recorded).length;
+  const supplementRate = calcSupplementRate(filteredDays);
+  const sleepFromTimeline = timelineSleepLabel(filteredDays);
+  const avgSleep = sleepFromTimeline.label;
+  const sleepPercent = sleepFromTimeline.percent;
+  const stress = timelineStressTone(filteredDays);
+  const symptomDays = filteredDays.filter((day) => day.recorded && day.hadSymptoms).length;
+  const recordedDays = filteredDays.filter((day) => day.recorded).length;
   const relapseFreeDays = dashboard.relapseFreeDays ?? 0;
   const lastSymptomLabel =
     symptomDays === 0 && relapseFreeDays === 0
@@ -227,7 +255,7 @@ export function JournalInsightsPanel({
     },
     {
       icon: '😴',
-      label: '평균 수면',
+      label: '수면 충분',
       value: avgSleep,
       valueColor: '#1D9E75',
       barColor: '#1D9E75',
@@ -299,7 +327,7 @@ export function JournalInsightsPanel({
         )}
       </section>
 
-      {/* 개인일지 요약 · 최근 30일 */}
+      {/* 개인일지 요약 */}
       <section className="border-t-[0.5px] border-[#E4DBC9] px-0.5 pt-1.5">
         <div className="my-[18px] flex items-center justify-between gap-3">
           <h3 className="text-[14px] font-bold text-[#1E2621]">
@@ -308,6 +336,24 @@ export function JournalInsightsPanel({
           <span className="shrink-0 text-[12.5px] font-semibold text-[#15695E]">
             {lastSymptomLabel}
           </span>
+        </div>
+
+        <div className="mb-4 flex gap-[3px] rounded-full bg-[#EBE2D1] p-[3px]">
+          {SUMMARY_PERIOD_OPTIONS.map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              onClick={() => setSummaryPeriod(option.id)}
+              className={cn(
+                'flex-1 rounded-full px-1 py-1.5 text-center text-[11px] transition-colors',
+                summaryPeriod === option.id
+                  ? 'bg-[#0B3B36] font-bold text-white'
+                  : 'font-medium text-[#8A9089]',
+              )}
+            >
+              {option.label}
+            </button>
+          ))}
         </div>
 
         <div className="space-y-[15px]">

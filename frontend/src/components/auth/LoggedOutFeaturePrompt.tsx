@@ -45,14 +45,8 @@ export function LoggedOutFeaturePrompt({
         <p className="text-[16px] font-bold text-[#15201D]">회원만 이용할 수 있어요</p>
         <p className="mt-2 max-w-[280px] text-[13px] leading-[1.7] text-[#6E766F]">{body}</p>
         <Link
-          href={`/login?from=${encodeURIComponent(signupFrom)}`}
-          className="mt-6 whitespace-nowrap rounded-[14px] border border-[#0B3B36] bg-white px-8 py-[15px] text-[14.5px] font-bold text-[#0B3B36]"
-        >
-          로그인
-        </Link>
-        <Link
           href={`/signup?from=${encodeURIComponent(signupFrom)}`}
-          className="mt-3 whitespace-nowrap rounded-[14px] bg-[#0B3B36] px-8 py-[15px] text-[14.5px] font-bold text-white shadow-[0_14px_30px_-14px_rgba(11,59,54,.6)]"
+          className="mt-6 whitespace-nowrap rounded-[14px] bg-[#0B3B36] px-8 py-[15px] text-[14.5px] font-bold text-white shadow-[0_14px_30px_-14px_rgba(11,59,54,.6)]"
         >
           30초 만에 가입하기
         </Link>

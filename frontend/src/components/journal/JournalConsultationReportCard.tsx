@@ -93,7 +93,7 @@ export function JournalConsultationReportCard({
               </span>
             </div>
           )}
-          <h3 className={cn('font-display font-bold', compact ? 'text-sm' : 'mt-3 text-lg')}>
+          <h3 className={cn('hf-display font-bold', compact ? 'text-sm' : 'mt-3 text-lg')}>
             기록 요약 리포트
           </h3>
           <p className="mt-0.5 text-[11px] text-primary-foreground/80">

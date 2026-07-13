@@ -24,6 +24,11 @@ export function getOAuthRedirectUri(provider: OAuthProvider): string {
   return `${window.location.origin}/auth/callback/${provider}`;
 }
 
+/** 개발자 콘솔 등록용 Redirect URI 안내 */
+export function getOAuthRedirectUriHint(provider: OAuthProvider): string {
+  return getOAuthRedirectUri(provider);
+}
+
 function getOAuthClientId(provider: OAuthProvider): string {
   const envMap: Record<OAuthProvider, string | undefined> = {
     kakao: process.env.NEXT_PUBLIC_OAUTH_KAKAO_CLIENT_ID,

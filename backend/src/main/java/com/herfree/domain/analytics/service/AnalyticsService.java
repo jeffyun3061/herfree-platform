@@ -20,6 +20,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import com.herfree.global.common.AppTimeZone;
+import com.herfree.global.util.ClientIpExtractor;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.HexFormat;
@@ -58,6 +59,7 @@ public class AnalyticsService {
     private final JournalRecordRepository journalRecordRepository;
     private final ContentRepository contentRepository;
     private final VideoRepository videoRepository;
+    private final ClientIpExtractor clientIpExtractor;
 
     @Value("${app.analytics.hash-salt:${JWT_SECRET:local-analytics-salt}}")
     private String hashSalt;
@@ -120,7 +122,7 @@ public class AnalyticsService {
                 .route(sanitizeRoute(route))
                 .user(user)
                 .sessionHash(hashNullable(sessionId))
-                .ipHash(hashNullable(extractClientIp(httpRequest)))
+                .ipHash(hashNullable(clientIpExtractor.extract(httpRequest)))
                 .userAgentHash(hashNullable(httpRequest == null ? null : httpRequest.getHeader("User-Agent")))
                 .build());
     }
@@ -139,17 +141,6 @@ public class AnalyticsService {
             value = value.substring(0, queryIndex);
         }
         return value.length() > 180 ? value.substring(0, 180) : value;
-    }
-
-    private String extractClientIp(HttpServletRequest request) {
-        if (request == null) {
-            return null;
-        }
-        String forwardedFor = request.getHeader("X-Forwarded-For");
-        if (StringUtils.hasText(forwardedFor)) {
-            return forwardedFor.split(",")[0].trim();
-        }
-        return request.getRemoteAddr();
     }
 
     private String hashNullable(String value) {

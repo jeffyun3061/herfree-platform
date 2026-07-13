@@ -52,7 +52,7 @@ public class UserController {
     }
 
     // 회원 탈퇴 — api-spec.md §8.2, 204 No Content 반환
-    // 클라이언트는 성공 후 localStorage 토큰을 반드시 폐기해야 한다.
+    // 클라이언트는 성공 후 브라우저 세션에 보관한 토큰을 반드시 폐기해야 한다.
     @DeleteMapping("/me")
     public ResponseEntity<Void> withdraw(@AuthenticationPrincipal Long userId) {
         userService.withdraw(userId);
