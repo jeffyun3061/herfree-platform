@@ -18,9 +18,14 @@ export function isOAuthProvider(value: string): value is OAuthProvider {
 }
 
 export function getOAuthRedirectUri(provider: OAuthProvider): string {
+  const configuredOrigin = process.env.NEXT_PUBLIC_OAUTH_REDIRECT_ORIGIN?.trim();
+  if (configuredOrigin) {
+    return `${configuredOrigin.replace(/\/$/, '')}/auth/callback/${provider}`;
+  }
   if (typeof window === 'undefined') {
     return `http://localhost:3000/auth/callback/${provider}`;
   }
+  // OAuth 콘솔의 Redirect URI와 완전히 같아야 한다. 로컬은 localhost:3000 접속을 권장한다.
   return `${window.location.origin}/auth/callback/${provider}`;
 }
 
