@@ -6,12 +6,15 @@ import com.herfree.domain.user.dto.request.UpdateUserStatusRequest;
 import com.herfree.domain.user.dto.request.ResetNicknameRequest;
 import com.herfree.domain.user.dto.request.RestrictUserRequest;
 import com.herfree.domain.user.dto.response.AdminUserResponse;
+import com.herfree.domain.user.entity.NicknameChangeHistory;
+import com.herfree.domain.user.entity.NicknameChangeType;
 import com.herfree.domain.user.entity.User;
 import com.herfree.domain.user.entity.UserProfile;
 import com.herfree.domain.user.entity.UserRole;
 import com.herfree.domain.user.entity.UserStatus;
 import com.herfree.domain.user.exception.RoleChangeNotAllowedException;
 import com.herfree.domain.user.exception.UserNotFoundException;
+import com.herfree.domain.user.repository.NicknameChangeHistoryRepository;
 import com.herfree.domain.user.repository.UserProfileRepository;
 import com.herfree.domain.user.repository.UserRepository;
 import com.herfree.global.util.StaffRolePolicy;
@@ -33,6 +36,7 @@ public class AdminUserService {
 
     private final UserRepository userRepository;
     private final UserProfileRepository userProfileRepository;
+    private final NicknameChangeHistoryRepository nicknameChangeHistoryRepository;
     private final RoleAuditService roleAuditService;
     private final AnalyticsService analyticsService;
 
@@ -157,7 +161,17 @@ public class AdminUserService {
 
         UserProfile profile = userProfileRepository.findByUserId(targetUserId)
                 .orElseThrow(UserNotFoundException::new);
-        profile.updateNickname(resolveSafeNickname(targetUserId, profile.getNickname()));
+        String oldNickname = profile.getNickname();
+        String newNickname = resolveSafeNickname(targetUserId, oldNickname);
+        profile.updateNickname(newNickname);
+        nicknameChangeHistoryRepository.save(NicknameChangeHistory.builder()
+                .user(target)
+                .actor(actor)
+                .oldNickname(oldNickname)
+                .newNickname(newNickname)
+                .changeType(NicknameChangeType.ADMIN_RESET)
+                .reason(request.reason().trim())
+                .build());
         roleAuditService.logNicknameReset(
                 actorId,
                 targetUserId,

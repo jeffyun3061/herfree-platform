@@ -6,12 +6,15 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
+import com.herfree.domain.user.dto.request.ResetNicknameRequest;
 import com.herfree.domain.user.dto.request.UpdateUserRoleRequest;
+import com.herfree.domain.user.entity.NicknameChangeHistory;
 import com.herfree.domain.user.entity.User;
 import com.herfree.domain.user.entity.UserProfile;
 import com.herfree.domain.user.entity.UserRole;
 import com.herfree.domain.user.entity.UserStatus;
 import com.herfree.domain.user.exception.RoleChangeNotAllowedException;
+import com.herfree.domain.user.repository.NicknameChangeHistoryRepository;
 import com.herfree.domain.user.repository.UserProfileRepository;
 import com.herfree.domain.user.repository.UserRepository;
 import java.util.Optional;
@@ -29,6 +32,8 @@ class AdminUserServiceTest {
     private UserRepository userRepository;
     @Mock
     private UserProfileRepository userProfileRepository;
+    @Mock
+    private NicknameChangeHistoryRepository nicknameChangeHistoryRepository;
     @Mock
     private RoleAuditService roleAuditService;
 
@@ -59,6 +64,28 @@ class AdminUserServiceTest {
         assertThatThrownBy(() ->
                 adminUserService.updateRole(1L, 2L, new UpdateUserRoleRequest(UserRole.MODERATOR)))
                 .isInstanceOf(RoleChangeNotAllowedException.class);
+    }
+
+    @Test
+    void adminNicknameResetSavesHistory() {
+        User actor = user(1L, UserRole.ADMIN);
+        User target = user(2L, UserRole.USER);
+        UserProfile profile = profile(target, "badnick");
+
+        given(userRepository.findByIdAndStatus(1L, UserStatus.ACTIVE)).willReturn(Optional.of(actor));
+        given(userRepository.findByIdAndStatus(2L, UserStatus.ACTIVE)).willReturn(Optional.of(target));
+        given(userProfileRepository.findByUserId(2L)).willReturn(Optional.of(profile));
+        given(userProfileRepository.existsByNickname("사용자2")).willReturn(false);
+
+        var result = adminUserService.resetNickname(
+                1L,
+                2L,
+                new ResetNicknameRequest("부적절한 닉네임", "운영자 테스트")
+        );
+
+        assertThat(result.nickname()).isEqualTo("사용자2");
+        verify(nicknameChangeHistoryRepository).save(any(NicknameChangeHistory.class));
+        verify(roleAuditService).logNicknameReset(1L, 2L, "부적절한 닉네임", "운영자 테스트");
     }
 
     private User user(Long id, UserRole role) {
