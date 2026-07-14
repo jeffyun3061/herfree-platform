@@ -14,16 +14,22 @@ import com.herfree.domain.reaction.repository.ReactionRepository;
 import com.herfree.domain.user.dto.request.UpdateProfileRequest;
 import com.herfree.domain.user.dto.response.UserActivityResponse;
 import com.herfree.domain.user.dto.response.UserResponse;
+import com.herfree.domain.user.entity.NicknameChangeHistory;
+import com.herfree.domain.user.entity.NicknameChangeType;
 import com.herfree.domain.user.entity.User;
 import com.herfree.domain.user.entity.UserProfile;
 import com.herfree.domain.user.entity.UserStatus;
 import com.herfree.domain.user.exception.DuplicateNicknameException;
+import com.herfree.domain.user.exception.NicknameChangeTooSoonException;
 import com.herfree.domain.user.exception.ReservedNicknameException;
+import com.herfree.domain.user.exception.SameNicknameException;
 import com.herfree.domain.user.exception.UserNotFoundException;
+import com.herfree.domain.user.repository.NicknameChangeHistoryRepository;
 import com.herfree.domain.user.repository.UserProfileRepository;
 import com.herfree.domain.user.repository.UserRepository;
 import com.herfree.global.util.ReservedNicknamePolicy;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -34,8 +40,11 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class UserService {
 
+    private static final int NICKNAME_CHANGE_COOLDOWN_DAYS = 30;
+
     private final UserRepository userRepository;
     private final UserProfileRepository userProfileRepository;
+    private final NicknameChangeHistoryRepository nicknameChangeHistoryRepository;
     private final PostRepository postRepository;
     private final CommentRepository commentRepository;
     private final ReactionRepository reactionRepository;
@@ -68,20 +77,47 @@ public class UserService {
         UserProfile profile = userProfileRepository.findByUserId(userId)
                 .orElseThrow(UserNotFoundException::new);
 
-        // 현재 닉네임과 다를 때만 중복 검사 — 같은 닉네임으로 수정 요청 시 통과
-        if (!profile.getNickname().equals(request.nickname())) {
-            if (ReservedNicknamePolicy.isReserved(request.nickname())) {
-                throw new ReservedNicknameException();
-            }
-            if (userProfileRepository.existsByNickname(request.nickname())) {
-                throw new DuplicateNicknameException();
-            }
-            profile.updateNickname(request.nickname());
+        String nextNickname = request.nickname().trim();
+
+        if (profile.getNickname().equals(nextNickname)) {
+            throw new SameNicknameException();
         }
+
+        // 닉네임은 커뮤니티 노출명이므로 악용 방지를 위해 일반 회원은 30일에 한 번만 변경한다.
+        if (ReservedNicknamePolicy.isReserved(nextNickname)) {
+            throw new ReservedNicknameException();
+        }
+        if (userProfileRepository.existsByNickname(nextNickname)) {
+            throw new DuplicateNicknameException();
+        }
+        assertNicknameChangeAllowed(userId);
+        String oldNickname = profile.getNickname();
+        profile.updateNickname(nextNickname);
+        nicknameChangeHistoryRepository.save(NicknameChangeHistory.builder()
+                .user(user)
+                .actor(user)
+                .oldNickname(oldNickname)
+                .newNickname(nextNickname)
+                .changeType(NicknameChangeType.USER)
+                .reason("사용자 직접 변경")
+                .build());
 
         profile.updateBio(request.bio());
 
         return UserResponse.of(user, profile);
+    }
+
+    private void assertNicknameChangeAllowed(Long userId) {
+        Instant cutoff = Instant.now().minus(NICKNAME_CHANGE_COOLDOWN_DAYS, ChronoUnit.DAYS);
+        nicknameChangeHistoryRepository
+                .findFirstByUserIdAndChangeTypeAndCreatedAtAfterOrderByCreatedAtDesc(
+                        userId,
+                        NicknameChangeType.USER,
+                        cutoff
+                )
+                .ifPresent(history -> {
+                    throw new NicknameChangeTooSoonException();
+                });
     }
 
     // 회원 탈퇴 — 물리 삭제 대신 DELETED 상태로 전환하고 작성 콘텐츠를 익명 처리한다.

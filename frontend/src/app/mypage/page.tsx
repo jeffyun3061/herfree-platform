@@ -107,6 +107,7 @@ export default function MyPage() {
   const [showPosts, setShowPosts] = useState(false);
   const [nickname, setNickname] = useState('');
   const [profileError, setProfileError] = useState<string | null>(null);
+  const [profileSuccess, setProfileSuccess] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [isWithdrawing, setIsWithdrawing] = useState(false);
@@ -121,14 +122,22 @@ export default function MyPage() {
   if (!isLoggedIn) return <LoggedOutMyPagePromptCard />;
 
   const handleNicknameUpdate = async () => {
-    if (!nickname.trim()) {
+    const nextNickname = nickname.trim();
+    if (!nextNickname) {
       setProfileError('닉네임을 입력해 주세요.');
+      return;
+    }
+    if (nextNickname === user?.nickname) {
+      setProfileError('현재 사용 중인 닉네임입니다.');
+      setProfileSuccess(null);
       return;
     }
     setIsUpdating(true);
     setProfileError(null);
+    setProfileSuccess(null);
     try {
-      await updateNickname(nickname.trim());
+      await updateNickname(nextNickname);
+      setProfileSuccess(`${nextNickname}으로 변경됐어요.`);
       setNickname('');
     } catch (err) {
       setProfileError(getErrorMessage(err));
@@ -226,12 +235,18 @@ export default function MyPage() {
           <div className="mypage-menu-card">
             <div className="border-b border-[#F2ECE1] px-[17px] py-[15px]">
               <p className="mb-2 text-[13.5px] font-semibold text-[#15201D]">닉네임 변경</p>
+              <p className="mb-3 text-[11.5px] leading-[1.6] text-[#8A9287]">
+                닉네임은 30일에 한 번만 변경할 수 있어요.
+              </p>
               <div className="flex items-center gap-2">
                 <div className="min-w-0 flex-1 [&_.wrtn-input]:mt-0">
                   <Input
                     placeholder="새 닉네임"
                     value={nickname}
-                    onChange={(e) => setNickname(e.target.value)}
+                    onChange={(e) => {
+                      setNickname(e.target.value);
+                      setProfileSuccess(null);
+                    }}
                     maxLength={20}
                   />
                 </div>
@@ -248,6 +263,11 @@ export default function MyPage() {
                 <div className="mt-2">
                   <ErrorMessage message={profileError} />
                 </div>
+              )}
+              {profileSuccess && (
+                <p className="mt-2 rounded-[12px] bg-[#EEF7F1] px-3 py-2 text-[11.5px] font-semibold text-[#167A55]">
+                  {profileSuccess}
+                </p>
               )}
             </div>
             <MenuRow
