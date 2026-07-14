@@ -296,7 +296,7 @@ export default function PostDetailPage() {
             )}
           </div>
 
-          <h1 className="hf-display mb-3 mt-[13px] text-[20px] font-extrabold leading-[1.45] tracking-[-0.01em] text-[#15201D]">
+          <h1 className="hf-display mb-3 mt-[13px] break-words text-[20px] font-extrabold leading-[1.45] tracking-[-0.01em] text-[#15201D]">
             {post.title}
           </h1>
 
@@ -337,7 +337,7 @@ export default function PostDetailPage() {
           >
             <p
               className={cn(
-                'whitespace-pre-wrap text-[13.5px] leading-[1.85]',
+                'whitespace-pre-wrap break-words text-[13.5px] leading-[1.85]',
                 isContentMasked ? 'text-[#7A847C]' : 'text-[#2C342E]',
               )}
             >

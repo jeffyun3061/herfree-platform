@@ -56,9 +56,11 @@ function getPostPreview(post: Post): string {
 function MemberStatusStrip({
   activeUsersLabel,
   todayStories,
+  storiesLoading,
 }: {
   activeUsersLabel: string;
   todayStories: number;
+  storiesLoading: boolean;
 }) {
   return (
     <section className="relative z-10 mx-5 -mt-[22px] rounded-[18px] bg-[#07251F] px-5 py-[15px] text-white shadow-[0_18px_40px_-24px_rgba(7,37,31,.7)]">
@@ -82,7 +84,9 @@ function MemberStatusStrip({
             <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#6FE0B0] shadow-[0_0_8px_rgba(111,224,176,.8)]" />
             {activeUsersLabel}
           </p>
-          <p className="mt-[3px] text-[12px] text-white/55">오늘 올라온 글 {todayStories.toLocaleString('ko-KR')}개</p>
+          <p className="mt-[3px] text-[12px] text-white/55">
+            {storiesLoading ? '오늘 올라온 글 확인 중' : `오늘 올라온 글 ${todayStories.toLocaleString('ko-KR')}개`}
+          </p>
         </div>
       </div>
     </section>
@@ -231,7 +235,7 @@ function GuestQuickLinks() {
     { href: '/consult', label: '1:1 비밀상담', icon: 'lock' },
     { href: '/contents', label: '칼럼', icon: 'book' },
     { href: '/inquiry', label: '문의하기', icon: 'notice' },
-    { href: '/', label: '헤르프리', icon: 'help' },
+    { href: '/videos', label: '헤르프리', icon: 'help' },
   ];
 
   return (
@@ -343,13 +347,13 @@ export function GuestHomePage() {
   const { data: homeStats, isLoading: statsLoading } = useJournalPublicHomeStats();
 
   const activeUsersLabel = formatMemberStatus(homeStats?.totalUsers, statsLoading);
-  const todayStories = recentPosts.totalElements || recentPosts.content.length;
-  const totalStories = recentPosts.totalElements || recentPosts.content.length;
+  const todayStories = recentLoading ? 0 : recentPosts.totalElements || recentPosts.content.length;
+  const totalStories = recentLoading ? 0 : recentPosts.totalElements || recentPosts.content.length;
 
   return (
     <div className="min-h-screen bg-[#F3EDE3] pb-7">
       <GuestHomeHero />
-      <MemberStatusStrip activeUsersLabel={activeUsersLabel} todayStories={todayStories} />
+      <MemberStatusStrip activeUsersLabel={activeUsersLabel} todayStories={todayStories} storiesLoading={recentLoading} />
       <GuestCommunityPreview
         posts={recentPosts.content}
         isLoading={recentLoading}

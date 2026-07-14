@@ -42,7 +42,7 @@ export function AdminJournalStatsSection() {
             익명 집계
           </span>
         </div>
-        <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
+        <div className="mt-4 grid gap-2.5">
           <FlowCard
             title="전체 기록"
             primaryLabel="최근 7일"
@@ -60,7 +60,7 @@ export function AdminJournalStatsSection() {
         </div>
       </section>
 
-      <section className="grid gap-3 sm:grid-cols-2">
+      <section className="grid gap-3">
         <CompactPanel
           title="신고 처리"
           items={[

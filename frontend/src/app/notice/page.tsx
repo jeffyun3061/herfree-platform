@@ -25,7 +25,7 @@ export default function NoticePage() {
 
   return (
     <>
-      <PageHeader title="공지사항" showBack backHref="/mypage" mobileOnly />
+      <PageHeader title="공지사항" showBack backHref="/mypage" />
       <main className="page-container mx-auto max-w-app pb-8 lg:max-w-content lg:pb-12">
       <section className="rounded-[26px] border border-[#E1D5C1] bg-[#FBF6ED] px-5 py-5 shadow-[0_18px_42px_-34px_rgba(7,37,31,.45)]">
         <p className="text-[12px] font-extrabold uppercase tracking-[0.18em] text-[#9B8B70]">

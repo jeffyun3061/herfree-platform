@@ -60,6 +60,12 @@ export function AdminModerationSection() {
     setPage(0);
   };
 
+  const confirmHide = (targetLabel: string) =>
+    window.confirm(`${targetLabel}을 숨김 처리할까요? 일반 사용자 화면에서는 보이지 않습니다.`);
+
+  const confirmRestore = (targetLabel: string) =>
+    window.confirm(`${targetLabel}을 다시 노출할까요? 일반 사용자 화면에 다시 보입니다.`);
+
   return (
     <div className="space-y-4">
       <section className="rounded-[20px] border border-[#E7DFD2] bg-white px-4 py-4 shadow-[0_16px_34px_-30px_rgba(20,31,26,.35)]">
@@ -150,7 +156,7 @@ export function AdminModerationSection() {
                       size="sm"
                       variant="danger"
                       disabled={isProcessing}
-                      onClick={() => void hidePost(item.id)}
+                      onClick={() => confirmHide('게시글') && void hidePost(item.id)}
                     >
                       숨김 처리
                     </Button>
@@ -158,7 +164,7 @@ export function AdminModerationSection() {
                     <Button
                       size="sm"
                       disabled={isProcessing}
-                      onClick={() => void restorePost(item.id)}
+                      onClick={() => confirmRestore('게시글') && void restorePost(item.id)}
                     >
                       다시 노출
                     </Button>
@@ -196,7 +202,7 @@ export function AdminModerationSection() {
                       size="sm"
                       variant="danger"
                       disabled={isProcessing}
-                      onClick={() => void hideComment(item.id)}
+                      onClick={() => confirmHide('댓글') && void hideComment(item.id)}
                     >
                       숨김 처리
                     </Button>
@@ -204,7 +210,7 @@ export function AdminModerationSection() {
                     <Button
                       size="sm"
                       disabled={isProcessing}
-                      onClick={() => void restoreComment(item.id)}
+                      onClick={() => confirmRestore('댓글') && void restoreComment(item.id)}
                     >
                       다시 노출
                     </Button>

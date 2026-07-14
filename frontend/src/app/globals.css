@@ -61,6 +61,15 @@ body {
   letter-spacing: -0.01em;
 }
 
+@keyframes hfMenuSlideIn {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
 html,
 body {
   width: 100%;
@@ -174,11 +183,11 @@ body {
 
   /* 관리자: 웹에서도 폰 테두리 유지 + 태블릿형 넓이 */
   .app-phone-shell.admin-shell {
-    @apply lg:max-w-[860px] lg:min-h-[min(900px,calc(100vh-3rem))];
+    @apply lg:max-w-app lg:min-h-[min(844px,calc(100vh-4rem))];
   }
 
   .app-phone-shell .admin-panel-inner {
-    @apply mx-auto w-full max-w-none px-4 py-4 lg:max-w-[820px] lg:px-5 lg:py-5;
+    @apply mx-auto w-full max-w-none px-4 py-4 lg:px-4 lg:py-4;
   }
 
   .app-phone-shell .page-container {
@@ -208,19 +217,19 @@ body {
   }
 
   .app-phone-shell.admin-shell .admin-stats-grid--pair {
-    @apply lg:grid-cols-2;
+    @apply lg:grid-cols-1;
   }
 
   .app-phone-shell.admin-shell .admin-stats-grid--triple {
-    @apply lg:grid-cols-3;
+    @apply lg:grid-cols-1;
   }
 
   .app-phone-shell.admin-shell .admin-stats-grid--quad {
-    @apply lg:grid-cols-2 xl:grid-cols-4;
+    @apply lg:grid-cols-1;
   }
 
   .app-phone-shell.admin-shell .admin-dashboard-split {
-    @apply grid grid-cols-1 gap-4 lg:grid-cols-2;
+    @apply grid grid-cols-1 gap-4;
   }
 
   .section-stack {
@@ -511,7 +520,7 @@ body {
   }
 
   .community-feed-row__title-line {
-    @apply mb-[7px] flex min-w-0 items-center gap-2;
+    @apply mb-[7px] flex min-w-0 items-start gap-2;
   }
 
   .community-feed-tag {
@@ -519,11 +528,11 @@ body {
   }
 
   .community-feed-row__title {
-    @apply min-w-0 flex-1 truncate text-[14px] font-semibold leading-snug tracking-normal text-[#1E2621];
+    @apply line-clamp-2 min-w-0 flex-1 break-words text-[14px] font-semibold leading-snug tracking-normal text-[#1E2621];
   }
 
   .community-feed-row__meta {
-    @apply flex items-center gap-[10px] text-[12px] font-medium;
+    @apply flex min-w-0 flex-wrap items-center gap-x-[10px] gap-y-1 text-[12px] font-medium;
     color: var(--hf-text-muted);
   }
 

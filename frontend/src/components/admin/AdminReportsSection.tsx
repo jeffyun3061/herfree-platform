@@ -223,7 +223,7 @@ export function AdminReportsSection() {
                     </div>
                   </div>
 
-                  <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  <div className="mt-3 grid grid-cols-2 gap-2">
                     {(target.targetType === 'POST' || target.targetType === 'COMMENT') && (
                       <>
                         <Button

@@ -60,12 +60,12 @@ export function PostCard({ post, boardName }: PostCardProps) {
           <span className="community-feed-row__title">{post.title}</span>
         </div>
         {post.contentPreview && (
-          <p className="mb-2.5 line-clamp-2 text-[12.5px] leading-[1.55] text-[#6E7671]">
+          <p className="mb-2.5 line-clamp-2 break-words text-[12.5px] leading-[1.55] text-[#6E7671]">
             {post.contentPreview}
           </p>
         )}
         <div className="community-feed-row__meta">
-          <span>{post.authorNickname}</span>
+          <span className="max-w-[46%] truncate">{post.authorNickname}</span>
           {authorIpLabel ? (
             <>
               <MetaDot />
@@ -74,7 +74,7 @@ export function PostCard({ post, boardName }: PostCardProps) {
           ) : null}
           <MetaDot />
           <span>{formatRelativeTime(post.createdAt)}</span>
-          <span className="ml-auto flex items-center gap-3">
+          <span className="ml-auto flex shrink-0 items-center gap-3">
             <span>♡ {post.reactionCount ?? 0}</span>
             <span>💬 {post.commentCount ?? 0}</span>
           </span>

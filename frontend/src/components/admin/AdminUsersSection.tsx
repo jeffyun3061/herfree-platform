@@ -62,6 +62,9 @@ export function AdminUsersSection() {
   };
 
   const handleRoleChange = async (userId: number, role: UserRole) => {
+    if (!window.confirm('회원 권한을 변경할까요? 변경 이력은 감사 로그에 남습니다.')) {
+      return;
+    }
     setPendingId(userId);
     setActionError(null);
     try {
@@ -75,6 +78,13 @@ export function AdminUsersSection() {
   };
 
   const handleStatusChange = async (userId: number, status: UserStatus) => {
+    if (status === 'SUSPENDED') {
+      setRestrictionUserId(userId);
+      return;
+    }
+    if (!window.confirm('계정 정지를 해제할까요?')) {
+      return;
+    }
     setPendingId(userId);
     setActionError(null);
     try {
@@ -109,6 +119,9 @@ export function AdminUsersSection() {
   };
 
   const handleNicknameReset = async (userId: number) => {
+    if (!window.confirm('닉네임을 기본값으로 초기화할까요?')) {
+      return;
+    }
     setPendingId(userId);
     setActionError(null);
     try {
@@ -183,12 +196,14 @@ export function AdminUsersSection() {
               className="rounded-2xl border border-border/80 bg-card px-4 py-4 text-sm"
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <p className="font-medium text-ink">
-                    {member.nickname}
+                <div className="min-w-0 flex-1">
+                  <p className="min-w-0 font-medium text-ink">
+                    <span className="inline-block max-w-full truncate align-bottom">
+                      {member.nickname}
+                    </span>
                     <span className="ml-2 text-xs font-normal text-muted">#{member.id}</span>
                   </p>
-                  <p className="mt-1 text-xs text-muted">{member.email}</p>
+                  <p className="mt-1 break-all text-xs text-muted">{member.email}</p>
                   <p className="mt-1 text-xs text-muted">
                     가입 {new Date(member.createdAt).toLocaleDateString('ko-KR')}
                   </p>
@@ -201,7 +216,7 @@ export function AdminUsersSection() {
                     </p>
                   )}
                 </div>
-                <div className="flex flex-col gap-2 sm:flex-row">
+                <div className="flex w-full shrink-0 flex-col gap-2">
                   {canChangeRole && member.role !== 'SUPER_ADMIN' ? (
                     <select
                       className="rounded-lg border border-border bg-white px-3 py-2 text-xs"
@@ -279,7 +294,7 @@ export function AdminUsersSection() {
               {restrictionUserId === member.id && (
                 <div className="mt-3 rounded-[16px] border border-[#E7DFD2] bg-[#FFFCF7] p-3">
                   <p className="text-[12px] font-extrabold text-[#1E2621]">회원 제재 설정</p>
-                  <div className="mt-3 grid gap-2 sm:grid-cols-[120px_1fr]">
+                  <div className="mt-3 grid gap-2">
                     <select
                       value={restrictionDays}
                       onChange={(event) => setRestrictionDays(event.target.value)}

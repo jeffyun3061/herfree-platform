@@ -17,6 +17,11 @@ const EVENT_LABELS: Record<string, string> = {
   video_open: '영상 진입',
   signup_completed: '가입 완료',
   login_succeeded: '로그인 성공',
+  signup_click: '회원가입 클릭',
+  login_completed: '로그인 성공',
+  oauth_signup_started: '소셜 가입 시작',
+  oauth_signup_completed: '소셜 가입 완료',
+  oauth_login_completed: '소셜 로그인 성공',
   post_created: '글 작성',
   journal_created: '일지 작성',
   password_reset_requested: '재설정 요청',
@@ -40,9 +45,9 @@ export function AdminDashboardSection() {
   const topEvents = data.topEvents7d.slice(0, 6);
 
   return (
-    <section className="grid gap-4 lg:grid-cols-[1.05fr_1.25fr]">
+    <section className="grid gap-4">
       <div className="space-y-4">
-        <section className="rounded-[22px] bg-[#082B25] p-4 text-white shadow-[0_18px_38px_-26px_rgba(6,26,22,.55)] lg:p-5">
+        <section className="rounded-[22px] bg-[#082B25] p-4 text-white shadow-[0_18px_38px_-26px_rgba(6,26,22,.55)]">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#D8C691]/70">
@@ -77,7 +82,7 @@ export function AdminDashboardSection() {
       </div>
 
       <div className="space-y-4">
-        <section className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
+        <section className="grid grid-cols-2 gap-2.5">
           <StatCard label="회원" value={data.totalUsers} helper={`7일 +${formatNumber(data.newUsers7d)}`} />
           <StatCard label="게시글" value={data.activePosts} helper={`7일 +${formatNumber(data.newPosts7d)}`} />
           <StatCard label="댓글" value={data.activeComments} helper="활성 기준" />

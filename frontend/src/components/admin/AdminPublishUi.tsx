@@ -88,7 +88,7 @@ export function AdminListToolbar({
           검색
         </button>
       </form>
-      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+      <div className="mt-3 grid gap-3">
         <AdminChipGroup
           label="노출 상태"
           value={statusFilter === '' ? 'ALL' : statusFilter}
@@ -336,7 +336,11 @@ export function AdminManageRow({
           {title}
         </p>
         {showCuration && (
-          <div className="mt-2 rounded-[12px] border border-[#E9DFD1] bg-[#F8F1E6] p-2">
+          <details className="mt-2 rounded-[12px] border border-[#E9DFD1] bg-[#F8F1E6] p-2">
+            <summary className="cursor-pointer list-none text-[11px] font-bold text-[#4F574F] marker:hidden">
+              정렬·고정 설정
+            </summary>
+            <div className="mt-2">
             {sortOrder !== undefined && onSetSortOrder && (
               <label className="mb-1.5 flex items-center justify-between gap-2 rounded-lg border border-[#E2D8C8] bg-white px-2 py-1 text-[10px] font-semibold text-[#4F574F]">
                 순서
@@ -395,7 +399,8 @@ export function AdminManageRow({
                 {isFeatured ? '추천 해제' : '추천 등록'}
               </button>
             )}
-          </div>
+            </div>
+          </details>
         )}
         <div className="mt-2 grid grid-cols-3 gap-1.5">
           <button

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { MobileMenu } from '@/components/layout/MobileMenu';
 import { ShellMenuIcon, ShellSearchIcon, ShellUserIcon } from '@/components/layout/ShellTopIcons';
@@ -20,12 +20,6 @@ export function InlineTopActions({
   const inkClass = variant === 'onDark' ? 'text-white' : 'text-[#3C443E]';
   const iconButtonClass = `${iconButtonBase} ${inkClass}`;
 
-  useEffect(() => {
-    if (!isLoggedIn) {
-      setMenuOpen(false);
-    }
-  }, [isLoggedIn]);
-
   return (
     <>
       <div className={`flex h-8 shrink-0 items-center gap-[18px] ${inkClass} ${className}`}>
@@ -42,6 +36,15 @@ export function InlineTopActions({
             >
               로그인
             </Link>
+            <button
+              type="button"
+              onClick={() => setMenuOpen(true)}
+              aria-label="메뉴"
+              title="메뉴"
+              className={iconButtonClass}
+            >
+              <ShellMenuIcon />
+            </button>
           </>
         ) : (
           <>
@@ -62,17 +65,15 @@ export function InlineTopActions({
                 로그인
               </Link>
             )}
-            {isLoggedIn ? (
-              <button
-                type="button"
-                onClick={() => setMenuOpen(true)}
-                aria-label="메뉴"
-                title="메뉴"
-                className={iconButtonClass}
-              >
-                <ShellMenuIcon />
-              </button>
-            ) : null}
+            <button
+              type="button"
+              onClick={() => setMenuOpen(true)}
+              aria-label="메뉴"
+              title="메뉴"
+              className={iconButtonClass}
+            >
+              <ShellMenuIcon />
+            </button>
           </>
         )}
       </div>

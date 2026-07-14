@@ -3,13 +3,9 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
-import { useBoards } from '@/hooks/useBoards';
-import { getCommunityBoards, getCommunityBoardTabLabel } from '@/domain/board/privateBoard';
-import { isCommunityListRoute } from '@/lib/navigation';
 import { lockBodyScroll, unlockBodyScroll } from '@/lib/body-scroll-lock';
-import { cn } from '@/lib/cn';
 
 type MobileMenuProps = {
   open: boolean;
@@ -17,69 +13,101 @@ type MobileMenuProps = {
 };
 
 const SERVICE_LINKS = [
-  { href: '/', label: '홈' },
-  { href: '/community', label: '커뮤니티' },
-  { href: '/journal', label: '개인일지' },
-  { href: '/contents', label: '칼럼' },
-  { href: '/videos', label: '영상' },
-  { href: '/qna', label: 'FAQ' },
-  { href: '/consult', label: '1:1 비밀상담' },
-  { href: '/mypage', label: '마이페이지' },
+  { href: '/', label: '홈', description: '오늘 상태와 요약' },
+  { href: '/community', label: '커뮤니티', description: '같은 경험을 나누는 공간' },
+  { href: '/journal', label: '개인일지', description: '매일 컨디션 기록' },
+  { href: '/contents', label: '칼럼', description: '경험에서 나온 이야기' },
+  { href: '/qna', label: 'FAQ', description: '자주 묻는 질문' },
+  { href: '/consult', label: '1:1 비밀상담', description: '편하게 나누는 1:1' },
+  { href: '/mypage', label: '마이페이지', description: '내 활동과 기록' },
 ] as const;
 
 const GUIDE_LINKS = [
   { href: '/notice', label: '공지사항' },
   { href: '/terms', label: '이용약관' },
-  { href: '/privacy', label: '개인정보 처리방침' },
+  { href: '/privacy', label: '개인정보처리방침' },
 ] as const;
 
-function SectionTitle({ children }: { children: React.ReactNode }) {
+function MenuSectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <p className="px-0.5 pb-2.5 text-[12px] font-bold tracking-[0.04em] text-[#9A9F94]">{children}</p>
+    <p className="px-0.5 pb-1 pt-[22px] text-[12px] font-bold tracking-[0.04em] text-[#A08E6A]">
+      {children}
+    </p>
   );
 }
 
-function normalizeBoardLabel(label: string) {
-  return label.replace(/게시판|방/g, '').trim() || label;
-}
-
-function isServiceActive(pathname: string, href: string) {
-  if (href === '/') return pathname === '/';
-  if (href === '/community') {
-    return isCommunityListRoute(pathname) || pathname.startsWith('/community/');
-  }
-  if (href === '/journal') {
-    return pathname === '/journal' || pathname.startsWith('/record');
-  }
-  return pathname === href || pathname.startsWith(`${href}/`);
+function MenuItem({
+  href,
+  label,
+  description,
+  onClose,
+}: {
+  href: string;
+  label: string;
+  description?: string;
+  onClose: () => void;
+}) {
+  return (
+    <Link
+      href={href}
+      onClick={onClose}
+      className="flex min-h-[54px] items-center justify-between gap-3 border-b border-[#E7DECC] px-0.5 py-[15px] text-[#1E2621] last:border-b-0"
+    >
+      <span className="shrink-0 text-[15px] font-semibold tracking-normal">{label}</span>
+      {description ? (
+        <span className="min-w-0 truncate text-right text-[11.5px] font-medium text-[#A8A08E]">
+          {description}
+        </span>
+      ) : null}
+    </Link>
+  );
 }
 
 export function MobileMenu({ open, onClose }: MobileMenuProps) {
   const router = useRouter();
-  const pathname = usePathname();
   const { isLoggedIn, user, logout } = useAuth();
-  const { boards } = useBoards();
   const [mounted, setMounted] = useState(false);
+  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
     setMounted(true);
+    setPortalTarget(document.querySelector<HTMLElement>('.app-phone-shell'));
   }, []);
 
   useEffect(() => {
     if (!open) return;
+    const shell = document.querySelector<HTMLElement>('.app-phone-shell');
+    const bottomNav = document.querySelector<HTMLElement>('nav[aria-label="하단 메뉴"]');
+    const previousShellOverflowY = shell?.style.overflowY;
+    const previousShellOverscroll = shell?.style.overscrollBehavior;
+    const previousBottomNavVisibility = bottomNav?.style.visibility;
+    const previousBottomNavPointerEvents = bottomNav?.style.pointerEvents;
+
     lockBodyScroll();
-    return () => unlockBodyScroll();
+    if (shell) {
+      shell.style.overflowY = 'hidden';
+      shell.style.overscrollBehavior = 'contain';
+    }
+    if (bottomNav) {
+      bottomNav.style.visibility = 'hidden';
+      bottomNav.style.pointerEvents = 'none';
+    }
+
+    return () => {
+      if (shell) {
+        shell.style.overflowY = previousShellOverflowY ?? '';
+        shell.style.overscrollBehavior = previousShellOverscroll ?? '';
+      }
+      if (bottomNav) {
+        bottomNav.style.visibility = previousBottomNavVisibility ?? '';
+        bottomNav.style.pointerEvents = previousBottomNavPointerEvents ?? '';
+      }
+      unlockBodyScroll();
+    };
   }, [open]);
 
-  useEffect(() => {
-    if (!isLoggedIn && open) {
-      onClose();
-    }
-  }, [isLoggedIn, open, onClose]);
+  if (!open || !mounted || !portalTarget) return null;
 
-  if (!open || !mounted) return null;
-
-  const communityBoards = getCommunityBoards(boards);
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
 
   const handleLogout = () => {
@@ -92,163 +120,106 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[100] flex justify-center bg-[#F3EDE3] lg:bg-[rgba(7,22,18,.45)]"
+      className="absolute inset-0 z-[100] overflow-hidden rounded-[inherit] bg-[rgba(7,22,18,.40)] backdrop-blur-[2px]"
       role="dialog"
       aria-modal="true"
       aria-label="전체 메뉴"
     >
-      <button type="button" className="absolute inset-0 hidden lg:block" aria-label="메뉴 닫기" onClick={onClose} />
-      <div
-        className="hf-menu-panel relative flex h-full w-full max-w-app flex-col overflow-y-auto bg-[#F3EDE3] lg:my-8 lg:h-[min(844px,calc(100vh-4rem))] lg:rounded-[48px] lg:shadow-[0_50px_90px_-34px_rgba(24,34,28,.5)]"
+      <button type="button" className="absolute inset-0" aria-label="메뉴 닫기" onClick={onClose} />
+      <aside
+        className="hf-menu-panel absolute bottom-0 right-0 top-0 flex h-full w-[82%] max-w-[340px] animate-[hfMenuSlideIn_.28s_cubic-bezier(.2,.7,.3,1)_both] flex-col overflow-hidden rounded-bl-[30px] bg-[#F3EDE3] shadow-[-20px_0_50px_-20px_rgba(7,37,31,.5)]"
         onClick={(event) => event.stopPropagation()}
       >
-        <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="absolute -right-8 top-[34%] h-[340px] w-[210px] rounded-[46%] bg-[#E5C3A0]/42" />
-          <div className="absolute -right-20 top-[48%] h-[260px] w-[180px] rounded-[42%] bg-[#DDB896]/28" />
-        </div>
-
-        <div className="hf-screen-header-block pb-5">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0 pr-2">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#B5A690]">
-                HERFREE MENU
-              </p>
-              <h2 className="hf-display mt-1.5 text-[28px] font-extrabold leading-[1.15] tracking-[-0.02em] text-[#1E2621]">
-                전체 메뉴
-              </h2>
-              <p className="mt-2.5 max-w-[290px] text-[12.5px] leading-[1.7] text-[#9A9F94]">
-                익명 커뮤니티, 개인일지, 검증된 정보를 한곳에서 이어서 볼 수 있어요.
-              </p>
+        <div className="shrink-0 bg-[#07251F] px-[22px] pb-[18px] pt-[52px] text-white">
+          <div className="mb-3.5 flex items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <span className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full bg-white/10 text-[16px] font-bold text-[#F3EDE3]">
+                h.
+              </span>
+              <span className="truncate text-[16px] font-bold tracking-normal text-[#F3EDE3]">
+                헤르프리
+              </span>
             </div>
             <button
               type="button"
               onClick={onClose}
               aria-label="닫기"
-              className="flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-full bg-white text-[17px] leading-none text-[#A6ABA0] shadow-[0_4px_14px_-6px_rgba(20,30,25,.22)]"
+              className="flex h-8 w-8 shrink-0 items-center justify-center text-[28px] font-light leading-none text-[#F3EDE3]/80"
             >
-              ✕
+              ×
             </button>
           </div>
-        </div>
 
-        <section className="relative hf-page-x pb-5">
-          <SectionTitle>서비스</SectionTitle>
-          <div className="grid grid-cols-2 gap-2.5">
-            {SERVICE_LINKS.map((item) => {
-              const active = isServiceActive(pathname, item.href);
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={onClose}
-                  className={cn(
-                    'flex min-h-[52px] items-center justify-center rounded-[16px] px-2 py-3.5 text-center text-[14px] font-semibold leading-[1.25]',
-                    active
-                      ? 'bg-[#07251F] text-white shadow-[0_12px_24px_-14px_rgba(7,37,31,.55)]'
-                      : 'bg-white text-[#1E2621] shadow-[0_4px_14px_-8px_rgba(20,30,25,.14)]',
-                  )}
-                >
-                  {item.label}
-                </Link>
-              );
-            })}
-          </div>
-        </section>
-
-        {communityBoards.length > 0 && (
-          <section className="relative hf-page-x pb-5">
-            <SectionTitle>게시판 바로가기</SectionTitle>
-            <div className="flex flex-wrap gap-2">
-              {communityBoards.map((board) => {
-                const label = normalizeBoardLabel(getCommunityBoardTabLabel(board.boardType) ?? board.name);
-                return (
-                  <Link
-                    key={board.id}
-                    href={`/community/${board.id}`}
-                    onClick={onClose}
-                    className="rounded-full border border-[#EADFCB] bg-white px-3.5 py-2 text-[12.5px] font-medium text-[#3C443E]"
-                  >
-                    {label}
-                  </Link>
-                );
-              })}
-            </div>
-          </section>
-        )}
-
-        <section className="relative hf-page-x pb-5">
-          <SectionTitle>이용 안내</SectionTitle>
-          <div className="overflow-hidden rounded-[16px] border border-[#EADFCB] bg-white/70">
-            {GUIDE_LINKS.map((item, index) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={onClose}
-                className={cn(
-                  'flex items-center justify-between px-4 py-[15px] text-[14px] font-semibold text-[#1E2621]',
-                  index < GUIDE_LINKS.length - 1 && 'border-b border-[#EDE4D4]',
-                )}
-              >
-                <span>{item.label}</span>
-                <span className="text-[15px] text-[#CBD0C7]" aria-hidden>
-                  ›
-                </span>
-              </Link>
-            ))}
-            {isAdmin ? (
-              <Link
-                href="/admin?tab=dashboard"
-                onClick={onClose}
-                className="flex items-center justify-between border-t border-[#EDE4D4] px-4 py-[15px] text-[14px] font-semibold text-[#1E2621]"
-              >
-                <span>관리자 대시보드</span>
-                <span className="text-[15px] text-[#CBD0C7]" aria-hidden>
-                  ›
-                </span>
-              </Link>
-            ) : null}
-          </div>
-        </section>
-
-        <div className="relative mt-auto hf-page-x pb-[calc(34px+env(safe-area-inset-bottom))] pt-1">
           {isLoggedIn ? (
-            <div className="flex gap-2.5">
-              <Link
-                href="/mypage"
-                onClick={onClose}
-                className="flex flex-1 items-center justify-center rounded-[14px] border border-[#EADFCB] bg-white py-[15px] text-[14px] font-bold text-[#1E2621] shadow-[0_2px_8px_-6px_rgba(20,30,25,.12)]"
-              >
-                마이페이지
-              </Link>
-              <button
-                type="button"
-                onClick={() => void handleLogout()}
-                className="flex flex-1 items-center justify-center rounded-[14px] bg-[#07251F] py-[15px] text-[14px] font-bold text-white shadow-[0_14px_30px_-14px_rgba(7,37,31,.55)]"
-              >
-                로그아웃
-              </button>
-            </div>
+            <p className="text-[12.5px] text-[#F3EDE3]/70">담담한 하루를 함께 기록해요</p>
           ) : (
-            <div className="flex gap-2.5">
-              <Link
-                href="/login"
-                onClick={onClose}
-                className="flex flex-1 items-center justify-center rounded-[14px] border border-[#EADFCB] bg-white py-[15px] text-[14px] font-bold text-[#1E2621] shadow-[0_2px_8px_-6px_rgba(20,30,25,.12)]"
-              >
-                로그인
-              </Link>
-              <Link
-                href="/signup"
-                onClick={onClose}
-                className="flex flex-1 items-center justify-center rounded-[14px] bg-[#07251F] py-[15px] text-[14px] font-bold text-white shadow-[0_14px_30px_-14px_rgba(7,37,31,.55)]"
-              >
-                회원가입
-              </Link>
-            </div>
+            <>
+              <p className="text-[12px] text-[#F3EDE3]/60">익명 기반 비공개 커뮤니티</p>
+              <div className="mt-4 flex gap-[9px]">
+                <Link
+                  href="/login"
+                  onClick={onClose}
+                  className="flex flex-1 items-center justify-center rounded-[12px] border border-[#F3EDE3]/[0.28] bg-white/10 py-3 text-[13.5px] font-bold text-[#F3EDE3]"
+                >
+                  로그인
+                </Link>
+                <Link
+                  href="/signup"
+                  onClick={onClose}
+                  className="flex flex-1 items-center justify-center rounded-[12px] bg-[#F3EDE3] py-3 text-[13.5px] font-bold text-[#0B3B36]"
+                >
+                  회원가입
+                </Link>
+              </div>
+            </>
           )}
         </div>
-      </div>
+
+        <nav
+          className="hf-menu-panel flex-1 overflow-y-auto overscroll-contain px-[22px] pb-[calc(72px+env(safe-area-inset-bottom))] pt-2.5"
+          aria-label="전체 메뉴 링크"
+        >
+          {SERVICE_LINKS.map((item) => (
+            <MenuItem
+              key={item.href}
+              href={item.href}
+              label={item.label}
+              description={item.description}
+              onClose={onClose}
+            />
+          ))}
+
+          <MenuSectionTitle>이용 안내</MenuSectionTitle>
+          {GUIDE_LINKS.map((item) => (
+            <MenuItem key={item.href} href={item.href} label={item.label} onClose={onClose} />
+          ))}
+
+          {isAdmin ? (
+            <>
+              <MenuSectionTitle>운영</MenuSectionTitle>
+              <MenuItem href="/admin?tab=dashboard" label="관리자 대시보드" onClose={onClose} />
+            </>
+          ) : null}
+
+          {isLoggedIn ? (
+            <button
+              type="button"
+              onClick={() => void handleLogout()}
+              className="w-full py-6 text-center text-[13px] text-[#A8A08E]"
+            >
+              로그아웃
+            </button>
+          ) : null}
+
+        </nav>
+        <div
+          className="pointer-events-none absolute inset-x-0 bottom-0 flex h-[64px] items-end justify-center bg-gradient-to-t from-[#F3EDE3] via-[#F3EDE3]/95 to-[#F3EDE3]/0 pb-[calc(14px+env(safe-area-inset-bottom))]"
+          aria-hidden
+        >
+          <span className="h-[3px] w-12 rounded-full bg-[#D8CDB9]/75" />
+        </div>
+      </aside>
     </div>,
-    document.body,
+    portalTarget,
   );
 }

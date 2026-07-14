@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { MobileMenu } from '@/components/layout/MobileMenu';
@@ -47,12 +47,6 @@ export function MobileHeader() {
   const router = useRouter();
   const { header } = usePageHeaderContext() ?? {};
 
-  useEffect(() => {
-    if (!isLoggedIn) {
-      setMenuOpen(false);
-    }
-  }, [isLoggedIn]);
-
   const isTabRoot = pathname === '/' || Boolean(getMobileTabRootTitle(pathname));
   const shouldShowBack = Boolean(header?.showBack) || !isTabRoot;
   const showHeaderActions = !header?.showBack;
@@ -95,6 +89,15 @@ export function MobileHeader() {
                 >
                   로그인
                 </Link>
+                <button
+                  type="button"
+                  onClick={() => setMenuOpen(true)}
+                  className="flex h-8 w-8 items-center justify-center text-[#3C443E]"
+                  aria-label="메뉴"
+                  title="메뉴"
+                >
+                  <ShellMenuIcon />
+                </button>
               </>
             ) : (
               <>
@@ -115,17 +118,15 @@ export function MobileHeader() {
                     로그인
                   </Link>
                 )}
-                {isLoggedIn ? (
-                  <button
-                    type="button"
-                    onClick={() => setMenuOpen(true)}
-                    className="flex h-8 w-8 items-center justify-center text-[#3C443E]"
-                    aria-label="메뉴"
-                    title="메뉴"
-                  >
-                    <ShellMenuIcon />
-                  </button>
-                ) : null}
+                <button
+                  type="button"
+                  onClick={() => setMenuOpen(true)}
+                  className="flex h-8 w-8 items-center justify-center text-[#3C443E]"
+                  aria-label="메뉴"
+                  title="메뉴"
+                >
+                  <ShellMenuIcon />
+                </button>
               </>
             )
           ) : null}

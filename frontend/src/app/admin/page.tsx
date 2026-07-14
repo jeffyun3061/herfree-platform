@@ -26,9 +26,9 @@ const ALL_TABS: { id: AdminTab; label: string; minRole: 'moderator' | 'admin' | 
   { id: 'reports', label: '신고', minRole: 'moderator' },
   { id: 'moderation', label: '숨김 관리', minRole: 'moderator' },
   { id: 'journal', label: '일지 통계', minRole: 'admin' },
-  { id: 'notices', label: '공지 올리기', minRole: 'admin' },
-  { id: 'contents', label: '칼럼 올리기', minRole: 'moderator' },
-  { id: 'videos', label: '영상 등록', minRole: 'admin' },
+  { id: 'notices', label: '공지 관리', minRole: 'admin' },
+  { id: 'contents', label: '칼럼 관리', minRole: 'moderator' },
+  { id: 'videos', label: '영상 관리', minRole: 'admin' },
   { id: 'products', label: '제품', minRole: 'admin' },
   { id: 'users', label: '회원', minRole: 'admin' },
 ];
@@ -101,6 +101,17 @@ function AdminPageContent() {
     }
   }, [tabs, tab]);
 
+  const handleTabChange = (nextTab: AdminTab) => {
+    setTab(nextTab);
+    const nextParams = new URLSearchParams();
+    nextParams.set('tab', nextTab);
+    const userQuery = searchParams.get('q');
+    if (nextTab === 'users' && userQuery) {
+      nextParams.set('q', userQuery);
+    }
+    router.replace(`/admin?${nextParams.toString()}`, { scroll: false });
+  };
+
   if (!isReady) return <LoadingSpinner />;
 
   if (!isLoggedIn) return null;
@@ -169,7 +180,7 @@ function AdminPageContent() {
         </div>
       </section>
 
-      <div className="mx-auto max-w-[1180px] px-4 py-4 lg:px-6 lg:py-6">
+      <div className="mx-auto max-w-app px-4 py-4">
         <header className="mb-3 flex items-center justify-between gap-3">
           <BackButton className="bg-white text-[#123D37] shadow-[0_10px_24px_-20px_rgba(18,61,55,.65)] hover:bg-white" />
           <div className="min-w-0 flex-1">
@@ -191,7 +202,7 @@ function AdminPageContent() {
             <select
               id="admin-tab-select"
               value={tab}
-              onChange={(event) => setTab(event.target.value as AdminTab)}
+              onChange={(event) => handleTabChange(event.target.value as AdminTab)}
               className="h-11 min-w-0 flex-1 rounded-[14px] border border-[#E4D8C8] bg-white px-3 text-[13px] font-bold text-[#1E2621] outline-none focus:border-[#0B3B36]"
             >
               {tabs.map((item) => (

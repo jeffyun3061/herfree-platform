@@ -34,7 +34,8 @@ export function CommentItem({
     <article
       className={cn(
         'flex gap-2.5 border-t border-[#F2ECE1] py-3 first:border-t-0',
-        depth > 0 && 'ml-3 rounded-[14px] bg-[#F8F4EC] px-3 py-3',
+        depth > 0 && 'rounded-[14px] bg-[#F8F4EC] px-3 py-3',
+        depth === 1 && 'ml-3',
       )}
     >
       <span
@@ -44,7 +45,7 @@ export function CommentItem({
         🌙
       </span>
       <div className="min-w-0 flex-1">
-        <div className="flex items-start justify-between gap-2">
+        <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-[7px]">
               <span className="text-[12px] font-semibold text-[#2C342E]">
@@ -54,12 +55,12 @@ export function CommentItem({
                 {formatRelativeTime(comment.createdAt)}
               </span>
             </div>
-            <p className="mt-[3px] whitespace-pre-wrap text-[12.5px] leading-[1.6] text-[#5C645A]">
+            <p className="mt-[3px] whitespace-pre-wrap break-words text-[12.5px] leading-[1.6] text-[#5C645A]">
               {comment.content}
             </p>
           </div>
           {hasActions && (
-            <div className="flex shrink-0 items-center gap-0.5">
+            <div className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-0.5">
               {isLoggedIn && onReply && (
                 <Button variant="ghost" size="sm" onClick={() => onReply(comment.id)}>
                   답글

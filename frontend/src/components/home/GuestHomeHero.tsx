@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { PUBLIC_IMAGES } from '@/domain/assets/static';
 import { BrandMark } from '@/components/brand/BrandMark';
+import { InlineTopActions } from '@/components/layout/InlineTopActions';
 import { PublicStaticImage } from '@/components/ui/PublicStaticImage';
 
 export function GuestHomeHero() {
@@ -26,12 +27,7 @@ export function GuestHomeHero() {
           <BrandMark size="sm" variant="onDark" className="h-[30px] w-[30px]" />
         </Link>
 
-        <Link
-          href="/login"
-          className="relative z-10 whitespace-nowrap rounded-md px-1 py-2 text-[13.5px] font-medium text-[#F3EDE3]/95 [text-shadow:0_1px_8px_rgba(7,37,31,.65)]"
-        >
-          로그인
-        </Link>
+        <InlineTopActions variant="onDark" />
       </div>
 
       <div className="absolute inset-x-0 top-[74px] px-[26px]">

@@ -1,6 +1,6 @@
 'use client';
 
-import { useParams } from 'next/navigation';
+import { useParams, usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useMemo } from 'react';
 import { useContentDetail, useContentList } from '@/hooks/useContents';
@@ -10,9 +10,12 @@ import { MedicalDisclaimer } from '@/components/layout/MedicalDisclaimer';
 import { estimateReadMinutes, getContentPreview } from '@/domain/content/types';
 import { PUBLIC_IMAGES } from '@/domain/assets/static';
 import { getErrorMessage } from '@/lib/api/client';
+import { navigateBack } from '@/lib/navigateBack';
 
 export default function ContentDetailPage() {
   const params = useParams();
+  const pathname = usePathname();
+  const router = useRouter();
   const contentId = Number(params.contentId);
   const { content, isLoading, error } = useContentDetail(contentId);
   const { contentPage, isLoading: relatedLoading } = useContentList(content?.category, 6);
@@ -47,14 +50,15 @@ export default function ContentDetailPage() {
               className="absolute inset-0 h-full w-full object-cover"
             />
             <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,37,31,.08)_0%,rgba(7,37,31,.35)_42%,rgba(7,37,31,.88)_100%)]" />
-            <Link
-              href="/contents"
+            <button
+              type="button"
               aria-label="칼럼 목록으로 돌아가기"
               className="absolute left-4 z-10 text-[24px] leading-none text-white"
               style={{ top: 'var(--hf-page-pt)' }}
+              onClick={() => navigateBack(router, { pathname, fallbackHref: '/contents' })}
             >
               ‹
-            </Link>
+            </button>
             <div className="absolute inset-x-0 bottom-[18px] px-[22px] text-white">
               <span className="inline-block rounded-[7px] bg-white/[0.92] px-2.5 py-1 text-[12px] font-bold text-[#04342C]">
                 {content.category}
