@@ -31,7 +31,8 @@ public class PasswordResetMailService {
                 log.error("Password reset mail delivery blocked: SMTP is not configured in prod.");
                 throw new PasswordResetDeliveryException();
             }
-            log.info("[password-reset] reset email suppressed in {} mode for to={}", mailProperties.mode(), toEmail);
+            // 운영 로그에는 이메일, token, reset URL을 남기지 않는다.
+            log.info("[password-reset] reset email suppressed in {} mode.", mailProperties.mode());
         }
     }
 
@@ -51,7 +52,7 @@ public class PasswordResetMailService {
             helper.setText(buildEmailBody(resetUrl), false);
             mailSender.send(message);
         } catch (MessagingException | MailException e) {
-            log.error("Password reset mail delivery failed for to={}", toEmail, e);
+            log.error("Password reset mail delivery failed.", e);
             throw new PasswordResetDeliveryException();
         }
     }

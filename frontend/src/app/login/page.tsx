@@ -127,10 +127,10 @@ function LoginForm() {
               onChange={(e) => setRememberEmail(e.target.checked)}
               className="h-4 w-4 rounded border-[#ECE5D8] text-[#0B3B36] focus:ring-[#0B3B36]"
             />
-            아이디 저장
+            이메일 저장
           </label>
           <Link href="/forgot-password" className="text-[12px] text-[#A6ABA0]">
-            비밀번호를 잊으셨나요?
+            이메일/비밀번호 찾기
           </Link>
         </div>
 

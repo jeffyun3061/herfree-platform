@@ -41,18 +41,17 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <TopBar title="비밀번호 찾기" showBack />
+      <TopBar title="계정 찾기" showBack />
       <div className="mx-auto max-w-app px-5 py-8">
         <div className="mb-8 flex justify-center">
           <BrandMark variant="auth" size="md" />
         </div>
-        <h2 className="text-xl font-bold text-ink">비밀번호를 잊으셨나요?</h2>
+        <h2 className="text-xl font-bold text-ink">이메일로 비밀번호 재설정</h2>
         <p className="mt-2 text-sm leading-relaxed text-wrtn-muted">
-          가입한 이메일을 입력해 주세요. 등록된 이메일이면 비밀번호 재설정 안내 메일을 보내 드립니다.
+          헤르프리 아이디는 가입 이메일입니다. 가입한 이메일을 입력하면 비밀번호 재설정 안내를 보내 드립니다.
         </p>
         <p className="mt-2 text-xs leading-relaxed text-wrtn-muted">
-          로컬 개발 환경에서는 메일 대신 백엔드 콘솔에 재설정 링크가 출력됩니다. 운영 환경에서는
-          SMTP 설정 후 실제 메일이 발송됩니다.
+          보안을 위해 가입 여부는 화면에 표시하지 않습니다. 메일이 오지 않으면 스팸함과 입력한 이메일을 확인해 주세요.
         </p>
 
         <form onSubmit={(e) => void handleSubmit(e)} className="mt-6">
@@ -74,8 +73,7 @@ export default function ForgotPasswordPage() {
             >
               {successMessage}
               <p className="mt-2 text-xs text-wrtn-muted">
-                메일이 보이지 않으면 스팸함을 확인해 주세요. 로컬에서는 백엔드 터미널 로그의
-                resetUrl을 사용하세요.
+                재설정 링크는 일정 시간이 지나면 만료됩니다. 링크가 만료되면 다시 요청해 주세요.
               </p>
             </div>
           )}
@@ -100,6 +98,13 @@ export default function ForgotPasswordPage() {
         <Link href="/login" className="mt-6 block text-center text-sm font-semibold text-primary">
           로그인으로 돌아가기
         </Link>
+
+        <div className="mt-6 rounded-2xl border border-[#ECE5D8] bg-[#FBF8F1] px-4 py-3">
+          <p className="text-sm font-semibold text-ink">가입 이메일이 기억나지 않나요?</p>
+          <p className="mt-1 text-xs leading-relaxed text-wrtn-muted">
+            자동 조회는 계정 노출 위험이 있어 제공하지 않습니다. 가입 경로와 예상 이메일을 정리해 운영자에게 문의해 주세요.
+          </p>
+        </div>
       </div>
     </div>
   );
