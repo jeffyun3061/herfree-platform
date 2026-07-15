@@ -9,9 +9,10 @@ import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { AdminPublishFab, AdminPublishLink } from '@/components/admin/AdminPublishLink';
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { getErrorMessage } from '@/lib/api/client';
+import { Pagination } from '@/components/common/Pagination';
 
 export default function VideosPage() {
-  const { videoPage, isLoading, error } = useVideos(30);
+  const { videoPage, page, setPage, isLoading, error } = useVideos(12);
   const { boards } = useBoards();
 
   const boardNameById = useMemo(() => {
@@ -21,6 +22,7 @@ export default function VideosPage() {
   }, [boards]);
 
   const featuredVideoId = useMemo(() => {
+    if (page !== 0) return null;
     if (videoPage.content.length === 0) return null;
     const featured = videoPage.content.find((video) => video.isFeatured);
     if (featured) return featured.id;
@@ -29,7 +31,7 @@ export default function VideosPage() {
       const videoTime = new Date(video.createdAt).getTime();
       return videoTime > latestTime ? video : latest;
     }, videoPage.content[0]).id;
-  }, [videoPage.content]);
+  }, [page, videoPage.content]);
 
   const featuredVideo = useMemo(() => {
     if (featuredVideoId == null) return null;
@@ -107,6 +109,10 @@ export default function VideosPage() {
             )}
           </div>
         )}
+
+        <div className="px-5">
+          <Pagination page={page} totalPages={videoPage.totalPages} onPageChange={setPage} />
+        </div>
       </div>
       <AdminPublishFab tab="videos" label="영상 등록" />
     </>

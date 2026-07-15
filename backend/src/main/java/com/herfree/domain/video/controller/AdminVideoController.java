@@ -68,7 +68,7 @@ public class AdminVideoController {
     @PatchMapping("/{videoId}/curation")
     public ResponseEntity<ApiResponse<VideoResponse>> updateCuration(
             @PathVariable Long videoId,
-            @RequestBody VideoCurationRequest request
+            @Valid @RequestBody VideoCurationRequest request
     ) {
         return ResponseEntity.ok(ApiResponse.success(videoService.updateCuration(videoId, request)));
     }

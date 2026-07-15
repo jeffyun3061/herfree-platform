@@ -278,6 +278,7 @@ export function AdminVideosSection() {
             required
             placeholder="영상 제목"
             value={form.title}
+            maxLength={200}
             onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
           />
 
@@ -286,6 +287,7 @@ export function AdminVideosSection() {
             required
             placeholder="https://www.youtube.com/watch?v=..."
             value={form.youtubeUrl}
+            maxLength={500}
             onChange={(e) => setForm((prev) => ({ ...prev, youtubeUrl: e.target.value }))}
           />
           {form.youtubeUrl.trim() && !previewVideoId && (
@@ -307,6 +309,7 @@ export function AdminVideosSection() {
             rows={3}
             placeholder="영상에 대한 짧은 설명"
             value={form.description}
+            maxLength={5000}
             onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
           />
 

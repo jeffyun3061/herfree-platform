@@ -7,13 +7,19 @@ import com.herfree.domain.content.dto.request.ContentVisibilityRequest;
 import com.herfree.domain.content.dto.response.ContentResponse;
 import com.herfree.domain.content.entity.Content;
 import com.herfree.domain.content.entity.ContentStatus;
+import com.herfree.domain.content.entity.ContentType;
 import com.herfree.domain.content.exception.ContentNotFoundException;
 import com.herfree.domain.content.repository.ContentRepository;
 import com.herfree.domain.user.entity.User;
 import com.herfree.domain.user.exception.UserNotFoundException;
 import com.herfree.domain.user.repository.UserRepository;
 import com.herfree.global.util.ContentWritePolicy;
+import com.herfree.global.util.StaffRolePolicy;
+import com.herfree.global.storage.PostImageStorageService;
+import com.herfree.global.exception.BusinessException;
+import com.herfree.global.exception.ErrorCode;
 import java.util.List;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -27,6 +33,7 @@ public class ContentService {
 
     private final ContentRepository contentRepository;
     private final UserRepository userRepository;
+    private final PostImageStorageService postImageStorageService;
 
     @Transactional(readOnly = true)
     public Page<ContentResponse> getContents(String category, Pageable pageable) {
@@ -44,17 +51,21 @@ public class ContentService {
 
     @Transactional(readOnly = true)
     public Page<ContentResponse> getAdminContents(
+            Long actorId,
             String keyword,
             ContentStatus statusFilter,
             String category,
             Pageable pageable
     ) {
+        User actor = findContentWriter(actorId);
+        Long authorScope = StaffRolePolicy.isStaff(actor.getRole()) ? null : actorId;
         List<ContentStatus> statuses = statusFilter != null
                 ? List.of(statusFilter)
                 : List.of(ContentStatus.ACTIVE, ContentStatus.HIDDEN);
 
         return contentRepository.searchAdminContents(
                         statuses,
+                        authorScope,
                         StringUtils.hasText(category) ? category.trim() : null,
                         StringUtils.hasText(keyword) ? keyword.trim() : null,
                         pageable)
@@ -70,17 +81,17 @@ public class ContentService {
 
     @Transactional
     public ContentResponse createContent(Long authorId, ContentCreateRequest request) {
-        User author = userRepository.findById(authorId)
-                .orElseThrow(UserNotFoundException::new);
-        ContentWritePolicy.assertCanWrite(author.getRole());
+        User author = findContentWriter(authorId);
+        String imageUrl = normalizeImageUrl(request.imageUrl());
+        postImageStorageService.assertImageUrlAllowed(authorId, imageUrl);
 
         Content content = Content.builder()
                 .author(author)
-                .title(request.title())
-                .content(request.content())
-                .imageUrl(normalizeImageUrl(request.imageUrl()))
-                .category(request.category())
-                .contentType(request.contentType())
+                .title(request.title().trim())
+                .content(request.content().trim())
+                .imageUrl(imageUrl)
+                .category(request.category().trim())
+                .contentType(resolveContentType(author, request.contentType()))
                 .build();
         content.updateSortOrder(
                 contentRepository.findTopByOrderBySortOrderDesc()
@@ -91,21 +102,25 @@ public class ContentService {
     }
 
     @Transactional
-    public ContentResponse updateContent(Long contentId, ContentUpdateRequest request) {
-        Content content = findContentForAdmin(contentId);
-        content.update(request.title(), request.content(), request.category(), normalizeImageUrl(request.imageUrl()));
+    public ContentResponse updateContent(Long actorId, Long contentId, ContentUpdateRequest request) {
+        Content content = findContentForManager(actorId, contentId);
+        String imageUrl = normalizeImageUrl(request.imageUrl());
+        if (StringUtils.hasText(imageUrl) && !Objects.equals(content.getImageUrl(), imageUrl)) {
+            postImageStorageService.assertImageUrlAllowed(actorId, imageUrl);
+        }
+        content.update(request.title().trim(), request.content().trim(), request.category().trim(), imageUrl);
         return ContentResponse.from(content);
     }
 
     @Transactional
-    public void hideContent(Long contentId) {
-        Content content = findContentForAdmin(contentId);
+    public void hideContent(Long actorId, Long contentId) {
+        Content content = findContentForManager(actorId, contentId);
         content.hide();
     }
 
     @Transactional
-    public ContentResponse updateVisibility(Long contentId, ContentVisibilityRequest request) {
-        Content content = findContentForAdmin(contentId);
+    public ContentResponse updateVisibility(Long actorId, Long contentId, ContentVisibilityRequest request) {
+        Content content = findContentForManager(actorId, contentId);
         if (Boolean.TRUE.equals(request.isVisible())) {
             content.show();
         } else {
@@ -115,8 +130,8 @@ public class ContentService {
     }
 
     @Transactional
-    public ContentResponse updateCuration(Long contentId, ContentCurationRequest request) {
-        Content content = findContentForAdmin(contentId);
+    public ContentResponse updateCuration(Long actorId, Long contentId, ContentCurationRequest request) {
+        Content content = findContentForManager(actorId, contentId);
         if (request.sortOrder() != null) {
             content.updateSortOrder(request.sortOrder());
         }
@@ -127,15 +142,43 @@ public class ContentService {
     }
 
     @Transactional
-    public void deleteContent(Long contentId) {
-        Content content = findContentForAdmin(contentId);
+    public void deleteContent(Long actorId, Long contentId) {
+        Content content = findContentForManager(actorId, contentId);
         content.delete();
     }
 
-    private Content findContentForAdmin(Long contentId) {
-        return contentRepository.findById(contentId)
-                .filter(content -> content.getStatus() != ContentStatus.DELETED)
+    private Content findContentForManager(Long actorId, Long contentId) {
+        User actor = findContentWriter(actorId);
+        Content content = contentRepository.findById(contentId)
+                .filter(item -> item.getStatus() != ContentStatus.DELETED)
                 .orElseThrow(ContentNotFoundException::new);
+        if (!StaffRolePolicy.isStaff(actor.getRole()) && !content.getAuthor().getId().equals(actorId)) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED_ACCESS);
+        }
+        return content;
+    }
+
+    private User findContentWriter(Long userId) {
+        User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
+        ContentWritePolicy.assertCanWrite(user.getRole());
+        return user;
+    }
+
+    private String resolveContentType(User author, String requestedType) {
+        return switch (author.getRole()) {
+            case DOCTOR -> ContentType.DOCTOR.name();
+            case CREATOR -> ContentType.CREATOR.name();
+            default -> {
+                if (!StringUtils.hasText(requestedType)) {
+                    throw new BusinessException(ErrorCode.INVALID_INPUT);
+                }
+                try {
+                    yield ContentType.valueOf(requestedType.trim().toUpperCase()).name();
+                } catch (IllegalArgumentException ex) {
+                    throw new BusinessException(ErrorCode.INVALID_INPUT);
+                }
+            }
+        };
     }
 
     private String normalizeImageUrl(String imageUrl) {

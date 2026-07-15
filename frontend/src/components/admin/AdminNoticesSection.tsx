@@ -242,6 +242,7 @@ export function AdminNoticesSection() {
             required
             placeholder="공지 제목"
             value={form.title}
+            maxLength={200}
             onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
           />
 
@@ -251,6 +252,7 @@ export function AdminNoticesSection() {
             rows={10}
             placeholder="공지 본문"
             value={form.content}
+            maxLength={15000}
             onChange={(e) => setForm((prev) => ({ ...prev, content: e.target.value }))}
           />
 

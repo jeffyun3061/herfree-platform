@@ -1,6 +1,7 @@
 package com.herfree.domain.video.service;
 
 import com.herfree.domain.board.entity.Board;
+import com.herfree.domain.board.exception.BoardNotFoundException;
 import com.herfree.domain.board.repository.BoardRepository;
 import com.herfree.domain.video.dto.request.VideoCreateRequest;
 import com.herfree.domain.video.dto.request.VideoCurationRequest;
@@ -11,6 +12,8 @@ import com.herfree.domain.video.entity.Video;
 import com.herfree.domain.video.exception.VideoNotFoundException;
 import com.herfree.domain.video.repository.VideoRepository;
 import com.herfree.global.util.YoutubeUtils;
+import com.herfree.global.exception.BusinessException;
+import com.herfree.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -51,23 +54,25 @@ public class VideoService {
     public VideoResponse createVideo(VideoCreateRequest request) {
         // URL에서 videoId를 파싱해 저장한다 — 임베드·썸네일 생성 시 재파싱 비용을 없앤다
         String videoId = YoutubeUtils.extractVideoId(request.youtubeUrl());
+        if (!StringUtils.hasText(videoId)) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT, "올바른 YouTube HTTPS 주소를 입력해 주세요.");
+        }
 
         Board relatedBoard = null;
         if (request.relatedBoardId() != null) {
-            relatedBoard = boardRepository.findById(request.relatedBoardId()).orElse(null);
+            relatedBoard = boardRepository.findById(request.relatedBoardId())
+                    .orElseThrow(BoardNotFoundException::new);
         }
 
-        String thumbnailUrl = request.thumbnailUrl();
-        if (thumbnailUrl == null || thumbnailUrl.isBlank()) {
-            thumbnailUrl = YoutubeUtils.defaultThumbnailUrl(videoId);
-        }
+        // 외부 추적 이미지가 저장되지 않도록 썸네일은 검증된 영상 ID로만 생성한다.
+        String thumbnailUrl = YoutubeUtils.defaultThumbnailUrl(videoId);
 
         Video video = Video.builder()
-                .title(request.title())
-                .youtubeUrl(request.youtubeUrl())
+                .title(request.title().trim())
+                .youtubeUrl(request.youtubeUrl().trim())
                 .youtubeVideoId(videoId)
                 .thumbnailUrl(thumbnailUrl)
-                .description(request.description())
+                .description(normalizeOptionalText(request.description()))
                 .relatedBoard(relatedBoard)
                 .build();
         video.updateSortOrder(
@@ -84,8 +89,11 @@ public class VideoService {
                 .orElseThrow(VideoNotFoundException::new);
 
         String newVideoId = YoutubeUtils.extractVideoId(request.youtubeUrl());
-        video.update(request.title(), request.youtubeUrl(), newVideoId,
-                request.thumbnailUrl(), request.description());
+        if (!StringUtils.hasText(newVideoId)) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT, "올바른 YouTube HTTPS 주소를 입력해 주세요.");
+        }
+        video.update(request.title().trim(), request.youtubeUrl().trim(), newVideoId,
+                YoutubeUtils.defaultThumbnailUrl(newVideoId), normalizeOptionalText(request.description()));
 
         return VideoResponse.from(video);
     }
@@ -121,6 +129,10 @@ public class VideoService {
         Video video = videoRepository.findById(videoId)
                 .orElseThrow(VideoNotFoundException::new);
         videoRepository.delete(video);
+    }
+
+    private String normalizeOptionalText(String value) {
+        return StringUtils.hasText(value) ? value.trim() : null;
     }
 
 }

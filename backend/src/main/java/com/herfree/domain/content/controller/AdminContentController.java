@@ -35,13 +35,14 @@ public class AdminContentController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<Page<ContentResponse>>> getContents(
+            @AuthenticationPrincipal Long actorId,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) ContentStatus status,
             @RequestParam(required = false) String category,
             @PageableDefault(size = 20) Pageable pageable
     ) {
         return ResponseEntity.ok(
-                ApiResponse.success(contentService.getAdminContents(keyword, status, category, pageable)));
+                ApiResponse.success(contentService.getAdminContents(actorId, keyword, status, category, pageable)));
     }
 
     @PostMapping
@@ -55,37 +56,46 @@ public class AdminContentController {
 
     @PatchMapping("/{contentId}")
     public ResponseEntity<ApiResponse<ContentResponse>> updateContent(
+            @AuthenticationPrincipal Long actorId,
             @PathVariable Long contentId,
             @Valid @RequestBody ContentUpdateRequest request
     ) {
-        return ResponseEntity.ok(ApiResponse.success(contentService.updateContent(contentId, request)));
+        return ResponseEntity.ok(ApiResponse.success(contentService.updateContent(actorId, contentId, request)));
     }
 
     @PatchMapping("/{contentId}/hide")
-    public ResponseEntity<ApiResponse<Void>> hideContent(@PathVariable Long contentId) {
-        contentService.hideContent(contentId);
+    public ResponseEntity<ApiResponse<Void>> hideContent(
+            @AuthenticationPrincipal Long actorId,
+            @PathVariable Long contentId
+    ) {
+        contentService.hideContent(actorId, contentId);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @PatchMapping("/{contentId}/visibility")
     public ResponseEntity<ApiResponse<ContentResponse>> updateVisibility(
+            @AuthenticationPrincipal Long actorId,
             @PathVariable Long contentId,
             @Valid @RequestBody ContentVisibilityRequest request
     ) {
-        return ResponseEntity.ok(ApiResponse.success(contentService.updateVisibility(contentId, request)));
+        return ResponseEntity.ok(ApiResponse.success(contentService.updateVisibility(actorId, contentId, request)));
     }
 
     @PatchMapping("/{contentId}/curation")
     public ResponseEntity<ApiResponse<ContentResponse>> updateCuration(
+            @AuthenticationPrincipal Long actorId,
             @PathVariable Long contentId,
-            @RequestBody ContentCurationRequest request
+            @Valid @RequestBody ContentCurationRequest request
     ) {
-        return ResponseEntity.ok(ApiResponse.success(contentService.updateCuration(contentId, request)));
+        return ResponseEntity.ok(ApiResponse.success(contentService.updateCuration(actorId, contentId, request)));
     }
 
     @DeleteMapping("/{contentId}")
-    public ResponseEntity<ApiResponse<Void>> deleteContent(@PathVariable Long contentId) {
-        contentService.deleteContent(contentId);
+    public ResponseEntity<ApiResponse<Void>> deleteContent(
+            @AuthenticationPrincipal Long actorId,
+            @PathVariable Long contentId
+    ) {
+        contentService.deleteContent(actorId, contentId);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

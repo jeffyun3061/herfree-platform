@@ -28,12 +28,14 @@ public interface ContentRepository extends JpaRepository<Content, Long> {
     @Query("""
             SELECT c FROM Content c
             WHERE c.status IN :statuses
+            AND (:authorId IS NULL OR c.author.id = :authorId)
             AND (:category IS NULL OR :category = '' OR c.category = :category)
             AND (:keyword IS NULL OR :keyword = '' OR LOWER(c.title) LIKE LOWER(CONCAT('%', :keyword, '%')))
             ORDER BY c.isPinned DESC, c.sortOrder DESC, c.createdAt DESC
             """)
     Page<Content> searchAdminContents(
             @Param("statuses") Collection<ContentStatus> statuses,
+            @Param("authorId") Long authorId,
             @Param("category") String category,
             @Param("keyword") String keyword,
             Pageable pageable);

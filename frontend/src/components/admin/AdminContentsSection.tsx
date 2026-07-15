@@ -32,6 +32,7 @@ import type { AdminModerationStatus } from '@/lib/api/admin';
 import { swapSortOrderWithNeighbor } from '@/lib/adminCuration';
 import { getErrorMessage } from '@/lib/api/client';
 import * as adminApi from '@/lib/api/admin';
+import { useAuth } from '@/hooks/useAuth';
 
 const EMPTY_FORM = {
   title: '',
@@ -48,6 +49,9 @@ function formatContentDate(iso: string): string {
 }
 
 export function AdminContentsSection() {
+  const { user } = useAuth();
+  const lockedContentType: ContentAuthorType | null =
+    user?.role === 'DOCTOR' ? 'DOCTOR' : user?.role === 'CREATOR' ? 'CREATOR' : null;
   const [mode, setMode] = useState<AdminSectionMode>('list');
   const [page, setPage] = useState(0);
   const [searchInput, setSearchInput] = useState('');
@@ -97,7 +101,7 @@ export function AdminContentsSection() {
           content: form.content.trim(),
           imageUrl: form.imageUrl?.trim() || undefined,
           category: form.category,
-          contentType: form.contentType,
+          contentType: lockedContentType ?? form.contentType,
         });
       }
       resetForm();
@@ -291,6 +295,7 @@ export function AdminContentsSection() {
             required
             placeholder="예) 재발 전에 챙기면 좋은 수면 루틴"
             value={form.title}
+            maxLength={200}
             onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
           />
 
@@ -301,7 +306,7 @@ export function AdminContentsSection() {
             onChange={(category) => setForm((prev) => ({ ...prev, category }))}
           />
 
-          {!editingId && (
+          {!editingId && !lockedContentType && (
             <AdminChipGroup
               label="작성 주체 표시"
               value={form.contentType}
@@ -325,6 +330,7 @@ export function AdminContentsSection() {
             rows={9}
             placeholder="칼럼 본문을 입력하세요. 줄바꿈이 그대로 반영됩니다."
             value={form.content}
+            maxLength={15000}
             onChange={(e) => setForm((prev) => ({ ...prev, content: e.target.value }))}
             className="min-h-[190px]"
           />
@@ -342,7 +348,7 @@ export function AdminContentsSection() {
               <div className="mt-2 flex items-center gap-2">
                 <Badge variant="gold">{form.category}</Badge>
                 <span className="text-[10px] text-muted">
-                  {getContentTypeLabel(form.contentType)}
+                  {getContentTypeLabel(lockedContentType ?? form.contentType)}
                 </span>
               </div>
               <p className="mt-2 text-[13px] font-medium text-cream-foreground">{form.title}</p>

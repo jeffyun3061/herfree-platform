@@ -4,7 +4,7 @@ type VideoPlayerSectionProps = {
 };
 
 export function VideoPlayerSection({ youtubeVideoId, title }: VideoPlayerSectionProps) {
-  const embedSrc = `https://www.youtube.com/embed/${youtubeVideoId}`;
+  const embedSrc = `https://www.youtube-nocookie.com/embed/${youtubeVideoId}`;
 
   return (
     <div className="overflow-hidden rounded-[16px] border border-[#E7DFD2] bg-black shadow-[0_12px_28px_-22px_rgba(7,37,31,.45)]">
@@ -12,6 +12,8 @@ export function VideoPlayerSection({ youtubeVideoId, title }: VideoPlayerSection
         src={embedSrc}
         title={title}
         className="aspect-video w-full"
+        loading="lazy"
+        referrerPolicy="strict-origin-when-cross-origin"
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
         allowFullScreen
       />

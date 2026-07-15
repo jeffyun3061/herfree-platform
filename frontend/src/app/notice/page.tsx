@@ -7,6 +7,9 @@ import { usePostList } from '@/hooks/usePosts';
 import { formatRelativeTime } from '@/domain/common/format';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { ErrorMessage } from '@/components/ui/ErrorMessage';
+import { Pagination } from '@/components/common/Pagination';
+import { getErrorMessage } from '@/lib/api/client';
 
 export default function NoticePage() {
   const { boards } = useBoards();
@@ -14,7 +17,7 @@ export default function NoticePage() {
     () => boards.find((board) => board.boardType === 'NOTICE')?.id ?? null,
     [boards],
   );
-  const { postPage, isLoading } = usePostList(
+  const { postPage, page, setPage, isLoading, error } = usePostList(
     noticeBoardId,
     20,
     '',
@@ -44,6 +47,10 @@ export default function NoticePage() {
           <div className="px-4 py-8">
             <LoadingSpinner label="공지사항을 불러오는 중..." />
           </div>
+        ) : error ? (
+          <div className="px-4 py-8">
+            <ErrorMessage message={getErrorMessage(error)} />
+          </div>
         ) : postPage.content.length > 0 ? (
           postPage.content.map((post, index) => (
             <Link
@@ -53,7 +60,7 @@ export default function NoticePage() {
             >
               <div className="flex items-start gap-3">
                 <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0B3B36] text-[14px] font-black text-[#F0C778]">
-                  {index === 0 ? '!' : index + 1}
+                  {page === 0 && index === 0 ? '!' : page * 20 + index + 1}
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
@@ -86,6 +93,7 @@ export default function NoticePage() {
           </div>
         )}
       </section>
+      <Pagination page={page} totalPages={postPage.totalPages} onPageChange={setPage} />
       </main>
     </>
   );

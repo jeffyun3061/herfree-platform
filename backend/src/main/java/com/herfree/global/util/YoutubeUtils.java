@@ -1,9 +1,20 @@
 package com.herfree.global.util;
 
+import java.net.URI;
+import java.util.Locale;
+import java.util.Set;
+import java.util.regex.Pattern;
+
 // 유튜브 URL 파싱 유틸리티 — Spring Bean이 아닌 순수 정적 메서드로 제공한다.
 // VideoService 외에 다른 도메인(예: Content)에서도 유튜브 URL을 다룰 때 재사용할 수 있도록
 // global/util로 분리했다.
 public final class YoutubeUtils {
+
+    private static final Pattern VIDEO_ID_PATTERN = Pattern.compile("^[A-Za-z0-9_-]{11}$");
+    private static final Set<String> YOUTUBE_HOSTS = Set.of(
+            "youtube.com", "www.youtube.com", "m.youtube.com", "music.youtube.com",
+            "youtube-nocookie.com", "www.youtube-nocookie.com"
+    );
 
     private YoutubeUtils() {
         // 인스턴스 생성을 막아 static 유틸리티 클래스 계약을 명시한다
@@ -24,32 +35,56 @@ public final class YoutubeUtils {
         if (url == null || url.isBlank()) {
             return "";
         }
+        try {
+            URI uri = URI.create(url.trim());
+            if (!"https".equalsIgnoreCase(uri.getScheme()) || uri.getHost() == null) {
+                return "";
+            }
 
-        // youtu.be 단축 URL 처리
-        if (url.contains("youtu.be/")) {
-            String[] parts = url.split("youtu.be/");
-            if (parts.length > 1) {
-                return parts[1].split("[?&]")[0];
+            String host = uri.getHost().toLowerCase(Locale.ROOT);
+            String candidate;
+            if ("youtu.be".equals(host) || "www.youtu.be".equals(host)) {
+                candidate = firstPathSegment(uri.getPath());
+            } else if (YOUTUBE_HOSTS.contains(host)) {
+                candidate = extractFromYoutubeUri(uri);
+            } else {
+                return "";
+            }
+            return VIDEO_ID_PATTERN.matcher(candidate).matches() ? candidate : "";
+        } catch (IllegalArgumentException ex) {
+            return "";
+        }
+    }
+
+    private static String extractFromYoutubeUri(URI uri) {
+        String path = uri.getPath() == null ? "" : uri.getPath();
+        if ("/watch".equals(path)) {
+            String query = uri.getRawQuery();
+            if (query != null) {
+                for (String pair : query.split("&")) {
+                    String[] keyValue = pair.split("=", 2);
+                    if (keyValue.length == 2 && "v".equals(keyValue[0])) {
+                        return keyValue[1];
+                    }
+                }
+            }
+            return "";
+        }
+        for (String prefix : new String[]{"/embed/", "/shorts/", "/live/"}) {
+            if (path.startsWith(prefix)) {
+                return firstPathSegment(path.substring(prefix.length()));
             }
         }
-
-        // watch?v= 형식 처리
-        if (url.contains("v=")) {
-            String[] parts = url.split("v=");
-            if (parts.length > 1) {
-                return parts[1].split("[?&]")[0];
-            }
-        }
-
-        // embed/ 형식 처리
-        if (url.contains("/embed/")) {
-            String[] parts = url.split("/embed/");
-            if (parts.length > 1) {
-                return parts[1].split("[?&]")[0];
-            }
-        }
-
         return "";
+    }
+
+    private static String firstPathSegment(String path) {
+        if (path == null) {
+            return "";
+        }
+        String normalized = path.startsWith("/") ? path.substring(1) : path;
+        int slash = normalized.indexOf('/');
+        return slash >= 0 ? normalized.substring(0, slash) : normalized;
     }
 
     public static String defaultThumbnailUrl(String videoId) {

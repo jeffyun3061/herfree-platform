@@ -71,7 +71,7 @@ public class AdminNoticeController {
     @PatchMapping("/{postId}/curation")
     public ResponseEntity<ApiResponse<AdminNoticeResponse>> updateCuration(
             @PathVariable Long postId,
-            @RequestBody NoticeCurationRequest request
+            @Valid @RequestBody NoticeCurationRequest request
     ) {
         return ResponseEntity.ok(ApiResponse.success(adminNoticeService.updateCuration(postId, request)));
     }
