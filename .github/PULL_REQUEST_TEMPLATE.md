@@ -16,6 +16,7 @@
 - [ ] backend `.\gradlew.bat build`
 - [ ] frontend `npm run lint`
 - [ ] frontend `npm run build`
+- [ ] `node scripts/check-secrets.mjs --all`
 - [ ] API/DB/운영 설정 변경 시 문서 갱신
 - [ ] 배포 후 smoke test가 필요한 항목을 적음
 

@@ -27,6 +27,20 @@ backend/src/main/resources/application-prod.yml
 frontend/.env.local
 frontend/.env.production
 
+# 같은 파일이 하위 폴더에 복사되어도 추적하지 않는다.
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.*.example
+**/local-secrets.yml
+**/application-local.yml
+**/application-prod.yml
+**/application-secret.yml
+**/secrets/**
+*.key
+*.jks
+*.keystore
+
 # AWS / credential exports (any folder)
 **/*accessKeys*.csv
 **/*access*key*.csv
