@@ -75,6 +75,9 @@ public class SecurityConfig {
                             "/api/health"
                     ).permitAll();
 
+            // 회원가입 전 퍼널도 기록하므로 이벤트 수집 POST만 익명 접근을 허용한다.
+            auth.requestMatchers(HttpMethod.POST, "/api/events").permitAll();
+
             if (!isProd) {
                 auth.requestMatchers(
                         "/v3/api-docs/**",

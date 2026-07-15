@@ -34,6 +34,18 @@ class ApiHttpStatusIntegrationTest {
     }
 
     @Test
+    @DisplayName("비로그인 사용자도 허용된 분석 이벤트를 기록할 수 있다")
+    void recordEvent_withoutAuth_returns200() throws Exception {
+        mockMvc.perform(post("/api/events")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"eventName":"page_view","route":"/login","sessionId":"anonymous-session"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
     @DisplayName("비로그인 게시글 작성은 401을 반환한다")
     void createPost_withoutAuth_returns401() throws Exception {
         mockMvc.perform(post("/api/posts")

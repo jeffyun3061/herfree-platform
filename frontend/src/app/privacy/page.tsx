@@ -58,8 +58,8 @@ export default function PrivacyPage() {
             <h2 className="text-base font-semibold text-ink">6. 문의처</h2>
             <p className="mt-2">
               개인정보 보호 문의:{' '}
-              <a href="mailto:privacy@herfree.kr" className="text-primary">
-                privacy@herfree.kr
+              <a href="mailto:privacy@herpfree.co.kr" className="text-primary">
+                privacy@herpfree.co.kr
               </a>
             </p>
           </section>

@@ -166,12 +166,12 @@ API 응답 `createdAt` 등은 ISO-8601 UTC (`…Z`) — 프론트는 브라우�
 | 환경변수 | 예시 (AWS SES SMTP) |
 |----------|---------------------|
 | `APP_MAIL_MODE` | `smtp` |
-| `APP_MAIL_FROM` | `noreply@herfree.kr` (SES에서 검증된 발신 주소) |
+| `APP_MAIL_FROM` | `noreply@herpfree.co.kr` (SES에서 검증된 발신 주소) |
 | `SPRING_MAIL_HOST` | `email-smtp.ap-northeast-2.amazonaws.com` |
 | `SPRING_MAIL_PORT` | `587` |
 | `SPRING_MAIL_USERNAME` | SES SMTP 사용자 |
 | `SPRING_MAIL_PASSWORD` | SES SMTP 비밀번호 |
-| `PASSWORD_RESET_FRONTEND_BASE_URL` | `https://www.herfree.kr` (Amplify/Vercel 프로덕션 URL) |
+| `PASSWORD_RESET_FRONTEND_BASE_URL` | `https://herpfree.co.kr` (프로덕션 프론트 URL) |
 
 `.env.prod` 에 값을 채운 뒤 `docker compose` 재기동. 배포 후 **비밀번호 찾기** 1회로 실제 수신을 확인한다.
 
@@ -193,7 +193,7 @@ API 응답 `createdAt` 등은 ISO-8601 UTC (`…Z`) — 프론트는 브라우�
 |------|-----|
 | `API_REWRITE_TARGET` | `https://api.실제도메인` (끝 `/` 없음) |
 | `NEXT_PUBLIC_API_URL` | **비움** |
-| `NEXT_PUBLIC_OAUTH_REDIRECT_ORIGIN` | 실제 프론트 도메인, 예: `https://www.herfree.kr` |
+| `NEXT_PUBLIC_OAUTH_REDIRECT_ORIGIN` | 실제 프론트 도메인, 예: `https://herpfree.co.kr` |
 
 OAuth 콘솔과 환경변수는 Dev/Prod를 분리한다. 상세 기준은 [`oauth-setup.md`](./oauth-setup.md)를 따른다.
 

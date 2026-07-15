@@ -53,6 +53,7 @@ public class OAuthAuthService {
     @Transactional
     public OAuthLoginResponse loginWithCode(OAuthProvider provider, OAuthLoginRequest request) {
         oauthClientRegistry.assertConfigured(provider);
+        oauthClientRegistry.assertRedirectUri(provider, request.redirectUri());
         OAuthClient client = oauthClientRegistry.requireClient(provider);
         OAuthProviderProfile profile = client.fetchProfile(
                 request.code(),

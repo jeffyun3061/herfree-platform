@@ -51,12 +51,12 @@ app:
 
 ## 운영 배포 설정
 
-운영 도메인이 `https://www.herfree.kr`라면 다음처럼 맞춘다.
+운영 도메인 `https://herpfree.co.kr`을 기준으로 다음처럼 맞춘다.
 
 ### 프론트 운영 환경변수
 
 ```env
-NEXT_PUBLIC_OAUTH_REDIRECT_ORIGIN=https://www.herfree.kr
+NEXT_PUBLIC_OAUTH_REDIRECT_ORIGIN=https://herpfree.co.kr
 
 NEXT_PUBLIC_OAUTH_KAKAO_CLIENT_ID=카카오_PROD_REST_API_KEY
 NEXT_PUBLIC_OAUTH_GOOGLE_CLIENT_ID=구글_PROD_CLIENT_ID
@@ -68,15 +68,15 @@ NEXT_PUBLIC_OAUTH_NAVER_CLIENT_ID=네이버_PROD_CLIENT_ID
 ```env
 OAUTH_KAKAO_CLIENT_ID=카카오_PROD_REST_API_KEY
 OAUTH_KAKAO_CLIENT_SECRET=카카오_PROD_CLIENT_SECRET
-OAUTH_KAKAO_REDIRECT_URI=https://www.herfree.kr/auth/callback/kakao
+OAUTH_KAKAO_REDIRECT_URI=https://herpfree.co.kr/auth/callback/kakao
 
 OAUTH_GOOGLE_CLIENT_ID=구글_PROD_CLIENT_ID
 OAUTH_GOOGLE_CLIENT_SECRET=구글_PROD_CLIENT_SECRET
-OAUTH_GOOGLE_REDIRECT_URI=https://www.herfree.kr/auth/callback/google
+OAUTH_GOOGLE_REDIRECT_URI=https://herpfree.co.kr/auth/callback/google
 
 OAUTH_NAVER_CLIENT_ID=네이버_PROD_CLIENT_ID
 OAUTH_NAVER_CLIENT_SECRET=네이버_PROD_CLIENT_SECRET
-OAUTH_NAVER_REDIRECT_URI=https://www.herfree.kr/auth/callback/naver
+OAUTH_NAVER_REDIRECT_URI=https://herpfree.co.kr/auth/callback/naver
 ```
 
 운영 값은 EC2 `.env.prod`, AWS Secrets Manager, 배포 플랫폼 환경변수처럼 코드 밖에서 주입한다.
@@ -94,8 +94,8 @@ OAUTH_NAVER_REDIRECT_URI=https://www.herfree.kr/auth/callback/naver
 
 | 항목 | 값 |
 | --- | --- |
-| Web 플랫폼 사이트 도메인 | `https://www.herfree.kr` |
-| Redirect URI | `https://www.herfree.kr/auth/callback/kakao` |
+| Web 플랫폼 사이트 도메인 | `https://herpfree.co.kr` |
+| Redirect URI | `https://herpfree.co.kr/auth/callback/kakao` |
 
 ### 구글 Dev
 
@@ -108,8 +108,8 @@ OAUTH_NAVER_REDIRECT_URI=https://www.herfree.kr/auth/callback/naver
 
 | 항목 | 값 |
 | --- | --- |
-| 승인된 JavaScript 원본 | `https://www.herfree.kr` |
-| 승인된 리디렉션 URI | `https://www.herfree.kr/auth/callback/google` |
+| 승인된 JavaScript 원본 | `https://herpfree.co.kr` |
+| 승인된 리디렉션 URI | `https://herpfree.co.kr/auth/callback/google` |
 
 ### 네이버 Dev
 
@@ -122,8 +122,8 @@ OAUTH_NAVER_REDIRECT_URI=https://www.herfree.kr/auth/callback/naver
 
 | 항목 | 값 |
 | --- | --- |
-| 서비스 URL | `https://www.herfree.kr` |
-| Callback URL | `https://www.herfree.kr/auth/callback/naver` |
+| 서비스 URL | `https://herpfree.co.kr` |
+| Callback URL | `https://herpfree.co.kr/auth/callback/naver` |
 
 ## 테스트 순서
 

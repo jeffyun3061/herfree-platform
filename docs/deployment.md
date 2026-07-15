@@ -111,7 +111,7 @@
 |------|-----|
 | `API_REWRITE_TARGET` | `https://api.도메인` (끝에 `/` 없음) |
 | `NEXT_PUBLIC_API_URL` | **비움** — 브라우저는 same-origin `/api` 사용 |
-| `NEXT_PUBLIC_OAUTH_REDIRECT_ORIGIN` | 실제 프론트 도메인, 예: `https://www.herfree.kr` |
+| `NEXT_PUBLIC_OAUTH_REDIRECT_ORIGIN` | 실제 프론트 도메인, 예: `https://herpfree.co.kr` |
 
 OAuth 콘솔과 환경변수는 Dev/Prod를 분리한다. 상세 기준은 [`oauth-setup.md`](./oauth-setup.md)를 따른다.
 

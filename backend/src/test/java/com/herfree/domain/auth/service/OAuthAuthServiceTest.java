@@ -5,13 +5,16 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.herfree.domain.auth.dto.request.OAuthCompleteProfileRequest;
 import com.herfree.domain.auth.dto.request.OAuthLoginRequest;
 import com.herfree.domain.auth.entity.OAuthProvider;
 import com.herfree.domain.auth.entity.UserOAuthAccount;
 import com.herfree.domain.auth.exception.OAuthEmailAlreadyRegisteredException;
+import com.herfree.domain.auth.exception.OAuthRedirectUriMismatchException;
 import com.herfree.domain.auth.oauth.OAuthClient;
 import com.herfree.domain.auth.oauth.OAuthClientRegistry;
 import com.herfree.domain.auth.oauth.OAuthProviderProfile;
@@ -75,6 +78,23 @@ class OAuthAuthServiceTest {
     @BeforeEach
     void setUp() {
         given(jwtProperties.accessExpirationSeconds()).willReturn(3600L);
+    }
+
+    @Test
+    @DisplayName("서버 설정과 다른 OAuth Callback URI는 외부 요청 전에 거부한다")
+    void loginWithCode_redirectUriMismatch_rejectsBeforeProviderCall() {
+        OAuthLoginRequest request = new OAuthLoginRequest(
+                "code",
+                "https://wrong.example/auth/callback/naver",
+                "state-naver"
+        );
+        willThrow(new OAuthRedirectUriMismatchException())
+                .given(oauthClientRegistry)
+                .assertRedirectUri(OAuthProvider.NAVER, request.redirectUri());
+
+        assertThatThrownBy(() -> oauthAuthService.loginWithCode(OAuthProvider.NAVER, request))
+                .isInstanceOf(OAuthRedirectUriMismatchException.class);
+        verifyNoInteractions(oauthClient);
     }
 
     @Test

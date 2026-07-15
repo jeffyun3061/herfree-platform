@@ -35,6 +35,13 @@ public record OAuthProperties(
         return StringUtils.hasText(config.clientSecret());
     }
 
+    public boolean isRedirectUriAllowed(OAuthProvider provider, String redirectUri) {
+        Provider config = providerConfig(provider);
+        return config != null
+                && StringUtils.hasText(config.redirectUri())
+                && config.redirectUri().equals(redirectUri);
+    }
+
     private Provider providerConfig(OAuthProvider provider) {
         return switch (provider) {
             case KAKAO -> kakao;

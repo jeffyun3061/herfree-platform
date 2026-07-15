@@ -41,6 +41,10 @@ public enum ErrorCode {
     SUSPENDED_ACCOUNT(HttpStatus.FORBIDDEN, "정지된 계정입니다. 운영자에게 문의하세요."),
     OAUTH_AUTHENTICATION_FAILED(HttpStatus.UNAUTHORIZED, "소셜 로그인에 실패했습니다. 다시 시도해 주세요."),
     OAUTH_PROVIDER_NOT_CONFIGURED(HttpStatus.SERVICE_UNAVAILABLE, "소셜 로그인 설정이 완료되지 않았습니다."),
+    OAUTH_REDIRECT_URI_MISMATCH(
+            HttpStatus.BAD_REQUEST,
+            "소셜 로그인 Callback URI가 서버 설정과 일치하지 않습니다."
+    ),
     OAUTH_EMAIL_ALREADY_REGISTERED(
             HttpStatus.CONFLICT,
             "이미 이메일로 가입한 계정이 있습니다. 이메일 로그인을 이용해 주세요."
