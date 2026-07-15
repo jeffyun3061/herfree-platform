@@ -53,7 +53,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             AND (:viewerId IS NOT NULL OR p.visibility = 'PUBLIC')
             ORDER BY CASE WHEN b.boardType = 'NOTICE' THEN 0 ELSE 1 END,
                      CASE WHEN b.boardType = 'NOTICE' AND p.isPinned = true THEN 0 ELSE 1 END,
-                     p.sortOrder DESC,
+                     CASE WHEN b.boardType = 'NOTICE' THEN p.sortOrder ELSE 0 END DESC,
                      p.createdAt DESC
             """)
     Page<Post> searchActivePosts(

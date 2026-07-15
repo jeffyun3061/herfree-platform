@@ -4,13 +4,22 @@ type TextareaProps = React.TextareaHTMLAttributes<HTMLTextAreaElement> & {
   label?: string;
   error?: string;
   required?: boolean;
+  containerClassName?: string;
 };
 
-export function Textarea({ label, error, required, className, id, ...props }: TextareaProps) {
+export function Textarea({
+  label,
+  error,
+  required,
+  containerClassName,
+  className,
+  id,
+  ...props
+}: TextareaProps) {
   const textareaId = id ?? label;
 
   return (
-    <div className="wrtn-field">
+    <div className={cn('wrtn-field', containerClassName)}>
       {label && (
         <label htmlFor={textareaId} className="wrtn-label">
           {label}

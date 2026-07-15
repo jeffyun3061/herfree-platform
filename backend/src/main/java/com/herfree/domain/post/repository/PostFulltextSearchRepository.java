@@ -24,7 +24,7 @@ public class PostFulltextSearchRepository {
     private static final String NOTICE_PREFIX = """
             ORDER BY CASE WHEN b.board_type = 'NOTICE' THEN 0 ELSE 1 END,
                      CASE WHEN b.board_type = 'NOTICE' AND p.is_pinned = 1 THEN 0 ELSE 1 END,
-                     p.sort_order DESC,
+                     CASE WHEN b.board_type = 'NOTICE' THEN p.sort_order ELSE 0 END DESC,
             """;
 
     private static final String CREATED_DESC_ORDER = "ORDER BY p.created_at DESC";

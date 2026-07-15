@@ -478,7 +478,7 @@ export default function PostDetailPage() {
           )}
 
           {canWriteComments ? (
-            <div className="mt-[18px] flex items-center gap-2">
+            <div className="mt-[18px] flex items-end gap-2 lg:gap-3">
               {replyParentId !== null && (
                 <p className="sr-only">
                   답글 작성 중 ·{' '}
@@ -497,12 +497,13 @@ export default function PostDetailPage() {
                 }
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
-                className="min-h-[42px] flex-1 rounded-[12px] border-[#ECE5D8] bg-[#F8F4EC] px-3.5 py-3 text-[12.5px] placeholder:text-[#B4B2A6]"
+                containerClassName="min-w-0 flex-1"
+                className="mt-0 min-h-[46px] rounded-[12px] border-[#ECE5D8] bg-[#F8F4EC] px-3.5 py-3 text-[13px] placeholder:text-[#B4B2A6] lg:min-h-[52px] lg:px-4 lg:text-sm"
               />
               <Button
                 disabled={isSubmitting}
                 onClick={() => void handleComment()}
-                className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[12px] px-0"
+                className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-[12px] px-0 lg:h-[52px] lg:w-[52px]"
                 aria-label={replyParentId ? '답글 등록' : isMaskedPost ? '답변 등록' : '댓글 등록'}
               >
                 <CommentSendIcon />
