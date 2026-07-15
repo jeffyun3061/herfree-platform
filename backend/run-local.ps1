@@ -3,6 +3,17 @@
 $ErrorActionPreference = "Stop"
 Set-Location $PSScriptRoot
 
+function Assert-DockerReady {
+    if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
+        throw "Docker CLI를 찾을 수 없습니다. Docker Desktop을 설치하고 다시 실행해 주세요."
+    }
+
+    docker info *> $null
+    if ($LASTEXITCODE -ne 0) {
+        throw "Docker Desktop이 실행 중이지 않습니다. Docker Desktop을 켠 뒤 다시 실행해 주세요."
+    }
+}
+
 function Ensure-LocalMysql {
     $composeFile = Join-Path $PSScriptRoot "..\docker-compose.local.yml"
     if (-not (Test-Path $composeFile)) {
@@ -20,6 +31,10 @@ function Ensure-LocalMysql {
         Write-Host "Starting local MySQL (docker compose)..."
         Push-Location (Split-Path $composeFile -Parent)
         docker compose -f docker-compose.local.yml up -d
+        if ($LASTEXITCODE -ne 0) {
+            Pop-Location
+            throw "로컬 MySQL 컨테이너를 시작하지 못했습니다. Docker Desktop 상태를 확인해 주세요."
+        }
         Pop-Location
         Write-Host "Waiting for MySQL healthcheck..."
         for ($i = 0; $i -lt 30; $i++) {
@@ -36,15 +51,14 @@ function Ensure-LocalMysql {
     }
 }
 
-function Repair-FlywayFailures {
+function Assert-NoFlywayFailures {
     try {
         $failed = docker exec herfree-mysql mysql -uherfree_user -pherfree_pass herfree_db -N -e "SELECT COUNT(*) FROM flyway_schema_history WHERE success = 0;" 2>$null
         if ($failed -and [int]$failed -gt 0) {
-            Write-Host "Repairing Flyway failed migrations ($failed entries)..."
-            docker exec herfree-mysql mysql -uherfree_user -pherfree_pass herfree_db -e "DELETE FROM flyway_schema_history WHERE success = 0;"
+            throw "실패한 Flyway 이력이 $failed 건 있습니다. 원인을 확인한 뒤 수동으로 repair해 주세요."
         }
     } catch {
-        Write-Host "[WARN] Flyway repair skipped: $($_.Exception.Message)"
+        throw "Flyway 상태 확인 실패: $($_.Exception.Message)"
     }
 }
 
@@ -88,8 +102,9 @@ function Stop-ListenerOnPort([int]$Port) {
     }
 }
 
+Assert-DockerReady
 Ensure-LocalMysql
-Repair-FlywayFailures
+Assert-NoFlywayFailures
 
 Stop-ListenerOnPort -Port 8080
 
