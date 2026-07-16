@@ -1,3 +1,4 @@
+import { forwardRef } from 'react';
 import { cn } from '@/lib/cn';
 
 type TextareaProps = React.TextareaHTMLAttributes<HTMLTextAreaElement> & {
@@ -7,7 +8,7 @@ type TextareaProps = React.TextareaHTMLAttributes<HTMLTextAreaElement> & {
   containerClassName?: string;
 };
 
-export function Textarea({
+export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function Textarea({
   label,
   error,
   required,
@@ -15,7 +16,7 @@ export function Textarea({
   className,
   id,
   ...props
-}: TextareaProps) {
+}, ref) {
   const textareaId = id ?? label;
 
   return (
@@ -27,6 +28,7 @@ export function Textarea({
         </label>
       )}
       <textarea
+        ref={ref}
         id={textareaId}
         className={cn(
           'wrtn-textarea',
@@ -38,4 +40,4 @@ export function Textarea({
       {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
     </div>
   );
-}
+});

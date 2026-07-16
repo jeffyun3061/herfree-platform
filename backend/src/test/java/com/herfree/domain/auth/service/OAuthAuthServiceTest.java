@@ -13,6 +13,7 @@ import com.herfree.domain.auth.dto.request.OAuthCompleteProfileRequest;
 import com.herfree.domain.auth.dto.request.OAuthLoginRequest;
 import com.herfree.domain.auth.entity.OAuthProvider;
 import com.herfree.domain.auth.entity.UserOAuthAccount;
+import com.herfree.domain.auth.exception.OAuthAuthenticationFailedException;
 import com.herfree.domain.auth.exception.OAuthEmailAlreadyRegisteredException;
 import com.herfree.domain.auth.exception.OAuthRedirectUriMismatchException;
 import com.herfree.domain.auth.oauth.OAuthClient;
@@ -158,6 +159,28 @@ class OAuthAuthServiceTest {
     }
 
     @Test
+    @DisplayName("OAuth 제공자가 254자를 넘는 이메일을 반환하면 가입을 거부한다")
+    void loginWithCode_tooLongEmail_rejectsAccountCreation() {
+        String longEmail = "a".repeat(243) + "@example.com";
+        given(oauthClientRegistry.requireClient(OAuthProvider.GOOGLE)).willReturn(oauthClient);
+        given(oauthClient.fetchProfile(anyString(), anyString(), anyString()))
+                .willReturn(OAuthProviderProfile.of("google-long-email", longEmail, "데모", null));
+        given(userOAuthAccountRepository.findByProviderAndProviderUserId(
+                OAuthProvider.GOOGLE, "google-long-email"))
+                .willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> oauthAuthService.loginWithCode(
+                OAuthProvider.GOOGLE,
+                new OAuthLoginRequest(
+                        "code",
+                        "http://localhost:3000/auth/callback/google",
+                        "state-google"
+                )
+        )).isInstanceOf(OAuthAuthenticationFailedException.class);
+        verifyNoInteractions(userRepository);
+    }
+
+    @Test
     @DisplayName("닉네임 미확정 소셜 가입은 profileCompletionToken을 반환한다")
     void loginWithCode_newAccountWithoutNickname_needsProfile() {
         given(oauthClientRegistry.requireClient(OAuthProvider.NAVER)).willReturn(oauthClient);
@@ -212,11 +235,11 @@ class OAuthAuthServiceTest {
         given(jwtTokenProvider.createAccessToken("20", "USER")).willReturn("jwt-after-profile");
 
         var response = oauthAuthService.completeProfile(
-                new OAuthCompleteProfileRequest("profile-token", "새닉네임", true, true, true, false)
+                new OAuthCompleteProfileRequest("profile-token", "새닉네임", true, true, true, true, false)
         );
 
         assertThat(response.accessToken()).isEqualTo("jwt-after-profile");
         assertThat(profile.getNickname()).isEqualTo("새닉네임");
-        verify(userConsentAgreementService).recordSignupConsent(user, true, false);
+        verify(userConsentAgreementService).recordSignupConsent(user, true, true, false);
     }
 }

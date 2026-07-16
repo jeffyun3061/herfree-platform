@@ -33,6 +33,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import org.mockito.ArgumentCaptor;
 
 // Mockito를 활용해 DB·JWT 의존성 없이 AuthService 비즈니스 로직만 검증한다.
 // MockitoExtension을 쓰면 @Mock 필드가 자동으로 초기화된다.
@@ -67,7 +68,7 @@ class AuthServiceTest {
     @DisplayName("정상적인 회원가입 요청 시 User와 UserProfile이 저장된다")
     void signup_success() {
         // given
-        SignupRequest request = new SignupRequest("test@test.com", "password123!", "닉네임", true, true, true, false);
+        SignupRequest request = new SignupRequest("test@test.com", "password123!", "닉네임", true, true, true, true, false);
 
         // 이메일·닉네임 중복 없음
         given(userRepository.existsByEmail(request.email())).willReturn(false);
@@ -87,7 +88,24 @@ class AuthServiceTest {
         // then — User와 UserProfile이 각각 1번 저장되었는지 확인한다
         verify(userRepository).save(any(User.class));
         verify(userProfileRepository).save(any(UserProfile.class));
-        verify(userConsentAgreementService).recordSignupConsent(any(User.class), eq(true), eq(false));
+        verify(userConsentAgreementService).recordSignupConsent(any(User.class), eq(true), eq(true), eq(false));
+    }
+
+    @Test
+    @DisplayName("회원가입 이메일은 공백 제거와 소문자 변환 후 저장한다")
+    void signup_normalizesEmail() {
+        SignupRequest request = new SignupRequest(
+                "  User.Name@Example.COM  ", "password123!", "닉네임", true, true, true, true, false);
+        given(userRepository.existsByEmail("user.name@example.com")).willReturn(false);
+        given(userProfileRepository.existsByNickname(request.nickname())).willReturn(false);
+        given(passwordEncoder.encode(request.password())).willReturn("encoded_password");
+        given(userRepository.save(any(User.class))).willAnswer(invocation -> invocation.getArgument(0));
+
+        authService.signup(request);
+
+        ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
+        verify(userRepository).save(captor.capture());
+        assertThat(captor.getValue().getEmail()).isEqualTo("user.name@example.com");
     }
 
     @Test
@@ -104,7 +122,7 @@ class AuthServiceTest {
     @DisplayName("이메일이 중복이면 DuplicateEmailException이 발생한다")
     void signup_duplicateEmail_throws() {
         // given — 이미 존재하는 이메일
-        SignupRequest request = new SignupRequest("duplicate@test.com", "password123!", "닉네임", true, true, true, false);
+        SignupRequest request = new SignupRequest("duplicate@test.com", "password123!", "닉네임", true, true, true, true, false);
         given(userRepository.existsByEmail(request.email())).willReturn(true);
 
         // when & then — 이메일 중복 시 409 Conflict에 매핑된 예외가 발생한다
@@ -148,6 +166,64 @@ class AuthServiceTest {
     }
 
     @Test
+    @DisplayName("기존 비밀번호 해시는 정상 로그인 시 현재 형식으로 자동 전환한다")
+    void login_legacyPassword_upgradesEncoding() {
+        LoginRequest request = new LoginRequest("legacy@test.com", "legacy-password");
+        User activeUser = User.builder()
+                .email(request.email())
+                .password("legacy_encoded_password")
+                .role(UserRole.USER)
+                .status(UserStatus.ACTIVE)
+                .build();
+        org.springframework.test.util.ReflectionTestUtils.setField(activeUser, "id", 1L);
+        UserProfile profile = UserProfile.builder()
+                .user(activeUser)
+                .nickname("닉네임")
+                .isPublic(true)
+                .build();
+
+        given(userRepository.findByEmail(request.email())).willReturn(Optional.of(activeUser));
+        given(passwordEncoder.matches(request.password(), "legacy_encoded_password")).willReturn(true);
+        given(passwordEncoder.upgradeEncoding("legacy_encoded_password")).willReturn(true);
+        given(passwordEncoder.encode(request.password())).willReturn("current_encoded_password");
+        given(userProfileRepository.findByUserId(1L)).willReturn(Optional.of(profile));
+        given(jwtTokenProvider.createAccessToken(any(), any())).willReturn("mock.jwt.token");
+        given(jwtProperties.accessExpirationSeconds()).willReturn(3600L);
+
+        authService.login(request);
+
+        assertThat(activeUser.getPassword()).isEqualTo("current_encoded_password");
+    }
+
+    @Test
+    @DisplayName("로그인은 이메일 대소문자와 앞뒤 공백에 영향받지 않는다")
+    void login_normalizesEmail() {
+        LoginRequest request = new LoginRequest("  USER@Test.COM ", "password123!");
+        User activeUser = User.builder()
+                .email("user@test.com")
+                .password("encoded_password")
+                .role(UserRole.USER)
+                .status(UserStatus.ACTIVE)
+                .build();
+        org.springframework.test.util.ReflectionTestUtils.setField(activeUser, "id", 1L);
+        UserProfile profile = UserProfile.builder()
+                .user(activeUser)
+                .nickname("닉네임")
+                .isPublic(true)
+                .build();
+        given(userRepository.findByEmail("user@test.com")).willReturn(Optional.of(activeUser));
+        given(passwordEncoder.matches(request.password(), activeUser.getPassword())).willReturn(true);
+        given(userProfileRepository.findByUserId(1L)).willReturn(Optional.of(profile));
+        given(jwtTokenProvider.createAccessToken(any(), any())).willReturn("mock.jwt.token");
+        given(jwtProperties.accessExpirationSeconds()).willReturn(3600L);
+
+        authService.login(request);
+
+        verify(loginLockoutService).assertNotLocked("user@test.com");
+        verify(loginLockoutService).clearFailures("user@test.com");
+    }
+
+    @Test
     @DisplayName("비밀번호가 틀리면 InvalidLoginCredentialsException이 발생한다")
     void login_wrongPassword_throws() {
         // given
@@ -188,7 +264,7 @@ class AuthServiceTest {
     @Test
     @DisplayName("예약 닉네임으로 회원가입하면 ReservedNicknameException이 발생한다")
     void signup_reservedNickname_throws() {
-        SignupRequest request = new SignupRequest("test@test.com", "password123!", "관리자", true, true, true, false);
+        SignupRequest request = new SignupRequest("test@test.com", "password123!", "관리자", true, true, true, true, false);
         given(userRepository.existsByEmail(request.email())).willReturn(false);
 
         assertThatThrownBy(() -> authService.signup(request))

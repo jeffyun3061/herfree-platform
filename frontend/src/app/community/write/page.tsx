@@ -56,6 +56,7 @@ function WritePostForm() {
   const [content, setContent] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [isImageUploading, setIsImageUploading] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [initialized, setInitialized] = useState(false);
   const [tipsOpen, setTipsOpen] = useState(false);
@@ -121,7 +122,7 @@ function WritePostForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isSubmitting) return;
+    if (isSubmitting || isImageUploading) return;
     const validation = validatePostInput({ title, content });
     if (validation) {
       setValidationError(validation);
@@ -261,18 +262,22 @@ function WritePostForm() {
         : '같은 경험을 가진 사람들에게 하고 싶은 이야기를 편하게 적어주세요. 담담하게, 솔직하게.';
 
   const backHref = boardId > 0 ? `/community/${boardId}` : '/community';
-  const submitLabel = isStaffAdminEdit
-    ? '저장'
-    : isEditMode
-      ? '수정'
-      : '등록';
-  const bottomSubmitLabel = isSubmitting || isAdminSubmitting
-    ? '저장 중…'
+  const submitLabel = isImageUploading
+    ? '업로드 중…'
     : isStaffAdminEdit
-      ? '운영자 수정 저장'
+      ? '저장'
       : isEditMode
-        ? '수정하기'
-        : '등록하기';
+        ? '수정'
+        : '등록';
+  const bottomSubmitLabel = isImageUploading
+    ? '사진 업로드 중…'
+    : isSubmitting || isAdminSubmitting
+      ? '저장 중…'
+      : isStaffAdminEdit
+        ? '운영자 수정 저장'
+        : isEditMode
+          ? '수정하기'
+          : '등록하기';
   const boardPickerDisabled = isEditMode || lockedPrivateBoard;
 
   return (
@@ -291,7 +296,7 @@ function WritePostForm() {
         <button
           type="submit"
           form="community-write-form"
-          disabled={isSubmitting || isAdminSubmitting || boardId <= 0}
+          disabled={isSubmitting || isAdminSubmitting || isImageUploading || boardId <= 0}
           className="shrink-0 text-[13.5px] font-bold text-[#0B3B36] disabled:opacity-40"
         >
           {submitLabel}
@@ -396,6 +401,7 @@ function WritePostForm() {
               <CommunityPhotoAttach
                 imageUrl={imageUrl}
                 onChange={setImageUrl}
+                onUploadingChange={setIsImageUploading}
                 disabled={isSubmitting}
                 variant="compact"
                 emptyText="사진 추가"
@@ -446,7 +452,7 @@ function WritePostForm() {
           )}
           <Button
             type="submit"
-            disabled={isSubmitting || isAdminSubmitting || boardId <= 0}
+            disabled={isSubmitting || isAdminSubmitting || isImageUploading || boardId <= 0}
             className="ml-auto rounded-xl px-[22px] py-[11px] text-[13.5px] font-bold shadow-none"
           >
             {bottomSubmitLabel}

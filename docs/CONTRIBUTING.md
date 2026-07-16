@@ -12,6 +12,7 @@
 - 테스트를 돌리지 못했다면 커밋이나 PR 본문에 이유를 남긴다.
 - 운영, 보안, DB 변경에서 개발자가 직접 결정해야 하는 항목은 `docs/developer-decision-checklist.md`에 남긴다.
 - 배포 전 운영·퍼널·UX 판단은 `docs/prelaunch-operations-plan.md`를 기준으로 확인한다.
+- 건강정보·개인정보·관리자·인증 변경은 `docs/health-data-security-standard.md`를 최우선 기준으로 확인한다.
 
 ## 브랜치 규칙
 
@@ -106,6 +107,8 @@ npm run build
 - 운영 환경의 실패가 조용히 성공 처리되지 않는가
 - 설정 예시는 실제 비밀값이 아닌 placeholder만 포함하는가
 - DB, 로그, 배포, 개인정보 정책처럼 운영 판단이 필요한 내용은 결정 근거를 남겼는가
+- 건강정보의 수집 목적, 조회 주체, 보유기간, 삭제·통계 재식별 위험을 검토했는가
+- production 대상이면 `docs/templates/release-security-review.md`에 검증 증거와 승인자를 남겼는가
 
 ## PR 본문 기준
 

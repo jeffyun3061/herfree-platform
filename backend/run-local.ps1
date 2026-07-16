@@ -1,4 +1,4 @@
-# 로컬 백엔드 실행 — MySQL·8080 확인 후 bootRun
+﻿# 로컬 백엔드 실행 — MySQL·8080 확인 후 bootRun
 # 사용: cd backend && .\run-local.ps1
 $ErrorActionPreference = "Stop"
 Set-Location $PSScriptRoot
@@ -52,14 +52,35 @@ function Ensure-LocalMysql {
 }
 
 function Assert-NoFlywayFailures {
+    # 컨테이너 환경변수를 사용해 비밀번호가 명령줄과 경고 로그에 노출되지 않게 한다.
+    $mysqlCommand = 'MYSQL_PWD="$MYSQL_PASSWORD" exec mysql -u"$MYSQL_USER" "$MYSQL_DATABASE" --batch --skip-column-names'
+    $query = 'SELECT COUNT(*) FROM flyway_schema_history WHERE success = 0;'
+    $previousErrorActionPreference = $ErrorActionPreference
+
     try {
-        $failed = docker exec herfree-mysql mysql -uherfree_user -pherfree_pass herfree_db -N -e "SELECT COUNT(*) FROM flyway_schema_history WHERE success = 0;" 2>$null
-        if ($failed -and [int]$failed -gt 0) {
-            throw "실패한 Flyway 이력이 $failed 건 있습니다. 원인을 확인한 뒤 수동으로 repair해 주세요."
-        }
-    } catch {
-        throw "Flyway 상태 확인 실패: $($_.Exception.Message)"
+        # 네이티브 명령의 stderr 경고와 실제 종료 실패를 구분하기 위해 종료 코드를 직접 확인한다.
+        $ErrorActionPreference = "Continue"
+        $output = $query | docker exec -i herfree-mysql sh -c $mysqlCommand 2>&1
+        $exitCode = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $previousErrorActionPreference
     }
+
+    $outputText = (@($output) | ForEach-Object { "$_" }) -join [Environment]::NewLine
+    if ($exitCode -ne 0) {
+        throw "Flyway 상태 확인 실패: $($outputText.Trim())"
+    }
+
+    $failed = 0
+    if (-not [int]::TryParse($outputText.Trim(), [ref]$failed)) {
+        throw "Flyway 상태 확인 결과를 해석할 수 없습니다: $($outputText.Trim())"
+    }
+
+    if ($failed -gt 0) {
+        throw "실패한 Flyway 이력이 $failed 건 있습니다. 원인을 확인한 뒤 수동으로 repair해 주세요."
+    }
+
+    Write-Host "Flyway migration history is clean."
 }
 
 function Stop-ListenerOnPort([int]$Port) {

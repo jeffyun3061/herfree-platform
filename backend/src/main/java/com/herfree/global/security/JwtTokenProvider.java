@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class JwtTokenProvider {
 
+    private static final String ACCESS_TOKEN_PURPOSE = "access";
     private static final String PROFILE_COMPLETION_PURPOSE = "oauth_profile";
     private static final long PROFILE_COMPLETION_EXPIRATION_SECONDS = 900L;
 
@@ -34,6 +35,7 @@ public class JwtTokenProvider {
         return Jwts.builder()
                 .subject(subject)
                 .claim("role", role)
+                .claim("purpose", ACCESS_TOKEN_PURPOSE)
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expiry))
                 .signWith(secretKey)
@@ -66,10 +68,14 @@ public class JwtTokenProvider {
         }
     }
 
-    public boolean validateToken(String token) {
+    /**
+     * API 접근용 액세스 토큰만 통과시킨다.
+     * 같은 서명 키를 쓰더라도 명시적으로 access 용도로 발급한 토큰만 API 인증에 사용한다.
+     * 용도 claim이 없거나 OAuth 프로필 완성용인 토큰은 거부한다.
+     */
+    public boolean validateAccessToken(String token) {
         try {
-            parseClaims(token);
-            return true;
+            return ACCESS_TOKEN_PURPOSE.equals(parseClaims(token).get("purpose", String.class));
         } catch (JwtException | IllegalArgumentException ex) {
             return false;
         }

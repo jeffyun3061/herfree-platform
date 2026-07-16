@@ -1,6 +1,7 @@
 # Herfree 운영자 매뉴얼
 
 이 문서는 개발자가 아닌 서비스 운영자가 Herfree를 안전하게 관리하기 위한 최소 절차입니다.
+건강정보 노출, 관리자 계정 탈취, DB·백업 유출이 의심되면 직접 판단해 넘기지 말고 [`health-data-security-standard.md`](./health-data-security-standard.md)의 SEV-1 절차로 즉시 보고합니다.
 
 ## 운영자가 매일 확인할 것
 

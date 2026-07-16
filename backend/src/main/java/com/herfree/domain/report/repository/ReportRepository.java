@@ -8,6 +8,7 @@ import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -18,8 +19,10 @@ public interface ReportRepository extends JpaRepository<Report, Long> {
             Long reporterId, ReportTargetType targetType, Long targetId);
 
     // 관리자가 상태별로 신고 목록을 조회할 때 사용
+    @EntityGraph(attributePaths = {"reporter", "processedBy"})
     Page<Report> findByStatusOrderByCreatedAtDesc(ReportStatus status, Pageable pageable);
 
+    @EntityGraph(attributePaths = {"reporter", "processedBy"})
     List<Report> findByStatusAndTargetTypeAndTargetId(
             ReportStatus status, ReportTargetType targetType, Long targetId);
 

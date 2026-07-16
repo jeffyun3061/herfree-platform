@@ -7,11 +7,13 @@ import com.herfree.domain.auth.dto.response.LoginResponse;
 import com.herfree.domain.auth.dto.response.OAuthLoginResponse;
 import com.herfree.domain.auth.entity.OAuthProvider;
 import com.herfree.domain.auth.entity.UserOAuthAccount;
+import com.herfree.domain.auth.exception.OAuthAuthenticationFailedException;
 import com.herfree.domain.auth.exception.OAuthEmailAlreadyRegisteredException;
 import com.herfree.domain.auth.exception.OAuthProfileTokenInvalidException;
 import com.herfree.domain.auth.oauth.OAuthClient;
 import com.herfree.domain.auth.oauth.OAuthClientRegistry;
 import com.herfree.domain.auth.oauth.OAuthProviderProfile;
+import com.herfree.domain.auth.policy.CredentialPolicy;
 import com.herfree.domain.auth.repository.UserOAuthAccountRepository;
 import com.herfree.domain.user.entity.User;
 import com.herfree.domain.user.entity.UserProfile;
@@ -69,6 +71,9 @@ public class OAuthAuthService {
         }
 
         String resolvedEmail = profile.resolveEmail(provider);
+        if (resolvedEmail.length() > CredentialPolicy.EMAIL_MAX_LENGTH) {
+            throw new OAuthAuthenticationFailedException();
+        }
         if (profile.email() != null && userRepository.existsByEmail(resolvedEmail)) {
             throw new OAuthEmailAlreadyRegisteredException();
         }
@@ -127,7 +132,8 @@ public class OAuthAuthService {
         }
 
         profile.updateNickname(nickname);
-        userConsentAgreementService.recordSignupConsent(user, request.agreeAge(), request.agreeMarketing());
+        userConsentAgreementService.recordSignupConsent(
+                user, request.agreeSensitive(), request.agreeAge(), request.agreeMarketing());
         recordAnalyticsEvent(AnalyticsService.SIGNUP_COMPLETED, user.getId());
         return issueLoginResponse(user);
     }

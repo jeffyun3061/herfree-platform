@@ -74,5 +74,8 @@ jobs:
           NEXT_PUBLIC_OAUTH_NAVER_CLIENT_ID: ci-naver-client-id
         run: |
           npm ci
+          npm audit --audit-level=high
+          npm run check:security-headers
           npm run lint
           npm run build
+          npx playwright test --list

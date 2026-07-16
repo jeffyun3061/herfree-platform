@@ -8,6 +8,7 @@ import com.herfree.domain.user.repository.UserRepository;
 import com.herfree.global.exception.ErrorCode;
 import com.herfree.global.response.ErrorResponse;
 import com.herfree.global.util.StaffRolePolicy;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -53,12 +54,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String token = extractToken(request);
 
-        if (!StringUtils.hasText(token) || !jwtTokenProvider.validateToken(token)) {
+        // 서명뿐 아니라 access 용도까지 확인해 OAuth 중간 토큰의 권한 상승을 막는다.
+        if (!StringUtils.hasText(token) || !jwtTokenProvider.validateAccessToken(token)) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        Long userId = Long.parseLong(jwtTokenProvider.getSubject(token));
+        Long userId;
+        try {
+            userId = Long.parseLong(jwtTokenProvider.getSubject(token));
+        } catch (JwtException | IllegalArgumentException ex) {
+            filterChain.doFilter(request, response);
+            return;
+        }
         User user = userRepository.findById(userId).orElse(null);
 
         if (user == null || user.getStatus() == UserStatus.DELETED) {

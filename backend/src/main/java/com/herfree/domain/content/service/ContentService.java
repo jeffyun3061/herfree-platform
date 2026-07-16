@@ -42,11 +42,11 @@ public class ContentService {
             return contentRepository
                     .findByCategoryAndStatusOrderByIsPinnedDescSortOrderDescCreatedAtDesc(
                             category, ContentStatus.ACTIVE, pageable)
-                    .map(ContentResponse::from);
+                    .map(this::toResponse);
         }
         return contentRepository
                 .findByStatusOrderByIsPinnedDescSortOrderDescCreatedAtDesc(ContentStatus.ACTIVE, pageable)
-                .map(ContentResponse::from);
+                .map(this::toResponse);
     }
 
     @Transactional(readOnly = true)
@@ -69,14 +69,14 @@ public class ContentService {
                         StringUtils.hasText(category) ? category.trim() : null,
                         StringUtils.hasText(keyword) ? keyword.trim() : null,
                         pageable)
-                .map(ContentResponse::from);
+                .map(this::toResponse);
     }
 
     @Transactional(readOnly = true)
     public ContentResponse getContent(Long contentId) {
         Content content = contentRepository.findByIdAndStatus(contentId, ContentStatus.ACTIVE)
                 .orElseThrow(ContentNotFoundException::new);
-        return ContentResponse.from(content);
+        return toResponse(content);
     }
 
     @Transactional
@@ -98,7 +98,7 @@ public class ContentService {
                         .map(c -> c.getSortOrder() + 1)
                         .orElse(1));
 
-        return ContentResponse.from(contentRepository.save(content));
+        return toResponse(contentRepository.save(content));
     }
 
     @Transactional
@@ -108,8 +108,11 @@ public class ContentService {
         if (StringUtils.hasText(imageUrl) && !Objects.equals(content.getImageUrl(), imageUrl)) {
             postImageStorageService.assertImageUrlAllowed(actorId, imageUrl);
         }
+        if (!Objects.equals(content.getImageUrl(), imageUrl)) {
+            postImageStorageService.deleteManagedImageIfPresent(content.getImageUrl());
+        }
         content.update(request.title().trim(), request.content().trim(), request.category().trim(), imageUrl);
-        return ContentResponse.from(content);
+        return toResponse(content);
     }
 
     @Transactional
@@ -126,7 +129,7 @@ public class ContentService {
         } else {
             content.hide();
         }
-        return ContentResponse.from(content);
+        return toResponse(content);
     }
 
     @Transactional
@@ -138,12 +141,13 @@ public class ContentService {
         if (request.isPinned() != null) {
             content.setPinned(request.isPinned());
         }
-        return ContentResponse.from(content);
+        return toResponse(content);
     }
 
     @Transactional
     public void deleteContent(Long actorId, Long contentId) {
         Content content = findContentForManager(actorId, contentId);
+        postImageStorageService.deleteManagedImageIfPresent(content.getImageUrl());
         content.delete();
     }
 
@@ -183,5 +187,11 @@ public class ContentService {
 
     private String normalizeImageUrl(String imageUrl) {
         return StringUtils.hasText(imageUrl) ? imageUrl.trim() : null;
+    }
+
+    private ContentResponse toResponse(Content content) {
+        return ContentResponse.from(
+                content,
+                postImageStorageService.toDisplayUrl(content.getImageUrl()));
     }
 }

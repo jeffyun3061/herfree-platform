@@ -7,9 +7,12 @@ backend/out/
 # Node / Next.js
 frontend/node_modules/
 frontend/.next/
+frontend/.next-preflight/
 frontend/out/
 frontend/dist/
 frontend/.turbo/
+frontend/playwright-report/
+frontend/test-results/
 
 # Environment & secrets (never commit)
 .env

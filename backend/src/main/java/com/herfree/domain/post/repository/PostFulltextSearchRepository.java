@@ -30,6 +30,7 @@ public class PostFulltextSearchRepository {
     private static final String CREATED_DESC_ORDER = "ORDER BY p.created_at DESC";
 
     private final EntityManager entityManager;
+    private final PostRepository postRepository;
 
     public Page<Post> searchCommunityPosts(
             Long boardId,
@@ -141,6 +142,10 @@ public class PostFulltextSearchRepository {
 
         @SuppressWarnings("unchecked")
         List<Post> content = dataQuery.getResultList();
+        if (!content.isEmpty()) {
+            // native query 결과의 LAZY board/user를 페이지당 한 번의 fetch join으로 초기화한다.
+            postRepository.findAllWithBoardAndUserByIdIn(content.stream().map(Post::getId).toList());
+        }
         long total = ((Number) countQuery.getSingleResult()).longValue();
         return new PageImpl<>(content, pageable, total);
     }

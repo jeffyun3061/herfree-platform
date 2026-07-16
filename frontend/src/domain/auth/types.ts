@@ -6,6 +6,7 @@ export type SignupRequest = {
   nickname: string;
   agreeTerms: boolean;
   agreePrivacy: boolean;
+  agreeSensitive: boolean;
   agreeAge: boolean;
   agreeMarketing: boolean;
 };
@@ -50,6 +51,7 @@ export type OAuthCompleteProfileRequest = {
   nickname: string;
   agreeTerms: boolean;
   agreePrivacy: boolean;
+  agreeSensitive: boolean;
   agreeAge: boolean;
   agreeMarketing: boolean;
 };

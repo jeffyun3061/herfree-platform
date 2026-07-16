@@ -4,12 +4,14 @@ import com.herfree.domain.comment.entity.CommentStatus;
 import com.herfree.domain.comment.entity.Comment;
 import com.herfree.domain.comment.repository.CommentRepository;
 import com.herfree.domain.auth.repository.UserOAuthAccountRepository;
+import com.herfree.domain.auth.repository.PasswordResetTokenRepository;
 import com.herfree.domain.board.repository.BoardRepository;
 import com.herfree.domain.journal.repository.JournalRecordRepository;
 import com.herfree.domain.post.dto.response.PostResponse;
 import com.herfree.domain.post.entity.Post;
 import com.herfree.domain.post.entity.PostStatus;
 import com.herfree.domain.post.repository.PostRepository;
+import com.herfree.domain.post.service.PostImageCleanupService;
 import com.herfree.domain.reaction.repository.ReactionRepository;
 import com.herfree.domain.user.dto.request.UpdateProfileRequest;
 import com.herfree.domain.user.dto.response.UserActivityResponse;
@@ -51,6 +53,8 @@ public class UserService {
     private final BoardRepository boardRepository;
     private final JournalRecordRepository journalRecordRepository;
     private final UserOAuthAccountRepository userOAuthAccountRepository;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final PostImageCleanupService postImageCleanupService;
 
     // 내 정보 조회 — DELETED 상태 계정은 조회 불가
     // 탈퇴한 회원의 JWT가 만료 전에 재사용될 경우를 방어하기 위해
@@ -130,7 +134,9 @@ public class UserService {
         UserProfile profile = userProfileRepository.findByUserId(userId)
                 .orElseThrow(UserNotFoundException::new);
 
-        for (Post post : postRepository.findByUserIdAndStatusNot(userId, PostStatus.DELETED)) {
+        java.util.List<Post> posts = postRepository.findByUserIdAndStatusNot(userId, PostStatus.DELETED);
+        postImageCleanupService.deleteImagesForPostIds(posts.stream().map(Post::getId).toList());
+        for (Post post : posts) {
             post.anonymize();
         }
 
@@ -140,9 +146,11 @@ public class UserService {
 
         journalRecordRepository.deleteAllByUserId(userId);
         userOAuthAccountRepository.deleteAllByUserId(userId);
+        passwordResetTokenRepository.deleteAllByUserId(userId);
+        nicknameChangeHistoryRepository.anonymizeByUserId(userId);
 
         profile.maskOnWithdraw(userId);
-        user.withdraw();
+        user.withdraw(userId);
     }
 
     // 마이페이지 활동 요약

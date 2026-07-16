@@ -13,6 +13,7 @@ type CommentItemProps = {
   onHide?: (commentId: number) => void;
   onReport?: (commentId: number) => void;
   onReply?: (commentId: number) => void;
+  activeReplyId?: number | null;
 };
 
 export function CommentItem({
@@ -24,18 +25,21 @@ export function CommentItem({
   onHide,
   onReport,
   onReply,
+  activeReplyId = null,
 }: CommentItemProps) {
   const canDelete = comment.isMyComment;
   const canReport = isLoggedIn && !comment.isMyComment;
   const canHide = isStaff && onHide;
   const hasActions = (isLoggedIn && onReply) || canReport || canHide || (canDelete && onDelete);
+  const isReplyTarget = activeReplyId === comment.id;
 
   return (
     <article
       className={cn(
-        'flex gap-2.5 border-t border-[#F2ECE1] py-3 first:border-t-0',
+        'flex gap-2.5 border-t border-[#F2ECE1] py-3 transition-colors first:border-t-0',
         depth > 0 && 'rounded-[14px] bg-[#F8F4EC] px-3 py-3',
         depth === 1 && 'ml-3',
+        isReplyTarget && 'rounded-[14px] bg-[#EDF4F0] px-3 ring-1 ring-inset ring-[#BFD2C8]',
       )}
     >
       <span
@@ -62,8 +66,14 @@ export function CommentItem({
           {hasActions && (
             <div className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-0.5">
               {isLoggedIn && onReply && (
-                <Button variant="ghost" size="sm" onClick={() => onReply(comment.id)}>
-                  답글
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  aria-pressed={isReplyTarget}
+                  className={cn(isReplyTarget && 'bg-[#DCEAE3] text-[#0B3B36]')}
+                  onClick={() => onReply(comment.id)}
+                >
+                  {isReplyTarget ? '선택됨' : '답글'}
                 </Button>
               )}
               {canReport && onReport && (
@@ -102,6 +112,7 @@ export function CommentItem({
                 onHide={onHide}
                 onReport={onReport}
                 onReply={onReply}
+                activeReplyId={activeReplyId}
               />
             ))}
           </div>

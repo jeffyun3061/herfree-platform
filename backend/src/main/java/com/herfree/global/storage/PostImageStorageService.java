@@ -22,6 +22,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
@@ -112,6 +113,13 @@ public class PostImageStorageService {
         return buildImageAccessUrl(objectKey);
     }
 
+    /** URL 인코딩·선행 슬래시를 정리하고 허용 형식(posts/{userId}/UUID.ext)인지 검증한 key를 돌려준다 */
+    public String normalizeAndValidateObjectKey(String objectKey) {
+        String normalized = normalizeObjectKey(objectKey);
+        assertValidObjectKey(normalized);
+        return normalized;
+    }
+
     public ImageObjectPayload fetchImageObject(String objectKey) {
         assertS3Configured();
         String normalizedKey = normalizeObjectKey(objectKey);
@@ -200,7 +208,7 @@ public class PostImageStorageService {
     private BusinessException mapS3Failure(SdkException ex, String action) {
         if (ex instanceof S3Exception s3Ex && s3Ex.awsErrorDetails() != null) {
             String code = s3Ex.awsErrorDetails().errorCode();
-            log.warn("S3 {} failed: {} (errorCode={})", action, ex.getMessage(), code);
+            log.warn("S3 {} failed (errorCode={})", action, code);
             return switch (code) {
                 case "NoSuchBucket" -> new BusinessException(ErrorCode.S3_BUCKET_NOT_FOUND);
                 case "AccessDenied" -> new BusinessException(ErrorCode.S3_ACCESS_DENIED);
@@ -209,7 +217,7 @@ public class PostImageStorageService {
                 default -> new BusinessException(ErrorCode.S3_UPLOAD_FAILED);
             };
         }
-        log.warn("S3 {} failed: {}", action, ex.getMessage());
+        log.warn("S3 {} failed (failureType={})", action, ex.getClass().getSimpleName());
         return new BusinessException(ErrorCode.S3_UPLOAD_FAILED);
     }
 
@@ -250,10 +258,7 @@ public class PostImageStorageService {
     }
 
     private String buildImageAccessUrl(String objectKey) {
-        if (StringUtils.hasText(s3Properties.publicBaseUrl())) {
-            String base = s3Properties.publicBaseUrl().trim();
-            return base.endsWith("/") ? base + objectKey : base + "/" + objectKey;
-        }
+        // 비공개 게시판 이미지도 같은 버킷을 사용하므로 항상 권한 판정 프록시를 거친다.
         return IMAGE_OBJECT_PATH_PREFIX + objectKey;
     }
 
@@ -308,6 +313,48 @@ public class PostImageStorageService {
             return "image/webp";
         }
         return "application/octet-stream";
+    }
+
+    /** 게시글 삭제·회원 탈퇴 시 DB 연결뿐 아니라 S3 원본도 함께 파기한다. */
+    public void deleteImage(String imageUrl) {
+        if (!StringUtils.hasText(imageUrl)) {
+            return;
+        }
+        assertS3Configured();
+        String objectKey = normalizeObjectKey(extractObjectKey(imageUrl.trim()));
+        assertValidObjectKey(objectKey);
+
+        try {
+            s3Client.deleteObject(DeleteObjectRequest.builder()
+                    .bucket(s3Properties.bucket())
+                    .key(objectKey)
+                    .build());
+        } catch (SdkException ex) {
+            log.warn("S3 delete failed (failureType={})", ex.getClass().getSimpleName());
+            throw new BusinessException(ErrorCode.S3_DELETE_FAILED);
+        }
+    }
+
+    public void deleteManagedImageIfPresent(String imageUrl) {
+        if (!StringUtils.hasText(imageUrl)) {
+            return;
+        }
+        String trimmed = imageUrl.trim();
+        if (trimmed.startsWith(IMAGE_OBJECT_PATH_PREFIX)) {
+            deleteImage(trimmed);
+            return;
+        }
+        try {
+            URI uri = URI.create(trimmed);
+            if ("https".equalsIgnoreCase(uri.getScheme())
+                    && isAllowedImageHost(uri.getHost())
+                    && uri.getPath() != null
+                    && uri.getPath().startsWith("/posts/")) {
+                deleteImage(trimmed);
+            }
+        } catch (IllegalArgumentException ignored) {
+            // 기존 정적 이미지 경로는 S3 관리 대상이 아니므로 삭제하지 않는다.
+        }
     }
 
     private String contentTypeOrFallback(String contentType, String objectKey) {

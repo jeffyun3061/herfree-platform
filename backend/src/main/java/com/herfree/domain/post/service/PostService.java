@@ -59,6 +59,7 @@ public class PostService {
     private final PostRepository postRepository;
     private final PostFulltextSearchRepository postFulltextSearchRepository;
     private final PostImageRepository postImageRepository;
+    private final PostImageCleanupService postImageCleanupService;
     private final BoardRepository boardRepository;
     private final CommentRepository commentRepository;
     private final UserRepository userRepository;
@@ -281,6 +282,7 @@ public class PostService {
             throw new PostAccessDeniedException();
         }
 
+        postImageCleanupService.deleteImagesForPostIds(List.of(postId));
         post.delete();
     }
 
@@ -310,6 +312,7 @@ public class PostService {
                         postId, java.util.List.of(PostStatus.ACTIVE, PostStatus.HIDDEN))
                 .orElseThrow(PostNotFoundException::new);
 
+        postImageCleanupService.deleteImagesForPostIds(List.of(postId));
         post.delete();
         recordAnalyticsEvent(AnalyticsService.ADMIN_ACTION, null);
     }
@@ -406,9 +409,17 @@ public class PostService {
         if (imageUrl == null) {
             return;
         }
-        postImageRepository.deleteByPostId(post.getId());
-        if (StringUtils.hasText(imageUrl)) {
-            savePostImageIfPresent(post, imageUrl);
+        String nextImageUrl = StringUtils.hasText(imageUrl) ? imageUrl.trim() : null;
+        String currentImageUrl = postImageRepository.findFirstByPostIdOrderBySortOrderAsc(post.getId())
+                .map(PostImage::getImageUrl)
+                .orElse(null);
+        if (java.util.Objects.equals(currentImageUrl, nextImageUrl)) {
+            return;
+        }
+
+        postImageCleanupService.deleteImagesForPostIds(List.of(post.getId()));
+        if (nextImageUrl != null) {
+            savePostImageIfPresent(post, nextImageUrl);
         }
     }
 

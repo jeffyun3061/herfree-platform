@@ -25,6 +25,7 @@ public interface JournalRecordRepository extends JpaRepository<JournalRecord, Lo
 
     @Query("""
             SELECT r FROM JournalRecord r
+            JOIN FETCH r.user
             WHERE r.hadSymptoms = true
             AND r.recordDate >= :since
             ORDER BY r.recordDate DESC

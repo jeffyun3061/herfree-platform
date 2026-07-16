@@ -38,6 +38,9 @@ public class UserConsentAgreement extends BaseTimeEntity {
     @Column(name = "age_confirmed", nullable = false)
     private boolean ageConfirmed;
 
+    @Column(name = "sensitive_info_agreed", nullable = false)
+    private boolean sensitiveInfoAgreed;
+
     @Column(name = "marketing_agreed", nullable = false)
     private boolean marketingAgreed;
 
@@ -46,12 +49,14 @@ public class UserConsentAgreement extends BaseTimeEntity {
             User user,
             String termsVersion,
             String privacyVersion,
+            boolean sensitiveInfoAgreed,
             boolean ageConfirmed,
             boolean marketingAgreed
     ) {
         this.user = user;
         this.termsVersion = termsVersion;
         this.privacyVersion = privacyVersion;
+        this.sensitiveInfoAgreed = sensitiveInfoAgreed;
         this.ageConfirmed = ageConfirmed;
         this.marketingAgreed = marketingAgreed;
     }

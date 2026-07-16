@@ -50,5 +50,5 @@ Herfree는 건강·개인정보 맥락의 커뮤니티 서비스이므로 로그
 ## 남은 보강
 
 - 관리자 로그인 별도 알림
-- SUPER_ADMIN MFA
+- SUPER_ADMIN MFA 또는 production 공개 전 대체 접근 통제
 - refresh token rotation 및 서버 측 폐기

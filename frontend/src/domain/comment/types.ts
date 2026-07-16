@@ -16,8 +16,11 @@ export type CommentCreateInput = {
   parentId?: number | null;
 };
 
+export const COMMENT_MAX_LENGTH = 2000;
+
 export function validateCommentInput(content: string): string | null {
   if (!content.trim()) return '댓글 내용을 입력해 주세요.';
+  if (content.length > COMMENT_MAX_LENGTH) return `댓글은 ${COMMENT_MAX_LENGTH}자 이하로 입력해 주세요.`;
   return null;
 }
 

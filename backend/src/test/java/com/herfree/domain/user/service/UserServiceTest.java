@@ -5,11 +5,13 @@ import com.herfree.domain.comment.entity.Comment;
 import com.herfree.domain.comment.entity.CommentStatus;
 import com.herfree.domain.comment.repository.CommentRepository;
 import com.herfree.domain.auth.repository.UserOAuthAccountRepository;
+import com.herfree.domain.auth.repository.PasswordResetTokenRepository;
 import com.herfree.domain.journal.repository.JournalRecordRepository;
 import com.herfree.domain.post.entity.Post;
 import com.herfree.domain.post.entity.PostStatus;
 import com.herfree.domain.post.entity.PostVisibility;
 import com.herfree.domain.post.repository.PostRepository;
+import com.herfree.domain.post.service.PostImageCleanupService;
 import com.herfree.domain.user.dto.request.UpdateProfileRequest;
 import com.herfree.domain.user.entity.NicknameChangeHistory;
 import com.herfree.domain.user.entity.NicknameChangeType;
@@ -29,6 +31,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 import java.util.Optional;
@@ -64,6 +67,12 @@ class UserServiceTest {
     @Mock
     private UserOAuthAccountRepository userOAuthAccountRepository;
 
+    @Mock
+    private PasswordResetTokenRepository passwordResetTokenRepository;
+
+    @Mock
+    private PostImageCleanupService postImageCleanupService;
+
     @InjectMocks
     private UserService userService;
 
@@ -93,6 +102,7 @@ class UserServiceTest {
                 .visibility(PostVisibility.PUBLIC)
                 .isAnonymous(false)
                 .build();
+        ReflectionTestUtils.setField(post, "id", 1L);
 
         Comment comment = Comment.builder()
                 .post(post)
@@ -109,6 +119,8 @@ class UserServiceTest {
         userService.withdraw(userId);
 
         assertThat(user.getStatus()).isEqualTo(UserStatus.DELETED);
+        assertThat(user.getEmail()).isEqualTo("withdrawn-1@deleted.invalid");
+        assertThat(user.getPassword()).isEqualTo("withdrawn-account-disabled");
         assertThat(post.isAnonymous()).isTrue();
         assertThat(comment.isAnonymous()).isTrue();
         assertThat(profile.getNickname()).isEqualTo("withdrawn_1");
@@ -116,6 +128,9 @@ class UserServiceTest {
         assertThat(profile.isPublic()).isFalse();
         verify(journalRecordRepository).deleteAllByUserId(userId);
         verify(userOAuthAccountRepository).deleteAllByUserId(userId);
+        verify(passwordResetTokenRepository).deleteAllByUserId(userId);
+        verify(nicknameChangeHistoryRepository).anonymizeByUserId(userId);
+        verify(postImageCleanupService).deleteImagesForPostIds(List.of(post.getId()));
     }
 
     @Test

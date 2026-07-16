@@ -10,7 +10,7 @@
 | 항목 | 코드/설정 | 판정 |
 |------|-----------|------|
 | API 권한 서버 고정 | `SecurityConfig` — URL·역할별 `hasRole` | ✅ |
-| JWT Stateless + BCrypt | `JwtAuthenticationFilter`, `PasswordEncoder` | ✅ |
+| JWT Stateless + BCrypt-SHA256 호환 인코더 | `JwtAuthenticationFilter`, `MigratingPasswordEncoder` | ✅ |
 | 로그인 잠금 (10회/30분) | `LoginLockoutService` | ✅ (인메모리) |
 | 로그인·가입 IP 제한 | `AuthRateLimitFilter` (분당 20회) | ✅ (인메모리) |
 | prod `ddl-auto: validate` | `application.yml` prod 프로필 | ✅ |

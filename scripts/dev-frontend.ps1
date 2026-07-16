@@ -1,4 +1,4 @@
-# Herfree 프론트 dev 서버 — 3000 포트 고정 (중복 Next.js 자동 정리)
+﻿# Herfree 프론트 dev 서버 — 3000 포트 고정 (중복 Next.js 자동 정리)
 # 사용법: cd frontend && npm run dev
 
 $ErrorActionPreference = "Stop"
@@ -19,8 +19,14 @@ function Stop-HerfreeFrontendListeners {
                 $cmd -match 'herfree-platform[\\/]frontend'
 
             if ($isNext) {
-                Write-Host "종료: PID $($conn.OwningProcess) (포트 $port)" -ForegroundColor Yellow
-                Stop-Process -Id $conn.OwningProcess -Force -ErrorAction SilentlyContinue
+                $targetPid = $conn.OwningProcess
+                $parent = Get-CimInstance Win32_Process -Filter "ProcessId=$($proc.ParentProcessId)" -ErrorAction SilentlyContinue
+                if ($parent -and ([string]$parent.CommandLine) -match 'herfree-platform[\\/]frontend.*next') {
+                    $targetPid = $parent.ProcessId
+                }
+
+                Write-Host "종료: PID $targetPid (포트 $port Next 프로세스 트리)" -ForegroundColor Yellow
+                taskkill.exe /PID $targetPid /T /F *> $null
             }
         }
     }

@@ -10,7 +10,11 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { validateLogin } from '@/domain/auth/validate';
+import {
+  EMAIL_MAX_LENGTH,
+  PASSWORD_MAX_LENGTH,
+  validateLogin,
+} from '@/domain/auth/validate';
 import { getErrorMessage } from '@/lib/api/client';
 import {
   clearRememberedEmail,
@@ -107,6 +111,7 @@ function LoginForm() {
           placeholder="이메일을 입력해 주세요"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          maxLength={EMAIL_MAX_LENGTH}
           error={fieldErrors.email}
         />
         <Input
@@ -116,6 +121,7 @@ function LoginForm() {
           placeholder="비밀번호를 입력해 주세요"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          maxLength={PASSWORD_MAX_LENGTH}
           error={fieldErrors.password}
         />
 

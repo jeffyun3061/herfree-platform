@@ -1,20 +1,15 @@
+import { Suspense } from 'react';
 import Link from 'next/link';
 import { FAQ_GROUPS } from '@/domain/faq/content';
+import { QnaDeepLinkSync } from '@/components/faq/QnaDeepLinkSync';
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
 
-type QnaPageProps = {
-  searchParams?: {
-    faq?: string;
-    category?: string;
-  };
-};
-
-export default function QnaPage({ searchParams }: QnaPageProps) {
-  const activeFaq = searchParams?.faq;
-  const activeCategory = searchParams?.category;
-
+export default function QnaPage() {
   return (
     <div className="content-screen mx-auto max-w-app pb-[96px] lg:max-w-none">
+      <Suspense fallback={null}>
+        <QnaDeepLinkSync />
+      </Suspense>
       <ScreenHeader
         title="자주 묻는 질문"
         subtitle="많이 물어보신 것들을 먼저 모아봤어요"
@@ -33,14 +28,11 @@ export default function QnaPage({ searchParams }: QnaPageProps) {
             <div className="overflow-hidden rounded-[16px] bg-white shadow-[0_1px_2px_rgba(20,30,25,.04),0_14px_30px_-24px_rgba(20,30,25,.22)]">
               {group.items.map((item, itemIndex) => {
                 const faqKey = `${groupIndex}-${itemIndex}`;
-                const openByFaq = activeFaq === faqKey;
-                const openByCategory = !activeFaq && activeCategory === group.category && itemIndex === 0;
 
                 return (
                   <details
                     key={item.question}
                     id={`faq-${faqKey}`}
-                    open={openByFaq || openByCategory}
                     className="group scroll-mt-24 border-t border-[#F2ECE1] first:border-t-0"
                   >
                     <summary className="flex cursor-pointer list-none items-start gap-[10px] px-4 py-[15px] [&::-webkit-details-marker]:hidden">

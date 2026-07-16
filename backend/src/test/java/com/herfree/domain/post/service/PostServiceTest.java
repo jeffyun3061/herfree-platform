@@ -83,6 +83,9 @@ class PostServiceTest {
     private PostImageStorageService postImageStorageService;
 
     @Mock
+    private PostImageCleanupService postImageCleanupService;
+
+    @Mock
     private ReactionRepository reactionRepository;
 
     @Mock
@@ -200,6 +203,50 @@ class PostServiceTest {
         // when & then — 작성자가 다를 때 403 예외가 발생해야 한다
         assertThatThrownBy(() -> postService.deletePost(requestUserId, 1L))
                 .isInstanceOf(PostAccessDeniedException.class);
+    }
+
+    @Test
+    @DisplayName("본인 게시글 삭제 시 저장된 이미지도 함께 삭제한다")
+    void deletePost_owner_deletesStoredImage() {
+        Long userId = 1L;
+        Long postId = 10L;
+        User owner = mock(User.class);
+        given(owner.getId()).willReturn(userId);
+        Post post = Post.builder()
+                .board(mock(Board.class))
+                .user(owner)
+                .title("제목")
+                .content("내용")
+                .visibility(PostVisibility.PUBLIC)
+                .isAnonymous(false)
+                .build();
+        given(postRepository.findByIdAndStatus(postId, PostStatus.ACTIVE)).willReturn(Optional.of(post));
+
+        postService.deletePost(userId, postId);
+
+        verify(postImageCleanupService).deleteImagesForPostIds(List.of(postId));
+        assertThat(post.getStatus()).isEqualTo(PostStatus.DELETED);
+    }
+
+    @Test
+    @DisplayName("관리자 영구 삭제도 저장된 이미지를 함께 삭제한다")
+    void adminDeletePost_deletesStoredImage() {
+        Long postId = 11L;
+        Post post = Post.builder()
+                .board(mock(Board.class))
+                .user(mock(User.class))
+                .title("제목")
+                .content("내용")
+                .visibility(PostVisibility.PUBLIC)
+                .isAnonymous(false)
+                .build();
+        given(postRepository.findByIdAndStatusIn(
+                postId, List.of(PostStatus.ACTIVE, PostStatus.HIDDEN))).willReturn(Optional.of(post));
+
+        postService.adminDeletePost(postId);
+
+        verify(postImageCleanupService).deleteImagesForPostIds(List.of(postId));
+        assertThat(post.getStatus()).isEqualTo(PostStatus.DELETED);
     }
 
     @Test

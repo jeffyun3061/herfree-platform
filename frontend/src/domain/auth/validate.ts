@@ -3,17 +3,27 @@
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+export const EMAIL_MAX_LENGTH = 254;
+export const PASSWORD_MIN_LENGTH = 15;
+export const PASSWORD_MAX_LENGTH = 64;
+
 export type FieldErrors = Record<string, string>;
 
 export function validateEmail(email: string): string | null {
   if (!email.trim()) return '이메일을 입력해 주세요.';
+  if (email.length > EMAIL_MAX_LENGTH) return `이메일은 ${EMAIL_MAX_LENGTH}자 이하로 입력해 주세요.`;
   if (!EMAIL_PATTERN.test(email)) return '올바른 이메일 형식이 아닙니다.';
   return null;
 }
 
 export function validatePassword(password: string): string | null {
   if (!password) return '비밀번호를 입력해 주세요.';
-  if (password.length < 8) return '비밀번호는 최소 8자 이상이어야 합니다.';
+  if (password.length < PASSWORD_MIN_LENGTH) {
+    return `비밀번호는 최소 ${PASSWORD_MIN_LENGTH}자 이상이어야 합니다.`;
+  }
+  if (password.length > PASSWORD_MAX_LENGTH) {
+    return `비밀번호는 ${PASSWORD_MAX_LENGTH}자 이하로 입력해 주세요.`;
+  }
   return null;
 }
 
@@ -49,6 +59,12 @@ export function validateSignup(input: {
 export function validateLogin(input: { email: string; password: string }): FieldErrors {
   const errors: FieldErrors = {};
   if (!input.email.trim()) errors.email = '이메일을 입력해 주세요.';
+  else if (input.email.length > EMAIL_MAX_LENGTH) {
+    errors.email = `이메일은 ${EMAIL_MAX_LENGTH}자 이하로 입력해 주세요.`;
+  }
   if (!input.password) errors.password = '비밀번호를 입력해 주세요.';
+  else if (input.password.length > PASSWORD_MAX_LENGTH) {
+    errors.password = `비밀번호는 ${PASSWORD_MAX_LENGTH}자 이하로 입력해 주세요.`;
+  }
   return errors;
 }

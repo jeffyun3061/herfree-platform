@@ -202,7 +202,7 @@ public class DemoDataSeedRunner implements ApplicationRunner {
             return;
         }
         if (userRepository.findByEmail(DEMO_MARKER_EMAIL).isPresent()) {
-            log.info("Demo seed skipped — marker user already exists ({})", DEMO_MARKER_EMAIL);
+            log.info("Demo seed skipped — marker user already exists.");
             return;
         }
 
@@ -214,8 +214,7 @@ public class DemoDataSeedRunner implements ApplicationRunner {
         seedExtraVideos();
         seedJournalRecords(demoUsers);
 
-        log.info("Demo seed completed — {} users, password: {}", demoUsers.size(), properties.resolvedPassword());
-        log.info("Demo login example: {} / {}", DEMO_MARKER_EMAIL, properties.resolvedPassword());
+        log.info("Demo seed completed — {} local users created.", demoUsers.size());
     }
 
     private List<User> seedDemoUsers() {

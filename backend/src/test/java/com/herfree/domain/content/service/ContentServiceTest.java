@@ -75,6 +75,50 @@ class ContentServiceTest {
         assertThat(captor.getValue().getContentType()).isEqualTo("DOCTOR");
     }
 
+    @Test
+    @DisplayName("칼럼 영구 삭제 시 관리 중인 S3 이미지를 함께 삭제한다")
+    void deleteContent_deletesManagedImage() {
+        User admin = user(10L, UserRole.ADMIN);
+        Content content = Content.builder()
+                .author(admin)
+                .title("제목")
+                .content("본문")
+                .category("정보")
+                .contentType("ADMIN")
+                .imageUrl("/api/posts/images/object/posts/10/image.png")
+                .build();
+        when(userRepository.findById(10L)).thenReturn(Optional.of(admin));
+        when(contentRepository.findById(100L)).thenReturn(Optional.of(content));
+
+        contentService.deleteContent(10L, 100L);
+
+        verify(postImageStorageService).deleteManagedImageIfPresent(content.getImageUrl());
+        assertThat(content.getStatus()).isEqualTo(ContentStatus.DELETED);
+    }
+
+    @Test
+    @DisplayName("Legacy direct image URL is returned through the access-control proxy")
+    void getContent_convertsLegacyDirectImageUrl() {
+        User author = user(10L, UserRole.DOCTOR);
+        Content content = Content.builder()
+                .author(author)
+                .title("title")
+                .content("content")
+                .category("medical")
+                .contentType("DOCTOR")
+                .imageUrl("https://cdn.example.com/posts/10/123e4567-e89b-12d3-a456-426614174000.png")
+                .build();
+        when(contentRepository.findByIdAndStatus(100L, ContentStatus.ACTIVE))
+                .thenReturn(Optional.of(content));
+        when(postImageStorageService.toDisplayUrl(content.getImageUrl()))
+                .thenReturn("/api/posts/images/object/posts/10/123e4567-e89b-12d3-a456-426614174000.png");
+
+        var response = contentService.getContent(100L);
+
+        assertThat(response.imageUrl())
+                .startsWith(PostImageStorageService.IMAGE_OBJECT_PATH_PREFIX);
+    }
+
     private User user(Long id, UserRole role) {
         User user = mock(User.class);
         lenient().when(user.getId()).thenReturn(id);

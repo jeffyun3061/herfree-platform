@@ -40,7 +40,7 @@ public class Comment extends BaseTimeEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    // 대댓글 확장을 위한 자기 참조 — 1차 MVP에서는 null만 허용하고 기능은 구현하지 않는다
+    // 답글이 어떤 댓글에 연결됐는지 보존하는 자기 참조다.
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")
     private Comment parent;

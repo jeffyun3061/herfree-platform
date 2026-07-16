@@ -11,7 +11,11 @@ import { NicknameFieldWithCheck } from '@/components/auth/NicknameFieldWithCheck
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
-import { validateSignup } from '@/domain/auth/validate';
+import {
+  EMAIL_MAX_LENGTH,
+  PASSWORD_MAX_LENGTH,
+  validateSignup,
+} from '@/domain/auth/validate';
 import { getErrorMessage } from '@/lib/api/client';
 
 function resolveReturnUrl(from: string | null): string {
@@ -31,6 +35,7 @@ function SignupForm() {
   const [agreements, setAgreements] = useState<SignupAgreementState>({
     agreeTerms: false,
     agreePrivacy: false,
+    agreeSensitive: false,
     agreeAge: false,
     agreeMarketing: false,
   });
@@ -84,6 +89,7 @@ function SignupForm() {
           placeholder="이메일을 입력해 주세요"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          maxLength={EMAIL_MAX_LENGTH}
           error={fieldErrors.email}
         />
         <Input
@@ -91,9 +97,11 @@ function SignupForm() {
           type="password"
           required
           autoComplete="new-password"
-          placeholder="8자 이상 입력"
+          placeholder="15~64자 입력"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          maxLength={PASSWORD_MAX_LENGTH}
+          hint={<span className="text-[11px] font-normal text-[#9A9F94]">15~64자</span>}
           error={fieldErrors.password}
         />
         <Input
@@ -103,6 +111,7 @@ function SignupForm() {
           autoComplete="new-password"
           value={passwordConfirm}
           onChange={(e) => setPasswordConfirm(e.target.value)}
+          maxLength={PASSWORD_MAX_LENGTH}
           error={fieldErrors.passwordConfirm}
         />
         <NicknameFieldWithCheck

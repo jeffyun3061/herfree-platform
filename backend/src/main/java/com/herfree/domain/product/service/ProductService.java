@@ -7,6 +7,9 @@ import com.herfree.domain.product.dto.response.ProductResponse;
 import com.herfree.domain.product.entity.Product;
 import com.herfree.domain.product.exception.ProductNotFoundException;
 import com.herfree.domain.product.repository.ProductRepository;
+import com.herfree.global.exception.BusinessException;
+import com.herfree.global.exception.ErrorCode;
+import java.net.URI;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -38,12 +41,12 @@ public class ProductService {
     @Transactional
     public ProductResponse createProduct(ProductCreateRequest request) {
         Product product = Product.builder()
-                .name(request.name())
-                .category(request.category())
-                .imageUrl(request.imageUrl())
-                .description(request.description())
+                .name(request.name().trim())
+                .category(request.category().trim())
+                .imageUrl(normalizeImageUrl(request.imageUrl()))
+                .description(normalizeOptional(request.description()))
                 .price(request.price())
-                .externalUrl(request.externalUrl())
+                .externalUrl(normalizeHttpsUrl(request.externalUrl()))
                 .build();
 
         return ProductResponse.from(productRepository.save(product));
@@ -54,8 +57,8 @@ public class ProductService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(ProductNotFoundException::new);
 
-        product.update(request.name(), request.category(), request.imageUrl(),
-                request.description(), request.price(), request.externalUrl());
+        product.update(request.name().trim(), request.category().trim(), normalizeImageUrl(request.imageUrl()),
+                normalizeOptional(request.description()), request.price(), normalizeHttpsUrl(request.externalUrl()));
 
         return ProductResponse.from(product);
     }
@@ -74,5 +77,36 @@ public class ProductService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(ProductNotFoundException::new);
         productRepository.delete(product);
+    }
+
+    private String normalizeImageUrl(String value) {
+        String normalized = normalizeOptional(value);
+        if (normalized == null) {
+            return null;
+        }
+        if (normalized.startsWith("/") && !normalized.startsWith("//")) {
+            return normalized;
+        }
+        return normalizeHttpsUrl(normalized);
+    }
+
+    private String normalizeHttpsUrl(String value) {
+        String normalized = normalizeOptional(value);
+        if (normalized == null) {
+            return null;
+        }
+        try {
+            URI uri = URI.create(normalized);
+            if (!"https".equalsIgnoreCase(uri.getScheme()) || uri.getHost() == null) {
+                throw new BusinessException(ErrorCode.INVALID_INPUT);
+            }
+            return normalized;
+        } catch (IllegalArgumentException ex) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
+        }
+    }
+
+    private String normalizeOptional(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
     }
 }

@@ -31,10 +31,10 @@ public class User extends BaseTimeEntity {
     private Long id;
 
     // 로그인 식별자 — 변경 불가 정책이므로 updatable = false
-    @Column(nullable = false, unique = true, updatable = false)
+    @Column(nullable = false, unique = true)
     private String email;
 
-    // BCrypt 해시값이 저장된다. 평문 비밀번호를 절대 넣지 않는다.
+    // 단방향 해시값이 저장된다. 평문 비밀번호를 절대 넣지 않는다.
     @Column(nullable = false)
     private String password;
 
@@ -72,7 +72,7 @@ public class User extends BaseTimeEntity {
     // "비밀번호를 변경하다"는 비즈니스 행위를 코드로 명시적으로 표현하기 위함이다.
     // setPassword()라고 쓰면 단순 값 주입과 구별이 되지 않아 의도가 흐려진다.
 
-    // 비밀번호 변경 — 호출 전 반드시 새 비밀번호를 BCrypt로 인코딩해야 한다
+    // 비밀번호 변경 — 호출 전 반드시 PasswordEncoder로 인코딩해야 한다
     public void changePassword(String encodedPassword) {
         this.password = encodedPassword;
     }
@@ -91,8 +91,14 @@ public class User extends BaseTimeEntity {
 
     // 회원 탈퇴 처리 — 물리 삭제 대신 DELETED 상태로 전환한다
     // 게시글·댓글 등 연관 데이터를 익명 처리하는 로직은 Service에서 담당한다
-    public void withdraw() {
+    public void withdraw(Long userId) {
+        // 탈퇴 즉시 로그인 식별자와 인증정보를 비식별 값으로 교체한다.
+        this.email = "withdrawn-" + userId + "@deleted.invalid";
+        this.password = "withdrawn-account-disabled";
         this.status = UserStatus.DELETED;
+        this.suspendedUntil = null;
+        this.suspensionReason = null;
+        this.suspensionNote = null;
     }
 
     // 계정 활성화 — 정지 해제 또는 관리자 복구 시 사용

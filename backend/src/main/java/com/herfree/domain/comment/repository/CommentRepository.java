@@ -7,6 +7,7 @@ import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -14,6 +15,7 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 
     // 특정 게시글의 활성 댓글을 등록순(오름차순)으로 조회한다
     // 댓글은 게시글과 달리 등록 순서대로 읽는 것이 자연스럽다
+    @EntityGraph(attributePaths = {"user", "post", "parent"})
     Page<Comment> findByPostIdAndStatusOrderByCreatedAtAsc(Long postId, CommentStatus status, Pageable pageable);
 
     // 탈퇴 처리 시 작성 댓글 익명화 대상 조회
@@ -38,6 +40,10 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
             Pageable pageable);
 
     java.util.Optional<Comment> findByIdAndStatusIn(Long id, java.util.Collection<CommentStatus> statuses);
+
+    @EntityGraph(attributePaths = {"user", "post"})
+    List<Comment> findByIdInAndStatusIn(
+            java.util.Collection<Long> ids, java.util.Collection<CommentStatus> statuses);
 
     @Query("""
             SELECT DISTINCT c.post.id FROM Comment c

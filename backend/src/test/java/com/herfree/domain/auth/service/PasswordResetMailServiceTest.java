@@ -49,6 +49,23 @@ class PasswordResetMailServiceTest {
     }
 
     @Test
+    @DisplayName("스테이징 환경에서도 SMTP가 아니면 재설정 요청을 안전하게 실패시킨다")
+    void sendPasswordResetEmail_stagingWithoutSmtp_throwsDomainException() {
+        MailProperties properties = new MailProperties("console", "noreply@herfree.test");
+        @SuppressWarnings("unchecked")
+        ObjectProvider<JavaMailSender> mailSenderProvider = org.mockito.Mockito.mock(ObjectProvider.class);
+        Environment environment = org.mockito.Mockito.mock(Environment.class);
+        given(environment.getActiveProfiles()).willReturn(new String[]{"staging"});
+
+        PasswordResetMailService service = new PasswordResetMailService(properties, mailSenderProvider, environment);
+
+        assertThatThrownBy(() -> service.sendPasswordResetEmail(
+                "user@test.com",
+                "https://app.test/reset-password?token=secret-token"))
+                .isInstanceOf(PasswordResetDeliveryException.class);
+    }
+
+    @Test
     @DisplayName("SMTP 모드인데 JavaMailSender가 없으면 도메인 예외로 실패한다")
     void sendPasswordResetEmail_smtpWithoutSender_throwsDomainException() {
         MailProperties properties = new MailProperties("smtp", "noreply@herfree.test");

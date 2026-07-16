@@ -4,6 +4,8 @@
 작업 속도를 늦추지 않기 위해 모든 항목을 한 번에 완벽히 끝내지 않는다.
 대신 배포 전, 운영 전, 면접 준비 전에 반복해서 확인한다.
 
+건강정보·개인정보 관련 결정은 [`health-data-security-standard.md`](./health-data-security-standard.md)가 상위 기준이다. 해당 문서의 `BLOCK`과 `DECISION`은 단순 후속 작업으로 미루지 않는다.
+
 ## 사용 방법
 
 - `결정 필요` 항목은 내가 직접 선택한다.
@@ -191,7 +193,9 @@
 | P0 | SMTP/S3/RDS 운영 설정 | 결정 필요 |
 | P0 | 배포 전 build/test/runbook 확인 | 진행 가능 |
 | P0 | 배포 전 운영·퍼널·UX 점검 | `prelaunch-operations-plan.md` 기준 확인 |
-| P1 | refresh token HttpOnly cookie/회전 | 후속 개선 |
-| P1 | 관리자 MFA | 후속 개선 |
-| P1 | 개인정보 보관/삭제 정책 | 결정 필요 |
+| P0 | 탈퇴 후 동의·감사·게시물 보존기간과 재가입 정책 | 운영 책임자 결정 필요 |
+| P0 | 관리자 MFA 또는 관리 API 접근 게이트 | 운영 공개 전 필요 |
+| P0 | 공개 건강 통계 최소 표본·재식별 방지 | 사용자 20명·항목 5명 기준 구현 완료, staging 검증 필요 |
+| P0 | RDS TLS·저장 암호화·복원 검증 | 운영 공개 전 필요 |
+| P1 | refresh token HttpOnly cookie/회전 | 위험 수용 근거와 기한 필요 |
 | P2 | 감사 로그 고도화 | 후속 개선 |

@@ -1,6 +1,8 @@
 package com.herfree.domain.auth.dto.request;
 
+import com.herfree.domain.auth.policy.CredentialPolicy;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 // 로그인 요청 DTO
 // 로그인 단계에서는 이메일 형식 검증(@Email)을 걸지 않는다.
@@ -8,9 +10,11 @@ import jakarta.validation.constraints.NotBlank;
 public record LoginRequest(
 
         @NotBlank(message = "이메일을 입력해 주세요.")
+        @Size(max = CredentialPolicy.EMAIL_MAX_LENGTH, message = "이메일은 254자를 초과할 수 없습니다.")
         String email,
 
         @NotBlank(message = "비밀번호를 입력해 주세요.")
+        @Size(max = CredentialPolicy.PASSWORD_MAX_LENGTH, message = "비밀번호는 64자를 초과할 수 없습니다.")
         String password
 ) {
 }

@@ -2,9 +2,9 @@ package com.herfree.domain.auth.service;
 
 import com.herfree.domain.auth.exception.PasswordResetDeliveryException;
 import com.herfree.global.config.MailProperties;
+import com.herfree.global.config.RuntimeProfilePolicy;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
-import java.util.Arrays;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
@@ -27,7 +27,7 @@ public class PasswordResetMailService {
         if ("smtp".equalsIgnoreCase(mailProperties.mode())) {
             sendViaSmtp(toEmail, resetUrl);
         } else {
-            if (isProd()) {
+            if (RuntimeProfilePolicy.isPublicEnvironment(environment)) {
                 log.error("Password reset mail delivery blocked: SMTP is not configured in prod.");
                 throw new PasswordResetDeliveryException();
             }
@@ -52,13 +52,10 @@ public class PasswordResetMailService {
             helper.setText(buildEmailBody(resetUrl), false);
             mailSender.send(message);
         } catch (MessagingException | MailException e) {
-            log.error("Password reset mail delivery failed.", e);
+            // 메일 예외 메시지에는 수신 주소가 포함될 수 있어 유형만 기록한다.
+            log.error("Password reset mail delivery failed. failureType={}", e.getClass().getSimpleName());
             throw new PasswordResetDeliveryException();
         }
-    }
-
-    private boolean isProd() {
-        return Arrays.asList(environment.getActiveProfiles()).contains("prod");
     }
 
     private String buildEmailBody(String resetUrl) {

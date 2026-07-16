@@ -21,6 +21,7 @@ import com.herfree.domain.user.service.UserConsentAgreementService;
 import com.herfree.global.security.JwtProperties;
 import com.herfree.global.security.JwtTokenProvider;
 import com.herfree.global.util.ReservedNicknamePolicy;
+import com.herfree.global.util.EmailNormalizer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -47,9 +48,10 @@ public class AuthService {
     // 프로필 저장이 실패하면 User도 롤백되어 孤立된 인증 레코드가 생기지 않는다.
     @Transactional
     public void signup(SignupRequest request) {
+        String email = EmailNormalizer.normalize(request.email());
         // 이메일 중복 체크 — DB unique 제약으로도 잡히지만,
         // 명시적으로 검증해야 의도가 담긴 에러 메시지를 내려줄 수 있다.
-        if (userRepository.existsByEmail(request.email())) {
+        if (userRepository.existsByEmail(email)) {
             throw new DuplicateEmailException();
         }
 
@@ -62,13 +64,11 @@ public class AuthService {
             throw new DuplicateNicknameException();
         }
 
-        // BCrypt를 쓰는 이유:
-        // 단방향 해시 + salt를 자동으로 붙여줘서 동일한 비밀번호도 다른 해시값이 나온다.
-        // Rainbow table 공격을 방어하면서 해시 복잡도(cost factor)를 설정으로 조절할 수 있다.
+        // 평문을 저장하지 않고 현재 표준 인코더로 단방향 해시한다.
         String encodedPassword = passwordEncoder.encode(request.password());
 
         User user = User.builder()
-                .email(request.email())
+                .email(email)
                 .password(encodedPassword)
                 .build();
 
@@ -84,7 +84,8 @@ public class AuthService {
                 .build();
 
         userProfileRepository.save(profile);
-        userConsentAgreementService.recordSignupConsent(user, request.agreeAge(), request.agreeMarketing());
+        userConsentAgreementService.recordSignupConsent(
+                user, request.agreeSensitive(), request.agreeAge(), request.agreeMarketing());
         recordAnalyticsEvent(AnalyticsService.SIGNUP_COMPLETED, user.getId());
     }
 
@@ -103,17 +104,18 @@ public class AuthService {
     // 로그인 — 이메일로 사용자를 찾고, 비밀번호를 검증한 뒤 JWT를 발급한다.
     @Transactional
     public LoginResponse login(LoginRequest request) {
-        loginLockoutService.assertNotLocked(request.email());
+        String email = EmailNormalizer.normalize(request.email());
+        loginLockoutService.assertNotLocked(email);
 
-        User user = userRepository.findByEmail(request.email()).orElse(null);
+        User user = userRepository.findByEmail(email).orElse(null);
         if (user == null) {
             // 없는 계정도 BCrypt 검증 비용을 태워 계정 존재 여부의 시간 차이를 줄인다.
             passwordEncoder.matches(request.password(), DUMMY_PASSWORD_HASH);
-            throw failLogin(request.email());
+            throw failLogin(email);
         }
 
         if (!passwordEncoder.matches(request.password(), user.getPassword())) {
-            throw failLogin(request.email());
+            throw failLogin(email);
         }
 
         // 정지 여부는 비밀번호 검증 성공 뒤에만 알려 계정 탈취자에게 상태 정보를 덜 준다.
@@ -126,10 +128,15 @@ public class AuthService {
         }
 
         if (user.getStatus() != UserStatus.ACTIVE) {
-            throw failLogin(request.email());
+            throw failLogin(email);
         }
 
-        loginLockoutService.clearFailures(request.email());
+        // 기존 BCrypt 계정은 정상 로그인 시 긴 입력도 안전한 현재 형식으로 점진 전환한다.
+        if (passwordEncoder.upgradeEncoding(user.getPassword())) {
+            user.changePassword(passwordEncoder.encode(request.password()));
+        }
+
+        loginLockoutService.clearFailures(email);
         recordAnalyticsEvent(AnalyticsService.LOGIN_SUCCEEDED, user.getId());
 
         UserProfile profile = userProfileRepository.findByUserId(user.getId())

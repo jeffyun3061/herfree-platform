@@ -1,4 +1,4 @@
-# 로컬 프론트 실행 — 3000 포트 점유 시 정리 후 npm run dev
+﻿# 로컬 프론트 실행 — 3000 포트 점유 시 정리 후 npm run dev
 # 사용: cd frontend && .\run-dev.ps1
 $ErrorActionPreference = "Stop"
 Set-Location $PSScriptRoot

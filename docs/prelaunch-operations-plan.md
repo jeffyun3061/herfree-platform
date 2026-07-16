@@ -102,12 +102,15 @@ ALB로 전환하면 `TRUSTED_PROXY_CIDRS`는 ALB가 위치한 서브넷 CIDR만 
 - 회원가입/로그인 실패
 - 비공개 게시판 타인 글 노출
 - 관리자 API 일반 사용자 접근 가능
+- 관리자 MFA 또는 VPN·Access Gateway·고정 IP 같은 대체 통제 없음
+- 공개 건강 통계의 사용자 20명·항목 5명 기준 staging 검증 없음
+- 탈퇴 후 동의·감사·게시물 보존기간과 재가입 정책 승인 없음
+- RDS TLS·저장 암호화·복원 검증 없음
 
 ### 후속 개선
 
 - GA4 또는 PostHog 고도화
 - refresh token HttpOnly cookie와 회전
-- 관리자 MFA
 - 고급 감사 로그
 - Playwright E2E 자동화
 - ALB/RDS 분리 확장
@@ -116,4 +119,4 @@ ALB로 전환하면 `TRUSTED_PROXY_CIDRS`는 ALB가 위치한 서브넷 CIDR만 
 
 > 첫 배포에서는 GA4 같은 외부 분석 도구보다 서버 이벤트 로그로 핵심 퍼널만 먼저 수집했습니다. 이메일, 토큰, 게시글 본문, 일지 메모 같은 민감 정보는 저장하지 않고, 회원가입·로그인·글쓰기·일지 작성·관리자 조치처럼 운영에 필요한 이벤트만 집계했습니다.
 
-> 배포 전에는 Flyway migration, DB 백업, SMTP/S3 smoke test, 비공개 게시판 권한 확인을 배포 차단 항목으로 두고, refresh token 회전이나 관리자 MFA 같은 항목은 후속 보안 개선으로 분리했습니다.
+> 배포 전에는 Flyway migration, DB 백업, SMTP/S3 smoke test, 비공개 게시판 권한, 공개 건강 통계의 재식별 방지, 관리자 강한 인증 또는 대체 접근 통제를 배포 차단 항목으로 두었습니다. refresh token 회전은 현재 access token 만료와 sessionStorage 정책을 위험 수용 기록으로 남긴 뒤 기한을 정해 개선합니다.

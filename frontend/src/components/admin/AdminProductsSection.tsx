@@ -113,31 +113,38 @@ export function AdminProductsSection() {
           <Input
             placeholder="제품명"
             value={form.name}
+            maxLength={255}
             onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
           />
           <Input
             placeholder="카테고리"
             value={form.category}
+            maxLength={50}
             onChange={(e) => setForm((prev) => ({ ...prev, category: e.target.value }))}
           />
           <Input
             placeholder="이미지 URL (선택)"
             value={form.imageUrl}
+            maxLength={500}
             onChange={(e) => setForm((prev) => ({ ...prev, imageUrl: e.target.value }))}
           />
           <Input
             placeholder="외부 링크 (선택)"
             value={form.externalUrl}
+            maxLength={500}
             onChange={(e) => setForm((prev) => ({ ...prev, externalUrl: e.target.value }))}
           />
           <Input
             placeholder="가격 (선택)"
+            type="number"
+            min={0}
             value={form.price}
             onChange={(e) => setForm((prev) => ({ ...prev, price: e.target.value }))}
           />
           <Textarea
             placeholder="설명 (선택)"
             value={form.description}
+            maxLength={5000}
             onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
           />
           {actionError && <ErrorMessage message={actionError} />}

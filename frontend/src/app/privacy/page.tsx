@@ -7,9 +7,19 @@ export default function PrivacyPage() {
       <PageHeader title="개인정보처리방침" showBack mobileOnly />
       <div className="page-container max-w-2xl py-8 lg:py-12">
         <h1 className="hidden text-2xl font-semibold text-ink lg:block">개인정보처리방침</h1>
-        <p className="mt-2 text-[12px] hf-text-muted">시행일: 2026년 6월 13일</p>
+        <p className="mt-2 text-[12px] hf-text-muted">시행일: 2026년 7월 15일</p>
 
         <div className="prose-policy mt-8 space-y-6 text-sm leading-relaxed text-cream-foreground">
+          <section>
+            <h2 className="text-base font-semibold text-ink">민감정보 처리 안내</h2>
+            <p className="mt-2">
+              서비스는 사용자가 직접 입력한 증상, 투약 여부, 수면·스트레스 상태와 건강 메모를
+              개인일지 제공 목적으로 처리합니다. 해당 정보는 본인과 권한이 부여된 운영자만 필요한
+              범위에서 접근하며, 회원 탈퇴 또는 사용자의 기록 삭제 요청 시 지체 없이 파기합니다.
+              민감정보 처리 동의를 거부할 수 있으나, 동의하지 않으면 회원가입 및 개인일지 기능을
+              이용할 수 없습니다.
+            </p>
+          </section>
           <section>
             <h2 className="text-base font-semibold text-ink">1. 수집하는 개인정보</h2>
             <ul className="mt-2 list-disc space-y-1 pl-5">

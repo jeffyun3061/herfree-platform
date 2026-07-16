@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { BrandMark } from '@/components/brand/BrandMark';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
-import { validateEmail } from '@/domain/auth/validate';
+import { EMAIL_MAX_LENGTH, validateEmail } from '@/domain/auth/validate';
 import { requestPasswordReset } from '@/lib/api/auth';
 import { getErrorMessage } from '@/lib/api/client';
 
@@ -63,6 +63,7 @@ export default function ForgotPasswordPage() {
             placeholder="이메일을 입력해 주세요"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            maxLength={EMAIL_MAX_LENGTH}
             error={fieldError ?? undefined}
           />
 

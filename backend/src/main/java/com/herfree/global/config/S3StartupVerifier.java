@@ -38,13 +38,13 @@ public class S3StartupVerifier {
                     s3Properties.bucket(), s3Properties.region());
         } catch (S3Exception ex) {
             String code = ex.awsErrorDetails() != null ? ex.awsErrorDetails().errorCode() : "Unknown";
-            log.error("S3 startup check FAILED — bucket='{}' region={} errorCode={} message={}",
-                    s3Properties.bucket(), s3Properties.region(), code, ex.getMessage());
+            log.error("S3 startup check FAILED — region={} errorCode={}",
+                    s3Properties.region(), code);
             log.error(
                     "Fix: (1) bucket/region in local-secrets.yml (2) IAM s3:PutObject + s3:ListBucket on arn:aws:s3:::{}/posts/*",
                     s3Properties.bucket());
         } catch (Exception ex) {
-            log.error("S3 startup check FAILED — {}", ex.getMessage());
+            log.error("S3 startup check FAILED — failureType={}", ex.getClass().getSimpleName());
         }
     }
 }

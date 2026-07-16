@@ -71,6 +71,16 @@ class PasswordResetServiceTest {
     }
 
     @Test
+    @DisplayName("비밀번호 재설정 이메일도 동일한 규칙으로 정규화한다")
+    void requestReset_normalizesEmail() {
+        given(userRepository.findByEmail("user@test.com")).willReturn(Optional.empty());
+
+        passwordResetService.requestReset(new PasswordResetRequest("  USER@Test.COM "));
+
+        verify(userRepository).findByEmail("user@test.com");
+    }
+
+    @Test
     @DisplayName("유효한 토큰이면 비밀번호를 변경하고 토큰을 사용 처리한다")
     void confirmReset_validToken_updatesPassword() {
         String rawToken = "test-reset-token-uuid";

@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
@@ -44,6 +45,22 @@ class PostImageStorageServiceTest {
                 ArgumentCaptor.forClass(PutObjectPresignRequest.class);
         verify(s3Presigner).presignPutObject(captor.capture());
         assertThat(captor.getValue().putObjectRequest().contentLength()).isEqualTo(1234L);
+    }
+
+    @Test
+    @DisplayName("Configured public base URL never bypasses the image access proxy")
+    void createUploadUrl_publicBaseUrlStillReturnsProxyPath() throws Exception {
+        S3Properties properties =
+                new S3Properties("test-bucket", "ap-northeast-2", null, null, "https://cdn.example.com");
+        PostImageStorageService proxyOnlyService =
+                new PostImageStorageService(properties, s3Client, s3Presigner);
+        PresignedPutObjectRequest presigned = org.mockito.Mockito.mock(PresignedPutObjectRequest.class);
+        given(presigned.url()).willReturn(new URL("https://example.com/upload"));
+        given(s3Presigner.presignPutObject(any(PutObjectPresignRequest.class))).willReturn(presigned);
+
+        var response = proxyOnlyService.createUploadUrl(1L, "image/png", 1234L);
+
+        assertThat(response.imageUrl()).startsWith(PostImageStorageService.IMAGE_OBJECT_PATH_PREFIX);
     }
 
     @Test
@@ -78,5 +95,25 @@ class PostImageStorageServiceTest {
                         assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.INVALID_IMAGE_TYPE));
 
         verify(s3Client, never()).getObject(any(GetObjectRequest.class));
+    }
+
+    @Test
+    @DisplayName("게시글 이미지 URL에서 객체 키를 추출해 S3 원본을 삭제한다")
+    void deleteImage_deletesS3Object() {
+        service.deleteImage("/api/posts/images/object/posts/1/123e4567-e89b-12d3-a456-426614174000.png");
+
+        ArgumentCaptor<DeleteObjectRequest> captor = ArgumentCaptor.forClass(DeleteObjectRequest.class);
+        verify(s3Client).deleteObject(captor.capture());
+        assertThat(captor.getValue().bucket()).isEqualTo("test-bucket");
+        assertThat(captor.getValue().key())
+                .isEqualTo("posts/1/123e4567-e89b-12d3-a456-426614174000.png");
+    }
+
+    @Test
+    @DisplayName("정적 칼럼 이미지는 S3 관리 대상이 아니므로 삭제하지 않는다")
+    void deleteManagedImageIfPresent_staticAsset_skipsS3() {
+        service.deleteManagedImageIfPresent("/assets/content/default.png");
+
+        verify(s3Client, never()).deleteObject(any(DeleteObjectRequest.class));
     }
 }

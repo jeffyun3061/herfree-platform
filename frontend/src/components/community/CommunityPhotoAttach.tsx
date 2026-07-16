@@ -8,6 +8,7 @@ import {
 } from '@/domain/post/types';
 import { getErrorMessage } from '@/lib/api/client';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
+import { AuthImage } from '@/components/common/AuthImage';
 
 type CommunityPhotoAttachProps = {
   imageUrl: string | null;
@@ -17,6 +18,7 @@ type CommunityPhotoAttachProps = {
   helperText?: string;
   emptyText?: string;
   variant?: 'default' | 'compact';
+  onUploadingChange?: (isUploading: boolean) => void;
 };
 
 export function CommunityPhotoAttach({
@@ -27,6 +29,7 @@ export function CommunityPhotoAttach({
   helperText = '사진 1장, 10MB 이하 (JPEG, PNG, WEBP)',
   emptyText = '사진 추가',
   variant = 'default',
+  onUploadingChange,
 }: CommunityPhotoAttachProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -49,6 +52,7 @@ export function CommunityPhotoAttach({
 
     setError(null);
     setIsUploading(true);
+    onUploadingChange?.(true);
     try {
       const uploadedUrl = await uploadPostImage(file);
       onChange(uploadedUrl);
@@ -56,6 +60,7 @@ export function CommunityPhotoAttach({
       setError(getErrorMessage(uploadError));
     } finally {
       setIsUploading(false);
+      onUploadingChange?.(false);
     }
   };
 
@@ -77,7 +82,7 @@ export function CommunityPhotoAttach({
         />
         {imageUrl ? (
           <div className="overflow-hidden rounded-[14px] border border-[#ECE5D8] bg-[#FFFCF7]">
-            <img src={imageUrl} alt="첨부 이미지 미리보기" className="max-h-48 w-full object-contain" />
+            <AuthImage src={imageUrl} alt="첨부 이미지 미리보기" className="max-h-48 w-full object-contain" />
             <div className="flex gap-2 border-t border-[#F2ECE1] p-2.5">
               <button
                 type="button"
@@ -139,7 +144,7 @@ export function CommunityPhotoAttach({
 
       {imageUrl ? (
         <div className="mt-3 overflow-hidden rounded-xl border border-wrtn-border bg-white">
-          <img src={imageUrl} alt="첨부 이미지 미리보기" className="max-h-64 w-full object-contain" />
+          <AuthImage src={imageUrl} alt="첨부 이미지 미리보기" className="max-h-64 w-full object-contain" />
           <div className="flex gap-2 border-t border-wrtn-border p-3">
             <button
               type="button"

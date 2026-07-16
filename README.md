@@ -137,6 +137,8 @@ Git·빌드·커밋은 **`C:\dev\herfree-platform`** 기준으로 합니다. One
 | [decision-log.md](docs/decision-log.md) | ADR (JWT, MySQL, S3 프록시 등) |
 | [CONTRIBUTING.md](docs/CONTRIBUTING.md) | 브랜치·PR |
 | [git-workflow.md](docs/git-workflow.md) | 운영 배포용 Git 흐름·브랜치 보호·커밋 설정 |
+| [health-data-security-standard.md](docs/health-data-security-standard.md) | 건강정보 보안·개인정보·DB·사고 대응 상위 기준 |
+| [go-live-checklist.md](docs/go-live-checklist.md) | 실서비스 production 배포 승인 체크리스트 |
 
 로컬에서 Swagger: `http://localhost:8080/swagger-ui.html` (기동 시)
 

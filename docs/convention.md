@@ -56,6 +56,7 @@ Controller에서 권한, 상태 변경, 복잡한 조회 조건을 직접 처리
 - 운영 DB 변경은 Flyway migration으로 남긴다.
 - 테이블, 인덱스, enum 의미가 바뀌면 `docs/erd.md` 또는 관련 문서를 갱신한다.
 - 운영에서는 `ddl-auto`에 의존하지 않는다.
+- 건강정보·개인정보를 바꾸는 migration은 `docs/templates/data-migration-review.md`로 권한, 파기, lock, 복구 영향을 검토한다.
 
 ### 보안 기준
 
@@ -64,6 +65,8 @@ Controller에서 권한, 상태 변경, 복잡한 조회 조건을 직접 처리
 - 프록시 헤더는 신뢰 가능한 프록시에서 온 요청일 때만 사용한다.
 - 외부 저장소에서 파일을 읽을 때는 content type과 크기를 먼저 확인한다.
 - 운영 환경의 메일, 저장소, DB 오류는 조용히 성공으로 처리하지 않는다.
+- 건강정보는 `docs/health-data-security-standard.md`의 D3로 분류하고, 수집 전 목적·접근·보유·파기·집계 기준을 승인받는다.
+- 공개 통계는 기록 수만으로 공개하지 않고 서로 다른 사용자 수와 소수 셀 억제를 적용한다.
 
 ## 프론트엔드
 
@@ -91,6 +94,7 @@ Controller에서 권한, 상태 변경, 복잡한 조회 조건을 직접 처리
 | 테이블, 컬럼, 인덱스 변경 | `docs/erd.md`, Flyway migration |
 | 운영 설정 변경 | `docs/deployment-aws.md`, `docs/operator-manual.md` |
 | 보안 정책 변경 | `docs/ops-security-checklist.md`, `docs/logging-policy.md` |
+| 건강정보·개인정보·사고 대응 | `docs/health-data-security-standard.md`, `docs/templates/` |
 | 큰 기술 결정 | `docs/decision-log.md` |
 
 ## 로컬 확인 명령

@@ -57,9 +57,49 @@ tasks.test {
     )
 }
 
+tasks.processResources {
+    // gitignore만으로는 로컬 파일이 JAR에 들어가는 것을 막지 못하므로 산출물에서 강제 제외한다.
+    exclude(
+        "application-local.yml",
+        "application-prod.yml",
+        "application-secret.yml",
+        "local-secrets.yml",
+        "secrets/**",
+    )
+}
+
 tasks.named<org.springframework.boot.gradle.tasks.run.BootRun>("bootRun") {
     // bootRun working directory = backend module (local-secrets.yml 경로 고정)
     workingDir = layout.projectDirectory.asFile
+    // 공통 설정은 배포 실수를 숨기지 않는다. local 프로필은 로컬 실행 명령에서만 명시한다.
+    args(
+        "--spring.profiles.active=local",
+        "--spring.config.additional-location=optional:file:src/main/resources/application-local.yml",
+    )
+}
+
+val verifyNoSecretResources by tasks.registering {
+    group = "verification"
+    dependsOn(tasks.named("bootJar"))
+    doLast {
+        val bootJar = tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar").get()
+        val forbidden = zipTree(bootJar.archiveFile.get().asFile).matching {
+            include(
+                "**/application-local.yml",
+                "**/application-prod.yml",
+                "**/application-secret.yml",
+                "**/local-secrets.yml",
+                "**/secrets/**",
+            )
+        }.files
+        if (forbidden.isNotEmpty()) {
+            throw GradleException("Secret-bearing resources found in bootJar: ${forbidden.joinToString()}")
+        }
+    }
+}
+
+tasks.named("check") {
+    dependsOn(verifyNoSecretResources)
 }
 
 // build 는 컴파일+테스트만. 서버 실행은 run-local.ps1 또는 bootRun 사용.

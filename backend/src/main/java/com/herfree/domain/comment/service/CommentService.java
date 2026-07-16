@@ -60,13 +60,16 @@ public class CommentService {
             parent = commentRepository.findById(request.parentId())
                     .filter(c -> c.getStatus() == CommentStatus.ACTIVE)
                     .orElseThrow(CommentNotFoundException::new);
+            if (!java.util.Objects.equals(parent.getPost().getId(), postId)) {
+                throw new CommentNotFoundException();
+            }
         }
 
         Comment comment = Comment.builder()
                 .post(post)
                 .user(user)
                 .parent(parent)
-                .content(request.content())
+                .content(request.content().trim())
                 .isAnonymous(request.isAnonymous())
                 .build();
 

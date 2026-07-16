@@ -18,6 +18,7 @@ import com.herfree.domain.user.repository.UserRepository;
 import com.herfree.global.common.AppTimeZone;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
@@ -317,5 +318,70 @@ class JournalServiceTest {
 
         assertThatThrownBy(() -> journalService.deleteRecord(userId, 10L))
                 .isInstanceOf(JournalRecordNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("Public insights require distinct users, not repeated records")
+    void getCommunityInsights_repeatedRecordsFromOneUserAreInsufficient() {
+        List<JournalRecord> records = new ArrayList<>();
+        for (int i = 0; i < 20; i++) {
+            records.add(symptomRecord(1L, List.of("STRESS"), List.of("ITCHING")));
+        }
+        given(journalRecordRepository.findRecentSymptomRecords(
+                any(LocalDate.class), any(PageRequest.class))).willReturn(records);
+
+        var response = journalService.getCommunityInsights();
+
+        assertThat(response.sufficientData()).isFalse();
+        assertThat(response.sampleSize()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("Public insights suppress cells mentioned by fewer than five users")
+    void getCommunityInsights_suppressesSmallCells() {
+        List<JournalRecord> records = new ArrayList<>();
+        for (long userId = 1; userId <= 20; userId++) {
+            List<String> triggers = userId <= 5
+                    ? List.of("SLEEP_DEFICIT")
+                    : userId <= 9 ? List.of("STRESS") : List.of();
+            List<String> symptoms = userId <= 5 ? List.of("ITCHING") : List.of("NONE");
+            records.add(symptomRecord(userId, triggers, symptoms));
+        }
+        given(journalRecordRepository.findRecentSymptomRecords(
+                any(LocalDate.class), any(PageRequest.class))).willReturn(records);
+
+        var response = journalService.getCommunityInsights();
+
+        assertThat(response.sufficientData()).isTrue();
+        assertThat(response.sampleSize()).isEqualTo(20);
+        assertThat(response.topTriggers())
+                .anySatisfy(item -> {
+                    assertThat(item.code()).isEqualTo("SLEEP_DEFICIT");
+                    assertThat(item.percentage()).isEqualTo(25);
+                })
+                .noneMatch(item -> item.code().equals("STRESS"));
+        assertThat(response.topProdromalSymptoms())
+                .anyMatch(item -> item.code().equals("ITCHING"));
+    }
+
+    private JournalRecord symptomRecord(
+            Long userId,
+            List<String> triggers,
+            List<String> prodromalSymptoms
+    ) {
+        User user = User.builder()
+                .email("user-" + userId + "@example.invalid")
+                .password("password")
+                .build();
+        ReflectionTestUtils.setField(user, "id", userId);
+        return JournalRecord.builder()
+                .user(user)
+                .recordDate(AppTimeZone.todayKst())
+                .hadSymptoms(true)
+                .triggers(triggers)
+                .prodromalSymptoms(prodromalSymptoms)
+                .supplementTaken(false)
+                .exerciseDone(false)
+                .build();
     }
 }

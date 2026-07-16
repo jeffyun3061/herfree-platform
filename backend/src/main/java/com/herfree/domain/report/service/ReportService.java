@@ -32,6 +32,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -96,10 +99,16 @@ public class ReportService {
     public java.util.List<AdminReportTargetResponse> getPendingTargets(int minCount, int size) {
         int safeMinCount = Math.max(1, minCount);
         int safeSize = Math.min(Math.max(size, 1), 100);
-        return reportRepository
+        java.util.List<ReportTargetSummary> summaries = reportRepository
                 .findTargetSummaries(ReportStatus.PENDING, safeMinCount, PageRequest.of(0, safeSize))
-                .stream()
-                .map(this::toTargetResponse)
+                .stream().toList();
+        Map<TargetKey, TargetSnapshot> snapshots = resolveTargetSnapshots(summaries);
+        return summaries.stream()
+                .map(summary -> toTargetResponse(
+                        summary,
+                        snapshots.getOrDefault(
+                                new TargetKey(summary.getTargetType(), summary.getTargetId()),
+                                deletedSnapshot(summary.getTargetType()))))
                 .toList();
     }
 
@@ -144,8 +153,10 @@ public class ReportService {
         return reports.stream().map(ReportResponse::from).toList();
     }
 
-    private AdminReportTargetResponse toTargetResponse(ReportTargetSummary summary) {
-        TargetSnapshot snapshot = resolveTargetSnapshot(summary.getTargetType(), summary.getTargetId());
+    private AdminReportTargetResponse toTargetResponse(
+            ReportTargetSummary summary,
+            TargetSnapshot snapshot
+    ) {
         return new AdminReportTargetResponse(
                 summary.getTargetType(),
                 summary.getTargetId(),
@@ -160,46 +171,79 @@ public class ReportService {
         );
     }
 
-    private TargetSnapshot resolveTargetSnapshot(ReportTargetType targetType, Long targetId) {
-        return switch (targetType) {
-            case POST -> postRepository.findByIdAndStatusIn(
-                            targetId,
-                            java.util.List.of(PostStatus.ACTIVE, PostStatus.HIDDEN))
-                    .map(post -> new TargetSnapshot(
-                            post.getTitle(),
-                            preview(post.getContent()),
-                            post.getStatus().name(),
-                            post.getUser().getId(),
-                            nicknameOf(post.getUser().getId())))
-                    .orElse(new TargetSnapshot("삭제된 게시글", null, "DELETED", null, null));
-            case COMMENT -> commentRepository.findByIdAndStatusIn(
-                            targetId,
-                            java.util.List.of(CommentStatus.ACTIVE, CommentStatus.HIDDEN))
-                    .map(comment -> new TargetSnapshot(
-                            "댓글 #" + comment.getId(),
-                            preview(comment.getContent()),
-                            comment.getStatus().name(),
-                            comment.getUser().getId(),
-                            nicknameOf(comment.getUser().getId())))
-                    .orElse(new TargetSnapshot("삭제된 댓글", null, "DELETED", null, null));
-            case USER -> userRepository.findById(targetId)
-                    .map(user -> new TargetSnapshot(
-                            "회원 #" + user.getId(),
-                            user.getEmail(),
-                            user.getStatus().name(),
-                            user.getId(),
-                            nicknameOf(user.getId())))
-                    .orElse(new TargetSnapshot("삭제된 회원", null, "DELETED", null, null));
-        };
+    private Map<TargetKey, TargetSnapshot> resolveTargetSnapshots(java.util.List<ReportTargetSummary> summaries) {
+        Set<Long> postIds = targetIds(summaries, ReportTargetType.POST);
+        Set<Long> commentIds = targetIds(summaries, ReportTargetType.COMMENT);
+        Set<Long> userIds = targetIds(summaries, ReportTargetType.USER);
+
+        java.util.List<Post> posts = postIds.isEmpty()
+                ? java.util.List.of()
+                : postRepository.findByIdInAndStatusIn(
+                        postIds, java.util.List.of(PostStatus.ACTIVE, PostStatus.HIDDEN));
+        java.util.List<Comment> comments = commentIds.isEmpty()
+                ? java.util.List.of()
+                : commentRepository.findByIdInAndStatusIn(
+                        commentIds, java.util.List.of(CommentStatus.ACTIVE, CommentStatus.HIDDEN));
+        java.util.List<User> users = userIds.isEmpty()
+                ? java.util.List.of()
+                : userRepository.findAllById(userIds);
+
+        Set<Long> authorIds = new java.util.HashSet<>(userIds);
+        posts.forEach(post -> authorIds.add(post.getUser().getId()));
+        comments.forEach(comment -> authorIds.add(comment.getUser().getId()));
+        Map<Long, String> nicknames = authorIds.isEmpty()
+                ? Map.of()
+                : userProfileRepository.findByUser_IdIn(authorIds).stream()
+                        .collect(Collectors.toMap(
+                                profile -> profile.getUser().getId(),
+                                UserProfile::getNickname));
+
+        Map<TargetKey, TargetSnapshot> snapshots = new java.util.HashMap<>();
+        posts.forEach(post -> snapshots.put(
+                new TargetKey(ReportTargetType.POST, post.getId()),
+                new TargetSnapshot(
+                        post.getTitle(),
+                        preview(post.getContent()),
+                        post.getStatus().name(),
+                        post.getUser().getId(),
+                        nicknames.get(post.getUser().getId()))));
+        comments.forEach(comment -> snapshots.put(
+                new TargetKey(ReportTargetType.COMMENT, comment.getId()),
+                new TargetSnapshot(
+                        "댓글 #" + comment.getId(),
+                        preview(comment.getContent()),
+                        comment.getStatus().name(),
+                        comment.getUser().getId(),
+                        nicknames.get(comment.getUser().getId()))));
+        users.forEach(user -> snapshots.put(
+                new TargetKey(ReportTargetType.USER, user.getId()),
+                new TargetSnapshot(
+                        "회원 #" + user.getId(),
+                        // MODERATOR도 신고 목록을 보므로 이메일 원문 대신 마스킹 값만 노출한다.
+                        maskEmail(user.getEmail()),
+                        user.getStatus().name(),
+                        user.getId(),
+                        nicknames.get(user.getId()))));
+        return snapshots;
     }
 
-    private String nicknameOf(Long userId) {
-        if (userId == null) {
-            return null;
-        }
-        return userProfileRepository.findByUserId(userId)
-                .map(UserProfile::getNickname)
-                .orElse(null);
+    private Set<Long> targetIds(
+            java.util.List<ReportTargetSummary> summaries,
+            ReportTargetType targetType
+    ) {
+        return summaries.stream()
+                .filter(summary -> summary.getTargetType() == targetType)
+                .map(ReportTargetSummary::getTargetId)
+                .collect(Collectors.toSet());
+    }
+
+    private TargetSnapshot deletedSnapshot(ReportTargetType targetType) {
+        String title = switch (targetType) {
+            case POST -> "삭제된 게시글";
+            case COMMENT -> "삭제된 댓글";
+            case USER -> "삭제된 회원";
+        };
+        return new TargetSnapshot(title, null, "DELETED", null, null);
     }
 
     private String preview(String text) {
@@ -210,6 +254,19 @@ public class ReportService {
         return normalized.length() <= 120 ? normalized : normalized.substring(0, 120) + "...";
     }
 
+    private String maskEmail(String email) {
+        if (email == null || !email.contains("@")) {
+            return "***";
+        }
+        String local = email.substring(0, email.indexOf('@'));
+        String domain = email.substring(email.indexOf('@'));
+        if (local.isEmpty()) {
+            return "***" + domain;
+        }
+        String visible = local.length() <= 2 ? local.substring(0, 1) : local.substring(0, 2);
+        return visible + "***" + domain;
+    }
+
     private record TargetSnapshot(
             String title,
             String preview,
@@ -217,6 +274,9 @@ public class ReportService {
             Long authorId,
             String authorNickname
     ) {
+    }
+
+    private record TargetKey(ReportTargetType type, Long id) {
     }
 
     private void recordAnalyticsEvent(String eventName, Long userId) {

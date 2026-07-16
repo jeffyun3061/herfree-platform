@@ -1,4 +1,4 @@
-# Herfree 프론트 안정 실행 (데모/검수용)
+﻿# Herfree 프론트 안정 실행 (데모/검수용)
 # 사용법: .\scripts\start-frontend-stable.ps1
 
 $ErrorActionPreference = "Stop"

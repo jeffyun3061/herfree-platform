@@ -2,6 +2,8 @@ package com.herfree.global.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.herfree.domain.user.repository.UserRepository;
+import com.herfree.domain.audit.service.AdminAuditService;
+import com.herfree.global.config.RuntimeProfilePolicy;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -10,12 +12,9 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-
-import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
@@ -30,10 +29,11 @@ public class SecurityConfig {
     private final AuthRateLimitFilter authRateLimitFilter;
     private final org.springframework.web.cors.CorsConfigurationSource corsConfigurationSource;
     private final Environment environment;
+    private final AdminAuditService adminAuditService;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+        return new MigratingPasswordEncoder();
     }
 
     @Bean
@@ -42,8 +42,13 @@ public class SecurityConfig {
     }
 
     @Bean
+    public AdminAuditFilter adminAuditFilter() {
+        return new AdminAuditFilter(adminAuditService);
+    }
+
+    @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        boolean isProd = Arrays.asList(environment.getActiveProfiles()).contains("prod");
+        boolean isPublicEnvironment = RuntimeProfilePolicy.isPublicEnvironment(environment);
 
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
@@ -78,7 +83,7 @@ public class SecurityConfig {
             // 회원가입 전 퍼널도 기록하므로 이벤트 수집 POST만 익명 접근을 허용한다.
             auth.requestMatchers(HttpMethod.POST, "/api/events").permitAll();
 
-            if (!isProd) {
+            if (!isPublicEnvironment) {
                 auth.requestMatchers(
                         "/v3/api-docs/**",
                         "/swagger-ui/**",
@@ -121,7 +126,8 @@ public class SecurityConfig {
 
         http
                 .addFilterBefore(authRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(adminAuditFilter(), JwtAuthenticationFilter.class);
 
         return http.build();
     }

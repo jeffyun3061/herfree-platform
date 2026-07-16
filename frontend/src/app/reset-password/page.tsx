@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { BrandMark } from '@/components/brand/BrandMark';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { validatePassword } from '@/domain/auth/validate';
+import { PASSWORD_MAX_LENGTH, validatePassword } from '@/domain/auth/validate';
 import { confirmPasswordReset } from '@/lib/api/auth';
 import { getErrorMessage } from '@/lib/api/client';
 
@@ -65,7 +65,7 @@ function ResetPasswordForm() {
         </div>
         <h2 className="text-xl font-bold text-ink">새 비밀번호 설정</h2>
         <p className="mt-2 text-sm leading-relaxed text-wrtn-muted">
-          새로 사용할 비밀번호를 입력해 주세요. 최소 8자 이상이어야 합니다.
+          새 비밀번호는 15~64자로 입력해 주세요. 공백과 특수문자도 사용할 수 있습니다.
         </p>
 
         {!token && (
@@ -83,6 +83,8 @@ function ResetPasswordForm() {
             placeholder="새 비밀번호를 입력해 주세요"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
+            maxLength={PASSWORD_MAX_LENGTH}
+            hint={<span className="text-[11px] font-normal text-[#9A9F94]">15~64자</span>}
             error={fieldErrors.newPassword}
           />
           <div className="mt-4">
@@ -94,6 +96,7 @@ function ResetPasswordForm() {
               placeholder="새 비밀번호를 다시 입력해 주세요"
               value={newPasswordConfirm}
               onChange={(e) => setNewPasswordConfirm(e.target.value)}
+              maxLength={PASSWORD_MAX_LENGTH}
               error={fieldErrors.newPasswordConfirm}
             />
           </div>

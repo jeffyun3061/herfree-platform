@@ -1,6 +1,5 @@
 package com.herfree.global.config;
 
-import java.util.Arrays;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -42,7 +41,7 @@ public class CorsConfig {
             configuration.setAllowedOriginPatterns(splitCsv(allowedOriginPatterns));
         } else if (StringUtils.hasText(allowedOrigins)) {
             configuration.setAllowedOrigins(splitCsv(allowedOrigins));
-        } else if (Arrays.asList(environment.getActiveProfiles()).contains("prod")) {
+        } else if (RuntimeProfilePolicy.isPublicEnvironment(environment)) {
             configuration.setAllowedOrigins(List.of());
         } else {
             configuration.setAllowedOriginPatterns(LOCAL_ORIGIN_PATTERNS);
@@ -54,7 +53,7 @@ public class CorsConfig {
     }
 
     private static List<String> splitCsv(String value) {
-        return Arrays.stream(value.split(","))
+        return java.util.Arrays.stream(value.split(","))
                 .map(String::trim)
                 .filter(StringUtils::hasText)
                 .toList();

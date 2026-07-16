@@ -44,7 +44,7 @@ public class AdminBootstrapRunner implements ApplicationRunner {
 
         if (existing.isPresent()) {
             if (!bootstrapProperties.syncExisting()) {
-                log.info("Admin bootstrap skipped — account already exists for {}", email);
+                log.info("Admin bootstrap skipped — configured account already exists.");
                 return;
             }
             syncExistingAdmin(existing.get());
@@ -61,7 +61,7 @@ public class AdminBootstrapRunner implements ApplicationRunner {
             user.activate();
         }
         userRepository.save(user);
-        log.info("Bootstrap synced existing account to SUPER_ADMIN: {}", user.getEmail());
+        log.info("Bootstrap synced existing account to SUPER_ADMIN.");
     }
 
     private void createAdmin(String email) {
@@ -81,7 +81,7 @@ public class AdminBootstrapRunner implements ApplicationRunner {
                 .build();
         userProfileRepository.save(profile);
 
-        log.info("Bootstrap SUPER_ADMIN created: {} (nickname={})", email, nickname);
+        log.info("Bootstrap SUPER_ADMIN created.");
     }
 
     private String resolveNickname() {

@@ -39,6 +39,7 @@ type AuthContextValue = {
     agreements: {
       agreeTerms: boolean;
       agreePrivacy: boolean;
+      agreeSensitive: boolean;
       agreeAge: boolean;
       agreeMarketing: boolean;
     },
@@ -86,7 +87,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      setUser(getSessionUser());
+      const cachedUser = getSessionUser();
+      setUser(cachedUser);
+      // 저장된 세션이 있으면 화면은 즉시 복원하고, 서버 토큰 검증은 백그라운드에서 계속한다.
+      if (cachedUser) {
+        setIsReady(true);
+      }
       try {
         const me = await Promise.race([
           usersApi.fetchMe(),
@@ -96,7 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         ]);
         if (me === null) {
           if (gen !== restoreGenRef.current || epochAtStart !== getAuthEpoch()) return;
-          setUser(getSessionUser());
+          setUser(cachedUser);
           return;
         }
         if (gen !== restoreGenRef.current || epochAtStart !== getAuthEpoch()) return;
@@ -110,7 +116,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(null);
           return;
         }
-        setUser(getSessionUser());
+        setUser(cachedUser);
       } finally {
         if (gen === restoreGenRef.current) {
           setIsReady(true);
@@ -184,6 +190,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     agreements: {
       agreeTerms: boolean;
       agreePrivacy: boolean;
+      agreeSensitive: boolean;
       agreeAge: boolean;
       agreeMarketing: boolean;
     },

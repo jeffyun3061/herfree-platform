@@ -19,12 +19,16 @@ public record ContentResponse(
         Instant updatedAt
 ) {
     public static ContentResponse from(Content content) {
+        return from(content, content.getImageUrl());
+    }
+
+    public static ContentResponse from(Content content, String displayImageUrl) {
         return new ContentResponse(
                 content.getId(),
                 content.getAuthor().getId(),
                 content.getTitle(),
                 content.getContent(),
-                content.getImageUrl(),
+                displayImageUrl,
                 content.getCategory(),
                 content.getContentType(),
                 content.getStatus(),

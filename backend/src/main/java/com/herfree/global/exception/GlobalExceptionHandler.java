@@ -9,6 +9,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.BindException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -49,22 +50,38 @@ public class GlobalExceptionHandler {
         return jsonResponse(HttpStatus.BAD_REQUEST, ErrorResponse.of(ErrorCode.INVALID_INPUT.getMessage()));
     }
 
-    @ExceptionHandler(IllegalStateException.class)
-    public ResponseEntity<ErrorResponse> handleIllegalState(IllegalStateException ex) {
-        log.error("Configuration error: {}", ex.getMessage());
+    @ExceptionHandler(SdkClientException.class)
+    public ResponseEntity<ErrorResponse> handleSdkClient(SdkClientException ex) {
+        log.error("S3 client error. failureType={}", ex.getClass().getSimpleName());
         return jsonResponse(
                 HttpStatus.SERVICE_UNAVAILABLE,
                 ErrorResponse.of(ErrorCode.S3_NOT_CONFIGURED.getMessage())
         );
     }
 
-    @ExceptionHandler(SdkClientException.class)
-    public ResponseEntity<ErrorResponse> handleSdkClient(SdkClientException ex) {
-        log.error("S3 client error: {}", ex.getMessage());
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+        // 사전 중복 검사는 UX용이고, 최종 보장은 DB unique 제약이다.
+        // 동시 요청이 사전 검사를 함께 통과해도 제약 이름만 해석해 일관된 409를 반환한다.
+        String detail = ex.getMostSpecificCause().getMessage();
+        String normalized = detail == null ? "" : detail.toLowerCase(java.util.Locale.ROOT);
+        if (normalized.contains("uk_users_email")) {
+            return jsonResponse(
+                    ErrorCode.DUPLICATE_EMAIL.getHttpStatus(),
+                    ErrorResponse.of(ErrorCode.DUPLICATE_EMAIL.getMessage()));
+        }
+        if (normalized.contains("uk_user_profiles_nickname")) {
+            return jsonResponse(
+                    ErrorCode.DUPLICATE_NICKNAME.getHttpStatus(),
+                    ErrorResponse.of(ErrorCode.DUPLICATE_NICKNAME.getMessage()));
+        }
+
+        log.error(
+                "Unhandled data integrity violation. failureType={}",
+                ex.getMostSpecificCause().getClass().getSimpleName());
         return jsonResponse(
-                HttpStatus.SERVICE_UNAVAILABLE,
-                ErrorResponse.of(ErrorCode.S3_NOT_CONFIGURED.getMessage())
-        );
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                ErrorResponse.of(ErrorCode.INTERNAL_ERROR.getMessage()));
     }
 
     @ExceptionHandler(Exception.class)

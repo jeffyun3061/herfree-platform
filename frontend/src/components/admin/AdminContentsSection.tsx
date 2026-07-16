@@ -12,6 +12,7 @@ import { Card } from '@/components/ui/Card';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { Badge } from '@/components/ui/Badge';
 import { CommunityPhotoAttach } from '@/components/community/CommunityPhotoAttach';
+import { AuthImage } from '@/components/common/AuthImage';
 import {
   AdminChipGroup,
   AdminListSummary,
@@ -250,7 +251,7 @@ export function AdminContentsSection() {
                   onDelete={() => setDeleteTargetId(item.id)}
                   preview={
                     item.imageUrl ? (
-                      <img
+                      <AuthImage
                         src={item.imageUrl}
                         alt=""
                         className="h-full w-full object-cover"
@@ -339,7 +340,7 @@ export function AdminContentsSection() {
             <div className="rounded-xl border border-dashed border-border bg-cream-dark/40 p-3">
               <p className="text-[10px] font-medium text-muted">미리보기 (칼럼 목록)</p>
               {form.imageUrl && (
-                <img
+                <AuthImage
                   src={form.imageUrl}
                   alt=""
                   className="mt-2 aspect-[16/9] w-full rounded-lg object-cover"

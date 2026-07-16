@@ -50,11 +50,23 @@ import {
 
 } from '@/hooks/useJournal';
 
+function JournalTabFromQuery({ onChange }: { onChange: (tab: JournalTabId) => void }) {
+  const searchParams = useSearchParams();
+  const tab = searchParams.get('tab');
+
+  useEffect(() => {
+    if (tab === 'today' || tab === 'records' || tab === 'insights') {
+      onChange(tab);
+    }
+  }, [tab, onChange]);
+
+  return null;
+}
+
 function JournalPageContent() {
 
   const { isLoggedIn, isReady } = useAuth();
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   const [activeTab, setActiveTab] = useState<JournalTabId>('today');
 
@@ -76,6 +88,9 @@ function JournalPageContent() {
 
 
   const historyHadSymptoms = historyFilter === 'relapse' ? true : undefined;
+  const journalEnabled = isLoggedIn && isReady;
+  const recordsEnabled = journalEnabled && activeTab === 'records';
+  const insightsEnabled = journalEnabled && activeTab === 'insights';
 
 
 
@@ -85,9 +100,11 @@ function JournalPageContent() {
 
     isLoading: dashboardLoading,
 
+    error: dashboardError,
+
     refetch: refetchDashboard,
 
-  } = useJournalDashboard(isLoggedIn && isReady);
+  } = useJournalDashboard(journalEnabled);
 
   const {
 
@@ -95,15 +112,13 @@ function JournalPageContent() {
 
     isLoading: reviewSummaryLoading,
 
-    refetch: refetchReviewSummary,
+  } = useJournalReviewSummary(insightsEnabled);
 
-  } = useJournalReviewSummary(isLoggedIn && isReady);
-
-  const { data: insights } = useJournalInsights(isLoggedIn && isReady);
+  const { data: insights } = useJournalInsights(insightsEnabled);
 
   const { data: historyPageData, isLoading: historyLoading, refetch: refetchHistory } =
 
-    useJournalRecords(historyPage, 10, isLoggedIn && isReady, historyHadSymptoms);
+    useJournalRecords(historyPage, 10, recordsEnabled, historyHadSymptoms);
 
   const calendarDate = new Date(`${calendarMonth}T00:00:00`);
   const calendarYear = calendarDate.getFullYear();
@@ -111,7 +126,7 @@ function JournalPageContent() {
   const { data: monthlyRecordsRaw, refetch: refetchMonthlyRecords } = useJournalMonthlyRecords(
     calendarYear,
     calendarMonthNumber,
-    isLoggedIn && isReady,
+    recordsEnabled,
     historyHadSymptoms,
   );
   const monthlyRecords = monthlyRecordsRaw ?? [];
@@ -125,10 +140,8 @@ function JournalPageContent() {
 
 
 
-  const refreshAll = async () => {
-
-    await Promise.all([refetchDashboard(), refetchHistory(), refetchReviewSummary(), refetchMonthlyRecords()]);
-
+  const refreshRecordLists = async () => {
+    await Promise.all([refetchDashboard(), refetchHistory(), refetchMonthlyRecords()]);
   };
 
 
@@ -153,7 +166,7 @@ function JournalPageContent() {
 
     onAfterSave: async () => {
 
-      await refreshAll();
+      await refetchDashboard();
 
       setActiveTab('records');
 
@@ -175,15 +188,6 @@ function JournalPageContent() {
 
   }, [historyFilter]);
 
-  useEffect(() => {
-    const tab = searchParams.get('tab');
-    if (tab === 'today' || tab === 'records' || tab === 'insights') {
-      setActiveTab(tab);
-    }
-  }, [searchParams]);
-
-
-
   const handleDelete = async () => {
 
     if (deleteTargetId == null) return;
@@ -192,7 +196,7 @@ function JournalPageContent() {
 
     setDeleteTargetId(null);
 
-    await refreshAll();
+    await refreshRecordLists();
 
   };
 
@@ -226,7 +230,7 @@ function JournalPageContent() {
 
   const handleInlineSave = async (input: import('@/domain/journal/types').JournalRecordInput) => {
     await saveInlineRecord(input);
-    await refreshAll();
+    await refetchDashboard();
     setActiveTab('records');
     setSaveMessage('기록이 저장됐어요.');
     setTimeout(() => setSaveMessage(null), 3000);
@@ -258,6 +262,8 @@ function JournalPageContent() {
 
             <div className="hf-page-x space-y-3">
             <Suspense fallback={null}>
+
+              <JournalTabFromQuery onChange={setActiveTab} />
 
               <JournalRecordFromQuery
 
@@ -370,7 +376,9 @@ function JournalPageContent() {
 
 
 
-        {(error || deleteError || inlineSaveError) && <ErrorMessage message={error ?? deleteError ?? inlineSaveError ?? ''} />}
+        {(dashboardError || error || deleteError || inlineSaveError) && (
+          <ErrorMessage message={dashboardError ?? error ?? deleteError ?? inlineSaveError ?? ''} />
+        )}
 
       </div>
 
@@ -403,16 +411,6 @@ function JournalPageContent() {
 }
 
 export default function JournalPage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="flex min-h-[50vh] items-center justify-center bg-[#F3EDE3]">
-          <LoadingSpinner label="개인일지를 준비하는 중..." />
-        </div>
-      }
-    >
-      <JournalPageContent />
-    </Suspense>
-  );
+  return <JournalPageContent />;
 }
 

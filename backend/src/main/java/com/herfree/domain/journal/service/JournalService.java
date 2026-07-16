@@ -40,9 +40,11 @@ import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -57,7 +59,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class JournalService {
 
-    private static final int INSIGHT_MIN_SAMPLE = 10;
+    private static final int INSIGHT_MIN_SAMPLE = 20;
+    private static final int INSIGHT_MIN_CELL_USERS = 5;
     private static final int INSIGHT_LOOKBACK_MONTHS = 6;
     private static final int ROUTINE_TASK_COUNT = 3;
     private static final int TIMELINE_DAYS = 14;
@@ -359,31 +362,37 @@ public class JournalService {
         LocalDate since = AppTimeZone.todayKst().minusMonths(INSIGHT_LOOKBACK_MONTHS);
         List<JournalRecord> records = journalRecordRepository.findRecentSymptomRecords(
                 since, PageRequest.of(0, 500));
+        Set<Long> participantIds = records.stream()
+                .map(record -> record.getUser().getId())
+                .collect(Collectors.toSet());
 
-        if (records.size() < INSIGHT_MIN_SAMPLE) {
-            return JournalInsightsResponse.insufficient(records.size(), INSIGHT_MIN_SAMPLE);
+        if (participantIds.size() < INSIGHT_MIN_SAMPLE) {
+            return JournalInsightsResponse.insufficient(participantIds.size(), INSIGHT_MIN_SAMPLE);
         }
 
-        Map<String, Integer> triggerCounts = new HashMap<>();
-        Map<String, Integer> symptomCounts = new HashMap<>();
+        Map<String, Set<Long>> triggerUsers = new HashMap<>();
+        Map<String, Set<Long>> symptomUsers = new HashMap<>();
 
         for (JournalRecord record : records) {
+            Long participantId = record.getUser().getId();
             if (record.getTriggers() != null) {
                 for (String trigger : record.getTriggers()) {
-                    triggerCounts.merge(trigger, 1, Integer::sum);
+                    triggerUsers.computeIfAbsent(trigger, ignored -> new HashSet<>()).add(participantId);
                 }
             }
             if (record.getProdromalSymptoms() != null) {
                 for (String symptom : record.getProdromalSymptoms()) {
                     if (!"NONE".equals(symptom)) {
-                        symptomCounts.merge(symptom, 1, Integer::sum);
+                        symptomUsers.computeIfAbsent(symptom, ignored -> new HashSet<>()).add(participantId);
                     }
                 }
             }
         }
 
-        List<JournalInsightItemResponse> topTriggers = toInsightItems(triggerCounts, TRIGGER_LABELS, records.size());
-        List<JournalInsightItemResponse> topProdromal = toInsightItems(symptomCounts, SYMPTOM_LABELS, records.size());
+        List<JournalInsightItemResponse> topTriggers =
+                toInsightItems(triggerUsers, TRIGGER_LABELS, participantIds.size());
+        List<JournalInsightItemResponse> topProdromal =
+                toInsightItems(symptomUsers, SYMPTOM_LABELS, participantIds.size());
 
         String message = topTriggers.isEmpty()
                 ? "회원들의 익명 기록이 쌓이면 재발 패턴을 함께 살펴볼 수 있어요."
@@ -391,10 +400,10 @@ public class JournalService {
                         "최근 재발 기록 중 '%s'이(가) 가장 많이 언급됐어요. 나만의 트리거도 꾸준히 기록해 보세요.",
                         topTriggers.get(0).label());
 
-        List<String> insightLines = buildInsightLines(records.size(), topTriggers, topProdromal);
+        List<String> insightLines = buildInsightLines(participantIds.size(), topTriggers, topProdromal);
 
         return new JournalInsightsResponse(
-                records.size(),
+                participantIds.size(),
                 true,
                 topTriggers,
                 topProdromal,
@@ -637,7 +646,7 @@ public class JournalService {
             List<JournalInsightItemResponse> topProdromal
     ) {
         List<String> lines = new ArrayList<>();
-        lines.add(String.format("최근 %d건의 익명 재발 기록을 분석했습니다.", sampleSize));
+        lines.add(String.format("최근 %d명의 익명 재발 기록을 분석했습니다.", sampleSize));
 
         for (JournalInsightItemResponse item : topTriggers) {
             lines.add(String.format("추정 트리거 · %s %d%%", item.label(), item.percentage()));
@@ -844,17 +853,19 @@ public class JournalService {
     }
 
     private List<JournalInsightItemResponse> toInsightItems(
-            Map<String, Integer> counts,
+            Map<String, Set<Long>> participantIdsByCode,
             Map<String, String> labels,
             int sampleSize
     ) {
-        return counts.entrySet().stream()
-                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+        return participantIdsByCode.entrySet().stream()
+                .filter(entry -> entry.getValue().size() >= INSIGHT_MIN_CELL_USERS)
+                .sorted(Comparator.<Map.Entry<String, Set<Long>>>comparingInt(
+                        entry -> entry.getValue().size()).reversed())
                 .limit(5)
                 .map(entry -> new JournalInsightItemResponse(
                         entry.getKey(),
                         labels.getOrDefault(entry.getKey(), entry.getKey()),
-                        Math.round(entry.getValue() * 100f / sampleSize)
+                        Math.round(entry.getValue().size() * 100f / sampleSize)
                 ))
                 .toList();
     }

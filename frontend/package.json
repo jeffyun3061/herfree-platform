@@ -7,26 +7,34 @@
     "dev:clean": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"if (Test-Path .next) { Remove-Item -Recurse -Force .next }; npm run dev\"",
     "dev:next": "next dev -H 0.0.0.0 -p 3000",
     "check:oauth": "node scripts/validate-oauth-env.mjs",
+    "check:security-headers": "node scripts/validate-security-headers.mjs",
     "prebuild": "npm run check:oauth",
     "build": "next build",
     "start": "next start -H 0.0.0.0",
-    "lint": "next lint"
+    "lint": "eslint . --max-warnings=0",
+    "e2e": "playwright test",
+    "e2e:staging": "playwright test --project=chromium"
   },
   "dependencies": {
-    "next": "14.2.29",
+    "axios": "^1.7.0",
+    "next": "15.5.20",
     "react": "^18",
-    "react-dom": "^18",
-    "axios": "^1.7.0"
+    "react-dom": "^18"
   },
   "devDependencies": {
-    "typescript": "^5",
+    "@playwright/test": "^1.55.1",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
-    "tailwindcss": "^3.4.0",
     "autoprefixer": "^10.0.1",
-    "postcss": "^8",
     "eslint": "^8",
-    "eslint-config-next": "14.2.29"
+    "eslint-config-next": "15.5.20",
+    "postcss": "^8.5.10",
+    "tailwindcss": "^3.4.0",
+    "typescript": "^5"
+  },
+  "overrides": {
+    "form-data": ">=4.0.6",
+    "postcss": "$postcss"
   }
 }

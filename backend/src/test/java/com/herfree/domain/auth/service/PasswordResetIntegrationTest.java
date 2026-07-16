@@ -38,13 +38,13 @@ class PasswordResetIntegrationTest {
     void passwordReset_confirmFlow_success() throws Exception {
         String email = "reset-flow@example.com";
         String nickname = "resetuser01";
-        String oldPassword = "Oldpass123!";
-        String newPassword = "Newpass456!";
+        String oldPassword = "Old-password-123!";
+        String newPassword = "New-password-456!";
 
         mockMvc.perform(post("/api/auth/signup")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"email":"%s","password":"%s","nickname":"%s","agreeTerms":true,"agreePrivacy":true,"agreeAge":true,"agreeMarketing":false}
+                                {"email":"%s","password":"%s","nickname":"%s","agreeTerms":true,"agreePrivacy":true,"agreeSensitive":true,"agreeAge":true,"agreeMarketing":false}
                                 """.formatted(email, oldPassword, nickname)))
                 .andExpect(status().isCreated());
 
@@ -92,11 +92,23 @@ class PasswordResetIntegrationTest {
         mockMvc.perform(post("/api/auth/password-reset/confirm")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"token":"not-a-valid-token","newPassword":"Newpass456!"}
+                                {"token":"not-a-valid-token","newPassword":"New-password-456!"}
                                 """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.success").value(false))
                 .andExpect(jsonPath("$.message").value("유효하지 않거나 만료된 재설정 링크입니다."));
+    }
+
+    @Test
+    @DisplayName("15자보다 짧은 새 비밀번호는 재설정 전에 거부한다")
+    void passwordReset_shortPassword_returns400() throws Exception {
+        mockMvc.perform(post("/api/auth/password-reset/confirm")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"token":"not-a-valid-token","newPassword":"short-password"}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false));
     }
 
     @Test

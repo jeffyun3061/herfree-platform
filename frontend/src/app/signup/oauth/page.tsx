@@ -27,6 +27,7 @@ function OAuthSignupForm() {
   const [agreements, setAgreements] = useState<SignupAgreementState>({
     agreeTerms: false,
     agreePrivacy: false,
+    agreeSensitive: false,
     agreeAge: false,
     agreeMarketing: false,
   });

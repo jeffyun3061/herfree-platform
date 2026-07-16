@@ -96,6 +96,30 @@ class ApiHttpStatusIntegrationTest {
     }
 
     @Test
+    @DisplayName("공개 공지·칼럼·영상·일지 집계 조회는 비로그인 상태에서도 허용한다")
+    void publicContent_withoutAuth_returns200() throws Exception {
+        mockMvc.perform(get("/api/posts"))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/api/contents"))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/api/videos"))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/api/journal/insights"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("비로그인 사용자는 모든 운영 콘텐츠 작성 API에 접근할 수 없다")
+    void adminContentWrite_withoutAuth_returns401() throws Exception {
+        mockMvc.perform(post("/api/admin/notices").contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(post("/api/admin/contents").contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(post("/api/admin/videos").contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
     @DisplayName("비회원도 닉네임 중복 확인 API를 호출할 수 있다")
     void nicknameCheck_withoutAuth_returns200() throws Exception {
         mockMvc.perform(get("/api/auth/nickname/check")
@@ -133,7 +157,19 @@ class ApiHttpStatusIntegrationTest {
         mockMvc.perform(post("/api/auth/signup")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"email":"not-an-email","password":"Testpass123!","nickname":"tester01","agreeTerms":true,"agreePrivacy":true,"agreeAge":true,"agreeMarketing":false}
+                                {"email":"not-an-email","password":"Test-password-123!","nickname":"tester01","agreeTerms":true,"agreePrivacy":true,"agreeSensitive":true,"agreeAge":true,"agreeMarketing":false}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false));
+    }
+
+    @Test
+    @DisplayName("민감정보 처리에 동의하지 않으면 가입을 거절한다")
+    void signup_withoutSensitiveInformationConsent_returns400() throws Exception {
+        mockMvc.perform(post("/api/auth/signup")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"no-sensitive-consent@example.com","password":"Test-password-123!","nickname":"consentcheck","agreeTerms":true,"agreePrivacy":true,"agreeSensitive":false,"agreeAge":true,"agreeMarketing":false}
                                 """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.success").value(false));
@@ -143,7 +179,7 @@ class ApiHttpStatusIntegrationTest {
     @DisplayName("회원가입 이메일 중복은 409를 반환한다")
     void signup_duplicateEmail_returns409() throws Exception {
         String body = """
-                {"email":"dup-status@example.com","password":"Testpass123!","nickname":"dupnick01","agreeTerms":true,"agreePrivacy":true,"agreeAge":true,"agreeMarketing":false}
+                {"email":"dup-status@example.com","password":"Test-password-123!","nickname":"dupnick01","agreeTerms":true,"agreePrivacy":true,"agreeSensitive":true,"agreeAge":true,"agreeMarketing":false}
                 """;
 
         mockMvc.perform(post("/api/auth/signup")
@@ -165,8 +201,46 @@ class ApiHttpStatusIntegrationTest {
         mockMvc.perform(post("/api/auth/signup")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"email":"newuser@example.com","password":"Testpass123!","nickname":"admin","agreeTerms":true,"agreePrivacy":true,"agreeAge":true,"agreeMarketing":false}
+                                {"email":"newuser@example.com","password":"Test-password-123!","nickname":"admin","agreeTerms":true,"agreePrivacy":true,"agreeSensitive":true,"agreeAge":true,"agreeMarketing":false}
                                 """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false));
+    }
+
+    @Test
+    @DisplayName("회원가입 이메일이 254자를 초과하면 400을 반환한다")
+    void signup_tooLongEmail_returns400() throws Exception {
+        String email = "a".repeat(243) + "@example.com";
+
+        mockMvc.perform(post("/api/auth/signup")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"%s","password":"Test-password-123!","nickname":"longemail","agreeTerms":true,"agreePrivacy":true,"agreeSensitive":true,"agreeAge":true,"agreeMarketing":false}
+                                """.formatted(email)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false));
+    }
+
+    @Test
+    @DisplayName("신규 비밀번호가 15자보다 짧으면 400을 반환한다")
+    void signup_shortPassword_returns400() throws Exception {
+        mockMvc.perform(post("/api/auth/signup")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"short-password@example.com","password":"short-password","nickname":"shortpassword","agreeTerms":true,"agreePrivacy":true,"agreeSensitive":true,"agreeAge":true,"agreeMarketing":false}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false));
+    }
+
+    @Test
+    @DisplayName("신규 비밀번호가 64자를 초과하면 400을 반환한다")
+    void signup_tooLongPassword_returns400() throws Exception {
+        mockMvc.perform(post("/api/auth/signup")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"long-password@example.com","password":"%s","nickname":"longpassword","agreeTerms":true,"agreePrivacy":true,"agreeSensitive":true,"agreeAge":true,"agreeMarketing":false}
+                                """.formatted("p".repeat(65))))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.success").value(false));
     }

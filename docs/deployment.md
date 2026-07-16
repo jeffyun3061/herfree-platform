@@ -129,7 +129,7 @@ OAuth 콘솔과 환경변수는 Dev/Prod를 분리한다. 상세 기준은 [`oau
 | `S3_BUCKET` | `herfree-prod-uploads` (의뢰인 AWS 계정) |
 | `S3_REGION` | `ap-northeast-2` |
 | `S3_ACCESS_KEY` / `S3_SECRET_KEY` | S3 전용 IAM (**VPS IAM 역할 권장**, 키 비우면 역할 사용) |
-| `S3_PUBLIC_BASE_URL` | CloudFront URL (선택) |
+| `S3_PUBLIC_BASE_URL` | 기존 S3/CloudFront URL 인식용(선택). 새 표시 URL은 접근 판정 API로 발급 |
 | `ADMIN_BOOTSTRAP_ENABLED` | **`false`** (운영 필수) |
 
 > **운영 보안 체크리스트:** [`ops-security-checklist.md`](ops-security-checklist.md) — env 10항 + 스모크 8항

@@ -85,6 +85,13 @@ type RequestOptions = {
   query?: Record<string, QueryValue>;
 };
 
+const API_TIMEOUT_MS = 15_000;
+const MULTIPART_TIMEOUT_MS = 30_000;
+
+function isAbortError(error: unknown): boolean {
+  return error instanceof DOMException && error.name === 'AbortError';
+}
+
 function buildUrl(path: string, query?: Record<string, QueryValue>): string {
   const url = new URL(path, `${resolveApiBaseUrl()}/`);
   if (query) {
@@ -146,14 +153,22 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
   }
 
   let response: Response;
+  const controller = new AbortController();
+  const timeoutId = globalThis.setTimeout(() => controller.abort(), API_TIMEOUT_MS);
   try {
     response = await fetch(buildUrl(path, options.query), {
       method: options.method ?? 'GET',
       headers,
       body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+      signal: controller.signal,
     });
-  } catch {
+  } catch (error) {
+    if (isAbortError(error)) {
+      throw createApiError(0, '요청 시간이 초과되었습니다. 잠시 후 다시 시도해 주세요.');
+    }
     throw createApiError(0, '서버에 연결할 수 없습니다. Wi-Fi·서버 실행 상태를 확인해 주세요.');
+  } finally {
+    globalThis.clearTimeout(timeoutId);
   }
 
   if (response.status === 401 && !isPublicAuthPath(path)) {
@@ -197,14 +212,22 @@ export async function requestMultipart<T>(path: string, formData: FormData): Pro
   const headers = buildRequestHeaders(path, tokenAtRequest);
 
   let response: Response;
+  const controller = new AbortController();
+  const timeoutId = globalThis.setTimeout(() => controller.abort(), MULTIPART_TIMEOUT_MS);
   try {
     response = await fetch(buildUrl(path), {
       method: 'POST',
       headers,
       body: formData,
+      signal: controller.signal,
     });
-  } catch {
+  } catch (error) {
+    if (isAbortError(error)) {
+      throw createApiError(0, '파일 전송 시간이 초과되었습니다. 네트워크를 확인하고 다시 시도해 주세요.');
+    }
     throw createApiError(0, '서버에 연결할 수 없습니다. Wi-Fi·서버 실행 상태를 확인해 주세요.');
+  } finally {
+    globalThis.clearTimeout(timeoutId);
   }
 
   if (response.status === 401) {

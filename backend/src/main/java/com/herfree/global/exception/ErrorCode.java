@@ -74,6 +74,7 @@ public enum ErrorCode {
     S3_BUCKET_NOT_FOUND(HttpStatus.BAD_GATEWAY, "S3 버킷을 찾을 수 없습니다. 버킷 이름을 확인해 주세요."),
     S3_ACCESS_DENIED(HttpStatus.BAD_GATEWAY, "S3 업로드 권한이 없습니다. IAM 정책을 확인해 주세요."),
     S3_UPLOAD_FAILED(HttpStatus.BAD_GATEWAY, "이미지 저장에 실패했습니다. 잠시 후 다시 시도해 주세요."),
+    S3_DELETE_FAILED(HttpStatus.BAD_GATEWAY, "이미지 삭제에 실패했습니다. 잠시 후 다시 시도해 주세요."),
 
     // 댓글(Comment)
     COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "댓글을 찾을 수 없습니다."),
