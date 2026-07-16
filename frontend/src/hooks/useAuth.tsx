@@ -42,6 +42,7 @@ type AuthContextValue = {
       agreeSensitive: boolean;
       agreeAge: boolean;
       agreeMarketing: boolean;
+      agreeHealthStatistics: boolean;
     },
   ) => Promise<void>;
   logout: () => Promise<void>;
@@ -193,6 +194,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       agreeSensitive: boolean;
       agreeAge: boolean;
       agreeMarketing: boolean;
+      agreeHealthStatistics: boolean;
     },
   ) => {
     clearAuth();

@@ -8,6 +8,7 @@ export type SignupAgreementState = {
   agreeSensitive: boolean;
   agreeAge: boolean;
   agreeMarketing: boolean;
+  agreeHealthStatistics: boolean;
 };
 
 type SignupAgreementFieldsProps = {
@@ -69,6 +70,26 @@ export function SignupAgreementFields({ value, onChange }: SignupAgreementFields
         />
         <span>
           <span className="font-medium text-[#0B3B36]">[필수]</span> 만 14세 이상입니다.
+        </span>
+      </label>
+      <label className="flex items-start gap-3 text-sm text-[#1E2621]">
+        <input
+          type="checkbox"
+          checked={value.agreeHealthStatistics}
+          onChange={(e) => onChange({ ...value, agreeHealthStatistics: e.target.checked })}
+          className="mt-0.5 h-4 w-4 rounded border-[#ECE5D8] text-[#0B3B36] focus:ring-[#0B3B36]"
+        />
+        <span>
+          <span className="font-medium text-[#5C645A]">[선택]</span>{' '}
+          <Link href="/privacy#health-statistics" className="underline underline-offset-2">
+            건강정보 통계 활용
+          </Link>
+          에 동의합니다.
+          <span className="mt-1 block text-xs leading-5 text-[#7A8178]">
+            증상·투약·수면·스트레스 선택값을 통계·서비스 개선에 활용합니다.
+            메모와 게시글 내용은 제외하며, 동의는 철회 또는 탈퇴까지 유효합니다.
+            거부해도 기본 기능을 이용할 수 있습니다.
+          </span>
         </span>
       </label>
       <label className="flex items-start gap-3 text-sm text-[#1E2621]">

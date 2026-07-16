@@ -13,6 +13,7 @@ import com.herfree.domain.user.exception.DuplicateEmailException;
 import com.herfree.domain.user.repository.UserProfileRepository;
 import com.herfree.domain.user.repository.UserRepository;
 import com.herfree.domain.user.service.UserConsentAgreementService;
+import com.herfree.domain.user.service.HealthStatisticsConsentService;
 import com.herfree.global.security.JwtProperties;
 import com.herfree.global.security.JwtTokenProvider;
 import org.junit.jupiter.api.DisplayName;
@@ -61,6 +62,9 @@ class AuthServiceTest {
     @Mock
     private UserConsentAgreementService userConsentAgreementService;
 
+    @Mock
+    private HealthStatisticsConsentService healthStatisticsConsentService;
+
     @InjectMocks
     private AuthService authService;
 
@@ -68,7 +72,8 @@ class AuthServiceTest {
     @DisplayName("정상적인 회원가입 요청 시 User와 UserProfile이 저장된다")
     void signup_success() {
         // given
-        SignupRequest request = new SignupRequest("test@test.com", "password123!", "닉네임", true, true, true, true, false);
+        SignupRequest request = new SignupRequest(
+                "test@test.com", "password123!", "닉네임", true, true, true, true, false, true);
 
         // 이메일·닉네임 중복 없음
         given(userRepository.existsByEmail(request.email())).willReturn(false);
@@ -89,13 +94,15 @@ class AuthServiceTest {
         verify(userRepository).save(any(User.class));
         verify(userProfileRepository).save(any(UserProfile.class));
         verify(userConsentAgreementService).recordSignupConsent(any(User.class), eq(true), eq(true), eq(false));
+        verify(healthStatisticsConsentService).recordInitialConsent(any(User.class), eq(true));
     }
 
     @Test
     @DisplayName("회원가입 이메일은 공백 제거와 소문자 변환 후 저장한다")
     void signup_normalizesEmail() {
         SignupRequest request = new SignupRequest(
-                "  User.Name@Example.COM  ", "password123!", "닉네임", true, true, true, true, false);
+                "  User.Name@Example.COM  ", "password123!", "닉네임",
+                true, true, true, true, false, false);
         given(userRepository.existsByEmail("user.name@example.com")).willReturn(false);
         given(userProfileRepository.existsByNickname(request.nickname())).willReturn(false);
         given(passwordEncoder.encode(request.password())).willReturn("encoded_password");
@@ -122,7 +129,9 @@ class AuthServiceTest {
     @DisplayName("이메일이 중복이면 DuplicateEmailException이 발생한다")
     void signup_duplicateEmail_throws() {
         // given — 이미 존재하는 이메일
-        SignupRequest request = new SignupRequest("duplicate@test.com", "password123!", "닉네임", true, true, true, true, false);
+        SignupRequest request = new SignupRequest(
+                "duplicate@test.com", "password123!", "닉네임",
+                true, true, true, true, false, false);
         given(userRepository.existsByEmail(request.email())).willReturn(true);
 
         // when & then — 이메일 중복 시 409 Conflict에 매핑된 예외가 발생한다
@@ -264,7 +273,9 @@ class AuthServiceTest {
     @Test
     @DisplayName("예약 닉네임으로 회원가입하면 ReservedNicknameException이 발생한다")
     void signup_reservedNickname_throws() {
-        SignupRequest request = new SignupRequest("test@test.com", "password123!", "관리자", true, true, true, true, false);
+        SignupRequest request = new SignupRequest(
+                "test@test.com", "password123!", "관리자",
+                true, true, true, true, false, false);
         given(userRepository.existsByEmail(request.email())).willReturn(false);
 
         assertThatThrownBy(() -> authService.signup(request))

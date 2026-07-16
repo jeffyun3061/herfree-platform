@@ -11,6 +11,21 @@ export function updateProfile(input: { nickname: string; bio?: string }): Promis
   return request<User>('/api/users/me/profile', { method: 'PATCH', body: input });
 }
 
+export type HealthStatisticsConsent = {
+  agreed: boolean;
+};
+
+export function fetchHealthStatisticsConsent(): Promise<HealthStatisticsConsent> {
+  return request<HealthStatisticsConsent>('/api/users/me/consents/health-statistics');
+}
+
+export function updateHealthStatisticsConsent(agreed: boolean): Promise<HealthStatisticsConsent> {
+  return request<HealthStatisticsConsent>('/api/users/me/consents/health-statistics', {
+    method: 'PATCH',
+    body: { agreed },
+  });
+}
+
 // api-spec.md 기준 회원 탈퇴 엔드포인트 — 백엔드 구현이 추가되면 그대로 동작한다
 export function withdraw(): Promise<void> {
   return request<void>('/api/users/me', { method: 'DELETE' });

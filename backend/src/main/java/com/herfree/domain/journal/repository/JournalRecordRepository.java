@@ -28,30 +28,116 @@ public interface JournalRecordRepository extends JpaRepository<JournalRecord, Lo
             JOIN FETCH r.user
             WHERE r.hadSymptoms = true
             AND r.recordDate >= :since
+            AND EXISTS (
+                SELECT c.id FROM HealthStatisticsConsent c
+                WHERE c.user = r.user
+                AND c.agreed = true
+                AND c.id = (
+                    SELECT MAX(c2.id) FROM HealthStatisticsConsent c2
+                    WHERE c2.user = r.user
+                )
+            )
             ORDER BY r.recordDate DESC
             """)
-    List<JournalRecord> findRecentSymptomRecords(@Param("since") LocalDate since, Pageable pageable);
+    List<JournalRecord> findRecentConsentedSymptomRecords(@Param("since") LocalDate since, Pageable pageable);
 
     long countByUserIdAndHadSymptomsTrue(Long userId);
 
     long countByUserIdAndHadSymptomsTrueAndRecordDateBetween(
             Long userId, LocalDate from, LocalDate to);
 
-    long countByHadSymptomsTrue();
-
     long countByCreatedAtAfter(Instant since);
-
-    long countByRecordDateBetween(LocalDate from, LocalDate to);
-
-    long countByHadSymptomsTrueAndRecordDateBetween(LocalDate from, LocalDate to);
 
     long countByUserIdAndRecordDateBetween(Long userId, LocalDate from, LocalDate to);
 
-    @Query("SELECT COUNT(DISTINCT r.user.id) FROM JournalRecord r")
-    long countDistinctUsers();
+    @Query("""
+            SELECT COUNT(r.id) FROM JournalRecord r
+            WHERE EXISTS (
+                SELECT c.id FROM HealthStatisticsConsent c
+                WHERE c.user = r.user
+                AND c.agreed = true
+                AND c.id = (
+                    SELECT MAX(c2.id) FROM HealthStatisticsConsent c2
+                    WHERE c2.user = r.user
+                )
+            )
+            """)
+    long countConsentedRecords();
 
-    @Query("SELECT COUNT(DISTINCT r.user.id) FROM JournalRecord r WHERE r.recordDate = :date")
-    long countDistinctUsersByRecordDate(@Param("date") LocalDate date);
+    @Query("""
+            SELECT COUNT(r.id) FROM JournalRecord r
+            WHERE r.hadSymptoms = true
+            AND EXISTS (
+                SELECT c.id FROM HealthStatisticsConsent c
+                WHERE c.user = r.user
+                AND c.agreed = true
+                AND c.id = (
+                    SELECT MAX(c2.id) FROM HealthStatisticsConsent c2
+                    WHERE c2.user = r.user
+                )
+            )
+            """)
+    long countConsentedSymptomRecords();
+
+    @Query("""
+            SELECT COUNT(r.id) FROM JournalRecord r
+            WHERE r.recordDate BETWEEN :from AND :to
+            AND EXISTS (
+                SELECT c.id FROM HealthStatisticsConsent c
+                WHERE c.user = r.user
+                AND c.agreed = true
+                AND c.id = (
+                    SELECT MAX(c2.id) FROM HealthStatisticsConsent c2
+                    WHERE c2.user = r.user
+                )
+            )
+            """)
+    long countConsentedRecordsBetween(@Param("from") LocalDate from, @Param("to") LocalDate to);
+
+    @Query("""
+            SELECT COUNT(r.id) FROM JournalRecord r
+            WHERE r.hadSymptoms = true
+            AND r.recordDate BETWEEN :from AND :to
+            AND EXISTS (
+                SELECT c.id FROM HealthStatisticsConsent c
+                WHERE c.user = r.user
+                AND c.agreed = true
+                AND c.id = (
+                    SELECT MAX(c2.id) FROM HealthStatisticsConsent c2
+                    WHERE c2.user = r.user
+                )
+            )
+            """)
+    long countConsentedSymptomRecordsBetween(@Param("from") LocalDate from, @Param("to") LocalDate to);
+
+    @Query("""
+            SELECT COUNT(DISTINCT r.user.id) FROM JournalRecord r
+            WHERE EXISTS (
+                SELECT c.id FROM HealthStatisticsConsent c
+                WHERE c.user = r.user
+                AND c.agreed = true
+                AND c.id = (
+                    SELECT MAX(c2.id) FROM HealthStatisticsConsent c2
+                    WHERE c2.user = r.user
+                )
+            )
+            """)
+    long countDistinctConsentedUsers();
+
+    @Query("""
+            SELECT COUNT(DISTINCT r.user.id) FROM JournalRecord r
+            WHERE r.recordDate = :date
+            AND EXISTS (
+                SELECT c.id FROM HealthStatisticsConsent c
+                WHERE c.user = r.user
+                AND c.agreed = true
+                AND c.id = (
+                    SELECT MAX(c2.id) FROM HealthStatisticsConsent c2
+                    WHERE c2.user = r.user
+                )
+            )
+            """)
+    long countDistinctConsentedUsersByRecordDate(@Param("date") LocalDate date);
 
     @Modifying(clearAutomatically = true)
     @Query("DELETE FROM JournalRecord r WHERE r.user.id = :userId")

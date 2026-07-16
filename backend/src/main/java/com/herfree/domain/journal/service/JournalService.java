@@ -353,14 +353,14 @@ public class JournalService {
 
     @Transactional(readOnly = true)
     public JournalPublicHomeStatsResponse getPublicHomeStats() {
-        long usersToday = journalRecordRepository.countDistinctUsersByRecordDate(AppTimeZone.todayKst());
+        long usersToday = journalRecordRepository.countDistinctConsentedUsersByRecordDate(AppTimeZone.todayKst());
         long totalUsers = userRepository.count();
         return new JournalPublicHomeStatsResponse(usersToday, totalUsers);
     }
 
     public JournalInsightsResponse getCommunityInsights() {
         LocalDate since = AppTimeZone.todayKst().minusMonths(INSIGHT_LOOKBACK_MONTHS);
-        List<JournalRecord> records = journalRecordRepository.findRecentSymptomRecords(
+        List<JournalRecord> records = journalRecordRepository.findRecentConsentedSymptomRecords(
                 since, PageRequest.of(0, 500));
         Set<Long> participantIds = records.stream()
                 .map(record -> record.getUser().getId())
@@ -415,15 +415,15 @@ public class JournalService {
     public AdminJournalStatsResponse getAdminStats() {
         LocalDate today = AppTimeZone.todayKst();
         JournalInsightsResponse communityInsights = getCommunityInsights();
-        long totalRecords = journalRecordRepository.count();
-        long totalUsers = journalRecordRepository.countDistinctUsers();
-        long symptomRecords = journalRecordRepository.countByHadSymptomsTrue();
+        long totalRecords = journalRecordRepository.countConsentedRecords();
+        long totalUsers = journalRecordRepository.countDistinctConsentedUsers();
+        long symptomRecords = journalRecordRepository.countConsentedSymptomRecords();
 
-        long recordsLast7Days = journalRecordRepository.countByRecordDateBetween(today.minusDays(6), today);
-        long recordsLast30Days = journalRecordRepository.countByRecordDateBetween(today.minusDays(29), today);
-        long symptomRecordsLast7Days = journalRecordRepository.countByHadSymptomsTrueAndRecordDateBetween(
+        long recordsLast7Days = journalRecordRepository.countConsentedRecordsBetween(today.minusDays(6), today);
+        long recordsLast30Days = journalRecordRepository.countConsentedRecordsBetween(today.minusDays(29), today);
+        long symptomRecordsLast7Days = journalRecordRepository.countConsentedSymptomRecordsBetween(
                 today.minusDays(6), today);
-        long symptomRecordsLast30Days = journalRecordRepository.countByHadSymptomsTrueAndRecordDateBetween(
+        long symptomRecordsLast30Days = journalRecordRepository.countConsentedSymptomRecordsBetween(
                 today.minusDays(29), today);
 
         long pendingReports = reportRepository.countByStatus(ReportStatus.PENDING);

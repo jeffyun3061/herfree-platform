@@ -722,3 +722,32 @@ Base path는 동일하게 `/api`이며, 모두 관리자 권한이 필요합니�
 ```
 
 영구 정지는 `permanent: true`로 보내고 `days`는 생략합니다.
+
+---
+
+## 건강정보 통계 활용 선택 동의
+
+개인 일지 저장과 본인 조회는 아래 선택 동의와 무관합니다. 공개·관리자 건강 통계에는
+가장 최근 동의 상태가 `true`인 회원의 구조화된 선택값만 포함하며, 자유 입력 메모와
+게시글·댓글·상담 내용은 포함하지 않습니다.
+
+| Method | URL | 설명 | 권한 |
+|--------|-----|------|------|
+| GET | `/api/users/me/consents/health-statistics` | 현재 건강정보 통계 활용 동의 조회 | USER 이상 |
+| PATCH | `/api/users/me/consents/health-statistics` | 동의 또는 철회 이력 추가 | USER 이상 |
+
+변경 요청:
+
+```json
+{
+  "agreed": false
+}
+```
+
+응답 `data`:
+
+```json
+{
+  "agreed": false
+}
+```

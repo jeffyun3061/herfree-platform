@@ -30,6 +30,7 @@ function OAuthSignupForm() {
     agreeSensitive: false,
     agreeAge: false,
     agreeMarketing: false,
+    agreeHealthStatistics: false,
   });
   const [nicknameAvailable, setNicknameAvailable] = useState<boolean | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});

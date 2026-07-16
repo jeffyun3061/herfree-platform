@@ -22,6 +22,7 @@ import { KAKAO_CONSULT_URL } from '@/domain/consult/constants';
 import { PUBLIC_IMAGES } from '@/domain/assets/static';
 import { getErrorMessage } from '@/lib/api/client';
 import { InlineTopActions } from '@/components/layout/InlineTopActions';
+import { HealthStatisticsConsentCard } from '@/components/mypage/HealthStatisticsConsentCard';
 
 const BOOKMARK_KEY = 'herfree-bookmarks';
 
@@ -293,6 +294,11 @@ export default function MyPage() {
               trailing={<span className="rounded bg-[#F4F6F5] px-1.5 py-0.5 text-[10px]">외부</span>}
             />
           </div>
+        </div>
+
+        <div className="hf-page-mx mt-4">
+          <p className="mb-2 px-0.5 text-[11px] font-semibold text-[#9A9F94]">개인정보 선택 동의</p>
+          <HealthStatisticsConsentCard />
         </div>
 
         {isStaff(user?.role) && (

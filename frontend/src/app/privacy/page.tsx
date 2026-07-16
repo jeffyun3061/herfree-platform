@@ -7,7 +7,7 @@ export default function PrivacyPage() {
       <PageHeader title="개인정보처리방침" showBack mobileOnly />
       <div className="page-container max-w-2xl py-8 lg:py-12">
         <h1 className="hidden text-2xl font-semibold text-ink lg:block">개인정보처리방침</h1>
-        <p className="mt-2 text-[12px] hf-text-muted">시행일: 2026년 7월 15일</p>
+        <p className="mt-2 text-[12px] hf-text-muted">시행일: 2026년 7월 16일</p>
 
         <div className="prose-policy mt-8 space-y-6 text-sm leading-relaxed text-cream-foreground">
           <section>
@@ -71,6 +71,25 @@ export default function PrivacyPage() {
               <a href="mailto:privacy@herpfree.co.kr" className="text-primary">
                 privacy@herpfree.co.kr
               </a>
+            </p>
+          </section>
+
+          <section id="health-statistics" className="scroll-mt-24">
+            <h2 className="text-base font-semibold text-ink">7. 건강정보 통계 활용 선택 동의</h2>
+            <p className="mt-2">
+              서비스는 별도로 동의한 회원의 증상 여부, 전조 증상, 유발 요인, 투약 여부,
+              수면 및 스트레스 선택값을 개별 회원 정보를 노출하지 않는 최소 표본 집계 통계와 서비스 개선에 활용합니다.
+              자유 입력 메모, 게시글·댓글·상담 내용, 이메일과 닉네임은 통계 원자료에서 제외합니다.
+            </p>
+            <p className="mt-2">
+              동의하지 않아도 개인 일지와 커뮤니티 등 기본 기능을 이용할 수 있습니다.
+              동의는 철회 또는 회원 탈퇴까지 유효합니다. 마이페이지에서 언제든 철회할 수 있으며,
+              철회 후 새로 생성되는 통계 집계에서 제외됩니다.
+              소수 인원을 추론할 수 없도록 최소 참여 인원 기준을 충족한 경우에만 통계를 공개합니다.
+            </p>
+            <p className="mt-2">
+              연구기관 제공, 외부 공동연구, 인공지능 학습, 판매 등 현재 고지한 범위를 벗어나는 활용은
+              이 동의에 포함하지 않으며, 필요한 법적 근거와 별도 고지를 마련한 후 진행합니다.
             </p>
           </section>
         </div>

@@ -33,6 +33,7 @@ async function signupAndLogin(request: APIRequestContext, suffix: string) {
       agreeSensitive: true,
       agreeAge: true,
       agreeMarketing: false,
+      agreeHealthStatistics: false,
     },
   });
   expect(signup.status(), await signup.text()).toBe(201);

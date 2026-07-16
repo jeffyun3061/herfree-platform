@@ -9,6 +9,7 @@ export type SignupRequest = {
   agreeSensitive: boolean;
   agreeAge: boolean;
   agreeMarketing: boolean;
+  agreeHealthStatistics: boolean;
 };
 
 export type LoginRequest = {
@@ -54,4 +55,5 @@ export type OAuthCompleteProfileRequest = {
   agreeSensitive: boolean;
   agreeAge: boolean;
   agreeMarketing: boolean;
+  agreeHealthStatistics: boolean;
 };

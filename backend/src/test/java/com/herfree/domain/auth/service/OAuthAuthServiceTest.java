@@ -27,6 +27,7 @@ import com.herfree.domain.user.entity.UserStatus;
 import com.herfree.domain.user.repository.UserProfileRepository;
 import com.herfree.domain.user.repository.UserRepository;
 import com.herfree.domain.user.service.UserConsentAgreementService;
+import com.herfree.domain.user.service.HealthStatisticsConsentService;
 import com.herfree.global.security.JwtProperties;
 import com.herfree.global.security.JwtTokenProvider;
 import java.util.Optional;
@@ -69,6 +70,9 @@ class OAuthAuthServiceTest {
 
     @Mock
     private UserConsentAgreementService userConsentAgreementService;
+
+    @Mock
+    private HealthStatisticsConsentService healthStatisticsConsentService;
 
     @Mock
     private OAuthClient oauthClient;
@@ -235,11 +239,13 @@ class OAuthAuthServiceTest {
         given(jwtTokenProvider.createAccessToken("20", "USER")).willReturn("jwt-after-profile");
 
         var response = oauthAuthService.completeProfile(
-                new OAuthCompleteProfileRequest("profile-token", "새닉네임", true, true, true, true, false)
+                new OAuthCompleteProfileRequest(
+                        "profile-token", "새닉네임", true, true, true, true, false, true)
         );
 
         assertThat(response.accessToken()).isEqualTo("jwt-after-profile");
         assertThat(profile.getNickname()).isEqualTo("새닉네임");
         verify(userConsentAgreementService).recordSignupConsent(user, true, true, false);
+        verify(healthStatisticsConsentService).recordInitialConsent(user, true);
     }
 }

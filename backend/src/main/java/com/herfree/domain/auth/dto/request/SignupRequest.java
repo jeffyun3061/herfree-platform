@@ -44,6 +44,8 @@ public record SignupRequest(
         @AssertTrue(message = "만 14세 이상 확인이 필요합니다.")
         boolean agreeAge,
 
-        boolean agreeMarketing
+        boolean agreeMarketing,
+
+        boolean agreeHealthStatistics
 ) {
 }

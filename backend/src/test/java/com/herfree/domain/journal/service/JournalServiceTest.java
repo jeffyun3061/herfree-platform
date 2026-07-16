@@ -327,7 +327,7 @@ class JournalServiceTest {
         for (int i = 0; i < 20; i++) {
             records.add(symptomRecord(1L, List.of("STRESS"), List.of("ITCHING")));
         }
-        given(journalRecordRepository.findRecentSymptomRecords(
+        given(journalRecordRepository.findRecentConsentedSymptomRecords(
                 any(LocalDate.class), any(PageRequest.class))).willReturn(records);
 
         var response = journalService.getCommunityInsights();
@@ -347,7 +347,7 @@ class JournalServiceTest {
             List<String> symptoms = userId <= 5 ? List.of("ITCHING") : List.of("NONE");
             records.add(symptomRecord(userId, triggers, symptoms));
         }
-        given(journalRecordRepository.findRecentSymptomRecords(
+        given(journalRecordRepository.findRecentConsentedSymptomRecords(
                 any(LocalDate.class), any(PageRequest.class))).willReturn(records);
 
         var response = journalService.getCommunityInsights();

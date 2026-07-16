@@ -2,9 +2,12 @@ package com.herfree.domain.user.controller;
 
 import com.herfree.domain.post.dto.response.PostResponse;
 import com.herfree.domain.user.dto.request.UpdateProfileRequest;
+import com.herfree.domain.user.dto.request.UpdateHealthStatisticsConsentRequest;
+import com.herfree.domain.user.dto.response.HealthStatisticsConsentResponse;
 import com.herfree.domain.user.dto.response.UserActivityResponse;
 import com.herfree.domain.user.dto.response.UserResponse;
 import com.herfree.domain.user.service.UserService;
+import com.herfree.domain.user.service.HealthStatisticsConsentService;
 import com.herfree.global.response.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +32,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserController {
 
     private final UserService userService;
+    private final HealthStatisticsConsentService healthStatisticsConsentService;
 
     // 내 정보 조회 — JWT에서 추출한 userId를 @AuthenticationPrincipal로 받는다.
     // Principal 객체에서 userId를 꺼내는 방식이므로 헤더를 직접 파싱하지 않아도 된다.
@@ -49,6 +53,22 @@ public class UserController {
     ) {
         UserResponse response = userService.updateProfile(userId, request);
         return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @GetMapping("/me/consents/health-statistics")
+    public ResponseEntity<ApiResponse<HealthStatisticsConsentResponse>> getHealthStatisticsConsent(
+            @AuthenticationPrincipal Long userId
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(healthStatisticsConsentService.getConsent(userId)));
+    }
+
+    @PatchMapping("/me/consents/health-statistics")
+    public ResponseEntity<ApiResponse<HealthStatisticsConsentResponse>> updateHealthStatisticsConsent(
+            @AuthenticationPrincipal Long userId,
+            @RequestBody UpdateHealthStatisticsConsentRequest request
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(
+                healthStatisticsConsentService.updateConsent(userId, request.agreed())));
     }
 
     // 회원 탈퇴 — api-spec.md §8.2, 204 No Content 반환
