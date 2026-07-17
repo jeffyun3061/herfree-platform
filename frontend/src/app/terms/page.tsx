@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { OPERATOR_CONTACT_EMAIL, operatorContactMailtoHref } from '@/domain/site/contact';
 
 export default function TermsPage() {
   return (
@@ -57,8 +58,8 @@ export default function TermsPage() {
             <h2 className="text-base font-semibold text-ink">제6조 (문의)</h2>
             <p className="mt-2">
               약관 관련 문의:{' '}
-              <a href="mailto:support@herpfree.co.kr" className="text-primary">
-                support@herpfree.co.kr
+              <a href={operatorContactMailtoHref()} className="text-primary">
+                {OPERATOR_CONTACT_EMAIL}
               </a>
             </p>
           </section>

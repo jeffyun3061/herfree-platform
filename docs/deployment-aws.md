@@ -166,7 +166,7 @@ API 응답 `createdAt` 등은 ISO-8601 UTC (`…Z`) — 프론트는 브라우�
 | 환경변수 | 예시 (AWS SES SMTP) |
 |----------|---------------------|
 | `APP_MAIL_MODE` | `smtp` |
-| `APP_MAIL_FROM` | `noreply@herpfree.co.kr` (SES에서 검증된 발신 주소) |
+| `APP_MAIL_FROM` | `herpfree3@gmail.com` (Gmail SMTP 또는 SES 검증 발신 주소) |
 | `SPRING_MAIL_HOST` | `email-smtp.ap-northeast-2.amazonaws.com` |
 | `SPRING_MAIL_PORT` | `587` |
 | `SPRING_MAIL_USERNAME` | SES SMTP 사용자 |

@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { BrandMark } from '@/components/brand/BrandMark';
 import { PRIVATE_BOARD_META } from '@/domain/board/privateBoard';
+import { operatorContactMailtoHref } from '@/domain/site/contact';
 
 export function SiteFooter() {
   return (
@@ -23,6 +24,9 @@ export function SiteFooter() {
           <Link href={PRIVATE_BOARD_META.INQUIRY.writePath} className="text-[#5C645A] hover:text-[#0B3B36]">
             문의하기
           </Link>
+          <a href={operatorContactMailtoHref()} className="text-[#5C645A] hover:text-[#0B3B36]">
+            운영 문의
+          </a>
         </nav>
         <p className="mt-4 text-[10px] text-[#8A9089]" suppressHydrationWarning>
           © {new Date().getFullYear()} Herfree. All rights reserved.

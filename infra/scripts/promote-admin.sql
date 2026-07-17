@@ -3,8 +3,8 @@
 
 UPDATE users
 SET role = 'SUPER_ADMIN'
-WHERE email = 'CHANGE_ME@example.com';
+WHERE email = 'herpfree3@gmail.com';
 
 SELECT id, email, role, status
 FROM users
-WHERE email = 'CHANGE_ME@example.com';
+WHERE email = 'herpfree3@gmail.com';

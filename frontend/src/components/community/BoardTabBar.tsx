@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { Board } from '@/domain/board/types';
 import { COMMUNITY_ALL_TAB_LABEL, getCommunityBoardTabLabel } from '@/domain/board/privateBoard';
 import { cn } from '@/lib/cn';
@@ -12,8 +12,12 @@ type BoardTabBarProps = {
   showAllTab?: boolean;
 };
 
-const SCROLL_EPSILON = 4;
-const SCROLL_STEP = 132;
+type TabItem = {
+  boardId: number | null;
+  label: string;
+};
+
+const PAGE_SIZE = 4;
 
 function ChevronIcon({ direction }: { direction: 'left' | 'right' }) {
   return (
@@ -38,133 +42,123 @@ function normalizeBoardLabel(board: Board) {
     .trim();
 }
 
-export function BoardTabBar({ boards, selectedBoardId, onSelect, showAllTab = false }: BoardTabBarProps) {
-  const scrollerRef = useRef<HTMLDivElement>(null);
-  const [edge, setEdge] = useState({ left: false, right: false });
+function chunkTabs(items: TabItem[], size: number): TabItem[][] {
+  const pages: TabItem[][] = [];
+  for (let index = 0; index < items.length; index += size) {
+    pages.push(items.slice(index, index + size));
+  }
+  return pages;
+}
 
-  const updateEdges = useCallback(() => {
-    const el = scrollerRef.current;
-    if (!el) return;
-
-    const maxScroll = el.scrollWidth - el.clientWidth;
-    if (maxScroll <= SCROLL_EPSILON) {
-      setEdge({ left: false, right: false });
-      return;
-    }
-
-    setEdge({
-      left: el.scrollLeft > SCROLL_EPSILON,
-      right: el.scrollLeft < maxScroll - SCROLL_EPSILON,
-    });
-  }, []);
-
-  const scrollByStep = useCallback((direction: -1 | 1) => {
-    scrollerRef.current?.scrollBy({ left: direction * SCROLL_STEP, behavior: 'smooth' });
-  }, []);
-
-  const selectAndCenterTab = useCallback(
-    (boardId: number | null, tab: HTMLButtonElement) => {
-      onSelect(boardId);
-      const scroller = scrollerRef.current;
-      if (!scroller) return;
-
-      const centeredLeft = tab.offsetLeft - (scroller.clientWidth - tab.offsetWidth) / 2;
-      scroller.scrollTo({ left: Math.max(0, centeredLeft), behavior: 'smooth' });
-    },
-    [onSelect],
+function tabButtonClass(active: boolean) {
+  return cn(
+    'min-w-0 truncate rounded-full border-[0.5px] px-2 py-2 text-center text-[11.5px] font-medium leading-tight sm:text-[12px]',
+    active
+      ? 'border-[#0B3B36] bg-[#0B3B36] text-white'
+      : 'border-[#ECE5D8] bg-white text-[#5C645A]',
   );
+}
+
+export function BoardTabBar({ boards, selectedBoardId, onSelect, showAllTab = false }: BoardTabBarProps) {
+  const tabs = useMemo<TabItem[]>(() => {
+    const items: TabItem[] = [];
+    if (showAllTab) {
+      items.push({ boardId: null, label: COMMUNITY_ALL_TAB_LABEL });
+    }
+    boards.forEach((board) => {
+      items.push({ boardId: board.id, label: normalizeBoardLabel(board) });
+    });
+    return items;
+  }, [boards, showAllTab]);
+
+  const pages = useMemo(() => chunkTabs(tabs, PAGE_SIZE), [tabs]);
+  const pageCount = pages.length;
+
+  const selectedPageIndex = useMemo(() => {
+    const tabIndex = tabs.findIndex((tab) => tab.boardId === selectedBoardId);
+    if (tabIndex < 0) return 0;
+    return Math.floor(tabIndex / PAGE_SIZE);
+  }, [selectedBoardId, tabs]);
+
+  const [pageIndex, setPageIndex] = useState(selectedPageIndex);
 
   useEffect(() => {
-    const el = scrollerRef.current;
-    if (!el) return;
+    setPageIndex(selectedPageIndex);
+  }, [selectedPageIndex]);
 
-    updateEdges();
-
-    const observer = new ResizeObserver(updateEdges);
-    observer.observe(el);
-    window.addEventListener('resize', updateEdges);
-
-    return () => {
-      observer.disconnect();
-      window.removeEventListener('resize', updateEdges);
-    };
-  }, [boards, updateEdges]);
+  const currentPage = pages[pageIndex] ?? [];
+  const canGoPrev = pageIndex > 0;
+  const canGoNext = pageIndex < pageCount - 1;
+  const showPager = pageCount > 1;
 
   return (
-    <div className="community-tabs relative -mx-4 w-[calc(100%+2rem)] min-w-0">
-      <div
-        ref={scrollerRef}
-        onScroll={updateEdges}
-        className={cn(
-          'community-tabs-scroller scrollbar-hide w-full min-w-0 touch-pan-x overflow-x-auto overflow-y-hidden overscroll-x-contain [-webkit-overflow-scrolling:touch]',
-          edge.right && 'community-tabs-scroller--peek-right',
-          edge.left && 'community-tabs-scroller--peek-left',
+    <div className="community-tabs w-full min-w-0">
+      <div className="flex items-center gap-2">
+        {showPager ? (
+          <button
+            type="button"
+            onClick={() => setPageIndex((value) => Math.max(0, value - 1))}
+            disabled={!canGoPrev}
+            aria-disabled={!canGoPrev}
+            className={cn('community-tabs-nav shrink-0', !canGoPrev && 'pointer-events-none opacity-35')}
+            aria-label="이전 카테고리 페이지"
+          >
+            <ChevronIcon direction="left" />
+          </button>
+        ) : (
+          <div className="w-8 shrink-0" aria-hidden />
         )}
-        role="tablist"
-        aria-label="게시판 카테고리, 좌우로 밀어 더 보기"
-      >
-        <div className="flex w-max gap-2 px-4 pb-1 pr-16">
-          {showAllTab && (
-            <button
-              type="button"
-              role="tab"
-              aria-selected={selectedBoardId === null}
-              onClick={(event) => selectAndCenterTab(null, event.currentTarget)}
-              className={cn(
-                'shrink-0 whitespace-nowrap rounded-full border-[0.5px] px-[15px] py-2 text-[12.5px] font-medium',
-                selectedBoardId === null
-                  ? 'border-[#0B3B36] bg-[#0B3B36] text-white'
-                  : 'border-[#ECE5D8] bg-white text-[#5C645A]',
-              )}
-            >
-              {COMMUNITY_ALL_TAB_LABEL}
-            </button>
-          )}
-          {boards.map((board) => {
-            const active = selectedBoardId === board.id;
-            const label = normalizeBoardLabel(board);
 
+        <div
+          className="grid min-w-0 flex-1 grid-cols-4 gap-1.5 sm:gap-2"
+          role="tablist"
+          aria-label={
+            showPager
+              ? `게시판 카테고리 ${pageIndex + 1}페이지, 총 ${pageCount}페이지`
+              : '게시판 카테고리'
+          }
+        >
+          {currentPage.map((tab) => {
+            const active = tab.boardId === selectedBoardId;
             return (
               <button
-                key={board.id}
+                key={tab.boardId ?? 'all'}
                 type="button"
                 role="tab"
                 aria-selected={active}
-                onClick={(event) => selectAndCenterTab(board.id, event.currentTarget)}
-                className={cn(
-                  'shrink-0 whitespace-nowrap rounded-full border-[0.5px] px-[15px] py-2 text-[12.5px] font-medium',
-                  active
-                    ? 'border-[#0B3B36] bg-[#0B3B36] text-white'
-                    : 'border-[#ECE5D8] bg-white text-[#5C645A]',
-                )}
+                title={tab.label}
+                onClick={() => onSelect(tab.boardId)}
+                className={tabButtonClass(active)}
               >
-                {label}
+                {tab.label}
               </button>
             );
           })}
+          {Array.from({ length: PAGE_SIZE - currentPage.length }).map((_, index) => (
+            <div key={`empty-${index}`} aria-hidden className="min-w-0" />
+          ))}
         </div>
+
+        {showPager ? (
+          <button
+            type="button"
+            onClick={() => setPageIndex((value) => Math.min(pageCount - 1, value + 1))}
+            disabled={!canGoNext}
+            aria-disabled={!canGoNext}
+            className={cn('community-tabs-nav shrink-0', !canGoNext && 'pointer-events-none opacity-35')}
+            aria-label="다음 카테고리 페이지"
+          >
+            <ChevronIcon direction="right" />
+          </button>
+        ) : (
+          <div className="w-8 shrink-0" aria-hidden />
+        )}
       </div>
 
-      {edge.left && (
-        <button
-          type="button"
-          onClick={() => scrollByStep(-1)}
-          className="community-tabs-nav community-tabs-nav-left"
-          aria-label="이전 카테고리 보기"
-        >
-          <ChevronIcon direction="left" />
-        </button>
-      )}
-
-      {edge.right && (
-        <button
-          type="button"
-          onClick={() => scrollByStep(1)}
-          className="community-tabs-nav community-tabs-nav-right"
-          aria-label="다음 카테고리 보기"
-        >
-          <ChevronIcon direction="right" />
-        </button>
+      {showPager && (
+        <p className="mt-1.5 text-center text-[10px] text-[#8A9089]" aria-live="polite">
+          {pageIndex + 1} / {pageCount}
+        </p>
       )}
     </div>
   );

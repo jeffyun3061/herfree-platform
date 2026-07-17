@@ -53,7 +53,7 @@ export const COMMUNITY_TAB_BOARD_TYPES = [
   { boardType: 'NOTICE', label: '공지' },
   { boardType: 'FREE', label: '자유·응원' },
   { boardType: 'QUESTION', label: '질문' },
-  { boardType: 'PHOBIA', label: '포비아/대기' },
+  { boardType: 'PHOBIA', label: '검사대기' },
   { boardType: 'SYMPTOM', label: '확진초기' },
   { boardType: 'RELATIONSHIP', label: '연애고지' },
   { boardType: 'EXPERIENCE', label: '정보공유' },

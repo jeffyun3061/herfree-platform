@@ -9,6 +9,7 @@ import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { EMAIL_MAX_LENGTH, validateEmail } from '@/domain/auth/validate';
 import { requestPasswordReset } from '@/lib/api/auth';
 import { getErrorMessage } from '@/lib/api/client';
+import { OPERATOR_CONTACT_EMAIL, operatorContactMailtoHref } from '@/domain/site/contact';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -98,7 +99,11 @@ export default function ForgotPasswordPage() {
       <div className="mt-6 rounded-2xl border border-[#ECE5D8] bg-[#FBF8F1] px-4 py-3">
         <p className="text-sm font-semibold text-ink">가입 이메일이 기억나지 않나요?</p>
         <p className="mt-1 text-xs leading-relaxed text-wrtn-muted">
-          자동 조회는 계정 노출 위험이 있어 제공하지 않습니다. 가입 경로와 예상 이메일을 정리해 운영자에게 문의해 주세요.
+          자동 조회는 계정 노출 위험이 있어 제공하지 않습니다. 가입 경로와 예상 이메일을 정리해{' '}
+          <a href={operatorContactMailtoHref()} className="font-medium text-primary">
+            {OPERATOR_CONTACT_EMAIL}
+          </a>
+          로 문의해 주세요.
         </p>
       </div>
     </AuthScreenShell>

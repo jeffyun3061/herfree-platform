@@ -46,7 +46,7 @@
 
 ```env
 ADMIN_BOOTSTRAP_ENABLED=true
-ADMIN_EMAIL=admin@herpfree.co.kr
+ADMIN_EMAIL=herpfree3@gmail.com
 ADMIN_PASSWORD=CHANGE_ME_STRONG_ADMIN_PASSWORD
 ADMIN_NICKNAME=운영자
 ```
@@ -63,7 +63,7 @@ ADMIN_NICKNAME=운영자
 ## 2. 최초 SUPER_ADMIN — 방법 B (SQL)
 
 ```sql
-UPDATE users SET role = 'SUPER_ADMIN' WHERE email = '운영자@email.com';
+UPDATE users SET role = 'SUPER_ADMIN' WHERE email = 'herpfree3@gmail.com';
 ```
 
 가입 후 실행 → **로그아웃 → 재로그인** (JWT role 갱신).
@@ -74,7 +74,7 @@ UPDATE users SET role = 'SUPER_ADMIN' WHERE email = '운영자@email.com';
 
 ```powershell
 cd C:\dev\herfree-platform
-.\infra\scripts\promote-admin.ps1 -Email "운영자@email.com"
+.\infra\scripts\promote-admin.ps1 -Email "herpfree3@gmail.com"
 ```
 
 `SUPER_ADMIN`으로 승격합니다.

@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { OPERATOR_CONTACT_EMAIL, operatorContactMailtoHref } from '@/domain/site/contact';
 
 export default function PrivacyPage() {
   return (
@@ -68,8 +69,8 @@ export default function PrivacyPage() {
             <h2 className="text-base font-semibold text-ink">6. 문의처</h2>
             <p className="mt-2">
               개인정보 보호 문의:{' '}
-              <a href="mailto:privacy@herpfree.co.kr" className="text-primary">
-                privacy@herpfree.co.kr
+              <a href={operatorContactMailtoHref()} className="text-primary">
+                {OPERATOR_CONTACT_EMAIL}
               </a>
             </p>
           </section>
