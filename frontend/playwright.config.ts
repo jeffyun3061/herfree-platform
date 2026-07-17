@@ -3,6 +3,11 @@ import { defineConfig, devices } from '@playwright/test';
 const baseURL = process.env.PLAYWRIGHT_BASE_URL?.trim() || 'http://127.0.0.1:3100';
 const parsedBaseURL = new URL(baseURL);
 const isLocal = parsedBaseURL.hostname === '127.0.0.1' || parsedBaseURL.hostname === 'localhost';
+const basicAuthUsername = process.env.E2E_HTTP_USERNAME?.trim();
+const basicAuthPassword = process.env.E2E_HTTP_PASSWORD?.trim();
+const httpCredentials = basicAuthUsername && basicAuthPassword
+  ? { username: basicAuthUsername, password: basicAuthPassword }
+  : undefined;
 
 export default defineConfig({
   testDir: './e2e',
@@ -17,6 +22,7 @@ export default defineConfig({
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'off',
+    httpCredentials,
   },
   webServer: isLocal && process.env.PLAYWRIGHT_NO_WEBSERVER !== 'true'
     ? {
