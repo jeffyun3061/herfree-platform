@@ -39,7 +39,14 @@ fi
 
 mkdir -p "${STATE_DIR}"
 chmod 700 "${STATE_DIR}"
-PREVIOUS_IMAGE="$(docker inspect "${PROJECT}-api-1" --format '{{.Config.Image}}' 2>/dev/null || true)"
+CURRENT_IMAGE_FILE="${STATE_DIR}/${DEPLOY_ENV}.current-image"
+PREVIOUS_IMAGE=""
+if [[ -s "${CURRENT_IMAGE_FILE}" ]]; then
+  PREVIOUS_IMAGE="$(<"${CURRENT_IMAGE_FILE}")"
+elif curl --fail --silent --max-time 3 "http://127.0.0.1:${PORT}/actuator/health" \
+    | grep -q '"status":"UP"'; then
+  PREVIOUS_IMAGE="$(docker inspect "${PROJECT}-api-1" --format '{{.Config.Image}}' 2>/dev/null || true)"
+fi
 
 deploy_image() {
   local image="$1"
@@ -58,7 +65,7 @@ echo "deploying ${DEPLOY_ENV} image"
 deploy_image "${NEW_IMAGE}"
 
 healthy=false
-for _ in {1..45}; do
+for _ in {1..150}; do
   if curl --fail --silent --show-error "http://127.0.0.1:${PORT}/actuator/health" \
       | grep -q '"status":"UP"'; then
     healthy=true
@@ -68,7 +75,7 @@ for _ in {1..45}; do
 done
 
 if [[ "${healthy}" == "true" ]]; then
-  printf '%s' "${NEW_IMAGE}" > "${STATE_DIR}/${DEPLOY_ENV}.current-image"
+  printf '%s' "${NEW_IMAGE}" > "${CURRENT_IMAGE_FILE}"
   if [[ -n "${PREVIOUS_IMAGE}" && "${PREVIOUS_IMAGE}" != "${NEW_IMAGE}" ]]; then
     printf '%s' "${PREVIOUS_IMAGE}" > "${STATE_DIR}/${DEPLOY_ENV}.previous-image"
   fi
