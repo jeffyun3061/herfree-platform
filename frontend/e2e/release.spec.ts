@@ -84,6 +84,22 @@ test.describe('release smoke', () => {
     });
   }
 
+  test('primary routes load within navigation budget', async ({ page }) => {
+    const routes = ['/', '/community', '/journal', '/mypage', '/login', '/qna'];
+    const budgetMs = 8_000;
+
+    for (const path of routes) {
+      const started = Date.now();
+      const response = await page.goto(path, { waitUntil: 'domcontentloaded' });
+      const elapsed = Date.now() - started;
+
+      expect(response, `${path} did not return a response`).not.toBeNull();
+      expect(response!.status(), `${path} returned ${response!.status()}`).toBeLessThan(500);
+      expect(elapsed, `${path} took ${elapsed}ms`).toBeLessThan(budgetMs);
+      await expect(page.locator('body')).toBeVisible();
+    }
+  });
+
   test('FAQ deep link opens the requested item', async ({ page }) => {
     await page.goto('/qna?faq=0-0#faq-0-0');
     await expect(page.locator('#faq-0-0')).toHaveAttribute('open', '');
