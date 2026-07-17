@@ -38,12 +38,16 @@ jobs:
           cache: gradle
       - name: Backend test
         working-directory: backend
-        run: ./gradlew test --no-daemon
+        run: |
+          chmod +x ./gradlew
+          ./gradlew test --no-daemon
         env:
           JWT_SECRET: ci-test-jwt-secret-minimum-32-characters-long
       - name: Backend build
         working-directory: backend
-        run: ./gradlew build -x test --no-daemon
+        run: |
+          chmod +x ./gradlew
+          ./gradlew build -x test --no-daemon
         env:
           JWT_SECRET: ci-test-jwt-secret-minimum-32-characters-long
       - name: Security hygiene check
