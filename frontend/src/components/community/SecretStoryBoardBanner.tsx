@@ -14,7 +14,7 @@ export function SecretStoryBoardBanner({ className }: SecretStoryBoardBannerProp
       )}
     >
       <p className="text-sm font-semibold text-ink">{SECRET_STORY_BOARD_COPY.bannerTitle}</p>
-      <p className="mt-1.5 text-xs leading-relaxed text-wrtn-muted">
+      <p className="mt-1.5 whitespace-pre-line text-xs leading-relaxed text-wrtn-muted">
         {SECRET_STORY_BOARD_COPY.bannerDescription}
       </p>
     </div>
