@@ -35,7 +35,6 @@ export const HIDE_SHELL_HEADER_PATHS = [
   '/inquiry/write',
   '/consult',
   '/consult/write',
-  '/mypage',
 ] as const;
 
 const HIDE_SHELL_HEADER_EXACT_PATHS = [

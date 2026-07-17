@@ -52,7 +52,7 @@
 1. 로그인 사용자 → `POST /api/posts/images/upload` (multipart)  
 2. Spring → S3 `PutObject` (서버 SDK)  
 3. 글 등록 시 `imageUrl`만 MySQL 저장  
-4. 이미지 **조회**만 S3/CDN URL (GetObject 공개 또는 CloudFront)
+4. 이미지 **조회**는 Spring 권한 판정 API가 S3에서 읽어 응답 (S3 직접 URL 비공개)
 
 > presigned URL 직접 업로드(`/upload-url`)는 확장용으로만 유지. 클라이언트는 `/upload` 사용.
 
@@ -266,9 +266,9 @@ cp .env.prod.example .env.prod   # 값 채우기
 - [ ] CORS: Vercel production·preview origin만
 - [ ] HTTPS 강제
 - [ ] JWT·DB·AWS 키 **git·YAML·프론트 env 미포함** (VPS `.env.prod` 또는 IAM 역할만)
-- [ ] S3 버킷 **공개 쓰기 금지** — API 서버 IAM으로만 PutObject
+- [ ] S3 **Public Access Block 전체 활성화** — API 서버 IAM으로만 객체 접근
 - [ ] S3 **업로드용 CORS 불필요** (API 경유 업로드)
-- [ ] S3 **조회**: `posts/*` GetObject 공개 또는 CloudFront
+- [ ] S3 **조회**: EC2 instance role만 `posts/*` GetObject, 브라우저는 권한 판정 API 사용
 - [ ] 글 등록 시 `imageUrl`은 **본인 버킷·prefix만** 허용 (서버 검증)
 - [ ] 노출된 dev 키는 **폐기·재발급** 후 의뢰인 prod IAM으로 교체
 - [ ] `ADMIN_BOOTSTRAP_ENABLED=false` (운영)
@@ -279,9 +279,9 @@ cp .env.prod.example .env.prod   # 값 채우기
 | 항목 | 정책 |
 |------|------|
 | 쓰기 | Spring API → S3 PutObject (IAM 키 또는 역할) |
-| 읽기 | `posts/*` GetObject 공개 또는 CloudFront |
+| 읽기 | EC2 instance role에만 `posts/*` GetObject, 퍼블릭 읽기 금지 |
 | 업로드 CORS | **불필요** (브라우저→API만) |
-| IAM | `s3:PutObject` on `posts/*`만 (`infra/aws/s3-iam-policy.json`) |
+| IAM | `s3:PutObject`, `s3:GetObject`, `s3:DeleteObject` on `posts/*` (`infra/aws/s3-iam-policy.json`) |
 | 키 보관 | 로컬: OS env / IDE Run Config. 운영: VPS env 또는 IAM 역할 |
 
 ---

@@ -69,6 +69,8 @@ test.describe('release smoke', () => {
     '/journal',
     '/qna',
     '/mypage',
+    '/mypage/received-reactions',
+    '/mypage/bookmarks',
     '/notice',
     '/terms',
     '/privacy',
@@ -172,7 +174,8 @@ test.describe('staging data flow', () => {
       await page.getByRole('button', { name: /내가 쓴 글/ }).click();
       await expect(page.getByRole('heading', { name: '내가 쓴 글' })).toBeVisible();
       await expect(page.getByText(title)).toBeVisible();
-      await page.getByRole('button', { name: /받은 공감/ }).click();
+      await page.getByRole('link', { name: /받은 공감/ }).click();
+      await expect(page).toHaveURL(/\/mypage\/received-reactions$/);
       await expect(page.getByRole('heading', { name: '받은 공감' })).toBeVisible();
       await expect(page.getByText(title)).toBeVisible();
 
@@ -181,7 +184,8 @@ test.describe('staging data flow', () => {
         window.sessionStorage.setItem('sessionUser', JSON.stringify(user));
       }, reader);
       await page.goto('/mypage', { waitUntil: 'domcontentloaded' });
-      await page.getByRole('button', { name: /스크랩한 글/ }).click();
+      await page.getByRole('link', { name: /스크랩한 글/ }).click();
+      await expect(page).toHaveURL(/\/mypage\/bookmarks$/);
       await expect(page.getByRole('heading', { name: '스크랩한 글' })).toBeVisible();
       await expect(page.getByText(title)).toBeVisible();
     } finally {

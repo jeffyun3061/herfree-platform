@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
-import { useMyPosts, type MyPostCollection } from '@/hooks/useMyPosts';
+import { useMyPosts } from '@/hooks/useMyPosts';
 import { useMyActivity } from '@/hooks/useMyActivity';
 import { useJournalDashboard } from '@/hooks/useJournal';
 import { PostCard } from '@/components/community/PostCard';
@@ -22,27 +22,6 @@ import { PUBLIC_IMAGES } from '@/domain/assets/static';
 import { getErrorMessage } from '@/lib/api/client';
 import { InlineTopActions } from '@/components/layout/InlineTopActions';
 import { HealthStatisticsConsentCard } from '@/components/mypage/HealthStatisticsConsentCard';
-
-const POST_COLLECTION_COPY: Record<
-  MyPostCollection,
-  { title: string; emptyTitle: string; emptyDescription: string }
-> = {
-  written: {
-    title: '내가 쓴 글',
-    emptyTitle: '작성한 글이 없습니다',
-    emptyDescription: '커뮤니티에서 첫 이야기를 남겨 보세요',
-  },
-  received: {
-    title: '받은 공감',
-    emptyTitle: '공감받은 글이 없습니다',
-    emptyDescription: '내 글에 공감이 남겨지면 여기에 표시됩니다',
-  },
-  bookmarked: {
-    title: '스크랩한 글',
-    emptyTitle: '스크랩한 글이 없습니다',
-    emptyDescription: '다시 보고 싶은 글을 스크랩해 보세요',
-  },
-};
 
 function MenuRow({
   href,
@@ -112,7 +91,7 @@ export default function MyPage() {
   const { isReady, isLoggedIn, user, logout, withdraw, updateNickname } = useAuth();
   const { activity, isLoading: activityLoading } = useMyActivity(isLoggedIn);
   const { data: journalDashboard } = useJournalDashboard(isLoggedIn);
-  const [postListMode, setPostListMode] = useState<MyPostCollection | null>(null);
+  const [showWrittenPosts, setShowWrittenPosts] = useState(false);
   const {
     postPage,
     page,
@@ -120,8 +99,8 @@ export default function MyPage() {
     isLoading: postsLoading,
     error: postsError,
   } = useMyPosts(
-    isLoggedIn && postListMode !== null,
-    postListMode ?? 'written',
+    isLoggedIn && showWrittenPosts,
+    'written',
     10,
   );
   const [nickname, setNickname] = useState('');
@@ -173,9 +152,9 @@ export default function MyPage() {
     }
   };
 
-  const openPostCollection = (mode: MyPostCollection) => {
+  const toggleWrittenPosts = () => {
     setPage(0);
-    setPostListMode((current) => (current === mode ? null : mode));
+    setShowWrittenPosts((current) => !current);
   };
 
   const peaceDays = journalDashboard?.relapseFreeDays ?? 0;
@@ -239,7 +218,7 @@ export default function MyPage() {
               icon="📝"
               label="내가 쓴 글"
               sub="커뮤니티 · FAQ"
-              onClick={() => openPostCollection('written')}
+              onClick={toggleWrittenPosts}
             />
             <MenuRow icon="📓" label="내 기록 모아보기" sub="개인일지" href="/journal" />
             <MenuRow icon="📨" label="문의하기" sub="서비스 이용·운영 문의" href="/inquiry" />
@@ -300,14 +279,14 @@ export default function MyPage() {
               label="받은 공감"
               sub="내 글에 달린 반응"
               trailing={activityLoading ? '…' : (activity?.receivedReactions ?? 0)}
-              onClick={() => openPostCollection('received')}
+              href="/mypage/received-reactions"
             />
             <MenuRow
               icon="🔖"
               label="스크랩한 글"
               sub="나중에 다시 볼 글"
               trailing={activityLoading ? '…' : (activity?.bookmarkCount ?? 0)}
-              onClick={() => openPostCollection('bookmarked')}
+              href="/mypage/bookmarks"
             />
           </div>
         </div>
@@ -360,19 +339,17 @@ export default function MyPage() {
           </button>
         </p>
 
-        {postListMode && (
+        {showWrittenPosts && (
           <section className="hf-page-mx mt-6">
-            <h3 className="mb-3 text-base font-semibold text-[#15201D]">
-              {POST_COLLECTION_COPY[postListMode].title}
-            </h3>
+            <h3 className="mb-3 text-base font-semibold text-[#15201D]">내가 쓴 글</h3>
             {postsLoading ? (
               <LoadingSpinner label="글 불러오는 중…" />
             ) : postsError ? (
               <ErrorMessage message={postsError} />
             ) : postPage.content.length === 0 ? (
               <EmptyState
-                title={POST_COLLECTION_COPY[postListMode].emptyTitle}
-                description={POST_COLLECTION_COPY[postListMode].emptyDescription}
+                title="작성한 글이 없습니다"
+                description="커뮤니티에서 첫 이야기를 남겨 보세요"
               />
             ) : (
               <>
