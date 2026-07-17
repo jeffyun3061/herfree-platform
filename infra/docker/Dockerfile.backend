@@ -9,7 +9,7 @@ RUN chmod +x gradlew
 COPY backend/src ./src
 RUN ./gradlew bootJar --no-daemon -x test
 
-FROM gcr.io/distroless/java17-debian12:nonroot@sha256:06484c2a9dcc9070aeafbc0fe752cb9f73bc0cea5c311f6a516e9010061998ad
+FROM gcr.io/distroless/java17-debian13:nonroot@sha256:4f682dfb4d9721e3f139fff791cd065b94e8dde1d3a4ae60b9ae86e165c4acf4
 WORKDIR /app
 
 COPY --from=builder --chown=nonroot:nonroot /workspace/build/libs/*.jar app.jar
