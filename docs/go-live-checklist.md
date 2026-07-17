@@ -1,6 +1,6 @@
 ﻿# Herfree 실서비스 배포 한방 체크리스트
 
-기준일: 2026-07-16
+기준일: 2026-07-17
 
 이 문서 하나를 배포 기준으로 사용한다. `[x]`는 코드와 로컬 자동 검증이 끝난 항목이고, `[ ]`는 AWS·외부 콘솔·법적 검토처럼 운영자가 직접 완료해야 하는 항목이다.
 
@@ -67,6 +67,10 @@
 - [x] 공개·관리자 건강 통계는 최신 동의가 유효한 회원의 기록만 집계
 - [x] 탈퇴 시 이메일·비밀번호·OAuth·reset token·닉네임 이력 원문 제거
 - [x] 이벤트·reset token·관리자/권한 감사 로그 자동 파기 스케줄과 환경별 보존기간 구성
+- [x] 커뮤니티 게시판 탭 4개 고정·페이지 전환 UX (2026-07-17, `BoardTabBar`)
+- [x] 운영 문의·약관·개인정보 연락처 `herpfree3@gmail.com` 통일 (2026-07-17)
+- [x] 배포 준비 로컬 검사 스크립트 `scripts/verify-deploy-readiness.ps1` (2026-07-17)
+- [x] preflight 재통과 (2026-07-17, commit `1bd3606` 이후)
 
 ## 3. 운영 공개 전 NO-GO
 
@@ -119,6 +123,18 @@
 - [ ] 운영자에게 관리자 기능, 문의 처리, 신고 처리, 사고 보고 방법을 전달했다.
 
 ## 4. GitHub와 AWS 최초 1회 설정
+
+### 4-A. 저장소·워크플로 (로컬에서 확인 가능)
+
+- [x] `ci.yml` — push/PR 시 secret-scan, backend test/build, frontend lint/build
+- [x] `release-backend.yml` — staging/production 수동 배포, ECR, SSM, staging E2E
+- [x] `codeql.yml` — 정적 분석
+- [x] `infra/docker/Dockerfile.backend` — Release workflow와 동일 이미지 경로
+- [x] `scripts/preflight-local.ps1` · `scripts/verify-deploy-readiness.ps1`
+- [x] `Dockerfile.backend` 로컬 Docker 빌드 검증 (2026-07-17, `herfree-api:local-verify`)
+- [x] release E2E 주요 경로 8초 이내 로드 budget 테스트 추가 (2026-07-17)
+
+### 4-B. GitHub·AWS 콘솔 (운영자 1회)
 
 - [ ] GitHub `staging`, `production` Environment를 만들었다.
 - [ ] production Environment에 required reviewer를 지정했다.
@@ -181,6 +197,14 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\preflight-loca
 
 자동 검사가 성공해도 3절의 수동 `NO-GO` 항목은 별도로 완료해야 한다.
 
+staging·GitHub Actions 배포 직전에는 아래도 실행한다.
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\verify-deploy-readiness.ps1
+```
+
+Docker가 없으면 `-SkipDocker`로 workflow·preflight만 검사할 수 있다.
+
 ## 7. staging 수동 사용자 흐름
 
 - [ ] 비회원 홈 → 회원가입 → 이메일 로그인 → 로그아웃
@@ -196,6 +220,8 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\preflight-loca
 - [ ] 관리자 사용자·게시글·댓글·칼럼·영상·신고·문의 관리
 - [ ] 모바일 390px와 데스크톱 1440px에서 메뉴·모달·페이지네이션·긴 텍스트 확인
 - [ ] 목록 데이터 100건 이상에서 페이지 이동·검색·정렬·성능 확인
+- [ ] **화면 전환 속도:** 홈 → 커뮤니티 → 일지 → 마이페이지 → QnA → 로그인을 모바일 390px·데스크톱 1440px에서 각 **3초 이내** 체감 (Next.js 클라이언트 이동·첫 진입 모두)
+- [ ] **화면 전환 속도:** 커뮤니티 탭 페이지(◀ ▶) 전환은 **즉시** (네트워크 없음) — staging에서 3페이지 모두 확인
 
 ## 8. 운영 배포 후 5분 smoke
 
@@ -261,8 +287,8 @@ DB migration은 이미지 rollback만으로 되돌아가지 않는다. 파괴적
 
 ## 최종 판정
 
-- 코드와 자동 검증: **2026-07-16 현재 명시된 범위 통과**
-- staging 배포: **가능**
+- 코드와 자동 검증: **2026-07-17 preflight + commit `1bd3606` 통과** (새 배포마다 `verify-deploy-readiness.ps1` 재실행)
+- staging 배포: **4-B·7절 완료 후 가능** (GitHub/AWS 원격 설정 필요)
 - production 공개: **3절 NO-GO, 7절 staging 검수, 건강정보 상위 기준의 BLOCK·DECISION을 모두 완료한 뒤 가능**
 
 자동 테스트 통과는 무결점 보증이 아니다. 새 기능·설정·의존성·migration이 바뀌면 이 판정은 만료되며, 같은 검증과 staging 승인을 다시 수행한다.
