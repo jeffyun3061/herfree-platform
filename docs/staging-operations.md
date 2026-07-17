@@ -136,8 +136,8 @@ aws rds create-db-snapshot `
 - [ ] `herpfree3@gmail.com`의 AWS SES 인증 메일 승인 (현재 `Pending`)
 - [ ] OAuth Dev 콘솔 3곳에 `https://staging.herpfree.co.kr/auth/callback/{provider}` 추가
 - [x] GitHub Actions가 백엔드 이미지 빌드·취약점 검사·ECR push·EC2 health 배포까지 통과
-- [ ] GitHub staging Environment에 Amplify Basic Auth의 `E2E_HTTP_USERNAME`, `E2E_HTTP_PASSWORD` 등록
-- [ ] EC2 IMDSv2 hop limit을 2로 변경하고 컨테이너의 S3 instance role 접근 확인
+- [x] GitHub staging Environment에 Amplify Basic Auth의 `E2E_HTTP_USERNAME`, `E2E_HTTP_PASSWORD` 등록
+- [x] EC2 IMDSv2 `required`, hop limit 2를 적용하고 컨테이너의 S3 instance role 접근 및 startup check 성공 확인
 - [ ] DNS·프론트 연결 후 GitHub Actions 전체 E2E 통과 및 `staging-passed-<SHA>` 생성
 - [ ] 자동 백업을 임시 RDS로 복원하는 연습
 
