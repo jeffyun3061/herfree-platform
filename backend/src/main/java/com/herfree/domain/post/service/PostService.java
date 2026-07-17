@@ -53,6 +53,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * 커뮤니티 게시글 — 작성·목록·상세·수정·삭제.
+ * <p>
+ * 비밀사연·문의·상담 등은 {@link com.herfree.global.util.PrivateBoardPolicy}로 제목·본문을 마스킹하고,
+ * 작성자 IP는 {@link com.herfree.global.util.AuthorIpMaskPolicy}로 목록에 노출하지 않는다.
+ */
 @Service
 @RequiredArgsConstructor
 public class PostService {

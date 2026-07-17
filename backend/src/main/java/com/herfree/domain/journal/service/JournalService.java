@@ -54,6 +54,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * 비공개 증상 일지 — 회원 본인만 CRUD.
+ * <p>
+ * 공개 API({@code /api/journal/insights})는 개인 기록을 반환하지 않고,
+ * {@link com.herfree.domain.user.service.HealthStatisticsConsentService} 동의가 유효한 회원만 집계한다.
+ * 전체 표본 {@value #INSIGHT_MIN_SAMPLE}명 미만·항목별 {@value #INSIGHT_MIN_CELL_USERS}명 미만이면 해당 셀을 숨긴다.
+ */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)

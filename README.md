@@ -136,7 +136,8 @@ Git·빌드·커밋은 **`C:\dev\herfree-platform`** 기준으로 합니다. One
 | [oauth-setup.md](docs/oauth-setup.md) | 카카오·구글·네이버 Dev/Prod OAuth 설정 |
 | [decision-log.md](docs/decision-log.md) | ADR (JWT, MySQL, S3 프록시 등) |
 | [CONTRIBUTING.md](docs/CONTRIBUTING.md) | 브랜치·PR |
-| [git-workflow.md](docs/git-workflow.md) | 운영 배포용 Git 흐름·브랜치 보호·커밋 설정 |
+| [architecture-overview.md](docs/architecture-overview.md) | 도메인·레이어·핵심 Service 맵 (코드 읽기 시작점) |
+| [git-workflow.md](docs/git-workflow.md) | `develop`/`main` 브랜치·PR·GitHub 보호·배포 흐름 |
 | [health-data-security-standard.md](docs/health-data-security-standard.md) | 건강정보 보안·개인정보·DB·사고 대응 상위 기준 |
 | [go-live-checklist.md](docs/go-live-checklist.md) | 실서비스 production 배포 승인 체크리스트 |
 

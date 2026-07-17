@@ -36,6 +36,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * 게시글·댓글 신고 접수와 관리자 처리(승인·반려).
+ * <p>
+ * 자기 글 신고는 거부하고, 처리 시 {@link ReportProcessRequest} 근거를 저장한다.
+ * 동일 대상에 대한 중복 신고는 {@code DuplicateReportException}.
+ */
 @Service
 @RequiredArgsConstructor
 public class ReportService {

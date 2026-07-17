@@ -29,6 +29,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 
+/**
+ * 이메일·비밀번호 회원가입과 로그인.
+ * <p>
+ * 존재하지 않는 계정과 잘못된 비밀번호는 동일한 오류로 응답하고,
+ * {@link LoginLockoutService}로 반복 실패 시 잠금한다. 가입 시 약관·건강통계 동의를 함께 기록한다.
+ */
 @Service
 @RequiredArgsConstructor
 public class AuthService {

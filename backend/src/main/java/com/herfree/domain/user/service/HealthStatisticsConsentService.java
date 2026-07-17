@@ -12,6 +12,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * 건강정보 통계 활용 선택 동의 — 수집·철회 이력을 append-only로 보존한다.
+ * <p>
+ * {@link com.herfree.domain.journal.service.JournalService} 공개 insight 집계는
+ * 최신 동의가 {@code agreed=true}인 회원만 포함한다. 정책 버전: {@value #POLICY_VERSION}.
+ */
 @Service
 @RequiredArgsConstructor
 public class HealthStatisticsConsentService {

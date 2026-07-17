@@ -96,6 +96,7 @@ Controller에서 권한, 상태 변경, 복잡한 조회 조건을 직접 처리
 | 보안 정책 변경 | `docs/ops-security-checklist.md`, `docs/logging-policy.md` |
 | 건강정보·개인정보·사고 대응 | `docs/health-data-security-standard.md`, `docs/templates/` |
 | 큰 기술 결정 | `docs/decision-log.md` |
+| 코드·도메인 구조 파악 | `docs/architecture-overview.md` |
 
 ## 로컬 확인 명령
 

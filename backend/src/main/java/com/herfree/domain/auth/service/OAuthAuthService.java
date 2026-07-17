@@ -37,6 +37,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * 소셜 OAuth(카카오·구글·네이버) 로그인·회원 연동.
+ * <p>
+ * 닉네임·약관 미완성 사용자에게는 일반 API용 JWT가 아닌 프로필 완성 전용 토큰을 발급한다.
+ * 이미 이메일 가입된 주소와 OAuth 이메일 충돌 시 {@code OAuthEmailAlreadyRegisteredException}.
+ */
 @Service
 @RequiredArgsConstructor
 public class OAuthAuthService {
