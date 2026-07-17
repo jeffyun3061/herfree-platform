@@ -10,6 +10,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * 회원 역할·상태 변경 감사 — 누가·언제·무엇을 바꿨는지 {@code role_audit_logs}에 기록.
+ */
 @Service
 @RequiredArgsConstructor
 public class RoleAuditService {

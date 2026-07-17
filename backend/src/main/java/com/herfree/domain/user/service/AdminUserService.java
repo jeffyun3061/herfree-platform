@@ -30,6 +30,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * 관리자 회원 검색·상태·역할·닉네임 강제 변경.
+ * <p>
+ * SUPER_ADMIN만 역할 승격 가능, 변경 이력은 {@link RoleAuditService}에 남긴다.
+ * MODERATOR는 신고 처리 위주, ADMIN 이상이 콘텐츠·회원 관리.
+ */
 @Service
 @RequiredArgsConstructor
 public class AdminUserService {

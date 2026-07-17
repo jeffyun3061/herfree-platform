@@ -16,6 +16,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * 제품 큐레이션 CMS — 외부 구매 링크만 등록(MVP에 결제 없음).
+ * <p>
+ * 런칭 초기에는 프론트 {@code FEATURE_PRODUCTS_ENABLED}로 UI 비노출, API·DB는 유지.
+ */
 @Service
 @RequiredArgsConstructor
 public class ProductService {

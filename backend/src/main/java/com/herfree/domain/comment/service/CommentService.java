@@ -30,6 +30,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * 게시글 댓글 CRUD·관리자 목록.
+ * <p>
+ * 숨김·삭제된 게시글에는 댓글을 달 수 없고, 비공개 게시판 댓글은 {@link com.herfree.global.util.PrivateBoardPolicy}와 동일한 마스킹을 따른다.
+ */
 @Service
 @RequiredArgsConstructor
 public class CommentService {

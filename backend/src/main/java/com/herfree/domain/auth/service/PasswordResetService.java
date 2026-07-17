@@ -21,6 +21,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * 비밀번호 재설정 요청·확인.
+ * <p>
+ * 계정 존재 여부와 무관하게 동일 성공 메시지를 반환하고, 토큰은 해시만 DB에 저장한다.
+ * 메일 발송은 {@link PasswordResetMailService}, 운영 환경에서 SMTP 실패 시 fallback 없음.
+ */
 @Service
 @RequiredArgsConstructor
 public class PasswordResetService {

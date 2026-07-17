@@ -42,6 +42,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * 회원 프로필·마이페이지·탈퇴.
+ * <p>
+ * 닉네임 변경은 쿨다운과 {@link com.herfree.global.util.ReservedNicknamePolicy}를 적용한다.
+ * 탈퇴 시 이메일·비밀번호·OAuth·reset token·닉네임 이력 원문을 제거하고 게시글 이미지는 {@link PostImageCleanupService}로 정리한다.
+ */
 @Service
 @RequiredArgsConstructor
 public class UserService {

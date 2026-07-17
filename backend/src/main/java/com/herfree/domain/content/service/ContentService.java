@@ -27,6 +27,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+/**
+ * 운영자 정보글 CMS — 카테고리·고정·순서·공개/숨김.
+ * <p>
+ * 커뮤니티 {@link com.herfree.domain.post.service.PostService}와 분리되어 운영자만 작성한다.
+ * 본문 이미지는 {@link com.herfree.global.storage.PostImageStorageService} 경유 업로드.
+ */
 @Service
 @RequiredArgsConstructor
 public class ContentService {

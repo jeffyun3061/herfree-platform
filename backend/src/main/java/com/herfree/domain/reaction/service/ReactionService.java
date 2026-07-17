@@ -17,6 +17,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * 게시글·댓글 공감(반응) toggle.
+ * <p>
+ * 동일 사용자·대상·타입 조합은 하나만 유지. 재클릭 시 취소되어 별도 DELETE API가 필요 없다.
+ */
 @Service
 @RequiredArgsConstructor
 public class ReactionService {

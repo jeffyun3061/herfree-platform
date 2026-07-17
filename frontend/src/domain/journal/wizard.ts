@@ -1,3 +1,7 @@
+/**
+ * (레거시) 위저드 단계 ID — 현재 UI는 단일 스크롤 폼(recordForm)을 사용.
+ * 대시보드·인사이트에서 단계 상수 참조가 남아 있을 수 있다.
+ */
 import type { RoutineItemId } from '@/domain/journal/routine';
 
 export const WIZARD_STEP = {

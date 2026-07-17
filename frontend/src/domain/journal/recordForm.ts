@@ -1,3 +1,7 @@
+/**
+ * 일지 기록 시트 ↔ API DTO 변환·수면 구간 매핑.
+ * 화면은 {@code JournalRecordSheet}가 이 함수들로 폼 상태를 맞춘다.
+ */
 import type { JournalRecord, JournalRecordInput, SleepRange, StressLevel } from '@/domain/journal/types';
 import { avgSleepToHours } from '@/domain/journal/routine';
 import type { WizardEntryMode } from '@/domain/journal/wizard';

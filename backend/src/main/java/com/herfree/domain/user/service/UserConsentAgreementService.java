@@ -6,6 +6,9 @@ import com.herfree.domain.user.repository.UserConsentAgreementRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+/**
+ * 이용약관·개인정보·민감정보 동의 이력 — 가입 시 버전과 함께 append-only 저장.
+ */
 @Service
 @RequiredArgsConstructor
 public class UserConsentAgreementService {

@@ -133,6 +133,8 @@
 - [x] `scripts/preflight-local.ps1` · `scripts/verify-deploy-readiness.ps1`
 - [x] `Dockerfile.backend` 로컬 Docker 빌드 검증 (2026-07-17, `herfree-api:local-verify`)
 - [x] release E2E 주요 경로 8초 이내 로드 budget 테스트 추가 (2026-07-17)
+- [ ] AWS 직전 Git: `.\scripts\pre-aws-git.ps1 -Push` 로 `main`·`develop` 원격 동기화 + CI green
+- [x] 도메인별 `package-info.java`·Service JavaDoc·[`architecture-overview.md`](./architecture-overview.md) (2026-07-17)
 
 ### 4-B. GitHub·AWS 콘솔 (운영자 1회)
 

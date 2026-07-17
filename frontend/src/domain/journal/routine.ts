@@ -1,3 +1,7 @@
+/**
+ * 일지 루틴 3종(수면·영양제·컨디션) 완료율·타임라인 표시용 순수 함수.
+ * API {@code JournalService}의 ROUTINE_TASK_COUNT=3과 맞춘다.
+ */
 import type {
   JournalRecord,
   JournalTimelineDay,

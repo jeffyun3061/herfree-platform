@@ -7,6 +7,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * 활성 게시판 메타 목록 — 타입·정렬·라벨은 DB 시드 + Flyway로 관리.
+ * <p>
+ * 게시판별 작성·조회 정책은 {@link com.herfree.global.util.BoardWritePolicy}·{@link com.herfree.global.util.PrivateBoardPolicy}.
+ */
 @Service
 @RequiredArgsConstructor
 public class BoardService {

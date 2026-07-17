@@ -1,4 +1,4 @@
-/** 비공개·마스킹 게시판 정책 */
+/** 비공개·마스킹 게시판 정책 — 백엔드 PrivateBoardPolicy와 동일한 UX 규칙 */
 export const MASKED_PRIVATE_TITLE = '******';
 
 export const SECRET_STORY_DETAIL_MESSAGE = '비밀 사연 입니다.';

@@ -14,6 +14,12 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
+/**
+ * 비밀번호 재설정 메일 발송.
+ * <p>
+ * staging·production에서는 SMTP 미설정 시 {@link com.herfree.domain.auth.exception.PasswordResetDeliveryException}.
+ * reset URL·토큰 원문은 로그에 남기지 않는다.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor

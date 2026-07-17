@@ -25,6 +25,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+/**
+ * 공지사항 CMS — NOTICE 게시판 타입 전용, 커뮤니티 일반 글과 분리.
+ */
 @Service
 @RequiredArgsConstructor
 public class AdminNoticeService {

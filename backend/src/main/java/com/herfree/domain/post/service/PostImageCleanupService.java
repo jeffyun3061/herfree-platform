@@ -8,6 +8,9 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+/**
+ * 게시글 삭제·탈퇴 시 S3 객체와 post_images 레코드 정리.
+ */
 @Service
 @RequiredArgsConstructor
 public class PostImageCleanupService {

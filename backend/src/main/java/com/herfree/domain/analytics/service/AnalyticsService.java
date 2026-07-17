@@ -32,6 +32,11 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+/**
+ * 클라이언트 이벤트 수집·관리자 대시보드 집계.
+ * <p>
+ * userId·IP는 salt 해시로 저장해 원문 식별을 줄인다. 로그인·가입 등 주요 퍼널 이벤트 상수는 이 클래스에 정의한다.
+ */
 @Service
 @RequiredArgsConstructor
 public class AnalyticsService {

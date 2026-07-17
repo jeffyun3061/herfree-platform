@@ -1,3 +1,7 @@
+/**
+ * OAuth 리다이렉트 state·return URL을 sessionStorage로 관리.
+ * callback URL은 환경별 OAuth 콘솔 등록값과 일치해야 한다 (docs/oauth-setup.md).
+ */
 export type OAuthProvider = 'kakao' | 'google' | 'naver';
 
 const OAUTH_STATE_PREFIX = 'herfree_oauth_state_';

@@ -25,6 +25,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * 게시글 스크랩(북마크) — 회원별 DB 보존, 목록은 공개 범위 정책을 다시 적용한다.
+ */
 @Service
 @RequiredArgsConstructor
 public class PostBookmarkService {

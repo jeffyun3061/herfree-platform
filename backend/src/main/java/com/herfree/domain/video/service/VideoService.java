@@ -21,6 +21,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+/**
+ * YouTube URL 큐레이션 CMS.
+ * <p>
+ * 영상 파일 직접 업로드는 MVP 범위 밖. 공개 목록은 노출·순서 기준 상위 N건, 관리자는 전체·숨김 복구.
+ */
 @Service
 @RequiredArgsConstructor
 public class VideoService {

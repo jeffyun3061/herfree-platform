@@ -85,20 +85,39 @@ com.herfree
 
 계층 규칙: **Controller → Service → Repository**. Entity는 API에 직접 노출하지 않고 Request/Response DTO를 쓴다.
 
-### 3.2 핵심 Service (읽기 시작점)
+### 3.2 Service 전체 (읽기 시작점)
+
+각 `domain/*/package-info.java`와 Service 클래스 JavaDoc에 **역할·API prefix·보안 근거**를 적어 두었다.
 
 | Service | 패키지 | 하는 일 |
 | --- | --- | --- |
-| `AuthService` | `auth` | 이메일 가입·로그인, JWT 발급, 로그인 잠금·계정 열거 완화 |
-| `OAuthAuthService` | `auth` | 카카오·구글·네이버 OAuth, 프로필 미완성 시 중간 토큰 분리 |
-| `JournalService` | `journal` | 날짜별 일지 upsert, 대시보드·리뷰. **공개 insight는 표본·동의 조건** |
-| `PostService` | `post` | 게시글 CRUD, 비공개 게시판 마스킹, 검색·목록 정책 |
-| `PostImageAccessService` | `post` | S3 이미지 **서빙 시점** 권한 재판정 (직링크 우회 방지) |
-| `ReportService` | `report` | 신고 접수·승인/반려, 처리 근거 보존 |
-| `HealthStatisticsConsentService` | `user` | 건강정보 통계 활용 **선택 동의** 이력·철회 |
-| `ContentService` / `VideoService` | `content` / `video` | 운영자 CMS |
+| `AuthService` | auth | 이메일 가입·로그인, JWT, 계정 열거 완화 |
+| `OAuthAuthService` | auth | OAuth, 프로필 미완성 중간 토큰 |
+| `LoginLockoutService` | auth | 로그인 10회 실패 시 30분 잠금 (인메모리) |
+| `PasswordResetService` | auth | 재설정 토큰·동일 성공 메시지 |
+| `PasswordResetMailService` | auth | SMTP 발송, 운영 fallback 없음 |
+| `UserService` | user | 프로필·마이페이지·탈퇴·닉네임 쿨다운 |
+| `AdminUserService` | user | 관리자 회원 검색·역할·상태 |
+| `UserConsentAgreementService` | user | 약관·민감정보 동의 이력 |
+| `HealthStatisticsConsentService` | user | 건강통계 활용 선택 동의 |
+| `RoleAuditService` | user | 역할 변경 감사 |
+| `BoardService` | board | 활성 게시판 메타 |
+| `PostService` | post | 게시글 CRUD·마스킹·검색 |
+| `PostImageAccessService` | post | 이미지 서빙 시점 권한 |
+| `PostImageCleanupService` | post | S3·DB 이미지 정리 |
+| `PostBookmarkService` | post | 스크랩 |
+| `AdminNoticeService` | post | 공지 CMS |
+| `CommentService` | comment | 댓글 CRUD |
+| `ReactionService` | reaction | 공감 toggle |
+| `ReportService` | report | 신고·처리 근거 |
+| `JournalService` | journal | 비공개 일지·공개 insight |
+| `ContentService` | content | 정보글 CMS |
+| `VideoService` | video | YouTube CMS |
+| `ProductService` | product | 제품 큐레이션 CMS |
+| `AnalyticsService` | analytics | 이벤트·관리자 통계 |
+| `AdminAuditService` | audit | 관리자 API 감사 |
 
-각 클래스 상단 JavaDoc에 **비즈니스 근거·보안 주의**를 짧게 적어 두었다.
+프론트 정책: `frontend/src/domain/` — [`domain/README.md`](../frontend/src/domain/README.md)
 
 ### 3.3 대표 흐름
 
