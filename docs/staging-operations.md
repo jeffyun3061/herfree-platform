@@ -16,6 +16,7 @@
 | RDS SG | `sg-0b9fb633cccc74303` | API SG에서 오는 3306만 허용 |
 | S3 | `herfree-staging-uploads-439777528445-ap-northeast-2-an` | Public access block, API instance role만 객체 접근 |
 | ECR | `herfree-api` | push scan, 미태그 이미지 7일 후 삭제, 최신 50개 보관 |
+| Amplify | `herfree-staging` / `d2bcg3vnlv5hkh` | Next.js `WEB_COMPUTE`, Basic Auth 필수 |
 | API 로그 | `/herfree/staging/api` | CloudWatch 30일 보존 |
 | RDS 오류 로그 | `/aws/rds/instance/herfree-staging-mysql/error` | CloudWatch 30일 보존 |
 | EC2 role | `herfree-staging-ec2` | SSM, ECR pull, staging S3·secret·로그 최소 권한 |
@@ -30,6 +31,7 @@ Secrets Manager에는 다음 세 secret이 있다.
 | `herfree/staging/app-config` | JWT, 분석 salt, OAuth, URL, S3·로그 설정 | API 재배포 필요 |
 | `herfree/staging/db-app` | 앱 전용 DB 사용자와 비밀번호 | DB 사용자 비밀번호 동기화 후 재배포 |
 | `herfree/staging/smtp` | SES SMTP 사용자와 비밀번호 | API 재배포 필요 |
+| `herfree/staging/frontend-basic-auth` | Amplify staging 접근 보호 | Amplify와 GitHub Environment 값을 함께 교체 |
 
 RDS master 비밀번호는 RDS 관리형 secret에 있고 앱이 사용하지 않는다. 원문 secret을 GitHub, Git, 문서, 채팅, SSM command 문자열에 넣지 않는다.
 
