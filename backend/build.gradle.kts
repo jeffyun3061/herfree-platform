@@ -1,6 +1,6 @@
 plugins {
     java
-    id("org.springframework.boot") version "3.3.6"
+    id("org.springframework.boot") version "3.5.16"
     id("io.spring.dependency-management") version "1.1.6"
 }
 
@@ -29,7 +29,7 @@ dependencies {
     implementation("org.flywaydb:flyway-core")
     implementation("org.flywaydb:flyway-mysql")
 
-    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.17")
 
     implementation("software.amazon.awssdk:s3:2.29.45")
 
