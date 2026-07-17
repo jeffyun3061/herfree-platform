@@ -52,7 +52,7 @@ trap 'rm -f "${TMP_FILE}"' EXIT
 
 cat > "${TMP_FILE}" <<EOF
 SPRING_PROFILES_ACTIVE=${PROFILE}
-SPRING_DATASOURCE_URL=jdbc:mysql://${DB_HOST}:3306/${DB_NAME}?serverTimezone=UTC&characterEncoding=UTF-8&sslMode=VERIFY_IDENTITY
+SPRING_DATASOURCE_URL=jdbc:mysql://${DB_HOST}:3306/${DB_NAME}?serverTimezone=UTC&characterEncoding=UTF-8&sslMode=VERIFY_IDENTITY&trustCertificateKeyStoreUrl=file:/app/certs/rds-truststore.p12&trustCertificateKeyStoreType=PKCS12&trustCertificateKeyStorePassword=changeit&fallbackToSystemTrustStore=false
 SPRING_DATASOURCE_USERNAME=$(json_value "${DB_JSON}" '.username')
 SPRING_DATASOURCE_PASSWORD=$(json_value "${DB_JSON}" '.password')
 SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE=5

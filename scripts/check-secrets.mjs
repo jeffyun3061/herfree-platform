@@ -31,6 +31,9 @@ const allowedSecretTemplates = [
   /(^|\/)local-secrets\.yml\.example$/,
   /(^|\/)application-(?:local|prod)\.yml\.example$/,
 ];
+const allowedPublicCertificates = new Set([
+  'infra/certs/rds-global-bundle.pem',
+]);
 const forbiddenPaths = [
   { name: '실제 환경변수 파일', pattern: /(^|\/)\.env(?:\..+)?$/ },
   { name: '로컬 비밀 설정', pattern: /(^|\/)local-secrets\.yml$/ },
@@ -48,6 +51,10 @@ const secretAssignment = /^\s*([A-Za-z0-9_.-]*(?:client[-_.]?secret|secret[-_.]?
 
 function isTemplate(path) {
   return allowedSecretTemplates.some((pattern) => pattern.test(path));
+}
+
+function isAllowedPublicCertificate(path) {
+  return allowedPublicCertificates.has(path);
 }
 
 function isSafeExampleValue(value) {
@@ -69,7 +76,7 @@ function fileContent(path) {
 
 const findings = [];
 for (const path of files) {
-  if (!isTemplate(path)) {
+  if (!isTemplate(path) && !isAllowedPublicCertificate(path)) {
     for (const rule of forbiddenPaths) {
       if (rule.pattern.test(path)) findings.push(`${path}: ${rule.name}`);
     }
