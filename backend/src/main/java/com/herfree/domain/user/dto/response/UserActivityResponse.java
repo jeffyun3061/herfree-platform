@@ -7,6 +7,7 @@ public record UserActivityResponse(
         int totalPosts,
         int symptomPosts,
         long receivedReactions,
+        long bookmarkCount,
         Instant lastPostAt,
         Instant memberSince
 ) {

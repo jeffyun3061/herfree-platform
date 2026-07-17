@@ -142,7 +142,11 @@ export function PrivateBoardWriteForm({ boardType }: PrivateBoardWriteFormProps)
 
   return (
     <div className="mx-auto min-h-screen w-full max-w-app bg-wrtn-bg">
-      <TopBar title={writeTitle} showBack backHref={meta.path} />
+      <TopBar
+        title={writeTitle}
+        showBack
+        backHref={meta.path}
+      />
       <form onSubmit={(e) => void handleSubmit(e)} className="space-y-6 px-4 py-5 lg:px-4">
         <p className="rounded-xl border border-wrtn-border bg-white px-4 py-3 text-sm leading-relaxed text-muted">
           {meta.description}

@@ -32,6 +32,37 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     Page<Post> findByUserIdAndBoardIdAndStatusOrderByCreatedAtDesc(
             Long userId, Long boardId, PostStatus status, Pageable pageable);
 
+    @Query(
+            value = """
+                    SELECT p FROM Post p
+                    JOIN FETCH p.board
+                    JOIN FETCH p.user
+                    WHERE p.user.id = :userId
+                    AND p.status = :status
+                    AND EXISTS (
+                        SELECT r.id FROM Reaction r
+                        WHERE r.targetType = com.herfree.domain.reaction.entity.ReactionTargetType.POST
+                        AND r.targetId = p.id
+                    )
+                    ORDER BY p.createdAt DESC
+                    """,
+            countQuery = """
+                    SELECT COUNT(p) FROM Post p
+                    WHERE p.user.id = :userId
+                    AND p.status = :status
+                    AND EXISTS (
+                        SELECT r.id FROM Reaction r
+                        WHERE r.targetType = com.herfree.domain.reaction.entity.ReactionTargetType.POST
+                        AND r.targetId = p.id
+                    )
+                    """
+    )
+    Page<Post> findPostsWithReceivedReactions(
+            @Param("userId") Long userId,
+            @Param("status") PostStatus status,
+            Pageable pageable
+    );
+
     long countByStatus(PostStatus status);
 
     long countByStatusAndCreatedAtAfter(PostStatus status, Instant since);

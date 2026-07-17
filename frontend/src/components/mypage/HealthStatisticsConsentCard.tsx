@@ -56,19 +56,8 @@ export function HealthStatisticsConsentCard() {
     <>
       <div className="mypage-menu-card">
         <div className="px-[17px] py-[15px]">
-          <div className="flex items-start justify-between gap-4">
-            <div className="min-w-0">
-              <p className="text-[13.5px] font-semibold text-[#15201D]">건강정보 통계 활용</p>
-              <p className="mt-1 text-[11.5px] leading-5 text-[#8A9287]">
-                최소 표본 집계에만 참여하며 메모와 게시글 내용은 제외됩니다.
-              </p>
-              <Link
-                href="/privacy#health-statistics"
-                className="mt-1 inline-block text-[11px] font-semibold text-[#0B3B36] underline underline-offset-2"
-              >
-                처리 기준 보기
-              </Link>
-            </div>
+          <div className="flex items-center justify-between gap-3">
+            <p className="min-w-0 text-[13.5px] font-semibold text-[#15201D]">건강정보 통계 활용</p>
             <span
               className={`shrink-0 text-[11px] font-semibold ${
                 agreed ? 'text-[#167A55]' : 'text-[#8A9287]'
@@ -77,6 +66,16 @@ export function HealthStatisticsConsentCard() {
               {isLoading ? '확인 중' : agreed ? '동의함' : '동의하지 않음'}
             </span>
           </div>
+          <p className="mt-1 text-[11.5px] leading-5 text-[#8A9287]">
+            <span className="block">최소 표본 집계에만 참여합니다.</span>
+            <span className="block">메모와 게시글 내용은 제외됩니다.</span>
+          </p>
+          <Link
+            href="/privacy#health-statistics"
+            className="mt-1 inline-block text-[11px] font-semibold text-[#0B3B36] underline underline-offset-2"
+          >
+            처리 기준 보기
+          </Link>
           <div className="mt-3">
             {agreed ? (
               <Button

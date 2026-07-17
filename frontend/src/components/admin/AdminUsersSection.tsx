@@ -14,6 +14,7 @@ import { Pagination } from '@/components/common/Pagination';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { Button } from '@/components/ui/Button';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import {
   ASSIGNABLE_ROLES,
   USER_ROLE_LABELS,
@@ -24,6 +25,11 @@ import {
 import { getErrorMessage } from '@/lib/api/client';
 import { useAuth } from '@/hooks/useAuth';
 import { isAdmin, isSuperAdmin } from '@/domain/user/types';
+
+type PendingUserAction =
+  | { kind: 'role'; userId: number; role: UserRole }
+  | { kind: 'activate'; userId: number }
+  | { kind: 'nickname'; userId: number };
 
 export function AdminUsersSection() {
   const { user: session } = useAuth();
@@ -37,6 +43,7 @@ export function AdminUsersSection() {
   const [restrictionDays, setRestrictionDays] = useState('7');
   const [restrictionReason, setRestrictionReason] = useState('운영 정책 위반');
   const [restrictionNote, setRestrictionNote] = useState('');
+  const [pendingAction, setPendingAction] = useState<PendingUserAction | null>(null);
   const hasKeyword = keyword.trim().length > 0;
 
   const { data, isLoading, error, refetch } = useApiQuery(
@@ -62,14 +69,12 @@ export function AdminUsersSection() {
   };
 
   const handleRoleChange = async (userId: number, role: UserRole) => {
-    if (!window.confirm('회원 권한을 변경할까요? 변경 이력은 감사 로그에 남습니다.')) {
-      return;
-    }
     setPendingId(userId);
     setActionError(null);
     try {
       await updateAdminUserRole(userId, role);
       await refetch();
+      setPendingAction(null);
     } catch (err) {
       setActionError(getErrorMessage(err));
     } finally {
@@ -82,14 +87,12 @@ export function AdminUsersSection() {
       setRestrictionUserId(userId);
       return;
     }
-    if (!window.confirm('계정 정지를 해제할까요?')) {
-      return;
-    }
     setPendingId(userId);
     setActionError(null);
     try {
       await updateAdminUserStatus(userId, status);
       await refetch();
+      setPendingAction(null);
     } catch (err) {
       setActionError(getErrorMessage(err));
     } finally {
@@ -119,9 +122,6 @@ export function AdminUsersSection() {
   };
 
   const handleNicknameReset = async (userId: number) => {
-    if (!window.confirm('닉네임을 기본값으로 초기화할까요?')) {
-      return;
-    }
     setPendingId(userId);
     setActionError(null);
     try {
@@ -130,11 +130,25 @@ export function AdminUsersSection() {
         note: '관리자 화면에서 닉네임 초기화',
       });
       await refetch();
+      setPendingAction(null);
     } catch (err) {
       setActionError(getErrorMessage(err));
     } finally {
       setPendingId(null);
     }
+  };
+
+  const confirmPendingAction = () => {
+    if (!pendingAction) return;
+    if (pendingAction.kind === 'role') {
+      void handleRoleChange(pendingAction.userId, pendingAction.role);
+      return;
+    }
+    if (pendingAction.kind === 'activate') {
+      void handleStatusChange(pendingAction.userId, 'ACTIVE');
+      return;
+    }
+    void handleNicknameReset(pendingAction.userId);
   };
 
   if (error) return <ErrorMessage message={getErrorMessage(error)} />;
@@ -223,7 +237,7 @@ export function AdminUsersSection() {
                       value={member.role}
                       disabled={pendingId === member.id || member.id === session?.userId}
                       onChange={(e) =>
-                        void handleRoleChange(member.id, e.target.value as UserRole)
+                        setPendingAction({ kind: 'role', userId: member.id, role: e.target.value as UserRole })
                       }
                     >
                       {ASSIGNABLE_ROLES.map((role) => (
@@ -244,7 +258,9 @@ export function AdminUsersSection() {
                       value={member.status}
                       disabled={pendingId === member.id || member.id === session?.userId}
                       onChange={(e) =>
-                        void handleStatusChange(member.id, e.target.value as UserStatus)
+                        e.target.value === 'SUSPENDED'
+                          ? setRestrictionUserId(member.id)
+                          : setPendingAction({ kind: 'activate', userId: member.id })
                       }
                     >
                       <option value="ACTIVE">{USER_STATUS_LABELS.ACTIVE}</option>
@@ -274,7 +290,7 @@ export function AdminUsersSection() {
                     size="sm"
                     variant="secondary"
                     disabled={pendingId === member.id}
-                    onClick={() => void handleNicknameReset(member.id)}
+                    onClick={() => setPendingAction({ kind: 'nickname', userId: member.id })}
                   >
                     닉네임 초기화
                   </Button>
@@ -283,7 +299,7 @@ export function AdminUsersSection() {
                       size="sm"
                       variant="primary"
                       disabled={pendingId === member.id}
-                      onClick={() => void handleStatusChange(member.id, 'ACTIVE')}
+                      onClick={() => setPendingAction({ kind: 'activate', userId: member.id })}
                     >
                       정지 해제
                     </Button>
@@ -352,6 +368,29 @@ export function AdminUsersSection() {
           검색 결과 새로고침
         </Button>
       )}
+
+      <ConfirmModal
+        open={pendingAction !== null}
+        title={
+          pendingAction?.kind === 'role'
+            ? '회원 권한 변경'
+            : pendingAction?.kind === 'activate'
+              ? '계정 정지 해제'
+              : '닉네임 초기화'
+        }
+        message={
+          pendingAction?.kind === 'role'
+            ? '운영 권한이 달라지며 변경 이력은 감사 로그에 기록됩니다.'
+            : pendingAction?.kind === 'activate'
+              ? '회원이 즉시 다시 로그인하고 서비스를 이용할 수 있습니다.'
+              : '부적절한 닉네임을 기본값으로 초기화하며 변경 이력이 기록됩니다.'
+        }
+        confirmLabel={pendingAction?.kind === 'activate' ? '정지 해제' : '변경 적용'}
+        variant={pendingAction?.kind === 'nickname' ? 'danger' : 'default'}
+        isLoading={pendingId !== null}
+        onConfirm={confirmPendingAction}
+        onClose={() => pendingId === null && setPendingAction(null)}
+      />
     </div>
   );
 }

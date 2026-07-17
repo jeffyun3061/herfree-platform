@@ -20,6 +20,7 @@ import com.herfree.domain.post.exception.PostNotFoundException;
 import com.herfree.domain.post.repository.PostFulltextSearchRepository;
 import com.herfree.domain.post.repository.PostImageRepository;
 import com.herfree.domain.post.repository.PostRepository;
+import com.herfree.domain.post.repository.PostBookmarkRepository;
 import com.herfree.domain.user.entity.User;
 import com.herfree.domain.user.entity.UserProfile;
 import com.herfree.domain.user.exception.UserNotFoundException;
@@ -57,6 +58,7 @@ import java.util.stream.Collectors;
 public class PostService {
 
     private final PostRepository postRepository;
+    private final PostBookmarkRepository postBookmarkRepository;
     private final PostFulltextSearchRepository postFulltextSearchRepository;
     private final PostImageRepository postImageRepository;
     private final PostImageCleanupService postImageCleanupService;
@@ -283,6 +285,7 @@ public class PostService {
         }
 
         postImageCleanupService.deleteImagesForPostIds(List.of(postId));
+        postBookmarkRepository.deleteAllByPostId(postId);
         post.delete();
     }
 
@@ -313,6 +316,7 @@ public class PostService {
                 .orElseThrow(PostNotFoundException::new);
 
         postImageCleanupService.deleteImagesForPostIds(List.of(postId));
+        postBookmarkRepository.deleteAllByPostId(postId);
         post.delete();
         recordAnalyticsEvent(AnalyticsService.ADMIN_ACTION, null);
     }

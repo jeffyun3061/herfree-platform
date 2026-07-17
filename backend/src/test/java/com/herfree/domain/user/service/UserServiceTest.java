@@ -1,6 +1,7 @@
 package com.herfree.domain.user.service;
 
 import com.herfree.domain.board.entity.Board;
+import com.herfree.domain.board.repository.BoardRepository;
 import com.herfree.domain.comment.entity.Comment;
 import com.herfree.domain.comment.entity.CommentStatus;
 import com.herfree.domain.comment.repository.CommentRepository;
@@ -11,7 +12,9 @@ import com.herfree.domain.post.entity.Post;
 import com.herfree.domain.post.entity.PostStatus;
 import com.herfree.domain.post.entity.PostVisibility;
 import com.herfree.domain.post.repository.PostRepository;
+import com.herfree.domain.post.repository.PostBookmarkRepository;
 import com.herfree.domain.post.service.PostImageCleanupService;
+import com.herfree.domain.reaction.repository.ReactionRepository;
 import com.herfree.domain.user.dto.request.UpdateProfileRequest;
 import com.herfree.domain.user.entity.NicknameChangeHistory;
 import com.herfree.domain.user.entity.NicknameChangeType;
@@ -59,6 +62,15 @@ class UserServiceTest {
     private PostRepository postRepository;
 
     @Mock
+    private PostBookmarkRepository postBookmarkRepository;
+
+    @Mock
+    private BoardRepository boardRepository;
+
+    @Mock
+    private ReactionRepository reactionRepository;
+
+    @Mock
     private CommentRepository commentRepository;
 
     @Mock
@@ -75,6 +87,31 @@ class UserServiceTest {
 
     @InjectMocks
     private UserService userService;
+
+    @Test
+    @DisplayName("활동 요약은 활성 게시글의 스크랩 수를 반환한다")
+    void getMyActivity_returnsActiveBookmarkCount() {
+        Long userId = 1L;
+        User user = User.builder()
+                .email("test@test.com")
+                .password("pw")
+                .role(UserRole.USER)
+                .status(UserStatus.ACTIVE)
+                .build();
+        given(postRepository.countByUserIdAndStatus(userId, PostStatus.ACTIVE)).willReturn(2L);
+        given(boardRepository.findByBoardType("SYMPTOM")).willReturn(Optional.empty());
+        given(reactionRepository.countReactionsOnUserPosts(userId)).willReturn(3L);
+        given(postBookmarkRepository.countActiveByUserId(userId)).willReturn(4L);
+        given(postRepository.findFirstByUserIdAndStatusOrderByCreatedAtDesc(userId, PostStatus.ACTIVE))
+                .willReturn(Optional.empty());
+        given(userRepository.findById(userId)).willReturn(Optional.of(user));
+
+        var result = userService.getMyActivity(userId);
+
+        assertThat(result.totalPosts()).isEqualTo(2);
+        assertThat(result.receivedReactions()).isEqualTo(3);
+        assertThat(result.bookmarkCount()).isEqualTo(4);
+    }
 
     @Test
     @DisplayName("회원 탈퇴 시 계정 DELETED 처리와 작성 콘텐츠 익명화가 수행된다")
@@ -130,6 +167,7 @@ class UserServiceTest {
         verify(userOAuthAccountRepository).deleteAllByUserId(userId);
         verify(passwordResetTokenRepository).deleteAllByUserId(userId);
         verify(nicknameChangeHistoryRepository).anonymizeByUserId(userId);
+        verify(postBookmarkRepository).deleteAllByUserId(userId);
         verify(postImageCleanupService).deleteImagesForPostIds(List.of(post.getId()));
     }
 

@@ -14,18 +14,27 @@ export const DESKTOP_NAV_ITEMS = [
   { href: '/videos', label: '영상' },
 ] as const;
 
-export const HIDE_NAV_PATHS = ['/login', '/signup', '/admin'] as const;
+export const HIDE_NAV_PATHS = [
+  '/login',
+  '/signup',
+  '/forgot-password',
+  '/reset-password',
+  '/auth',
+  '/admin',
+] as const;
 
 export const HIDE_SHELL_HEADER_PATHS = [
   '/login',
   '/signup',
+  '/forgot-password',
+  '/reset-password',
+  '/auth',
   '/admin',
   '/community/write',
   '/community/search',
   '/inquiry/write',
   '/consult',
   '/consult/write',
-  '/forgot-password',
   '/mypage',
 ] as const;
 
@@ -37,6 +46,7 @@ const HIDE_SHELL_HEADER_EXACT_PATHS = [
   '/journal',
   '/qna',
   '/mypage',
+  '/inquiry',
 ] as const;
 
 export function shouldShowBottomNav(pathname: string): boolean {

@@ -12,7 +12,7 @@ import { Pagination } from '@/components/common/Pagination';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { Button } from '@/components/ui/Button';
-import { BackButton } from '@/components/ui/BackButton';
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { findBoardByType } from '@/domain/board/types';
 import {
   PRIVATE_BOARD_META,
@@ -47,7 +47,6 @@ export function PrivateBoardFeed({ boardType }: PrivateBoardFeedProps) {
 
   const writeHref = meta.writePath;
   const canWrite = !isStaff(user?.role);
-  const backHref = boardType === 'INQUIRY' ? '/mypage' : '/consult';
   const listError = boardsError ?? error;
   const isLoadingAll = !isReady || boardsLoading || isLoading;
 
@@ -56,17 +55,16 @@ export function PrivateBoardFeed({ boardType }: PrivateBoardFeedProps) {
   }
 
   return (
-    <div className="page-container community-screen mx-auto max-w-app pb-20 lg:pb-8">
-      <div className="mb-4 flex items-start gap-2">
-        <BackButton
-          backHref={backHref}
-          className="mt-0.5 bg-white text-[#123D37] shadow-[0_10px_24px_-20px_rgba(18,61,55,.65)] hover:bg-white"
-        />
-        <div className="min-w-0 flex-1">
-          <h1 className="section-heading">{meta.title}</h1>
-          <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted">{meta.description}</p>
+    <div className="community-screen mx-auto max-w-app pb-20 lg:max-w-none lg:pb-12">
+      <ScreenHeader
+        title={meta.title}
+        subtitle="서비스 이용과 운영에 관한 문의를 남겨 주세요"
+      />
+
+      <div className="hf-page-x pt-4">
+        <div className="mb-4 border-l-2 border-[#C9A24B] bg-[#F8F2E7] px-3 py-2.5">
+          <p className="text-[12px] leading-[1.65] text-[#69716B]">{meta.description}</p>
         </div>
-      </div>
 
       {canWrite && (
         <div className="mb-4 flex items-center justify-end gap-2">
@@ -132,6 +130,8 @@ export function PrivateBoardFeed({ boardType }: PrivateBoardFeedProps) {
           <Pagination page={page} totalPages={postPage.totalPages} onPageChange={setPage} />
         </div>
       )}
+
+      </div>
 
       {canWrite && <CommunityFab href={writeHref} ariaLabel={meta.writeLabel} />}
     </div>

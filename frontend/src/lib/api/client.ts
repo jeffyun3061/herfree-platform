@@ -80,7 +80,7 @@ export function getErrorMessage(error: unknown): string {
 type QueryValue = string | number | boolean | undefined | null;
 
 type RequestOptions = {
-  method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
+  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   body?: unknown;
   query?: Record<string, QueryValue>;
 };

@@ -121,9 +121,9 @@ public class ReportService {
                 .orElseThrow(UserNotFoundException::new);
 
         if (request.status() == ReportStatus.ACCEPTED) {
-            report.accept(admin);
+            report.accept(admin, request.processNote());
         } else {
-            report.reject(admin);
+            report.reject(admin, request.processNote());
         }
 
         recordAnalyticsEvent(AnalyticsService.ADMIN_ACTION, adminId);
@@ -144,9 +144,9 @@ public class ReportService {
 
         for (Report report : reports) {
             if (request.status() == ReportStatus.ACCEPTED) {
-                report.accept(admin);
+                report.accept(admin, request.processNote());
             } else {
-                report.reject(admin);
+                report.reject(admin, request.processNote());
             }
         }
         recordAnalyticsEvent(AnalyticsService.ADMIN_ACTION, adminId);

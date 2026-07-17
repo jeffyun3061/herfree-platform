@@ -5,6 +5,7 @@ import { usePostList } from '@/hooks/usePosts';
 import { useJournalPublicHomeStats } from '@/hooks/useJournal';
 import { GuestHomeHero } from '@/components/home/GuestHomeHero';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { QuickAccessSection } from '@/components/home/QuickAccessSection';
 import type { Post } from '@/domain/post/types';
 import { formatRelativeTime } from '@/domain/common/format';
 
@@ -230,70 +231,6 @@ function GuestJournalStartCard() {
   );
 }
 
-function GuestQuickLinks() {
-  const links = [
-    { href: '/consult', label: '1:1 비밀상담', icon: 'lock' },
-    { href: '/contents', label: '칼럼', icon: 'book' },
-    { href: '/inquiry', label: '문의하기', icon: 'notice' },
-    { href: '/videos', label: '헤르프리', icon: 'help' },
-  ];
-
-  return (
-    <section className="px-6 pb-2 pt-[30px]">
-      <p className="mb-[18px] text-[12px] font-semibold tracking-[0.04em] text-[#9A9F94]">
-        바로가기
-      </p>
-      <div className="grid grid-cols-4 gap-2.5">
-        {links.map((item) => (
-          <Link key={item.href} href={item.href} className="group flex min-w-0 flex-col items-center gap-2.5">
-            <span className="flex h-14 w-14 items-center justify-center rounded-[18px] border border-[#ECE5D8] bg-white text-[#0B3B36] shadow-[0_6px_16px_-10px_rgba(20,30,25,.2)] transition-colors group-hover:bg-[#F8F1E6]">
-              <QuickLinkIcon name={item.icon} />
-            </span>
-            <span className="max-w-full truncate text-center text-[12px] font-medium leading-[1.35] text-[#5C645A]">
-              {item.label}
-            </span>
-          </Link>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function QuickLinkIcon({ name }: { name: string }) {
-  if (name === 'lock') {
-    return (
-      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-        <rect x="5" y="11" width="14" height="9" rx="2" />
-        <path d="M8 11V7a4 4 0 0 1 8 0v4" />
-      </svg>
-    );
-  }
-  if (name === 'book') {
-    return (
-      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-        <path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z" />
-      </svg>
-    );
-  }
-  if (name === 'notice') {
-    return (
-      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-        <path d="M12 9v4" />
-        <path d="M12 17h.01" />
-        <circle cx="12" cy="12" r="9" />
-      </svg>
-    );
-  }
-  return (
-    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-      <circle cx="12" cy="12" r="9" />
-      <path d="M9.5 9a2.5 2.5 0 1 1 3.9 2.05c-.8.5-1.4 1.05-1.4 2.2" />
-      <path d="M12 17h.01" />
-    </svg>
-  );
-}
-
 function GuestQuietFooter() {
   return (
     <footer className="px-6 pb-2 pt-[26px] text-center">
@@ -360,7 +297,9 @@ export function GuestHomePage() {
         totalStories={totalStories}
       />
       <GuestJournalStartCard />
-      <GuestQuickLinks />
+      <div className="hf-dashboard-x">
+        <QuickAccessSection layout="home" />
+      </div>
       <GuestQuietFooter />
     </div>
   );

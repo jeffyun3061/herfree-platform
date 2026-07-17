@@ -96,4 +96,13 @@ public class UserController {
     ) {
         return ResponseEntity.ok(ApiResponse.success(userService.getMyPosts(userId, boardId, pageable)));
     }
+
+    @GetMapping("/me/posts/received-reactions")
+    public ResponseEntity<ApiResponse<Page<PostResponse>>> getMyPostsWithReceivedReactions(
+            @AuthenticationPrincipal Long userId,
+            @PageableDefault(size = 20) Pageable pageable
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(
+                userService.getMyPostsWithReceivedReactions(userId, pageable)));
+    }
 }

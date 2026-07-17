@@ -102,7 +102,7 @@ export function ConsultIntroPage() {
           rel="noopener noreferrer"
           className="flex min-h-[48px] w-full items-center justify-center rounded-[14px] bg-[#0B3B36] px-4 py-[15px] text-center text-[14.5px] font-bold text-white"
         >
-          상담 신청하기
+          카카오톡 상담 신청
         </a>
       </section>
     </main>

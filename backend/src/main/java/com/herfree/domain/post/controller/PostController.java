@@ -7,7 +7,9 @@ import com.herfree.domain.post.dto.response.PostDetailResponse;
 import com.herfree.domain.post.dto.response.PostImageUploadResponse;
 import com.herfree.domain.post.dto.response.PostImageUploadUrlResponse;
 import com.herfree.domain.post.dto.response.PostResponse;
+import com.herfree.domain.post.dto.response.PostBookmarkStatusResponse;
 import com.herfree.domain.post.service.PostImageAccessService;
+import com.herfree.domain.post.service.PostBookmarkService;
 import com.herfree.domain.post.service.PostService;
 import com.herfree.global.exception.BusinessException;
 import com.herfree.global.exception.ErrorCode;
@@ -31,6 +33,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -44,6 +47,7 @@ import org.springframework.util.StringUtils;
 public class PostController {
 
     private final PostService postService;
+    private final PostBookmarkService postBookmarkService;
     private final PostImageStorageService postImageStorageService;
     private final PostImageAccessService postImageAccessService;
 
@@ -59,6 +63,39 @@ public class PostController {
     ) {
         return ResponseEntity.ok(ApiResponse.success(
                 postService.getPosts(boardId, keyword, pageable, userId, period)));
+    }
+
+    @GetMapping("/bookmarks")
+    public ResponseEntity<ApiResponse<Page<PostResponse>>> getBookmarks(
+            @AuthenticationPrincipal Long userId,
+            @PageableDefault(size = 20) Pageable pageable
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(
+                postBookmarkService.getBookmarkedPosts(userId, pageable)));
+    }
+
+    @GetMapping("/{postId}/bookmark")
+    public ResponseEntity<ApiResponse<PostBookmarkStatusResponse>> getBookmarkStatus(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable Long postId
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(postBookmarkService.getStatus(userId, postId)));
+    }
+
+    @PutMapping("/{postId}/bookmark")
+    public ResponseEntity<ApiResponse<PostBookmarkStatusResponse>> bookmark(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable Long postId
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(postBookmarkService.bookmark(userId, postId)));
+    }
+
+    @DeleteMapping("/{postId}/bookmark")
+    public ResponseEntity<ApiResponse<PostBookmarkStatusResponse>> removeBookmark(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable Long postId
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(postBookmarkService.remove(userId, postId)));
     }
 
     @PostMapping(value = "/images/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { useApiQuery } from '@/hooks/useApiQuery';
@@ -74,9 +75,9 @@ export function AdminDashboardSection() {
             </span>
           </div>
           <div className="mt-3 grid gap-2">
-            <CheckRow label="신고 대기" value={`${pendingReportState} · ${formatNumber(data.pendingReports)}건`} />
-            <CheckRow label="일지 사용" value={`${journalState} · 7일 ${formatNumber(data.journalRecords7d)}건`} />
-            <CheckRow label="콘텐츠" value={`칼럼 ${formatNumber(data.contents)}개 · 영상 ${formatNumber(data.videos)}개`} />
+            <CheckRow href="/admin?tab=reports" label="신고 대기" value={`${pendingReportState} · ${formatNumber(data.pendingReports)}건`} />
+            <CheckRow href="/admin?tab=journal" label="일지 사용" value={`${journalState} · 7일 ${formatNumber(data.journalRecords7d)}건`} />
+            <CheckRow href="/admin?tab=contents" label="콘텐츠" value={`칼럼 ${formatNumber(data.contents)}개 · 영상 ${formatNumber(data.videos)}개`} />
           </div>
         </section>
       </div>
@@ -86,10 +87,10 @@ export function AdminDashboardSection() {
           <StatCard label="회원" value={data.totalUsers} helper={`7일 +${formatNumber(data.newUsers7d)}`} />
           <StatCard label="게시글" value={data.activePosts} helper={`7일 +${formatNumber(data.newPosts7d)}`} />
           <StatCard label="댓글" value={data.activeComments} helper="활성 기준" />
-          <StatCard label="신고" value={data.pendingReports} helper="대기 건" />
-          <StatCard label="개인일지" value={data.journalRecords} helper={`7일 +${formatNumber(data.journalRecords7d)}`} />
-          <StatCard label="칼럼" value={data.contents} helper="등록 기준" />
-          <StatCard label="영상" value={data.videos} helper="등록 기준" />
+          <StatCard href="/admin?tab=reports" label="신고" value={data.pendingReports} helper="대기 건" />
+          <StatCard href="/admin?tab=journal" label="개인일지" value={data.journalRecords} helper={`7일 +${formatNumber(data.journalRecords7d)}`} />
+          <StatCard href="/admin?tab=contents" label="칼럼" value={data.contents} helper="등록 기준" />
+          <StatCard href="/admin?tab=videos" label="영상" value={data.videos} helper="등록 기준" />
           <StatCard label="이벤트" value={data.events7d} helper="최근 7일" />
         </section>
 
@@ -140,21 +141,30 @@ function DarkMetric({ label, value, helper }: { label: string; value: number; he
   );
 }
 
-function CheckRow({ label, value }: { label: string; value: string }) {
+function CheckRow({ label, value, href }: { label: string; value: string; href: string }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-[14px] bg-[#F7F1E7] px-3 py-2.5">
+    <Link
+      href={href}
+      className="flex min-h-11 items-center justify-between gap-3 rounded-[14px] bg-[#F7F1E7] px-3 py-2.5 transition-colors hover:bg-[#EFE6D8]"
+    >
       <span className="text-[12px] font-bold text-[#1F2A25]">{label}</span>
-      <span className="min-w-0 truncate text-right text-[12px] text-[#7D857F]">{value}</span>
-    </div>
+      <span className="flex min-w-0 items-center gap-1 text-right text-[12px] text-[#7D857F]">
+        <span className="truncate">{value}</span>
+        <span aria-hidden>›</span>
+      </span>
+    </Link>
   );
 }
 
-function StatCard({ label, value, helper }: { label: string; value: number; helper: string }) {
-  return (
-    <div className="rounded-[16px] border border-[#E7DFD2] bg-[#FFFCF7] p-3 shadow-[0_10px_24px_-22px_rgba(20,31,26,.34)]">
+function StatCard({ label, value, helper, href }: { label: string; value: number; helper: string; href?: string }) {
+  const content = (
+    <>
       <p className="text-[11px] font-bold text-[#5E6761]">{label}</p>
       <p className="mt-1.5 text-[22px] font-extrabold leading-none text-[#0B3B36]">{formatNumber(value)}</p>
       <p className="mt-1.5 line-clamp-1 text-[10.5px] leading-relaxed text-[#8A918C]">{helper}</p>
-    </div>
+    </>
   );
+
+  const className = "rounded-[16px] border border-[#E7DFD2] bg-[#FFFCF7] p-3 shadow-[0_10px_24px_-22px_rgba(20,31,26,.34)]";
+  return href ? <Link href={href} className={`${className} transition-colors hover:bg-[#F8F3EA]`}>{content}</Link> : <div className={className}>{content}</div>;
 }

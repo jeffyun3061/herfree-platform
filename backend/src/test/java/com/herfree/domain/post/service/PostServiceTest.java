@@ -14,6 +14,7 @@ import com.herfree.domain.post.exception.PostNotFoundException;
 import com.herfree.domain.post.repository.PostFulltextSearchRepository;
 import com.herfree.domain.post.repository.PostImageRepository;
 import com.herfree.domain.post.repository.PostRepository;
+import com.herfree.domain.post.repository.PostBookmarkRepository;
 import com.herfree.domain.user.entity.User;
 import com.herfree.domain.user.entity.UserProfile;
 import com.herfree.domain.user.entity.UserRole;
@@ -60,6 +61,9 @@ class PostServiceTest {
 
     @Mock
     private PostRepository postRepository;
+
+    @Mock
+    private PostBookmarkRepository postBookmarkRepository;
 
     @Mock
     private PostFulltextSearchRepository postFulltextSearchRepository;

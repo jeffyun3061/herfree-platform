@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
-import { useMyPosts } from '@/hooks/useMyPosts';
+import { useMyPosts, type MyPostCollection } from '@/hooks/useMyPosts';
 import { useMyActivity } from '@/hooks/useMyActivity';
 import { useJournalDashboard } from '@/hooks/useJournal';
 import { PostCard } from '@/components/community/PostCard';
@@ -18,23 +18,31 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { LoggedOutMyPagePromptCard } from '@/components/mypage/LoggedOutMyPagePrompt';
 import { isAdmin, isStaff } from '@/domain/user/types';
 import { formatMemberDays } from '@/domain/common/format';
-import { KAKAO_CONSULT_URL } from '@/domain/consult/constants';
 import { PUBLIC_IMAGES } from '@/domain/assets/static';
 import { getErrorMessage } from '@/lib/api/client';
 import { InlineTopActions } from '@/components/layout/InlineTopActions';
 import { HealthStatisticsConsentCard } from '@/components/mypage/HealthStatisticsConsentCard';
 
-const BOOKMARK_KEY = 'herfree-bookmarks';
-
-function loadBookmarkCount(): number {
-  if (typeof window === 'undefined') return 0;
-  try {
-    const raw = localStorage.getItem(BOOKMARK_KEY);
-    return raw ? (JSON.parse(raw) as number[]).length : 0;
-  } catch {
-    return 0;
-  }
-}
+const POST_COLLECTION_COPY: Record<
+  MyPostCollection,
+  { title: string; emptyTitle: string; emptyDescription: string }
+> = {
+  written: {
+    title: '내가 쓴 글',
+    emptyTitle: '작성한 글이 없습니다',
+    emptyDescription: '커뮤니티에서 첫 이야기를 남겨 보세요',
+  },
+  received: {
+    title: '받은 공감',
+    emptyTitle: '공감받은 글이 없습니다',
+    emptyDescription: '내 글에 공감이 남겨지면 여기에 표시됩니다',
+  },
+  bookmarked: {
+    title: '스크랩한 글',
+    emptyTitle: '스크랩한 글이 없습니다',
+    emptyDescription: '다시 보고 싶은 글을 스크랩해 보세요',
+  },
+};
 
 function MenuRow({
   href,
@@ -104,19 +112,24 @@ export default function MyPage() {
   const { isReady, isLoggedIn, user, logout, withdraw, updateNickname } = useAuth();
   const { activity, isLoading: activityLoading } = useMyActivity(isLoggedIn);
   const { data: journalDashboard } = useJournalDashboard(isLoggedIn);
-  const { postPage, page, setPage, isLoading: postsLoading } = useMyPosts(isLoggedIn, 10);
-  const [showPosts, setShowPosts] = useState(false);
+  const [postListMode, setPostListMode] = useState<MyPostCollection | null>(null);
+  const {
+    postPage,
+    page,
+    setPage,
+    isLoading: postsLoading,
+    error: postsError,
+  } = useMyPosts(
+    isLoggedIn && postListMode !== null,
+    postListMode ?? 'written',
+    10,
+  );
   const [nickname, setNickname] = useState('');
   const [profileError, setProfileError] = useState<string | null>(null);
   const [profileSuccess, setProfileSuccess] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [isWithdrawing, setIsWithdrawing] = useState(false);
-  const [bookmarkCount, setBookmarkCount] = useState(0);
-
-  useEffect(() => {
-    setBookmarkCount(loadBookmarkCount());
-  }, []);
 
   if (!isReady) return <LoadingSpinner label="마이페이지 불러오는 중…" />;
 
@@ -158,6 +171,11 @@ export default function MyPage() {
       setIsWithdrawing(false);
       setWithdrawOpen(false);
     }
+  };
+
+  const openPostCollection = (mode: MyPostCollection) => {
+    setPage(0);
+    setPostListMode((current) => (current === mode ? null : mode));
   };
 
   const peaceDays = journalDashboard?.relapseFreeDays ?? 0;
@@ -221,10 +239,10 @@ export default function MyPage() {
               icon="📝"
               label="내가 쓴 글"
               sub="커뮤니티 · FAQ"
-              onClick={() => setShowPosts((v) => !v)}
+              onClick={() => openPostCollection('written')}
             />
             <MenuRow icon="📓" label="내 기록 모아보기" sub="개인일지" href="/journal" />
-            <MenuRow icon="🔒" label="1:1 비밀 상담 내역" href="/consult" />
+            <MenuRow icon="📨" label="문의하기" sub="서비스 이용·운영 문의" href="/inquiry" />
             <MenuRow icon="📢" label="공지사항" href="/notice" />
             <MenuRow icon="📄" label="이용약관" href="/terms" />
             <MenuRow icon="🛡️" label="개인정보처리방침" href="/privacy" />
@@ -234,6 +252,12 @@ export default function MyPage() {
         <div className="hf-page-mx mt-4">
           <p className="mb-2 px-0.5 text-[11px] font-semibold text-[#9A9F94]">계정</p>
           <div className="mypage-menu-card">
+            <MenuRow
+              icon="💬"
+              label="1:1 비밀 상담"
+              sub="상담 안내 및 신청"
+              href="/consult"
+            />
             <div className="border-b border-[#F2ECE1] px-[17px] py-[15px]">
               <p className="mb-2 text-[13.5px] font-semibold text-[#15201D]">닉네임 변경</p>
               <p className="mb-3 text-[11.5px] leading-[1.6] text-[#8A9287]">
@@ -276,22 +300,14 @@ export default function MyPage() {
               label="받은 공감"
               sub="내 글에 달린 반응"
               trailing={activityLoading ? '…' : (activity?.receivedReactions ?? 0)}
-              href="/community"
+              onClick={() => openPostCollection('received')}
             />
             <MenuRow
               icon="🔖"
               label="스크랩한 글"
               sub="나중에 다시 볼 글"
-              trailing={bookmarkCount}
-              href="/community"
-            />
-            <MenuRow
-              icon="💬"
-              label="카카오톡 상담 신청"
-              sub="오픈채팅으로 이동"
-              href={KAKAO_CONSULT_URL}
-              external
-              trailing={<span className="rounded bg-[#F4F6F5] px-1.5 py-0.5 text-[10px]">외부</span>}
+              trailing={activityLoading ? '…' : (activity?.bookmarkCount ?? 0)}
+              onClick={() => openPostCollection('bookmarked')}
             />
           </div>
         </div>
@@ -344,13 +360,20 @@ export default function MyPage() {
           </button>
         </p>
 
-        {showPosts && (
+        {postListMode && (
           <section className="hf-page-mx mt-6">
-            <h3 className="mb-3 text-base font-semibold text-[#15201D]">내가 쓴 글</h3>
+            <h3 className="mb-3 text-base font-semibold text-[#15201D]">
+              {POST_COLLECTION_COPY[postListMode].title}
+            </h3>
             {postsLoading ? (
               <LoadingSpinner label="글 불러오는 중…" />
+            ) : postsError ? (
+              <ErrorMessage message={postsError} />
             ) : postPage.content.length === 0 ? (
-              <EmptyState title="작성한 글이 없습니다" description="커뮤니티에서 첫 이야기를 남겨 보세요." />
+              <EmptyState
+                title={POST_COLLECTION_COPY[postListMode].emptyTitle}
+                description={POST_COLLECTION_COPY[postListMode].emptyDescription}
+              />
             ) : (
               <>
                 <div className="community-feed-list">

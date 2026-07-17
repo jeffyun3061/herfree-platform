@@ -62,6 +62,9 @@ public class Report {
     @Column
     private Instant processedAt;
 
+    @Column(name = "process_note", length = 500)
+    private String processNote;
+
     @CreatedDate
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
@@ -80,16 +83,18 @@ public class Report {
     // --- 도메인 메서드 ---
 
     // 신고 인정 처리 — 처리자와 처리 시각을 함께 기록해 감사 추적이 가능하다
-    public void accept(User admin) {
+    public void accept(User admin, String processNote) {
         this.status = ReportStatus.ACCEPTED;
         this.processedBy = admin;
         this.processedAt = Instant.now();
+        this.processNote = processNote.trim();
     }
 
     // 신고 기각 처리 — accept와 동일한 방식으로 처리자를 기록한다
-    public void reject(User admin) {
+    public void reject(User admin, String processNote) {
         this.status = ReportStatus.REJECTED;
         this.processedBy = admin;
         this.processedAt = Instant.now();
+        this.processNote = processNote.trim();
     }
 }

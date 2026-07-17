@@ -30,7 +30,14 @@ export function AppShell({ children }: AppShellProps) {
         {showHeader && <DesktopHeader />}
         <div className={cn('app-phone-shell', isAdminPage && 'admin-shell')}>
           {showHeader && <MobileHeader />}
-          <main className={cn('min-h-screen bg-[#F3EDE3]', showNav && 'pb-[4.75rem]')}>{children}</main>
+          <main
+            className={cn(
+              'min-h-[100dvh] bg-[#F3EDE3] lg:min-h-[min(844px,calc(100vh-4rem))]',
+              showNav && 'pb-[4.75rem]',
+            )}
+          >
+            {children}
+          </main>
           {showHeader && !showNav && <SiteFooter />}
         </div>
         {showNav && <BottomNav />}

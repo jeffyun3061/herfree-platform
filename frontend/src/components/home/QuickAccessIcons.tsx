@@ -18,21 +18,6 @@ export function QuickAccessLockIcon({ className = 'h-[22px] w-[22px]' }: IconPro
   );
 }
 
-export function QuickAccessChecklistIcon({ className = 'h-[22px] w-[22px]' }: IconProps) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} fill="none" aria-hidden>
-      <rect x="7" y="6.5" width="10" height="13.5" rx="1.2" stroke={GREEN} strokeWidth="1.3" />
-      <path
-        d="M10 6.5V5.5a2 2 0 0 1 4 0v1"
-        stroke={GREEN}
-        strokeWidth="1.3"
-        strokeLinecap="round"
-      />
-      <path d="M9.5 11.5h5M9.5 14h5M9.5 16.5h3.5" stroke={GREEN} strokeWidth="1.15" strokeLinecap="round" />
-    </svg>
-  );
-}
-
 export function QuickAccessColumnIcon({ className = 'h-[22px] w-[22px]' }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="none" aria-hidden>
@@ -47,6 +32,26 @@ export function QuickAccessVideoIcon({ className = 'h-[22px] w-[22px]' }: IconPr
     <svg viewBox="0 0 24 24" className={className} fill="none" aria-hidden>
       <rect x="7" y="7" width="10" height="10" rx="1.6" fill={GREEN} />
       <path d="m10.8 10.5 3.8 2.2-3.8 2.2v-4.4Z" fill="#ffffff" />
+    </svg>
+  );
+}
+
+export function QuickAccessHerfreeIcon({ className = 'h-[22px] w-[22px]' }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" aria-hidden>
+      <path
+        d="M18.3 5.4c-5.5.3-9.2 2.5-9.8 6.2-.4 2.7 1.4 4.8 4 4.8 4.2 0 6.1-4.3 5.8-11Z"
+        stroke={GREEN}
+        strokeWidth="1.35"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M6.4 19c.8-3.5 3.2-6.2 7.2-8.1"
+        stroke={GREEN}
+        strokeWidth="1.35"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }

@@ -5,6 +5,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 
 import com.herfree.domain.post.service.PostImageAccessService;
+import com.herfree.domain.post.service.PostBookmarkService;
 import com.herfree.domain.post.service.PostService;
 import com.herfree.global.storage.PostImageStorageService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -15,9 +16,15 @@ class PostControllerImageCacheTest {
     private static final String KEY = "posts/1/123e4567-e89b-12d3-a456-426614174000.png";
 
     private final PostService postService = mock(PostService.class);
+    private final PostBookmarkService postBookmarkService = mock(PostBookmarkService.class);
     private final PostImageStorageService storage = mock(PostImageStorageService.class);
     private final PostImageAccessService accessService = mock(PostImageAccessService.class);
-    private final PostController controller = new PostController(postService, storage, accessService);
+    private final PostController controller = new PostController(
+            postService,
+            postBookmarkService,
+            storage,
+            accessService
+    );
 
     @Test
     void privateImageResponseIsPrivateAndNoStore() {

@@ -61,7 +61,19 @@ function auth(token: string) {
 }
 
 test.describe('release smoke', () => {
-  for (const path of ['/', '/signup', '/login', '/community', '/journal', '/qna', '/mypage', '/admin']) {
+  for (const path of [
+    '/',
+    '/signup',
+    '/login',
+    '/community',
+    '/journal',
+    '/qna',
+    '/mypage',
+    '/notice',
+    '/terms',
+    '/privacy',
+    '/admin',
+  ]) {
     test(`${path} renders without a server error`, async ({ page }) => {
       const response = await page.goto(path, { waitUntil: 'domcontentloaded' });
       expect(response, `${path} did not return a response`).not.toBeNull();
@@ -111,6 +123,82 @@ test.describe('staging data flow', () => {
       await expect(page.getByText('개인일지를 준비하는 중...')).toHaveCount(0);
     } finally {
       await request.delete('/api/users/me', { headers: auth(account.token) });
+    }
+  });
+
+  test('mypage shows written, received-reaction and bookmarked post collections', async ({ page, request }, testInfo) => {
+    const owner = await signupAndLogin(request, `collections-owner-${testInfo.project.name}`);
+    const reader = await signupAndLogin(request, `collections-reader-${testInfo.project.name}`);
+    let postId: number | undefined;
+    let reactionAdded = false;
+    let bookmarkAdded = false;
+
+    try {
+      const boards = await data<Array<{ id: number; boardType: string }>>(await request.get('/api/boards'));
+      const board = boards.find((item) => item.boardType === 'FREE');
+      expect(board).toBeTruthy();
+      const title = `E2E mypage collections ${Date.now()}`;
+      const created = await data<{ id: number }>(await request.post('/api/posts', {
+        headers: auth(owner.token),
+        data: {
+          boardId: board!.id,
+          title,
+          content: 'Temporary automated collection verification post.',
+          isAnonymous: false,
+          visibility: 'PUBLIC',
+        },
+      }));
+      postId = created.id;
+
+      const bookmark = await request.put(`/api/posts/${postId}/bookmark`, {
+        headers: auth(reader.token),
+      });
+      expect(bookmark.status(), await bookmark.text()).toBe(200);
+      bookmarkAdded = true;
+
+      const reaction = await request.post('/api/reactions', {
+        headers: auth(reader.token),
+        data: { targetType: 'POST', targetId: postId, reactionType: 'EMPATHY' },
+      });
+      expect(reaction.status(), await reaction.text()).toBe(200);
+      reactionAdded = true;
+
+      await page.goto('/', { waitUntil: 'domcontentloaded' });
+      await page.evaluate(({ token, user }) => {
+        window.sessionStorage.setItem('accessToken', token);
+        window.sessionStorage.setItem('sessionUser', JSON.stringify(user));
+      }, owner);
+      await page.goto('/mypage', { waitUntil: 'domcontentloaded' });
+      await page.getByRole('button', { name: /내가 쓴 글/ }).click();
+      await expect(page.getByRole('heading', { name: '내가 쓴 글' })).toBeVisible();
+      await expect(page.getByText(title)).toBeVisible();
+      await page.getByRole('button', { name: /받은 공감/ }).click();
+      await expect(page.getByRole('heading', { name: '받은 공감' })).toBeVisible();
+      await expect(page.getByText(title)).toBeVisible();
+
+      await page.evaluate(({ token, user }) => {
+        window.sessionStorage.setItem('accessToken', token);
+        window.sessionStorage.setItem('sessionUser', JSON.stringify(user));
+      }, reader);
+      await page.goto('/mypage', { waitUntil: 'domcontentloaded' });
+      await page.getByRole('button', { name: /스크랩한 글/ }).click();
+      await expect(page.getByRole('heading', { name: '스크랩한 글' })).toBeVisible();
+      await expect(page.getByText(title)).toBeVisible();
+    } finally {
+      if (bookmarkAdded && postId) {
+        await request.delete(`/api/posts/${postId}/bookmark`, { headers: auth(reader.token) });
+      }
+      if (reactionAdded && postId) {
+        await request.post('/api/reactions', {
+          headers: auth(reader.token),
+          data: { targetType: 'POST', targetId: postId, reactionType: 'EMPATHY' },
+        });
+      }
+      if (postId) {
+        await request.delete(`/api/posts/${postId}`, { headers: auth(owner.token) });
+      }
+      await request.delete('/api/users/me', { headers: auth(owner.token) });
+      await request.delete('/api/users/me', { headers: auth(reader.token) });
     }
   });
 

@@ -62,6 +62,18 @@ export function BoardTabBar({ boards, selectedBoardId, onSelect, showAllTab = fa
     scrollerRef.current?.scrollBy({ left: direction * SCROLL_STEP, behavior: 'smooth' });
   }, []);
 
+  const selectAndCenterTab = useCallback(
+    (boardId: number | null, tab: HTMLButtonElement) => {
+      onSelect(boardId);
+      const scroller = scrollerRef.current;
+      if (!scroller) return;
+
+      const centeredLeft = tab.offsetLeft - (scroller.clientWidth - tab.offsetWidth) / 2;
+      scroller.scrollTo({ left: Math.max(0, centeredLeft), behavior: 'smooth' });
+    },
+    [onSelect],
+  );
+
   useEffect(() => {
     const el = scrollerRef.current;
     if (!el) return;
@@ -84,12 +96,12 @@ export function BoardTabBar({ boards, selectedBoardId, onSelect, showAllTab = fa
         ref={scrollerRef}
         onScroll={updateEdges}
         className={cn(
-          'community-tabs-scroller scrollbar-hide w-full min-w-0 touch-pan-x overflow-x-auto overflow-y-hidden overscroll-x-contain',
+          'community-tabs-scroller scrollbar-hide w-full min-w-0 touch-pan-x overflow-x-auto overflow-y-hidden overscroll-x-contain [-webkit-overflow-scrolling:touch]',
           edge.right && 'community-tabs-scroller--peek-right',
           edge.left && 'community-tabs-scroller--peek-left',
         )}
         role="tablist"
-        aria-label="게시판 카테고리"
+        aria-label="게시판 카테고리, 좌우로 밀어 더 보기"
       >
         <div className="flex w-max gap-2 px-4 pb-1 pr-16">
           {showAllTab && (
@@ -97,7 +109,7 @@ export function BoardTabBar({ boards, selectedBoardId, onSelect, showAllTab = fa
               type="button"
               role="tab"
               aria-selected={selectedBoardId === null}
-              onClick={() => onSelect(null)}
+              onClick={(event) => selectAndCenterTab(null, event.currentTarget)}
               className={cn(
                 'shrink-0 whitespace-nowrap rounded-full border-[0.5px] px-[15px] py-2 text-[12.5px] font-medium',
                 selectedBoardId === null
@@ -118,7 +130,7 @@ export function BoardTabBar({ boards, selectedBoardId, onSelect, showAllTab = fa
                 type="button"
                 role="tab"
                 aria-selected={active}
-                onClick={() => onSelect(board.id)}
+                onClick={(event) => selectAndCenterTab(board.id, event.currentTarget)}
                 className={cn(
                   'shrink-0 whitespace-nowrap rounded-full border-[0.5px] px-[15px] py-2 text-[12.5px] font-medium',
                   active

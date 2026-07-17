@@ -27,11 +27,11 @@
 ## 2. 현재 완료된 코드·자동 검증
 
 - [x] 백엔드 `clean build` 성공
-- [x] 백엔드 테스트 183개 통과, 실패 0개
+- [x] 백엔드 테스트 188개 통과, 실패 0개
 - [x] 프론트 lint와 production build 성공
 - [x] Next.js 15.5.20 전환 후 주요 라우트와 API 흐름 검증
 - [x] npm audit 취약점 0건
-- [x] 데스크톱·모바일 공개 화면, health·권한 경계, 로그인 일지 로딩 E2E 22개 통과
+- [x] 데스크톱·모바일 공개 화면, health·권한 경계, 로그인 일지·마이페이지 목록 E2E 31개 통과 (중복 mutation 1개 의도적 생략)
 - [ ] S3를 포함한 회원가입·게시글·댓글·일지·비공개 이미지 mutation E2E는 staging에서 통과
 - [x] 로그인 계정 열거와 비밀번호 검증 타이밍 보완
 - [x] 비밀번호 재설정 토큰·URL·이메일 민감 로그 방지
@@ -62,6 +62,8 @@
 - [x] 신고 관리 화면의 회원 이메일 마스킹 (MODERATOR 열람 대비)
 - [x] 공개 건강 통계는 서로 다른 사용자 20명 이상, 항목별 5명 이상일 때만 공개
 - [x] 건강정보 통계 활용을 선택 동의로 분리하고 동의 이력·철회 API와 Flyway V34 적용
+- [x] 신고 승인·반려 처리 근거를 보존하고 Flyway V35 적용
+- [x] 회원별 스크랩을 DB에 보존하고 받은 공감·스크랩 목록을 분리하며 Flyway V36 적용
 - [x] 공개·관리자 건강 통계는 최신 동의가 유효한 회원의 기록만 집계
 - [x] 탈퇴 시 이메일·비밀번호·OAuth·reset token·닉네임 이력 원문 제거
 - [x] 이벤트·reset token·관리자/권한 감사 로그 자동 파기 스케줄과 환경별 보존기간 구성
@@ -82,6 +84,7 @@
 
 - [ ] production과 staging의 RDS, S3, SMTP, OAuth 자격증명을 분리했다.
 - [ ] RDS Public access를 끄고 EC2 보안 그룹에서만 3306 접근을 허용했다.
+- [ ] staging·production에서 Flyway V36 적용과 `post_bookmarks` 유니크 제약 생성을 확인했다.
 - [ ] EC2의 8080/8081과 RDS 3306을 인터넷에 공개하지 않았다.
 - [ ] 외부에는 Nginx 443만 공개하고 HTTP는 HTTPS로 전환한다.
 - [ ] `herpfree.co.kr`, `api.herpfree.co.kr`과 staging 도메인의 DNS·TLS 인증서가 정상이다.

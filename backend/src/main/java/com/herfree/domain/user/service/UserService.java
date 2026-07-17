@@ -11,6 +11,7 @@ import com.herfree.domain.post.dto.response.PostResponse;
 import com.herfree.domain.post.entity.Post;
 import com.herfree.domain.post.entity.PostStatus;
 import com.herfree.domain.post.repository.PostRepository;
+import com.herfree.domain.post.repository.PostBookmarkRepository;
 import com.herfree.domain.post.service.PostImageCleanupService;
 import com.herfree.domain.reaction.repository.ReactionRepository;
 import com.herfree.domain.user.dto.request.UpdateProfileRequest;
@@ -32,6 +33,9 @@ import com.herfree.domain.user.repository.UserRepository;
 import com.herfree.global.util.ReservedNicknamePolicy;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -48,6 +52,7 @@ public class UserService {
     private final UserProfileRepository userProfileRepository;
     private final NicknameChangeHistoryRepository nicknameChangeHistoryRepository;
     private final PostRepository postRepository;
+    private final PostBookmarkRepository postBookmarkRepository;
     private final CommentRepository commentRepository;
     private final ReactionRepository reactionRepository;
     private final BoardRepository boardRepository;
@@ -148,6 +153,7 @@ public class UserService {
         userOAuthAccountRepository.deleteAllByUserId(userId);
         passwordResetTokenRepository.deleteAllByUserId(userId);
         nicknameChangeHistoryRepository.anonymizeByUserId(userId);
+        postBookmarkRepository.deleteAllByUserId(userId);
 
         profile.maskOnWithdraw(userId);
         user.withdraw(userId);
@@ -162,6 +168,7 @@ public class UserService {
                         userId, board.getId(), PostStatus.ACTIVE))
                 .orElse(0);
         long receivedReactions = reactionRepository.countReactionsOnUserPosts(userId);
+        long bookmarkCount = postBookmarkRepository.countActiveByUserId(userId);
         Instant lastPostAt = postRepository
                 .findFirstByUserIdAndStatusOrderByCreatedAtDesc(userId, PostStatus.ACTIVE)
                 .map(Post::getCreatedAt)
@@ -170,7 +177,14 @@ public class UserService {
                 .map(User::getCreatedAt)
                 .orElse(null);
 
-        return new UserActivityResponse(totalPosts, symptomPosts, receivedReactions, lastPostAt, memberSince);
+        return new UserActivityResponse(
+                totalPosts,
+                symptomPosts,
+                receivedReactions,
+                bookmarkCount,
+                lastPostAt,
+                memberSince
+        );
     }
 
     // 내가 작성한 게시글 목록 — 삭제된 글은 제외하고 ACTIVE 상태만 반환한다.
@@ -187,6 +201,48 @@ public class UserService {
                         userId, PostStatus.ACTIVE, pageable);
 
         User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
-        return posts.map(post -> PostResponse.of(post, profile.getNickname(), userId, user.getRole()));
+        Map<Long, Integer> reactions = resolveReactionCounts(posts);
+        return posts.map(post -> PostResponse.of(
+                post,
+                profile.getNickname(),
+                userId,
+                user.getRole(),
+                false,
+                reactions.getOrDefault(post.getId(), 0)
+        ));
+    }
+
+    @Transactional(readOnly = true)
+    public Page<PostResponse> getMyPostsWithReceivedReactions(Long userId, Pageable pageable) {
+        UserProfile profile = userProfileRepository.findByUserId(userId)
+                .orElseThrow(UserNotFoundException::new);
+        User user = userRepository.findByIdAndStatus(userId, UserStatus.ACTIVE)
+                .orElseThrow(UserNotFoundException::new);
+        Page<Post> posts = postRepository.findPostsWithReceivedReactions(
+                userId,
+                PostStatus.ACTIVE,
+                pageable
+        );
+        Map<Long, Integer> reactions = resolveReactionCounts(posts);
+        return posts.map(post -> PostResponse.of(
+                post,
+                profile.getNickname(),
+                userId,
+                user.getRole(),
+                false,
+                reactions.getOrDefault(post.getId(), 0)
+        ));
+    }
+
+    private Map<Long, Integer> resolveReactionCounts(Page<Post> posts) {
+        Set<Long> postIds = posts.getContent().stream().map(Post::getId).collect(Collectors.toSet());
+        if (postIds.isEmpty()) {
+            return Map.of();
+        }
+        return reactionRepository.countReactionsByPostIds(postIds).stream()
+                .collect(Collectors.toMap(
+                        row -> ((Number) row[0]).longValue(),
+                        row -> ((Number) row[1]).intValue()
+                ));
     }
 }

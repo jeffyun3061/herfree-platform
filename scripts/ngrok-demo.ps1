@@ -1,5 +1,11 @@
 # Herfree ngrok demo — prints public URL clearly
-# Usage: .\scripts\ngrok-demo.ps1
+# Usage:
+#   .\scripts\ngrok-demo.ps1           # start ngrok in a new window (keep that window open)
+#   .\scripts\ngrok-demo.ps1 -Foreground  # run ngrok in THIS terminal (Ctrl+C to stop)
+
+param(
+    [switch]$Foreground
+)
 
 $ErrorActionPreference = "Stop"
 
@@ -50,7 +56,17 @@ function Show-NgrokUrl([string]$Url) {
     Write-Host "========================================" -ForegroundColor Green
     Write-Host ""
     Write-Host "Local dashboard: http://127.0.0.1:4040" -ForegroundColor DarkGray
-    Write-Host "Stop ngrok: close its window or Ctrl+C in that terminal" -ForegroundColor DarkGray
+    Write-Host ""
+    Write-Host "Why ngrok stops working (localhost:3000 still works):" -ForegroundColor Cyan
+    Write-Host "  - ngrok is a separate tunnel process, not part of Next.js." -ForegroundColor DarkGray
+    Write-Host "  - When ngrok exits, the public URL dies immediately (ERR_NGROK_3200 / 404)." -ForegroundColor DarkGray
+    Write-Host "  - Each restart gets a NEW URL on the free plan — old links/bookmarks will not work." -ForegroundColor DarkGray
+    Write-Host "  - Closing the ngrok window, reboot, sleep, or killing the process stops the tunnel." -ForegroundColor DarkGray
+    Write-Host ""
+    Write-Host "Keep it alive:" -ForegroundColor Yellow
+    Write-Host "  - Leave the ngrok window open, OR run in a dedicated terminal:" -ForegroundColor DarkGray
+    Write-Host "      ngrok http 3000" -ForegroundColor White
+    Write-Host "  - To re-check URL later: http://127.0.0.1:4040 or run this script again." -ForegroundColor DarkGray
     Write-Host ""
 }
 
@@ -104,7 +120,17 @@ Write-Host ""
 Write-Host "Starting ngrok -> http://localhost:3000" -ForegroundColor Cyan
 Write-Host "Using: $ngrokExe" -ForegroundColor DarkGray
 
+if ($Foreground) {
+    Write-Host ""
+    Write-Host "Running in this terminal. Press Ctrl+C to stop the tunnel." -ForegroundColor Yellow
+    Write-Host ""
+    & $ngrokExe http 3000
+    exit $LASTEXITCODE
+}
+
 Start-Process -FilePath $ngrokExe -ArgumentList @("http", "3000") -WindowStyle Normal
+Write-Host ""
+Write-Host "A separate ngrok window was opened — do NOT close it while testing on your phone." -ForegroundColor Yellow
 
 $publicUrl = $null
 for ($i = 0; $i -lt 15; $i++) {

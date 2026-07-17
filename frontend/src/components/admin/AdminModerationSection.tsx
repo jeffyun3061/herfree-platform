@@ -8,12 +8,18 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { AdminListSummary, AdminListToolbar } from '@/components/admin/AdminPublishUi';
 import type { AdminModerationStatus } from '@/lib/api/admin';
 import { getErrorMessage } from '@/lib/api/client';
 import { cn } from '@/lib/cn';
 
 type ModerationTarget = 'posts' | 'comments';
+type PendingModerationAction = {
+  target: '게시글' | '댓글';
+  id: number;
+  action: 'hide' | 'restore';
+};
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleString('ko-KR', {
@@ -33,6 +39,7 @@ export function AdminModerationSection() {
   const [statusFilter, setStatusFilter] = useState<AdminModerationStatus | ''>('HIDDEN');
   const [searchInput, setSearchInput] = useState('');
   const [keyword, setKeyword] = useState('');
+  const [pendingAction, setPendingAction] = useState<PendingModerationAction | null>(null);
 
   const {
     postPage,
@@ -60,11 +67,14 @@ export function AdminModerationSection() {
     setPage(0);
   };
 
-  const confirmHide = (targetLabel: string) =>
-    window.confirm(`${targetLabel}을 숨김 처리할까요? 일반 사용자 화면에서는 보이지 않습니다.`);
-
-  const confirmRestore = (targetLabel: string) =>
-    window.confirm(`${targetLabel}을 다시 노출할까요? 일반 사용자 화면에 다시 보입니다.`);
+  const confirmPendingAction = async () => {
+    if (!pendingAction) return;
+    const { target: actionTarget, id, action } = pendingAction;
+    const succeeded = actionTarget === '게시글'
+      ? await (action === 'hide' ? hidePost(id) : restorePost(id))
+      : await (action === 'hide' ? hideComment(id) : restoreComment(id));
+    if (succeeded) setPendingAction(null);
+  };
 
   return (
     <div className="space-y-4">
@@ -156,7 +166,7 @@ export function AdminModerationSection() {
                       size="sm"
                       variant="danger"
                       disabled={isProcessing}
-                      onClick={() => confirmHide('게시글') && void hidePost(item.id)}
+                      onClick={() => setPendingAction({ target: '게시글', id: item.id, action: 'hide' })}
                     >
                       숨김 처리
                     </Button>
@@ -164,7 +174,7 @@ export function AdminModerationSection() {
                     <Button
                       size="sm"
                       disabled={isProcessing}
-                      onClick={() => confirmRestore('게시글') && void restorePost(item.id)}
+                      onClick={() => setPendingAction({ target: '게시글', id: item.id, action: 'restore' })}
                     >
                       다시 노출
                     </Button>
@@ -202,7 +212,7 @@ export function AdminModerationSection() {
                       size="sm"
                       variant="danger"
                       disabled={isProcessing}
-                      onClick={() => confirmHide('댓글') && void hideComment(item.id)}
+                      onClick={() => setPendingAction({ target: '댓글', id: item.id, action: 'hide' })}
                     >
                       숨김 처리
                     </Button>
@@ -210,7 +220,7 @@ export function AdminModerationSection() {
                     <Button
                       size="sm"
                       disabled={isProcessing}
-                      onClick={() => confirmRestore('댓글') && void restoreComment(item.id)}
+                      onClick={() => setPendingAction({ target: '댓글', id: item.id, action: 'restore' })}
                     >
                       다시 노출
                     </Button>
@@ -227,6 +237,21 @@ export function AdminModerationSection() {
       </div>
 
       <Pagination page={pageIndex} totalPages={activePage.totalPages} onPageChange={setPage} />
+
+      <ConfirmModal
+        open={pendingAction !== null}
+        title={pendingAction?.action === 'hide' ? `${pendingAction.target} 숨김` : `${pendingAction?.target ?? ''} 다시 노출`}
+        message={
+          pendingAction?.action === 'hide'
+            ? '일반 사용자 화면에서 즉시 보이지 않게 됩니다. 숨김 관리에서 다시 복구할 수 있습니다.'
+            : '일반 사용자 화면에 콘텐츠가 다시 표시됩니다.'
+        }
+        confirmLabel={pendingAction?.action === 'hide' ? '숨김 처리' : '다시 노출'}
+        variant={pendingAction?.action === 'hide' ? 'danger' : 'default'}
+        isLoading={isProcessing}
+        onConfirm={() => void confirmPendingAction()}
+        onClose={() => !isProcessing && setPendingAction(null)}
+      />
     </div>
   );
 }

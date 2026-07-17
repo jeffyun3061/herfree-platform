@@ -151,7 +151,9 @@ Refresh Token·재발급·토큰 블랙리스트는 운영 고도화 항목으�
 | GET | `/api/users/me` | 내 정보 조회 | 회원 |
 | PATCH | `/api/users/me/profile` | 프로필 수정 | 회원 |
 | DELETE | `/api/users/me` | 회원 탈퇴 | 회원 |
+| GET | `/api/users/me/activity` | 내 활동·받은 공감·스크랩 수 조회 | 회원 |
 | GET | `/api/users/me/posts` | 내가 작성한 글 조회 | 회원 |
+| GET | `/api/users/me/posts/received-reactions` | 공감받은 내 글 조회 | 회원 |
 
 **`DELETE /api/users/me` 처리 내용**
 
@@ -159,6 +161,7 @@ Refresh Token·재발급·토큰 블랙리스트는 운영 고도화 항목으�
 - 프로필 닉네임·소개 익명화 (`withdrawn_{userId}`)
 - 작성 게시글·댓글 익명 처리 (커뮤니티 맥락 보존)
 - **`journal_records` 전건 물리 삭제** (개인 건강 메모 파기)
+- **`post_bookmarks` 전건 물리 삭제** (회원 관심정보 파기)
 
 ---
 
@@ -179,6 +182,10 @@ Refresh Token·재발급·토큰 블랙리스트는 운영 고도화 항목으�
 | GET | `/api/posts/{postId}` | 게시글 상세 조회 | 전체 |
 | PATCH | `/api/posts/{postId}` | 게시글 수정 | 작성자 |
 | DELETE | `/api/posts/{postId}` | 게시글 삭제 | 작성자 |
+| GET | `/api/posts/bookmarks` | 내가 스크랩한 활성 글 조회 | 회원 |
+| GET | `/api/posts/{postId}/bookmark` | 글 스크랩 상태 조회 | 회원 |
+| PUT | `/api/posts/{postId}/bookmark` | 글 스크랩 저장 (멱등) | 회원 |
+| DELETE | `/api/posts/{postId}/bookmark` | 글 스크랩 취소 (멱등) | 회원 |
 | POST | `/api/posts/images/upload` | 게시글 이미지 업로드 (API→S3, **기본**) | 회원 |
 | POST | `/api/posts/images/upload-url` | presigned URL (확장용, 클라이언트 미사용) | 회원 |
 | PATCH | `/api/admin/posts/{postId}` | 커뮤니티 게시글 수정 (NOTICE 제외) | 모더레이터+ |
@@ -462,11 +469,13 @@ Refresh Token·재발급·토큰 블랙리스트는 운영 고도화 항목으�
 ```json
 {
   "status": "ACCEPTED",
-  "hideTarget": true
+  "processNote": "개인정보 노출 확인 후 숨김 처리"
 }
 ```
 
-`status`: `ACCEPTED` | `REJECTED`. `hideTarget`이 `true`이면 신고 대상 게시글·댓글을 `HIDDEN` 처리한다.
+`status`: `ACCEPTED` | `REJECTED`. `processNote`는 500자 이하의 필수 내부 처리 근거다.
+게시글·댓글 숨김은 각각 `/api/admin/posts/{postId}/hide`, `/api/admin/comments/{commentId}/hide`로 처리한다.
+처리 응답에는 `processedById`, `processedAt`, `processNote`가 포함된다.
 
 ### 큐레이션 PATCH Body (부분 갱신)
 

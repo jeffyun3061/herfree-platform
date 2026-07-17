@@ -20,6 +20,7 @@ export type Report = {
   status: ReportStatus;
   processedById: number | null;
   processedAt: string | null;
+  processNote: string | null;
   createdAt: string;
 };
 
@@ -38,7 +39,7 @@ export type AdminReportTarget = {
 
 export type ReportProcessInput = {
   status: 'ACCEPTED' | 'REJECTED';
-  processNote?: string;
+  processNote: string;
 };
 
 // 운영 정책에 맞춘 신고 사유. 서버는 자유 문자를 받지만 클라이언트에서 선택지를 제공한다.

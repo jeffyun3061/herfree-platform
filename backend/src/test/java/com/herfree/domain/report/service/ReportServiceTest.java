@@ -1,5 +1,6 @@
 package com.herfree.domain.report.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
@@ -11,6 +12,9 @@ import com.herfree.domain.post.entity.PostStatus;
 import com.herfree.domain.post.entity.PostVisibility;
 import com.herfree.domain.post.repository.PostRepository;
 import com.herfree.domain.report.dto.request.ReportCreateRequest;
+import com.herfree.domain.report.dto.request.ReportProcessRequest;
+import com.herfree.domain.report.entity.Report;
+import com.herfree.domain.report.entity.ReportStatus;
 import com.herfree.domain.report.entity.ReportTargetType;
 import com.herfree.domain.report.exception.SelfReportException;
 import com.herfree.domain.report.repository.ReportRepository;
@@ -147,6 +151,34 @@ class ReportServiceTest {
         org.assertj.core.api.Assertions.assertThat(result).hasSize(1);
         org.assertj.core.api.Assertions.assertThat(result.get(0).targetPreview())
                 .isEqualTo("re***@example.com");
+    }
+
+    @Test
+    @DisplayName("신고 처리 사유는 승인 결과에 보존된다")
+    void processReport_preservesProcessNote() {
+        Long adminId = 90L;
+        Long reportId = 30L;
+        User reporter = user(10L);
+        User admin = user(adminId);
+        Report report = Report.builder()
+                .reporter(reporter)
+                .targetType(ReportTargetType.POST)
+                .targetId(50L)
+                .reason("개인정보 노출")
+                .detail("전화번호가 포함되어 있음")
+                .build();
+        ReportProcessRequest request = new ReportProcessRequest(
+                ReportStatus.ACCEPTED,
+                "개인정보 노출 확인 후 숨김 처리");
+
+        given(reportRepository.findById(reportId)).willReturn(Optional.of(report));
+        given(userRepository.findById(adminId)).willReturn(Optional.of(admin));
+
+        var result = reportService.processReport(adminId, reportId, request);
+
+        assertThat(result.status()).isEqualTo(ReportStatus.ACCEPTED);
+        assertThat(result.processNote()).isEqualTo("개인정보 노출 확인 후 숨김 처리");
+        assertThat(report.getProcessNote()).isEqualTo("개인정보 노출 확인 후 숨김 처리");
     }
 
     private ReportTargetSummary summary(Long targetId) {

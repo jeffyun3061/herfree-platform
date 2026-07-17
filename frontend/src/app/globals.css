@@ -172,13 +172,13 @@ body {
 
   /* 데스크톱: 중앙 폰 프레임 / 실제 모바일·앱: 전체 너비 */
   .app-canvas {
-    @apply min-h-screen w-full overflow-x-hidden;
+    @apply min-h-[100dvh] w-full overflow-x-hidden;
     background:
       radial-gradient(130% 90% at 50% -10%, #f1e9dc 0%, #e6dccb 55%, #d8cdb9 100%);
   }
 
   .app-phone-shell {
-    @apply relative mx-auto min-h-screen w-full max-w-[100vw] overflow-x-hidden bg-[#F3EDE3] shadow-none lg:my-8 lg:min-h-[min(844px,calc(100vh-4rem))] lg:max-w-app lg:overflow-y-auto lg:rounded-[48px] lg:shadow-[0_50px_90px_-34px_rgba(24,34,28,.5),0_0_0_11px_#16181a,0_0_0_13px_#2c2f31];
+    @apply relative mx-auto min-h-[100dvh] w-full max-w-[100vw] overflow-x-hidden bg-[#F3EDE3] shadow-none lg:my-8 lg:min-h-[min(844px,calc(100vh-4rem))] lg:max-w-app lg:overflow-y-auto lg:rounded-[48px] lg:shadow-[0_50px_90px_-34px_rgba(24,34,28,.5),0_0_0_11px_#16181a,0_0_0_13px_#2c2f31];
   }
 
   /* 관리자: 웹에서도 폰 테두리 유지 + 태블릿형 넓이 */
@@ -491,7 +491,7 @@ body {
   }
 
   .community-tabs-nav {
-    @apply absolute top-1/2 z-10 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full border border-[#DDE3E1] bg-white/95 text-[#0B3B36] shadow-[0_8px_20px_-16px_rgba(15,30,25,.5)];
+    @apply absolute top-1/2 z-10 hidden h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-[#DDE3E1] bg-white/95 text-[#0B3B36] shadow-[0_8px_20px_-16px_rgba(15,30,25,.5)] lg:flex;
   }
 
   .community-tabs-nav-left {

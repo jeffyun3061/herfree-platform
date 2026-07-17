@@ -35,6 +35,7 @@ export type UserActivity = {
   totalPosts: number;
   symptomPosts: number;
   receivedReactions: number;
+  bookmarkCount: number;
   lastPostAt: string | null;
   memberSince: string | null;
 };
@@ -50,5 +51,14 @@ export function fetchMyPosts(
 ): Promise<PageData<Post>> {
   return request<PageData<Post>>('/api/users/me/posts', {
     query: { page, size, sort: 'createdAt,desc', boardId },
+  });
+}
+
+export function fetchMyPostsWithReceivedReactions(
+  page: number,
+  size = 10,
+): Promise<PageData<Post>> {
+  return request<PageData<Post>>('/api/users/me/posts/received-reactions', {
+    query: { page, size, sort: 'createdAt,desc' },
   });
 }

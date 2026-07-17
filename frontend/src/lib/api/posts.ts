@@ -34,6 +34,28 @@ export function fetchPost(postId: number): Promise<PostDetail> {
   return request<PostDetail>(`/api/posts/${postId}`);
 }
 
+export type PostBookmarkStatus = {
+  bookmarked: boolean;
+};
+
+export function fetchBookmarkedPosts(page: number, size = 10): Promise<PageData<Post>> {
+  return request<PageData<Post>>('/api/posts/bookmarks', {
+    query: { page, size, sort: 'createdAt,desc' },
+  });
+}
+
+export function fetchPostBookmarkStatus(postId: number): Promise<PostBookmarkStatus> {
+  return request<PostBookmarkStatus>(`/api/posts/${postId}/bookmark`);
+}
+
+export function bookmarkPost(postId: number): Promise<PostBookmarkStatus> {
+  return request<PostBookmarkStatus>(`/api/posts/${postId}/bookmark`, { method: 'PUT' });
+}
+
+export function removePostBookmark(postId: number): Promise<PostBookmarkStatus> {
+  return request<PostBookmarkStatus>(`/api/posts/${postId}/bookmark`, { method: 'DELETE' });
+}
+
 export function createPost(input: PostCreateInput): Promise<PostDetail> {
   const imageUrl = pickPostImageUrlForCreate(input.imageUrl);
   const body = {

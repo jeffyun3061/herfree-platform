@@ -7,6 +7,7 @@ import { usePostDetail, usePostMutation } from '@/hooks/usePosts';
 import { useComments } from '@/hooks/useComments';
 import { useAuth } from '@/hooks/useAuth';
 import { useBoards } from '@/hooks/useBoards';
+import { usePostBookmark } from '@/hooks/usePostBookmark';
 import { CommunityGuestPostPanel } from '@/components/community/CommunityGuestPostPanel';
 import { ReactionBar } from '@/components/community/ReactionBar';
 import { CommentItem } from '@/components/community/CommentItem';
@@ -86,6 +87,16 @@ export default function PostDetailPage() {
   const { isLoggedIn, isReady, user } = useAuth();
   const { boards } = useBoards();
   const { post, isLoading, error, refetch: refetchPost } = usePostDetail(postId);
+  const postBoard = boards.find((board) => board.id === post?.boardId);
+  const bookmarkEnabled =
+    isReady && isLoggedIn && post != null && postBoard != null && !isMaskedBoardType(postBoard.boardType);
+  const {
+    bookmarked,
+    isLoading: bookmarkLoading,
+    isUpdating: bookmarkUpdating,
+    error: bookmarkError,
+    toggle: toggleBookmark,
+  } = usePostBookmark(postId, bookmarkEnabled);
   const { deletePost, isSubmitting: isDeletingPost } = usePostMutation();
   const {
     commentPage,
@@ -257,7 +268,6 @@ export default function PostDetailPage() {
       : '삭제';
 
   const commentTree = buildCommentTree(commentPage.content);
-  const postBoard = boards.find((board) => board.id === post.boardId);
   const isStaffOnlyPost = postBoard != null && isStaffOnlyBoardType(postBoard.boardType);
   const isMaskedPost = postBoard != null && isMaskedBoardType(postBoard.boardType);
   const isContentMasked = post.readable === false;
@@ -378,6 +388,16 @@ export default function PostDetailPage() {
 
           <div className="mt-3 flex flex-wrap gap-2">
             {isLoggedIn && !isMaskedPost && (
+              <Button
+                variant={bookmarked ? 'secondary' : 'ghost'}
+                size="sm"
+                disabled={bookmarkLoading || bookmarkUpdating}
+                onClick={() => void toggleBookmark()}
+              >
+                {bookmarked ? '스크랩 취소' : '스크랩'}
+              </Button>
+            )}
+            {isLoggedIn && !isMaskedPost && (
               <Button variant="ghost" size="sm" onClick={() => setReportOpen(true)}>
                 신고
               </Button>
@@ -437,6 +457,7 @@ export default function PostDetailPage() {
               </>
             )}
           </div>
+          {bookmarkError && <div className="mt-3"><ErrorMessage message={bookmarkError} /></div>}
         </section>
 
         {showComments && (

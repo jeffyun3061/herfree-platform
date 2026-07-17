@@ -55,6 +55,9 @@ ADMIN_NICKNAME=운영자
 
 이미 동일 이메일이 있으면 **건너뜁니다** (기존 role 유지).
 
+최초 관리자 생성이 확인되면 `ADMIN_BOOTSTRAP_ENABLED=false`로 되돌리고 재배포합니다.
+운영 중에는 공유 관리자 계정을 만들지 말고 각 운영자 계정을 역할별로 승격합니다.
+
 ---
 
 ## 2. 최초 SUPER_ADMIN — 방법 B (SQL)

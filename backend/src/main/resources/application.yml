@@ -64,16 +64,16 @@ app:
     allowed-origin-patterns: ${CORS_ALLOWED_ORIGIN_PATTERNS:}
   bootstrap:
     enabled: ${ADMIN_BOOTSTRAP_ENABLED:false}
+    email: ${ADMIN_EMAIL:}
+    password: ${ADMIN_PASSWORD:}
+    nickname: ${ADMIN_NICKNAME:HerfreeOps}
+    sync-existing: ${ADMIN_BOOTSTRAP_SYNC_EXISTING:false}
   retention:
     event-days: ${APP_RETENTION_EVENT_DAYS:90}
     reset-token-grace-days: ${APP_RETENTION_RESET_TOKEN_GRACE_DAYS:7}
     admin-audit-days: ${APP_RETENTION_ADMIN_AUDIT_DAYS:365}
     role-audit-days: ${APP_RETENTION_ROLE_AUDIT_DAYS:365}
     cleanup-cron: '${APP_RETENTION_CLEANUP_CRON:0 20 3 * * *}'
-    email: ${ADMIN_EMAIL:}
-    password: ${ADMIN_PASSWORD:}
-    nickname: ${ADMIN_NICKNAME:HerfreeOps}
-    sync-existing: ${ADMIN_BOOTSTRAP_SYNC_EXISTING:false}
   s3:
     bucket: ${S3_BUCKET:${AWS_S3_BUCKET:}}
     region: ${S3_REGION:${AWS_REGION:ap-northeast-2}}

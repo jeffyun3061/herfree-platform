@@ -100,7 +100,7 @@ function OAuthCallbackForm() {
 
   if (error) {
     return (
-      <div className="mx-auto flex min-h-screen max-w-app flex-col items-center justify-center bg-cream px-6">
+      <div className="mx-auto flex min-h-[100dvh] max-w-app flex-col items-center justify-center bg-cream px-6 lg:min-h-[min(844px,calc(100vh-4rem))]">
         <ErrorMessage message={error} className="whitespace-pre-wrap text-left" />
         <button
           type="button"
@@ -114,7 +114,7 @@ function OAuthCallbackForm() {
   }
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-app items-center justify-center bg-cream px-6">
+    <div className="mx-auto flex min-h-[100dvh] max-w-app items-center justify-center bg-cream px-6 lg:min-h-[min(844px,calc(100vh-4rem))]">
       <LoadingSpinner label="소셜 로그인 처리 중..." />
     </div>
   );

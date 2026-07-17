@@ -10,6 +10,7 @@ import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import {
   type AdminReportTarget,
   REPORT_STATUS_LABELS,
@@ -66,6 +67,7 @@ export function AdminReportsSection() {
   } = useApiQuery(() => adminApi.fetchReportTargets(1, 50), []);
   const [targetActionError, setTargetActionError] = useState<string | null>(null);
   const [targetProcessingKey, setTargetProcessingKey] = useState<string | null>(null);
+  const [deleteTargetCandidate, setDeleteTargetCandidate] = useState<AdminReportTarget | null>(null);
   const reportTargets = reportTargetsData ?? [];
 
   const refreshQueues = async () => {
@@ -121,9 +123,6 @@ export function AdminReportsSection() {
   };
 
   const deleteTarget = async (target: AdminReportTarget) => {
-    if (!window.confirm('삭제 처리하면 일반 화면에서 복구할 수 없습니다. 계속할까요?')) {
-      return;
-    }
     setTargetProcessingKey(targetKey(target));
     setTargetActionError(null);
     try {
@@ -134,6 +133,7 @@ export function AdminReportsSection() {
         processNote: '누적 신고 검토 후 삭제 처리',
       });
       await refreshQueues();
+      setDeleteTargetCandidate(null);
     } catch (err) {
       setTargetActionError(getErrorMessage(err));
     } finally {
@@ -238,7 +238,7 @@ export function AdminReportsSection() {
                           size="sm"
                           variant="danger"
                           disabled={processing || target.targetStatus === 'DELETED'}
-                          onClick={() => void deleteTarget(target)}
+                          onClick={() => setDeleteTargetCandidate(target)}
                         >
                           삭제
                         </Button>
@@ -320,6 +320,13 @@ export function AdminReportsSection() {
               </p>
             )}
 
+            {status !== 'PENDING' && report.processNote && (
+              <div className="rounded-[14px] border border-[#E7DFD2] bg-[#FFFCF7] px-3 py-2.5">
+                <p className="text-[10.5px] font-bold text-[#8B9590]">처리 근거</p>
+                <p className="mt-1 text-[12px] leading-[1.55] text-[#44504A]">{report.processNote}</p>
+              </div>
+            )}
+
             {status === 'PENDING' && (
               <div className="grid grid-cols-2 gap-2">
                 <Button
@@ -367,6 +374,17 @@ export function AdminReportsSection() {
       </div>
 
       <Pagination page={page} totalPages={reportPage.totalPages} onPageChange={setPage} />
+
+      <ConfirmModal
+        open={deleteTargetCandidate !== null}
+        title="신고 대상 영구 삭제"
+        message="삭제 후에는 일반 화면과 관리자 화면에서 복구할 수 없습니다. 신고 근거를 확인한 경우에만 진행해 주세요."
+        confirmLabel="영구 삭제"
+        variant="danger"
+        isLoading={deleteTargetCandidate ? targetProcessingKey === targetKey(deleteTargetCandidate) : false}
+        onConfirm={() => deleteTargetCandidate && void deleteTarget(deleteTargetCandidate)}
+        onClose={() => !targetProcessingKey && setDeleteTargetCandidate(null)}
+      />
     </div>
   );
 }

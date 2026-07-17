@@ -3,10 +3,9 @@
 import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { TopBar } from '@/components/layout/TopBar';
+import { AuthScreenShell } from '@/components/auth/AuthScreenShell';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { BrandMark } from '@/components/brand/BrandMark';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { PASSWORD_MAX_LENGTH, validatePassword } from '@/domain/auth/validate';
@@ -57,24 +56,19 @@ function ResetPasswordForm() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
-      <TopBar title="비밀번호 재설정" showBack />
-      <div className="mx-auto max-w-app px-5 py-8">
-        <div className="mb-8 flex justify-center">
-          <BrandMark variant="auth" size="md" />
+    <AuthScreenShell
+      backHref="/forgot-password"
+      title="새 비밀번호 설정"
+      subtitle="15~64자로 입력하고, 이전과 다른 비밀번호를 사용해 주세요."
+      brandSize="md"
+    >
+      {!token && (
+        <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          재설정 링크가 올바르지 않습니다. 메일의 링크를 다시 확인하거나 비밀번호 찾기를 요청해 주세요.
         </div>
-        <h2 className="text-xl font-bold text-ink">새 비밀번호 설정</h2>
-        <p className="mt-2 text-sm leading-relaxed text-wrtn-muted">
-          새 비밀번호는 15~64자로 입력해 주세요. 공백과 특수문자도 사용할 수 있습니다.
-        </p>
+      )}
 
-        {!token && (
-          <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-            재설정 링크가 올바르지 않습니다. 메일의 링크를 다시 확인하거나 비밀번호 찾기를 요청해 주세요.
-          </div>
-        )}
-
-        <form onSubmit={(e) => void handleSubmit(e)} className="mt-6">
+      <form onSubmit={(e) => void handleSubmit(e)} className="mt-6">
           <Input
             label="새 비밀번호"
             type="password"
@@ -116,13 +110,12 @@ function ResetPasswordForm() {
           >
             {isSubmitting ? '변경 중…' : '비밀번호 변경'}
           </Button>
-        </form>
+      </form>
 
-        <Link href="/forgot-password" className="mt-6 block text-center text-sm font-semibold text-primary">
-          재설정 링크 다시 받기
-        </Link>
-      </div>
-    </div>
+      <Link href="/forgot-password" className="mt-6 block text-center text-sm font-semibold text-primary">
+        재설정 링크 다시 받기
+      </Link>
+    </AuthScreenShell>
   );
 }
 

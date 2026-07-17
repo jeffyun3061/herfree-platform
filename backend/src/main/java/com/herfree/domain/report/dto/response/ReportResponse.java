@@ -15,6 +15,7 @@ public record ReportResponse(
         ReportStatus status,
         Long processedById,
         Instant processedAt,
+        String processNote,
         Instant createdAt
 ) {
     public static ReportResponse from(Report report) {
@@ -28,6 +29,7 @@ public record ReportResponse(
                 report.getStatus(),
                 report.getProcessedBy() != null ? report.getProcessedBy().getId() : null,
                 report.getProcessedAt(),
+                report.getProcessNote(),
                 report.getCreatedAt()
         );
     }

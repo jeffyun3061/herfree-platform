@@ -17,6 +17,7 @@ const SERVICE_LINKS = [
   { href: '/community', label: '커뮤니티', description: '같은 경험을 나누는 공간' },
   { href: '/journal', label: '개인일지', description: '매일 컨디션 기록' },
   { href: '/contents', label: '칼럼', description: '경험에서 나온 이야기' },
+  { href: '/videos', label: '헤르프리 영상', description: '함께 보는 회복 이야기' },
   { href: '/qna', label: 'FAQ', description: '자주 묻는 질문' },
   { href: '/consult', label: '1:1 비밀상담', description: '편하게 나누는 1:1' },
   { href: '/mypage', label: '마이페이지', description: '내 활동과 기록' },
@@ -120,7 +121,7 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
 
   return createPortal(
     <div
-      className="absolute inset-0 z-[100] overflow-hidden rounded-[inherit] bg-[rgba(7,22,18,.40)] backdrop-blur-[2px]"
+      className="fixed inset-x-0 top-0 z-[100] h-[100dvh] overflow-hidden bg-[rgba(7,22,18,.40)] backdrop-blur-[2px] lg:absolute lg:inset-0 lg:h-auto lg:rounded-[inherit]"
       role="dialog"
       aria-modal="true"
       aria-label="전체 메뉴"
@@ -130,7 +131,7 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
         className="hf-menu-panel absolute bottom-0 right-0 top-0 flex h-full w-[82%] max-w-[340px] animate-[hfMenuSlideIn_.28s_cubic-bezier(.2,.7,.3,1)_both] flex-col overflow-hidden rounded-bl-[30px] bg-[#F3EDE3] shadow-[-20px_0_50px_-20px_rgba(7,37,31,.5)]"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="shrink-0 bg-[#07251F] px-[22px] pb-[18px] pt-[52px] text-white">
+        <div className="shrink-0 bg-[#07251F] px-[22px] pb-[18px] pt-[max(20px,env(safe-area-inset-top))] text-white">
           <div className="mb-3.5 flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-2.5">
               <span className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full bg-white/10 text-[16px] font-bold text-[#F3EDE3]">
@@ -176,7 +177,7 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
         </div>
 
         <nav
-          className="hf-menu-panel flex-1 overflow-y-auto overscroll-contain px-[22px] pb-[calc(72px+env(safe-area-inset-bottom))] pt-2.5"
+          className="hf-menu-panel flex-1 touch-pan-y overflow-y-auto overscroll-contain px-[22px] pb-[calc(72px+env(safe-area-inset-bottom))] pt-2.5 [-webkit-overflow-scrolling:touch]"
           aria-label="전체 메뉴 링크"
         >
           {SERVICE_LINKS.map((item) => (

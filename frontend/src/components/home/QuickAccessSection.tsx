@@ -1,8 +1,8 @@
 import Link from 'next/link';
 import { cn } from '@/lib/cn';
 import {
-  QuickAccessChecklistIcon,
   QuickAccessColumnIcon,
+  QuickAccessHerfreeIcon,
 } from '@/components/home/QuickAccessIcons';
 
 function ConsultIcon() {
@@ -26,7 +26,7 @@ const QUICK_ITEMS = [
   { id: 'consult', title: '1:1 비밀상담', href: '/consult', Icon: ConsultIcon },
   { id: 'inquiry', title: '문의하기', href: '/inquiry', Icon: CommunityIcon },
   { id: 'column', title: '칼럼', href: '/contents', Icon: QuickAccessColumnIcon },
-  { id: 'home', title: '헤르프리', href: '/videos', Icon: QuickAccessChecklistIcon },
+  { id: 'home', title: '헤르프리', href: '/videos', Icon: QuickAccessHerfreeIcon },
 ] as const;
 
 type QuickAccessSectionProps = {
