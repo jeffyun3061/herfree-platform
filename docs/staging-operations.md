@@ -41,7 +41,7 @@ EC2의 `/opt/herfree/config/.env.staging`은 `render-release-env.sh`가 세 secr
 2. `develop` 대상 PR을 만들고 `secret-scan`, `backend`, `frontend` CI를 통과시킨다.
 3. squash merge 후 `Release backend`를 `target=staging`으로 실행한다.
 4. Actions가 이미지를 빌드·검사해 ECR에 올리고 SSM으로 EC2에 배포한다.
-5. EC2 health가 실패하면 직전 이미지로 자동 rollback한다.
+5. EC2는 최대 5분 동안 health를 확인한다. 실패하면 상태 파일에 기록된 마지막 정상 이미지로만 자동 rollback한다.
 6. staging 사용자 흐름을 통과한 후에만 `develop`에서 `main`으로 PR을 만든다.
 7. production은 `main`과 본인 Environment 승인, `staging-passed-<SHA>` 이미지가 모두 필요하다.
 
