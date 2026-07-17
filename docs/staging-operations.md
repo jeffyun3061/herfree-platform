@@ -51,6 +51,14 @@ EC2의 `/opt/herfree/config/.env.staging`은 `render-release-env.sh`가 세 secr
 
 ## 4. 평소 확인
 
+먼저 저장소 루트에서 아래 명령을 실행한다. AWS·GitHub·DNS·SES·Amplify 상태와 최근 배포를 확인하되 secret 값은 출력하지 않는다.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/check-staging-status.ps1
+```
+
+CI나 점검표에서 미완료 상태를 실패 코드로 받아야 할 때만 `-Strict`를 붙인다.
+
 매일:
 
 - GitHub Actions 최근 staging 배포 성공 여부
@@ -118,14 +126,38 @@ aws rds create-db-snapshot `
 4. DB migration은 이미지 rollback으로 취소되지 않는다. 데이터 손상이 있으면 신규 쓰기를 멈추고 snapshot/PITR 복원을 검토한다.
 5. secret 유출이면 새 값을 발급하고 이전 값을 폐기한 뒤 재배포한다.
 
-## 8. 최초 staging 공개 전 남은 수동 작업
+## 8. 최초 staging 공개 전 남은 작업
 
 - [ ] Gabia DNS: `api-staging.herpfree.co.kr` A 레코드를 `3.37.78.234`로 설정
-- [ ] staging 프론트 호스팅을 만들고 `staging.herpfree.co.kr` 연결
+- [x] Amplify `herfree-staging` 앱 생성, Next.js 빌드 설정, Basic Auth 적용
+- [ ] Amplify 앱에서 GitHub 저장소 `jeffyun3061/herfree-platform`과 `develop` 브랜치 연결
+- [ ] Amplify에 `staging.herpfree.co.kr` 사용자 지정 도메인을 추가하고 안내된 CNAME을 Gabia DNS에 설정
 - [ ] DNS 적용 후 EC2에서 Let's Encrypt 인증서 발급
-- [ ] `herpfree3@gmail.com`의 AWS SES 인증 메일 승인
+- [ ] `herpfree3@gmail.com`의 AWS SES 인증 메일 승인 (현재 `Pending`)
 - [ ] OAuth Dev 콘솔 3곳에 `https://staging.herpfree.co.kr/auth/callback/{provider}` 추가
-- [ ] GitHub Actions staging 배포와 전체 E2E 통과
+- [x] GitHub Actions가 백엔드 이미지 빌드·취약점 검사·ECR push·EC2 health 배포까지 통과
+- [ ] GitHub staging Environment에 Amplify Basic Auth의 `E2E_HTTP_USERNAME`, `E2E_HTTP_PASSWORD` 등록
+- [ ] EC2 IMDSv2 hop limit을 2로 변경하고 컨테이너의 S3 instance role 접근 확인
+- [ ] DNS·프론트 연결 후 GitHub Actions 전체 E2E 통과 및 `staging-passed-<SHA>` 생성
 - [ ] 자동 백업을 임시 RDS로 복원하는 연습
+
+### Amplify GitHub 최초 연결
+
+이 작업만 GitHub App 권한 승인이 필요하므로 AWS 콘솔에서 한 번 수행한다.
+
+1. AWS Amplify의 `herfree-staging` 앱을 연다.
+2. `Connect branch`에서 GitHub를 선택하고 `jeffyun3061/herfree-platform` 저장소 접근을 승인한다.
+3. 브랜치는 `develop`만 선택한다. `main`은 production 검증 전 연결하지 않는다.
+4. 저장소 루트가 아니라 monorepo 설정의 `appRoot=frontend`가 유지되는지 확인한다.
+5. 연결 후 이 문서의 상태 확인 스크립트를 다시 실행한다.
+
+### DNS 입력 순서
+
+1. Gabia에 A 레코드 `api-staging` → `3.37.78.234`를 추가한다.
+2. Amplify 사용자 지정 도메인에서 `staging.herpfree.co.kr`을 추가한다.
+3. Amplify가 보여 주는 인증·호스팅 CNAME을 그대로 Gabia에 입력한다.
+4. DNS가 확인된 뒤 API TLS 인증서를 발급한다. DNS 적용 전에 인증서 발급을 반복하지 않는다.
+
+현재 `api-staging.herpfree.co.kr`과 `staging.herpfree.co.kr`은 아직 해석되지 않는다. 따라서 최근 Actions의 E2E 실패는 애플리케이션 오류가 아니라 DNS 미설정 결과다.
 
 production은 이 목록과 `go-live-checklist.md`의 NO-GO 항목을 모두 통과한 뒤 별도로 만든다.
