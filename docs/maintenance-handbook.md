@@ -63,6 +63,7 @@
 - 데이터 삭제, 타입 축소, 대량 UPDATE 전에는 수동 snapshot을 만들고 staging에서 실행 시간과 복구를 검증한다.
 - 애플리케이션 rollback은 DB rollback이 아니다. 호환되지 않는 migration이면 배포를 중단하고 별도 DB에 snapshot/PITR 복원 후 검증한다.
 - production DB에 개발자 PC나 인터넷에서 직접 접속할 수 있게 열지 않는다.
+- AWS의 RDS CA 교체 공지가 오면 `infra/certs/rds-global-bundle.pem`을 공식 truststore 주소에서 갱신하고, 새 이미지의 TLS 연결을 staging에서 먼저 검증한다. 인증서 검증을 끄는 방식으로 우회하지 않는다.
 
 ## 6. 비밀정보와 개인정보
 

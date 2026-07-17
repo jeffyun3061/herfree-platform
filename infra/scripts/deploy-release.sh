@@ -48,6 +48,12 @@ deploy_image() {
       up -d --pull always --no-build --remove-orphans
 }
 
+show_logs() {
+  API_IMAGE="${NEW_IMAGE}" APP_ENV_FILE="${ENV_FILE}" API_BIND_PORT="${PORT}" DEPLOY_ENV="${DEPLOY_ENV}" \
+    docker compose --env-file "${ENV_FILE}" -p "${PROJECT}" -f "${COMPOSE_FILE}" \
+      logs --tail=120 api || true
+}
+
 echo "deploying ${DEPLOY_ENV} image"
 deploy_image "${NEW_IMAGE}"
 
@@ -71,8 +77,7 @@ if [[ "${healthy}" == "true" ]]; then
 fi
 
 echo "health check failed"
-docker compose --env-file "${ENV_FILE}" -p "${PROJECT}" -f "${COMPOSE_FILE}" \
-  logs --tail=120 api || true
+show_logs
 
 if [[ -n "${PREVIOUS_IMAGE}" && "${PREVIOUS_IMAGE}" != "${NEW_IMAGE}" ]]; then
   echo "rolling back to previous image"

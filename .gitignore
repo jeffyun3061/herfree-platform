@@ -51,6 +51,7 @@ frontend/.env.production
 *.pem
 *.p12
 *.pfx
+!infra/certs/rds-global-bundle.pem
 
 # Logs
 *.log
