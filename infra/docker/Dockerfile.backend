@@ -1,5 +1,5 @@
 # Herfree API — multi-stage build (Gradle bootJar → JRE 17 runtime)
-FROM eclipse-temurin:17-jdk AS builder
+FROM eclipse-temurin:17-jdk@sha256:068a8f9ae4b74d9a20de3ecca771ba1a6437f1d7a8a8ad6deaf9dbdd2274397a AS builder
 WORKDIR /workspace
 
 COPY backend/gradlew backend/gradle backend/build.gradle.kts backend/settings.gradle.kts ./
@@ -9,13 +9,10 @@ RUN chmod +x gradlew
 COPY backend/src ./src
 RUN ./gradlew bootJar --no-daemon -x test
 
-FROM eclipse-temurin:17-jre
+FROM gcr.io/distroless/java17-debian12:nonroot@sha256:06484c2a9dcc9070aeafbc0fe752cb9f73bc0cea5c311f6a516e9010061998ad
 WORKDIR /app
 
-RUN useradd -r -u 10001 appuser
-USER appuser
-
-COPY --from=builder /workspace/build/libs/*.jar app.jar
+COPY --from=builder --chown=nonroot:nonroot /workspace/build/libs/*.jar app.jar
 
 EXPOSE 8080
 ENTRYPOINT ["java", "-Duser.timezone=UTC", "-jar", "/app/app.jar"]
