@@ -34,6 +34,14 @@ class ApiHttpStatusIntegrationTest {
     }
 
     @Test
+    @DisplayName("Actuator 헬스체크는 직렬화 오류 없이 200을 반환한다")
+    void actuatorHealth_returns200() throws Exception {
+        mockMvc.perform(get("/actuator/health"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("UP"));
+    }
+
+    @Test
     @DisplayName("비로그인 사용자도 허용된 분석 이벤트를 기록할 수 있다")
     void recordEvent_withoutAuth_returns200() throws Exception {
         mockMvc.perform(post("/api/events")
