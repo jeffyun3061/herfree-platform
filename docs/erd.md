@@ -112,6 +112,7 @@ AI 기능 도입 시 **메인 DB는 MySQL 8을 유지**한다. 대화 메타·�
 | `id` | BIGINT PK | 사용자 ID |
 | `email` | VARCHAR UNIQUE | 로그인 이메일 |
 | `password` | VARCHAR | 암호화된 비밀번호 |
+| `credential_version` | INT | 비밀번호 변경 시 증가하는 세션 무효화 버전 |
 | `role` | VARCHAR | USER, CREATOR, DOCTOR, MODERATOR, ADMIN |
 | `status` | VARCHAR | ACTIVE, SUSPENDED, DELETED |
 | `created_at` | DATETIME | 생성일 |
@@ -353,6 +354,7 @@ Table users {
   id bigint [pk, increment]
   email varchar [not null, unique]
   password varchar [not null]
+  credential_version int [not null, default: 0]
   role varchar [not null]
   status varchar [not null]
   created_at datetime

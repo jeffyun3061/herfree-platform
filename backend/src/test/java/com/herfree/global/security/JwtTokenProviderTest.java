@@ -13,10 +13,11 @@ class JwtTokenProviderTest {
     @Test
     @DisplayName("액세스 토큰은 API 인증에 통과한다")
     void validateAccessToken_accessToken_passes() {
-        String token = provider.createAccessToken("1", "USER");
+        String token = provider.createAccessToken("1", "USER", 3);
 
         assertThat(provider.validateAccessToken(token)).isTrue();
         assertThat(provider.getSubject(token)).isEqualTo("1");
+        assertThat(provider.getCredentialVersion(token)).isEqualTo(3);
     }
 
     @Test

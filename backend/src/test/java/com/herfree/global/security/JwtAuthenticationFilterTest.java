@@ -47,7 +47,7 @@ class JwtAuthenticationFilterTest {
         JwtAuthenticationFilter filter =
                 new JwtAuthenticationFilter(provider, userRepository, new ObjectMapper());
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/journal");
-        request.addHeader("Authorization", "Bearer " + provider.createAccessToken("not-a-user-id", "USER"));
+        request.addHeader("Authorization", "Bearer " + provider.createAccessToken("not-a-user-id", "USER", 0));
         MockHttpServletResponse response = new MockHttpServletResponse();
         MockFilterChain chain = new MockFilterChain();
 
@@ -56,5 +56,28 @@ class JwtAuthenticationFilterTest {
         assertThat(response.getStatus()).isEqualTo(200);
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
         verifyNoInteractions(userRepository);
+    }
+
+    @Test
+    void accessTokenIssuedBeforePasswordChangeIsRejected() throws Exception {
+        JwtTokenProvider provider = new JwtTokenProvider(new JwtProperties(SECRET, 3600L));
+        UserRepository userRepository = mock(UserRepository.class);
+        com.herfree.domain.user.entity.User user = com.herfree.domain.user.entity.User.builder()
+                .email("user@example.com")
+                .password("encoded")
+                .build();
+        org.springframework.test.util.ReflectionTestUtils.setField(user, "id", 1L);
+        user.changePassword("new-encoded");
+        org.mockito.BDDMockito.given(userRepository.findById(1L)).willReturn(java.util.Optional.of(user));
+        JwtAuthenticationFilter filter =
+                new JwtAuthenticationFilter(provider, userRepository, new ObjectMapper());
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/users/me");
+        request.addHeader("Authorization", "Bearer " + provider.createAccessToken("1", "USER", 0));
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        filter.doFilter(request, response, new MockFilterChain());
+
+        assertThat(response.getStatus()).isEqualTo(401);
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
     }
 }

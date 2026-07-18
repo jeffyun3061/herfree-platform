@@ -17,6 +17,8 @@ public interface UserOAuthAccountRepository extends JpaRepository<UserOAuthAccou
 
     boolean existsByUserIdAndProvider(Long userId, OAuthProvider provider);
 
+    boolean existsByUserId(Long userId);
+
     @Modifying(clearAutomatically = true)
     @Query("DELETE FROM UserOAuthAccount a WHERE a.user.id = :userId")
     void deleteAllByUserId(@Param("userId") Long userId);

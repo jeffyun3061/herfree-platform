@@ -150,10 +150,19 @@ Refresh Token·재발급·토큰 블랙리스트는 운영 고도화 항목으�
 |--------|-----|------|------|
 | GET | `/api/users/me` | 내 정보 조회 | 회원 |
 | PATCH | `/api/users/me/profile` | 프로필 수정 | 회원 |
+| GET | `/api/users/me/account` | 비밀번호 변경 가능 여부 조회 | 회원 |
+| PATCH | `/api/users/me/password` | 현재 비밀번호 확인 후 비밀번호 변경 | 회원 |
 | DELETE | `/api/users/me` | 회원 탈퇴 | 회원 |
 | GET | `/api/users/me/activity` | 내 활동·받은 공감·스크랩 수 조회 | 회원 |
 | GET | `/api/users/me/posts` | 내가 작성한 글 조회 | 회원 |
 | GET | `/api/users/me/posts/received-reactions` | 공감받은 내 글 조회 | 회원 |
+
+**`PATCH /api/users/me/password` 보안 규칙**
+
+- 일반 가입 계정만 변경할 수 있으며, 소셜 로그인 계정은 해당 제공자에서 비밀번호를 관리한다.
+- 현재 비밀번호를 확인하고 가입과 동일한 비밀번호 정책(15~64자)을 적용한다.
+- 변경 즉시 `credential_version`을 증가시켜 기존 액세스 토큰을 모두 무효화하고 다시 로그인하게 한다.
+- 발급된 비밀번호 재설정 토큰도 함께 폐기한다.
 
 **`DELETE /api/users/me` 처리 내용**
 

@@ -21,7 +21,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
- * 로그인·가입 엔드포인트 IP 기준 단순 레이트 리밋 (1차 MVP — 인메모리).
+ * 로그인·가입·재설정·비밀번호 변경 엔드포인트 IP 기준 레이트 리밋 (1차 MVP — 인메모리).
  */
 @Component
 @RequiredArgsConstructor
@@ -40,11 +40,14 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        if (!"POST".equalsIgnoreCase(request.getMethod())) {
+        boolean isPost = "POST".equalsIgnoreCase(request.getMethod());
+        boolean isPatch = "PATCH".equalsIgnoreCase(request.getMethod());
+        if (!isPost && !isPatch) {
             return true;
         }
         String path = request.getRequestURI();
-        return !"/api/auth/login".equals(path)
+        return !(isPatch && "/api/users/me/password".equals(path))
+                && !"/api/auth/login".equals(path)
                 && !"/api/auth/signup".equals(path)
                 && !"/api/auth/password-reset/request".equals(path)
                 && !"/api/auth/password-reset/confirm".equals(path);

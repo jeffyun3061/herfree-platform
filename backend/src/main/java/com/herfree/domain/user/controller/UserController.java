@@ -2,10 +2,12 @@ package com.herfree.domain.user.controller;
 
 import com.herfree.domain.post.dto.response.PostResponse;
 import com.herfree.domain.user.dto.request.UpdateProfileRequest;
+import com.herfree.domain.user.dto.request.ChangePasswordRequest;
 import com.herfree.domain.user.dto.request.UpdateHealthStatisticsConsentRequest;
 import com.herfree.domain.user.dto.response.HealthStatisticsConsentResponse;
 import com.herfree.domain.user.dto.response.UserActivityResponse;
 import com.herfree.domain.user.dto.response.UserResponse;
+import com.herfree.domain.user.dto.response.AccountSecurityResponse;
 import com.herfree.domain.user.service.UserService;
 import com.herfree.domain.user.service.HealthStatisticsConsentService;
 import com.herfree.global.response.ApiResponse;
@@ -53,6 +55,22 @@ public class UserController {
     ) {
         UserResponse response = userService.updateProfile(userId, request);
         return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @GetMapping("/me/account")
+    public ResponseEntity<ApiResponse<AccountSecurityResponse>> getAccountSecurity(
+            @AuthenticationPrincipal Long userId
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(userService.getAccountSecurity(userId)));
+    }
+
+    @PatchMapping("/me/password")
+    public ResponseEntity<Void> changePassword(
+            @AuthenticationPrincipal Long userId,
+            @Valid @RequestBody ChangePasswordRequest request
+    ) {
+        userService.changePassword(userId, request);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/me/consents/health-statistics")

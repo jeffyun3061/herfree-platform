@@ -11,6 +11,21 @@ export function updateProfile(input: { nickname: string; bio?: string }): Promis
   return request<User>('/api/users/me/profile', { method: 'PATCH', body: input });
 }
 
+export type AccountSecurity = {
+  passwordChangeAvailable: boolean;
+};
+
+export function fetchAccountSecurity(): Promise<AccountSecurity> {
+  return request<AccountSecurity>('/api/users/me/account');
+}
+
+export function changePassword(input: {
+  currentPassword: string;
+  newPassword: string;
+}): Promise<void> {
+  return request<void>('/api/users/me/password', { method: 'PATCH', body: input });
+}
+
 export type HealthStatisticsConsent = {
   agreed: boolean;
 };

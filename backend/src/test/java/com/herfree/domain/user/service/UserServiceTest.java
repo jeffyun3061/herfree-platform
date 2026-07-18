@@ -16,6 +16,7 @@ import com.herfree.domain.post.repository.PostBookmarkRepository;
 import com.herfree.domain.post.service.PostImageCleanupService;
 import com.herfree.domain.reaction.repository.ReactionRepository;
 import com.herfree.domain.user.dto.request.UpdateProfileRequest;
+import com.herfree.domain.user.dto.request.ChangePasswordRequest;
 import com.herfree.domain.user.entity.NicknameChangeHistory;
 import com.herfree.domain.user.entity.NicknameChangeType;
 import com.herfree.domain.user.entity.User;
@@ -25,6 +26,9 @@ import com.herfree.domain.user.entity.UserStatus;
 import com.herfree.domain.user.exception.NicknameChangeTooSoonException;
 import com.herfree.domain.user.exception.SameNicknameException;
 import com.herfree.domain.user.exception.UserNotFoundException;
+import com.herfree.domain.auth.exception.InvalidPasswordException;
+import com.herfree.domain.user.exception.PasswordChangeNotAvailableException;
+import com.herfree.domain.user.exception.SamePasswordException;
 import com.herfree.domain.user.repository.NicknameChangeHistoryRepository;
 import com.herfree.domain.user.repository.UserProfileRepository;
 import com.herfree.domain.user.repository.UserRepository;
@@ -35,6 +39,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
 import java.util.Optional;
@@ -84,6 +89,9 @@ class UserServiceTest {
 
     @Mock
     private PostImageCleanupService postImageCleanupService;
+
+    @Mock
+    private PasswordEncoder passwordEncoder;
 
     @InjectMocks
     private UserService userService;
@@ -270,5 +278,89 @@ class UserServiceTest {
 
         assertThatThrownBy(() -> userService.updateProfile(userId, new UpdateProfileRequest("새닉네임", null)))
                 .isInstanceOf(NicknameChangeTooSoonException.class);
+    }
+
+    @Test
+    @DisplayName("현재 비밀번호 확인 후 비밀번호를 변경하고 재설정 토큰을 폐기한다")
+    void changePassword_validCurrentPassword_updatesCredential() {
+        Long userId = 1L;
+        User user = User.builder()
+                .email("user@test.com")
+                .password("old-encoded")
+                .status(UserStatus.ACTIVE)
+                .build();
+        given(userRepository.findByIdAndStatus(userId, UserStatus.ACTIVE)).willReturn(Optional.of(user));
+        given(userOAuthAccountRepository.existsByUserId(userId)).willReturn(false);
+        given(passwordEncoder.matches("Current-password-123!", "old-encoded")).willReturn(true);
+        given(passwordEncoder.matches("New-password-456!", "old-encoded")).willReturn(false);
+        given(passwordEncoder.encode("New-password-456!")).willReturn("new-encoded");
+
+        userService.changePassword(
+                userId,
+                new ChangePasswordRequest("Current-password-123!", "New-password-456!")
+        );
+
+        assertThat(user.getPassword()).isEqualTo("new-encoded");
+        assertThat(user.getCredentialVersion()).isEqualTo(1);
+        verify(passwordResetTokenRepository).deleteAllByUserId(userId);
+    }
+
+    @Test
+    @DisplayName("현재 비밀번호가 틀리면 비밀번호를 변경하지 않는다")
+    void changePassword_invalidCurrentPassword_rejected() {
+        Long userId = 1L;
+        User user = User.builder()
+                .email("user@test.com")
+                .password("old-encoded")
+                .status(UserStatus.ACTIVE)
+                .build();
+        given(userRepository.findByIdAndStatus(userId, UserStatus.ACTIVE)).willReturn(Optional.of(user));
+        given(passwordEncoder.matches("Wrong-password-123!", "old-encoded")).willReturn(false);
+
+        assertThatThrownBy(() -> userService.changePassword(
+                userId,
+                new ChangePasswordRequest("Wrong-password-123!", "New-password-456!")
+        )).isInstanceOf(InvalidPasswordException.class);
+
+        assertThat(user.getPassword()).isEqualTo("old-encoded");
+        verify(passwordResetTokenRepository, never()).deleteAllByUserId(any());
+    }
+
+    @Test
+    @DisplayName("현재 비밀번호를 새 비밀번호로 다시 사용할 수 없다")
+    void changePassword_samePassword_rejected() {
+        Long userId = 1L;
+        User user = User.builder()
+                .email("user@test.com")
+                .password("encoded")
+                .status(UserStatus.ACTIVE)
+                .build();
+        given(userRepository.findByIdAndStatus(userId, UserStatus.ACTIVE)).willReturn(Optional.of(user));
+        given(passwordEncoder.matches("Same-password-123!", "encoded")).willReturn(true);
+
+        assertThatThrownBy(() -> userService.changePassword(
+                userId,
+                new ChangePasswordRequest("Same-password-123!", "Same-password-123!")
+        )).isInstanceOf(SamePasswordException.class);
+    }
+
+    @Test
+    @DisplayName("소셜 전용 계정은 로컬 비밀번호 변경을 사용할 수 없다")
+    void changePassword_oauthUser_rejected() {
+        Long userId = 1L;
+        User user = User.builder()
+                .email("social@test.com")
+                .password("oauth-random-encoded")
+                .status(UserStatus.ACTIVE)
+                .build();
+        given(userRepository.findByIdAndStatus(userId, UserStatus.ACTIVE)).willReturn(Optional.of(user));
+        given(userOAuthAccountRepository.existsByUserId(userId)).willReturn(true);
+
+        assertThatThrownBy(() -> userService.changePassword(
+                userId,
+                new ChangePasswordRequest("Unknown-password-123!", "New-password-456!")
+        )).isInstanceOf(PasswordChangeNotAvailableException.class);
+
+        verify(passwordEncoder, never()).matches(any(), any());
     }
 }

@@ -162,7 +162,7 @@ class AuthServiceTest {
         given(userRepository.findByEmail(request.email())).willReturn(Optional.of(activeUser));
         given(passwordEncoder.matches(request.password(), activeUser.getPassword())).willReturn(true);
         given(userProfileRepository.findByUserId(1L)).willReturn(Optional.of(profile));
-        given(jwtTokenProvider.createAccessToken(any(), any())).willReturn("mock.jwt.token");
+        given(jwtTokenProvider.createAccessToken(any(), any(), any(Integer.class))).willReturn("mock.jwt.token");
         given(jwtProperties.accessExpirationSeconds()).willReturn(3600L);
 
         // when
@@ -196,7 +196,7 @@ class AuthServiceTest {
         given(passwordEncoder.upgradeEncoding("legacy_encoded_password")).willReturn(true);
         given(passwordEncoder.encode(request.password())).willReturn("current_encoded_password");
         given(userProfileRepository.findByUserId(1L)).willReturn(Optional.of(profile));
-        given(jwtTokenProvider.createAccessToken(any(), any())).willReturn("mock.jwt.token");
+        given(jwtTokenProvider.createAccessToken(any(), any(), any(Integer.class))).willReturn("mock.jwt.token");
         given(jwtProperties.accessExpirationSeconds()).willReturn(3600L);
 
         authService.login(request);
@@ -223,7 +223,7 @@ class AuthServiceTest {
         given(userRepository.findByEmail("user@test.com")).willReturn(Optional.of(activeUser));
         given(passwordEncoder.matches(request.password(), activeUser.getPassword())).willReturn(true);
         given(userProfileRepository.findByUserId(1L)).willReturn(Optional.of(profile));
-        given(jwtTokenProvider.createAccessToken(any(), any())).willReturn("mock.jwt.token");
+        given(jwtTokenProvider.createAccessToken(any(), any(), any(Integer.class))).willReturn("mock.jwt.token");
         given(jwtProperties.accessExpirationSeconds()).willReturn(3600L);
 
         authService.login(request);

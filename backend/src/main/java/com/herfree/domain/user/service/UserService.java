@@ -5,6 +5,7 @@ import com.herfree.domain.comment.entity.Comment;
 import com.herfree.domain.comment.repository.CommentRepository;
 import com.herfree.domain.auth.repository.UserOAuthAccountRepository;
 import com.herfree.domain.auth.repository.PasswordResetTokenRepository;
+import com.herfree.domain.auth.exception.InvalidPasswordException;
 import com.herfree.domain.board.repository.BoardRepository;
 import com.herfree.domain.journal.repository.JournalRecordRepository;
 import com.herfree.domain.post.dto.response.PostResponse;
@@ -15,6 +16,8 @@ import com.herfree.domain.post.repository.PostBookmarkRepository;
 import com.herfree.domain.post.service.PostImageCleanupService;
 import com.herfree.domain.reaction.repository.ReactionRepository;
 import com.herfree.domain.user.dto.request.UpdateProfileRequest;
+import com.herfree.domain.user.dto.request.ChangePasswordRequest;
+import com.herfree.domain.user.dto.response.AccountSecurityResponse;
 import com.herfree.domain.user.dto.response.UserActivityResponse;
 import com.herfree.domain.user.dto.response.UserResponse;
 import com.herfree.domain.user.entity.NicknameChangeHistory;
@@ -27,6 +30,8 @@ import com.herfree.domain.user.exception.NicknameChangeTooSoonException;
 import com.herfree.domain.user.exception.ReservedNicknameException;
 import com.herfree.domain.user.exception.SameNicknameException;
 import com.herfree.domain.user.exception.UserNotFoundException;
+import com.herfree.domain.user.exception.PasswordChangeNotAvailableException;
+import com.herfree.domain.user.exception.SamePasswordException;
 import com.herfree.domain.user.repository.NicknameChangeHistoryRepository;
 import com.herfree.domain.user.repository.UserProfileRepository;
 import com.herfree.domain.user.repository.UserRepository;
@@ -40,6 +45,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -66,6 +72,7 @@ public class UserService {
     private final UserOAuthAccountRepository userOAuthAccountRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final PostImageCleanupService postImageCleanupService;
+    private final PasswordEncoder passwordEncoder;
 
     // 내 정보 조회 — DELETED 상태 계정은 조회 불가
     // 탈퇴한 회원의 JWT가 만료 전에 재사용될 경우를 방어하기 위해
@@ -120,6 +127,33 @@ public class UserService {
         profile.updateBio(request.bio());
 
         return UserResponse.of(user, profile);
+    }
+
+    @Transactional(readOnly = true)
+    public AccountSecurityResponse getAccountSecurity(Long userId) {
+        userRepository.findByIdAndStatus(userId, UserStatus.ACTIVE)
+                .orElseThrow(UserNotFoundException::new);
+        return new AccountSecurityResponse(!userOAuthAccountRepository.existsByUserId(userId));
+    }
+
+    @Transactional
+    public void changePassword(Long userId, ChangePasswordRequest request) {
+        User user = userRepository.findByIdAndStatus(userId, UserStatus.ACTIVE)
+                .orElseThrow(UserNotFoundException::new);
+
+        if (userOAuthAccountRepository.existsByUserId(userId)) {
+            throw new PasswordChangeNotAvailableException();
+        }
+        if (!passwordEncoder.matches(request.currentPassword(), user.getPassword())) {
+            throw new InvalidPasswordException();
+        }
+        if (passwordEncoder.matches(request.newPassword(), user.getPassword())) {
+            throw new SamePasswordException();
+        }
+
+        user.changePassword(passwordEncoder.encode(request.newPassword()));
+        // 발급만 받고 사용하지 않은 재설정 링크도 비밀번호 변경과 동시에 폐기한다.
+        passwordResetTokenRepository.deleteAllByUserId(userId);
     }
 
     private void assertNicknameChangeAllowed(Long userId) {

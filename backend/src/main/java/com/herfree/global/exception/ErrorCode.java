@@ -35,6 +35,11 @@ public enum ErrorCode {
     // 비밀번호 재설정 토큰 만료·사용 완료·위조
     INVALID_PASSWORD_RESET_TOKEN(HttpStatus.BAD_REQUEST, "유효하지 않거나 만료된 재설정 링크입니다."),
     PASSWORD_RESET_DELIVERY_FAILED(HttpStatus.SERVICE_UNAVAILABLE, "비밀번호 재설정 메일을 보낼 수 없습니다. 잠시 후 다시 시도해 주세요."),
+    SAME_PASSWORD(HttpStatus.BAD_REQUEST, "현재 비밀번호와 다른 비밀번호를 입력해 주세요."),
+    PASSWORD_CHANGE_NOT_AVAILABLE(
+            HttpStatus.BAD_REQUEST,
+            "소셜 로그인 계정은 연결된 소셜 서비스에서 비밀번호를 관리해 주세요."
+    ),
     // 정지된 계정은 401이 아닌 403으로 처리한다.
     // 자격증명 자체는 유효하지만 서비스 접근이 금지된 상태이기 때문이다.
     // 클라이언트는 이 코드를 받으면 "계정이 정지됐습니다" 안내를 표시한다.
