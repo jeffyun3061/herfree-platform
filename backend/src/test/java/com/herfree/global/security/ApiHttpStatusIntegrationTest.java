@@ -230,25 +230,37 @@ class ApiHttpStatusIntegrationTest {
     }
 
     @Test
-    @DisplayName("신규 비밀번호가 15자보다 짧으면 400을 반환한다")
+    @DisplayName("신규 비밀번호가 10자보다 짧으면 400을 반환한다")
     void signup_shortPassword_returns400() throws Exception {
         mockMvc.perform(post("/api/auth/signup")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"email":"short-password@example.com","password":"short-password","nickname":"shortpassword","agreeTerms":true,"agreePrivacy":true,"agreeSensitive":true,"agreeAge":true,"agreeMarketing":false}
+                                {"email":"short-password@example.com","password":"Short1!","nickname":"shortpassword","agreeTerms":true,"agreePrivacy":true,"agreeSensitive":true,"agreeAge":true,"agreeMarketing":false}
                                 """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.success").value(false));
     }
 
     @Test
-    @DisplayName("신규 비밀번호가 64자를 초과하면 400을 반환한다")
+    @DisplayName("신규 비밀번호가 24자를 초과하면 400을 반환한다")
     void signup_tooLongPassword_returns400() throws Exception {
         mockMvc.perform(post("/api/auth/signup")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"email":"long-password@example.com","password":"%s","nickname":"longpassword","agreeTerms":true,"agreePrivacy":true,"agreeSensitive":true,"agreeAge":true,"agreeMarketing":false}
-                                """.formatted("p".repeat(65))))
+                                """.formatted("p".repeat(25))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false));
+    }
+
+    @Test
+    @DisplayName("신규 비밀번호에 특수문자가 없으면 400을 반환한다")
+    void signup_passwordWithoutSpecialChar_returns400() throws Exception {
+        mockMvc.perform(post("/api/auth/signup")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"nospecial@example.com","password":"Password1234","nickname":"nospecial","agreeTerms":true,"agreePrivacy":true,"agreeSensitive":true,"agreeAge":true,"agreeMarketing":false}
+                                """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.success").value(false));
     }

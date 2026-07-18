@@ -26,6 +26,11 @@ public enum ErrorCode {
     NICKNAME_CHANGE_TOO_SOON(HttpStatus.TOO_MANY_REQUESTS, "닉네임은 30일에 한 번만 변경할 수 있습니다."),
     // 비밀번호 불일치는 403이 아닌 401 — "인증 자격증명 자체가 틀렸다"는 의미
     INVALID_PASSWORD(HttpStatus.UNAUTHORIZED, "비밀번호가 올바르지 않습니다."),
+    INVALID_CURRENT_PASSWORD(HttpStatus.BAD_REQUEST, "현재 비밀번호가 올바르지 않습니다."),
+    CURRENT_PASSWORD_LOCKED(
+            HttpStatus.TOO_MANY_REQUESTS,
+            "현재 비밀번호 확인 시도 횟수를 초과했습니다. 30분 후 다시 시도해 주세요."
+    ),
     // 로그인 실패(이메일 없음·비밀번호 불일치) — 존재 여부를 구분하지 않는 통합 메시지
     INVALID_LOGIN_CREDENTIALS(HttpStatus.UNAUTHORIZED, "이메일 또는 비밀번호가 올바르지 않습니다."),
     // 로그인 10회 연속 실패 후 30분 잠금

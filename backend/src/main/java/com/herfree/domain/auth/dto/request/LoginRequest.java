@@ -14,7 +14,7 @@ public record LoginRequest(
         String email,
 
         @NotBlank(message = "비밀번호를 입력해 주세요.")
-        @Size(max = CredentialPolicy.PASSWORD_MAX_LENGTH, message = "비밀번호는 64자를 초과할 수 없습니다.")
+        @Size(max = CredentialPolicy.PASSWORD_INPUT_MAX_LENGTH, message = "비밀번호는 64자를 초과할 수 없습니다.")
         String password
 ) {
 }

@@ -9,6 +9,8 @@ import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { Input } from '@/components/ui/Input';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import {
+  PASSWORD_HINT,
+  PASSWORD_INPUT_MAX_LENGTH,
   PASSWORD_MAX_LENGTH,
   validateNickname,
   validatePassword,
@@ -106,7 +108,6 @@ export default function AccountSettingsPage() {
       setNewPasswordConfirm('');
       router.replace('/login?reason=password_changed');
     } catch (error) {
-      setCurrentPassword('');
       setPasswordError(getErrorMessage(error));
     } finally {
       setIsUpdatingPassword(false);
@@ -169,7 +170,7 @@ export default function AccountSettingsPage() {
           ) : (
             <>
               <p className="mt-1 text-[11.5px] leading-[1.6] text-[#8A9287]">
-                현재 비밀번호를 확인한 뒤 15~64자의 새 비밀번호로 변경합니다.
+                현재 비밀번호를 확인한 뒤 {PASSWORD_HINT} 조건의 새 비밀번호로 변경합니다.
               </p>
               <form onSubmit={(event) => void handlePasswordSubmit(event)} className="mt-4 space-y-4">
                 <Input
@@ -180,7 +181,7 @@ export default function AccountSettingsPage() {
                   value={currentPassword}
                   required
                   onChange={(event) => setCurrentPassword(event.target.value)}
-                  maxLength={PASSWORD_MAX_LENGTH}
+                  maxLength={PASSWORD_INPUT_MAX_LENGTH}
                   error={passwordErrors.currentPassword}
                 />
                 <Input
@@ -192,7 +193,7 @@ export default function AccountSettingsPage() {
                   required
                   onChange={(event) => setNewPassword(event.target.value)}
                   maxLength={PASSWORD_MAX_LENGTH}
-                  hint={<span className="text-[11px] font-normal text-[#9A9F94]">15~64자</span>}
+                  hint={<span className="text-[11px] font-normal text-[#9A9F94]">{PASSWORD_HINT}</span>}
                   error={passwordErrors.newPassword}
                 />
                 <Input

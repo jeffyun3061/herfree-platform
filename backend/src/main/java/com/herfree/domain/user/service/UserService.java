@@ -5,7 +5,8 @@ import com.herfree.domain.comment.entity.Comment;
 import com.herfree.domain.comment.repository.CommentRepository;
 import com.herfree.domain.auth.repository.UserOAuthAccountRepository;
 import com.herfree.domain.auth.repository.PasswordResetTokenRepository;
-import com.herfree.domain.auth.exception.InvalidPasswordException;
+import com.herfree.domain.auth.service.CurrentPasswordLockoutService;
+import com.herfree.domain.user.exception.InvalidCurrentPasswordException;
 import com.herfree.domain.board.repository.BoardRepository;
 import com.herfree.domain.journal.repository.JournalRecordRepository;
 import com.herfree.domain.post.dto.response.PostResponse;
@@ -73,6 +74,7 @@ public class UserService {
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final PostImageCleanupService postImageCleanupService;
     private final PasswordEncoder passwordEncoder;
+    private final CurrentPasswordLockoutService currentPasswordLockoutService;
 
     // 내 정보 조회 — DELETED 상태 계정은 조회 불가
     // 탈퇴한 회원의 JWT가 만료 전에 재사용될 경우를 방어하기 위해
@@ -144,14 +146,17 @@ public class UserService {
         if (userOAuthAccountRepository.existsByUserId(userId)) {
             throw new PasswordChangeNotAvailableException();
         }
+        currentPasswordLockoutService.assertNotLocked(userId);
         if (!passwordEncoder.matches(request.currentPassword(), user.getPassword())) {
-            throw new InvalidPasswordException();
+            currentPasswordLockoutService.recordFailure(userId);
+            throw new InvalidCurrentPasswordException();
         }
         if (passwordEncoder.matches(request.newPassword(), user.getPassword())) {
             throw new SamePasswordException();
         }
 
         user.changePassword(passwordEncoder.encode(request.newPassword()));
+        currentPasswordLockoutService.clearFailures(userId);
         // 발급만 받고 사용하지 않은 재설정 링크도 비밀번호 변경과 동시에 폐기한다.
         passwordResetTokenRepository.deleteAllByUserId(userId);
     }

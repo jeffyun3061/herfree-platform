@@ -111,9 +111,6 @@ function handleUnauthorized(hadToken: boolean, tokenAtRequest: string | null): v
   const path = window.location.pathname;
   if (path.startsWith('/login') || path.startsWith('/signup')) return;
 
-  clearAuth();
-  publishAppNotice('session_expired');
-
   const publicPath =
     path === '/' ||
     path.startsWith('/community') ||
@@ -125,14 +122,22 @@ function handleUnauthorized(hadToken: boolean, tokenAtRequest: string | null): v
     path.startsWith('/privacy') ||
     path.startsWith('/consult');
 
+  clearAuth();
+
   if (publicPath) {
     return;
   }
+
+  publishAppNotice('session_expired');
 
   if (!path.startsWith('/login')) {
     const from = encodeURIComponent(path + window.location.search);
     window.location.href = `/login?reason=session_expired&from=${from}`;
   }
+}
+
+function shouldInvalidateSessionOn401(path: string): boolean {
+  return path !== '/api/users/me/password';
 }
 
 function isPublicAuthPath(path: string): boolean {
@@ -171,7 +176,7 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
     globalThis.clearTimeout(timeoutId);
   }
 
-  if (response.status === 401 && !isPublicAuthPath(path)) {
+  if (response.status === 401 && !isPublicAuthPath(path) && shouldInvalidateSessionOn401(path)) {
     handleUnauthorized(Boolean(tokenAtRequest), tokenAtRequest);
   }
 
@@ -230,7 +235,7 @@ export async function requestMultipart<T>(path: string, formData: FormData): Pro
     globalThis.clearTimeout(timeoutId);
   }
 
-  if (response.status === 401) {
+  if (response.status === 401 && shouldInvalidateSessionOn401(path)) {
     handleUnauthorized(Boolean(tokenAtRequest), tokenAtRequest);
   }
 

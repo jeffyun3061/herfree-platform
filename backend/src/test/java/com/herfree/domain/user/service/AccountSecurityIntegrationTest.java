@@ -56,8 +56,8 @@ class AccountSecurityIntegrationTest {
                         .content("""
                                 {"currentPassword":"Wrong-password-123!","newPassword":"%s"}
                                 """.formatted(newPassword)))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.message").value("비밀번호가 올바르지 않습니다."));
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("현재 비밀번호가 올바르지 않습니다."));
 
         mockMvc.perform(patch("/api/users/me/password")
                         .header("Authorization", "Bearer " + accessToken)

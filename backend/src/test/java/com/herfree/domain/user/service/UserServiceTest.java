@@ -7,6 +7,7 @@ import com.herfree.domain.comment.entity.CommentStatus;
 import com.herfree.domain.comment.repository.CommentRepository;
 import com.herfree.domain.auth.repository.UserOAuthAccountRepository;
 import com.herfree.domain.auth.repository.PasswordResetTokenRepository;
+import com.herfree.domain.auth.service.CurrentPasswordLockoutService;
 import com.herfree.domain.journal.repository.JournalRecordRepository;
 import com.herfree.domain.post.entity.Post;
 import com.herfree.domain.post.entity.PostStatus;
@@ -26,7 +27,7 @@ import com.herfree.domain.user.entity.UserStatus;
 import com.herfree.domain.user.exception.NicknameChangeTooSoonException;
 import com.herfree.domain.user.exception.SameNicknameException;
 import com.herfree.domain.user.exception.UserNotFoundException;
-import com.herfree.domain.auth.exception.InvalidPasswordException;
+import com.herfree.domain.user.exception.InvalidCurrentPasswordException;
 import com.herfree.domain.user.exception.PasswordChangeNotAvailableException;
 import com.herfree.domain.user.exception.SamePasswordException;
 import com.herfree.domain.user.repository.NicknameChangeHistoryRepository;
@@ -92,6 +93,9 @@ class UserServiceTest {
 
     @Mock
     private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private CurrentPasswordLockoutService currentPasswordLockoutService;
 
     @InjectMocks
     private UserService userService;
@@ -303,6 +307,7 @@ class UserServiceTest {
         assertThat(user.getPassword()).isEqualTo("new-encoded");
         assertThat(user.getCredentialVersion()).isEqualTo(1);
         verify(passwordResetTokenRepository).deleteAllByUserId(userId);
+        verify(currentPasswordLockoutService).clearFailures(userId);
     }
 
     @Test
@@ -320,7 +325,9 @@ class UserServiceTest {
         assertThatThrownBy(() -> userService.changePassword(
                 userId,
                 new ChangePasswordRequest("Wrong-password-123!", "New-password-456!")
-        )).isInstanceOf(InvalidPasswordException.class);
+        )).isInstanceOf(InvalidCurrentPasswordException.class);
+
+        verify(currentPasswordLockoutService).recordFailure(userId);
 
         assertThat(user.getPassword()).isEqualTo("old-encoded");
         verify(passwordResetTokenRepository, never()).deleteAllByUserId(any());
