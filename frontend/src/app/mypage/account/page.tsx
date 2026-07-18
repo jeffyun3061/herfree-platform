@@ -10,7 +10,6 @@ import { Input } from '@/components/ui/Input';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import {
   PASSWORD_HINT,
-  PASSWORD_INPUT_MAX_LENGTH,
   PASSWORD_MAX_LENGTH,
   validateNickname,
   validatePassword,
@@ -85,6 +84,10 @@ export default function AccountSettingsPage() {
     event.preventDefault();
     const errors: Record<string, string> = {};
     if (!currentPassword) errors.currentPassword = '현재 비밀번호를 입력해 주세요.';
+    else {
+      const currentPasswordError = validatePassword(currentPassword);
+      if (currentPasswordError) errors.currentPassword = currentPasswordError;
+    }
     const newPasswordError = validatePassword(newPassword);
     if (newPasswordError) errors.newPassword = newPasswordError;
     else if (currentPassword === newPassword) {
@@ -181,7 +184,7 @@ export default function AccountSettingsPage() {
                   value={currentPassword}
                   required
                   onChange={(event) => setCurrentPassword(event.target.value)}
-                  maxLength={PASSWORD_INPUT_MAX_LENGTH}
+                  maxLength={PASSWORD_MAX_LENGTH}
                   error={passwordErrors.currentPassword}
                 />
                 <Input

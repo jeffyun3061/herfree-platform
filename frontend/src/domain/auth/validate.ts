@@ -7,8 +7,6 @@ const PASSWORD_SPECIAL_CHAR_PATTERN = /[^A-Za-z0-9]/;
 export const EMAIL_MAX_LENGTH = 254;
 export const PASSWORD_MIN_LENGTH = 10;
 export const PASSWORD_MAX_LENGTH = 24;
-/** 로그인·현재 비밀번호 입력 (기존 긴 비밀번호 계정 호환) */
-export const PASSWORD_INPUT_MAX_LENGTH = 64;
 
 export const PASSWORD_HINT = '10~24자, 특수문자 1개 이상';
 
@@ -70,9 +68,7 @@ export function validateLogin(input: { email: string; password: string }): Field
   else if (input.email.length > EMAIL_MAX_LENGTH) {
     errors.email = `이메일은 ${EMAIL_MAX_LENGTH}자 이하로 입력해 주세요.`;
   }
-  if (!input.password) errors.password = '비밀번호를 입력해 주세요.';
-  else if (input.password.length > PASSWORD_INPUT_MAX_LENGTH) {
-    errors.password = `비밀번호는 ${PASSWORD_INPUT_MAX_LENGTH}자 이하로 입력해 주세요.`;
-  }
+  const passwordError = validatePassword(input.password);
+  if (passwordError) errors.password = passwordError;
   return errors;
 }

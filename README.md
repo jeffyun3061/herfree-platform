@@ -114,7 +114,7 @@ cp backend/src/main/resources/application-local.yml.example \
 | | |
 |---|---|
 | 이메일 | `admin@herfree.local` |
-| 비밀번호 | `HerfreeAdmin01` |
+| 비밀번호 | `HerfreeAdmin01!` |
 
 로그인 후 **정보 올리기** / **영상 등록** 탭에서 콘텐츠를 바로 등록할 수 있습니다.
 

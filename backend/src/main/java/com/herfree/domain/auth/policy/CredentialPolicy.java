@@ -8,10 +8,8 @@ public final class CredentialPolicy {
 
     public static final int EMAIL_MAX_LENGTH = 254;
     public static final int PASSWORD_MIN_LENGTH = 10;
-    /** 신규·변경 비밀번호 상한 */
+    /** 신규·변경·로그인·현재 비밀번호 입력 모두 동일 상한 */
     public static final int PASSWORD_MAX_LENGTH = 24;
-    /** 로그인·현재 비밀번호 입력 상한 (기존 64자 계정 호환) */
-    public static final int PASSWORD_INPUT_MAX_LENGTH = 64;
 
     /** 영문·숫자 외 문자 1개 이상 (특수문자) */
     public static final String PASSWORD_SPECIAL_CHAR_PATTERN = ".*[^A-Za-z0-9].*";

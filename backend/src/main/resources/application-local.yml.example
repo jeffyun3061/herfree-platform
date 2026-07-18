@@ -28,12 +28,13 @@ app:
   bootstrap:
     enabled: true
     email: admin@herfree.local
-    password: HerfreeAdmin01
+    password: HerfreeAdmin01!
     nickname: HerfreeOps
     sync-existing: true
   demo-seed:
     enabled: true
     password: Demo1234!
+    sync-existing: true
     supplement-enabled: true
   s3:
     bucket: ${S3_BUCKET:${AWS_S3_BUCKET:herfree-dev-uploads}}

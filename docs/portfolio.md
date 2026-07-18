@@ -148,7 +148,7 @@ Forwarding   https://xxxx-xxxx.ngrok-free.dev -> http://localhost:3000
 | | |
 |---|---|
 | 관리자 이메일 | `admin@herfree.local` |
-| 비밀번호 | `HerfreeAdmin01` |
+| 비밀번호 | `HerfreeAdmin01!` |
 
 ---
 
