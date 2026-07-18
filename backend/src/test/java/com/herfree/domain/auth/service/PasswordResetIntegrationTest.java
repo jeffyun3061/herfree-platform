@@ -100,12 +100,12 @@ class PasswordResetIntegrationTest {
     }
 
     @Test
-    @DisplayName("15자보다 짧은 새 비밀번호는 재설정 전에 거부한다")
+    @DisplayName("10자보다 짧은 새 비밀번호는 재설정 전에 거부한다")
     void passwordReset_shortPassword_returns400() throws Exception {
         mockMvc.perform(post("/api/auth/password-reset/confirm")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"token":"not-a-valid-token","newPassword":"short-password"}
+                                {"token":"not-a-valid-token","newPassword":"Short1!"}
                                 """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.success").value(false));

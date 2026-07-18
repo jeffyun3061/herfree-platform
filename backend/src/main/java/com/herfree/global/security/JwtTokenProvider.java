@@ -15,6 +15,7 @@ public class JwtTokenProvider {
 
     private static final String ACCESS_TOKEN_PURPOSE = "access";
     private static final String PROFILE_COMPLETION_PURPOSE = "oauth_profile";
+    private static final String CREDENTIAL_VERSION_CLAIM = "credentialVersion";
     private static final long PROFILE_COMPLETION_EXPIRATION_SECONDS = 900L;
 
     private final JwtProperties jwtProperties;
@@ -25,10 +26,9 @@ public class JwtTokenProvider {
         this.secretKey = Keys.hmacShaKeyFor(jwtProperties.secret().getBytes(StandardCharsets.UTF_8));
     }
 
-    // role을 claim에 포함하는 이유:
-    // 매 요청마다 DB에서 권한을 조회하지 않아도 필터 단계에서 올바른 권한을 SecurityContext에 설정할 수 있다.
-    // 권한이 변경되면 토큰을 재발급받아야 하므로, 권한 변경 후 재로그인을 유도해야 한다.
-    public String createAccessToken(String subject, String role) {
+    // role claim은 토큰 문맥과 하위 호환을 위해 유지한다.
+    // 실제 인가 권한은 JwtAuthenticationFilter가 매 요청 DB에서 읽어 역할 변경을 즉시 반영한다.
+    public String createAccessToken(String subject, String role, int credentialVersion) {
         Instant now = Instant.now();
         Instant expiry = now.plusSeconds(jwtProperties.accessExpirationSeconds());
 
@@ -36,6 +36,7 @@ public class JwtTokenProvider {
                 .subject(subject)
                 .claim("role", role)
                 .claim("purpose", ACCESS_TOKEN_PURPOSE)
+                .claim(CREDENTIAL_VERSION_CLAIM, credentialVersion)
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expiry))
                 .signWith(secretKey)
@@ -89,6 +90,12 @@ public class JwtTokenProvider {
     // claim이 없으면 null을 반환하므로 호출부에서 null 처리가 필요하다.
     public String getRole(String token) {
         return parseClaims(token).get("role", String.class);
+    }
+
+    public int getCredentialVersion(String token) {
+        Integer version = parseClaims(token).get(CREDENTIAL_VERSION_CLAIM, Integer.class);
+        // 배포 전 발급된 토큰은 기존 계정의 기본 버전 0으로 취급한다.
+        return version == null ? 0 : version;
     }
 
     private Claims parseClaims(String token) {

@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/Button';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import {
   EMAIL_MAX_LENGTH,
+  PASSWORD_HINT,
   PASSWORD_MAX_LENGTH,
   validateSignup,
 } from '@/domain/auth/validate';
@@ -98,11 +99,11 @@ function SignupForm() {
           type="password"
           required
           autoComplete="new-password"
-          placeholder="15~64자 입력"
+          placeholder={`${PASSWORD_HINT} 입력`}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           maxLength={PASSWORD_MAX_LENGTH}
-          hint={<span className="text-[11px] font-normal text-[#9A9F94]">15~64자</span>}
+          hint={<span className="text-[11px] font-normal text-[#9A9F94]">{PASSWORD_HINT}</span>}
           error={fieldErrors.password}
         />
         <Input

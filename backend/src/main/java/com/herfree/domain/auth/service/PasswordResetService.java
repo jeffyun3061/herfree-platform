@@ -5,6 +5,7 @@ import com.herfree.domain.auth.dto.request.PasswordResetRequest;
 import com.herfree.domain.auth.entity.PasswordResetToken;
 import com.herfree.domain.auth.exception.InvalidPasswordResetTokenException;
 import com.herfree.domain.auth.repository.PasswordResetTokenRepository;
+import com.herfree.domain.auth.repository.UserOAuthAccountRepository;
 import com.herfree.domain.analytics.service.AnalyticsService;
 import com.herfree.domain.user.entity.User;
 import com.herfree.domain.user.entity.UserStatus;
@@ -40,11 +41,13 @@ public class PasswordResetService {
     private final PasswordResetProperties passwordResetProperties;
     private final PasswordEncoder passwordEncoder;
     private final AnalyticsService analyticsService;
+    private final UserOAuthAccountRepository userOAuthAccountRepository;
 
     @Transactional
     public void requestReset(PasswordResetRequest request) {
         userRepository.findByEmail(EmailNormalizer.normalize(request.email()))
                 .filter(user -> user.getStatus() == UserStatus.ACTIVE)
+                .filter(user -> !userOAuthAccountRepository.existsByUserId(user.getId()))
                 .ifPresent(this::issueResetToken);
     }
 

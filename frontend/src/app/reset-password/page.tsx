@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { PASSWORD_MAX_LENGTH, validatePassword } from '@/domain/auth/validate';
+import { PASSWORD_HINT, PASSWORD_MAX_LENGTH, validatePassword } from '@/domain/auth/validate';
 import { confirmPasswordReset } from '@/lib/api/auth';
 import { getErrorMessage } from '@/lib/api/client';
 
@@ -59,7 +59,7 @@ function ResetPasswordForm() {
     <AuthScreenShell
       backHref="/forgot-password"
       title="새 비밀번호 설정"
-      subtitle="15~64자로 입력하고, 이전과 다른 비밀번호를 사용해 주세요."
+      subtitle={`${PASSWORD_HINT}로 입력하고, 이전과 다른 비밀번호를 사용해 주세요.`}
       brandSize="md"
     >
       {!token && (
@@ -78,7 +78,7 @@ function ResetPasswordForm() {
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
             maxLength={PASSWORD_MAX_LENGTH}
-            hint={<span className="text-[11px] font-normal text-[#9A9F94]">15~64자</span>}
+            hint={<span className="text-[11px] font-normal text-[#9A9F94]">{PASSWORD_HINT}</span>}
             error={fieldErrors.newPassword}
           />
           <div className="mt-4">

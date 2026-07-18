@@ -131,7 +131,7 @@ class OAuthAuthServiceTest {
         given(userOAuthAccountRepository.findByProviderAndProviderUserId(OAuthProvider.KAKAO, "12345"))
                 .willReturn(Optional.of(linked));
         given(userProfileRepository.findByUserId(10L)).willReturn(Optional.of(profile));
-        given(jwtTokenProvider.createAccessToken("10", "USER")).willReturn("jwt-token");
+        given(jwtTokenProvider.createAccessToken("10", "USER", 0)).willReturn("jwt-token");
 
         var response = oauthAuthService.loginWithCode(
                 OAuthProvider.KAKAO,
@@ -236,7 +236,7 @@ class OAuthAuthServiceTest {
         given(userRepository.findByIdAndStatus(20L, UserStatus.ACTIVE)).willReturn(Optional.of(user));
         given(userProfileRepository.findByUserId(20L)).willReturn(Optional.of(profile));
         given(userProfileRepository.existsByNickname("새닉네임")).willReturn(false);
-        given(jwtTokenProvider.createAccessToken("20", "USER")).willReturn("jwt-after-profile");
+        given(jwtTokenProvider.createAccessToken("20", "USER", 0)).willReturn("jwt-after-profile");
 
         var response = oauthAuthService.completeProfile(
                 new OAuthCompleteProfileRequest(

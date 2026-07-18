@@ -202,7 +202,12 @@ public class DemoDataSeedRunner implements ApplicationRunner {
             return;
         }
         if (userRepository.findByEmail(DEMO_MARKER_EMAIL).isPresent()) {
-            log.info("Demo seed skipped — marker user already exists.");
+            if (properties.syncExisting()) {
+                syncDemoUserPasswords();
+                log.info("Demo seed passwords synced to configured policy-compliant value.");
+            } else {
+                log.info("Demo seed skipped — marker user already exists.");
+            }
             return;
         }
 
@@ -215,6 +220,17 @@ public class DemoDataSeedRunner implements ApplicationRunner {
         seedJournalRecords(demoUsers);
 
         log.info("Demo seed completed — {} local users created.", demoUsers.size());
+    }
+
+    private void syncDemoUserPasswords() {
+        String encoded = passwordEncoder.encode(properties.resolvedPassword());
+        for (int i = 1; i <= DEMO_NICKNAMES.length; i++) {
+            String email = "demo" + i + "@herfree.local";
+            userRepository.findByEmail(email).ifPresent(user -> {
+                user.changePassword(encoded);
+                userRepository.save(user);
+            });
+        }
     }
 
     private List<User> seedDemoUsers() {

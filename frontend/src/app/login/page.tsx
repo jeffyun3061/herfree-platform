@@ -46,6 +46,8 @@ function LoginForm() {
       ? '로그인이 만료됐어요. 다시 로그인해 주세요.'
       : searchParams.get('reason') === 'password_reset'
         ? '비밀번호가 변경되었습니다. 새 비밀번호로 로그인해 주세요.'
+        : searchParams.get('reason') === 'password_changed'
+          ? '비밀번호가 안전하게 변경되었습니다. 새 비밀번호로 다시 로그인해 주세요.'
         : null;
 
   useEffect(() => {

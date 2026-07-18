@@ -1,11 +1,14 @@
-// 백엔드 SignupRequest Bean Validation과 동일한 기준으로 클라이언트에서 선검증한다.
+// 백엔드 CredentialPolicy와 동일한 기준으로 클라이언트에서 선검증한다.
 // 서버 검증이 최종 기준이지만, 즉각적인 피드백으로 불필요한 요청을 줄인다.
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PASSWORD_SPECIAL_CHAR_PATTERN = /[^A-Za-z0-9]/;
 
 export const EMAIL_MAX_LENGTH = 254;
-export const PASSWORD_MIN_LENGTH = 15;
-export const PASSWORD_MAX_LENGTH = 64;
+export const PASSWORD_MIN_LENGTH = 10;
+export const PASSWORD_MAX_LENGTH = 24;
+
+export const PASSWORD_HINT = '10~24자, 특수문자 1개 이상';
 
 export type FieldErrors = Record<string, string>;
 
@@ -19,10 +22,13 @@ export function validateEmail(email: string): string | null {
 export function validatePassword(password: string): string | null {
   if (!password) return '비밀번호를 입력해 주세요.';
   if (password.length < PASSWORD_MIN_LENGTH) {
-    return `비밀번호는 최소 ${PASSWORD_MIN_LENGTH}자 이상이어야 합니다.`;
+    return `비밀번호는 ${PASSWORD_MIN_LENGTH}~${PASSWORD_MAX_LENGTH}자로 입력해 주세요.`;
   }
   if (password.length > PASSWORD_MAX_LENGTH) {
     return `비밀번호는 ${PASSWORD_MAX_LENGTH}자 이하로 입력해 주세요.`;
+  }
+  if (!PASSWORD_SPECIAL_CHAR_PATTERN.test(password)) {
+    return '비밀번호에 특수문자(!, @, # 등)를 하나 이상 포함해 주세요.';
   }
   return null;
 }
@@ -62,9 +68,7 @@ export function validateLogin(input: { email: string; password: string }): Field
   else if (input.email.length > EMAIL_MAX_LENGTH) {
     errors.email = `이메일은 ${EMAIL_MAX_LENGTH}자 이하로 입력해 주세요.`;
   }
-  if (!input.password) errors.password = '비밀번호를 입력해 주세요.';
-  else if (input.password.length > PASSWORD_MAX_LENGTH) {
-    errors.password = `비밀번호는 ${PASSWORD_MAX_LENGTH}자 이하로 입력해 주세요.`;
-  }
+  const passwordError = validatePassword(input.password);
+  if (passwordError) errors.password = passwordError;
   return errors;
 }

@@ -128,6 +128,12 @@ DB·API는 UTC, 화면 표시는 브라우저 로컬(KST). 상세: [decision-log
 | 401 | code 무효·provider 오류 | 소셜 로그인에 실패했습니다. |
 | 503 | provider 키 미설정 | 소셜 로그인 설정이 완료되지 않았습니다. |
 
+### Auth — 비밀번호 정책 (가입·로그인·변경·재설정 공통)
+
+- **10~24자**, **특수문자 1개 이상** (`!`, `@`, `#` 등 영문·숫자 외 문자)
+- 예외 없음 — 로그인·현재 비밀번호 입력도 동일 기준
+- 로컬 시드 계정(`admin@herfree.local`, `demo*.local`)은 기동 시 설정값으로 DB 비밀번호 동기화
+
 ### Auth — 로그인 실패·잠금
 
 | HTTP | 조건 | message (예) |
@@ -150,10 +156,21 @@ Refresh Token·재발급·토큰 블랙리스트는 운영 고도화 항목으�
 |--------|-----|------|------|
 | GET | `/api/users/me` | 내 정보 조회 | 회원 |
 | PATCH | `/api/users/me/profile` | 프로필 수정 | 회원 |
+| GET | `/api/users/me/account` | 비밀번호 변경 가능 여부 조회 | 회원 |
+| PATCH | `/api/users/me/password` | 현재 비밀번호 확인 후 비밀번호 변경 | 회원 |
 | DELETE | `/api/users/me` | 회원 탈퇴 | 회원 |
 | GET | `/api/users/me/activity` | 내 활동·받은 공감·스크랩 수 조회 | 회원 |
 | GET | `/api/users/me/posts` | 내가 작성한 글 조회 | 회원 |
 | GET | `/api/users/me/posts/received-reactions` | 공감받은 내 글 조회 | 회원 |
+
+**`PATCH /api/users/me/password` 보안 규칙**
+
+- 일반 가입 계정만 변경할 수 있으며, 소셜 로그인 계정은 해당 제공자에서 비밀번호를 관리한다.
+- 현재 비밀번호를 확인하고 가입과 동일한 비밀번호 정책(10~24자, 특수문자 1개 이상)을 적용한다.
+- 현재 비밀번호 10회 연속 실패 시 30분간 변경 시도를 잠근다 (`429`, 로그인 잠금과 동일한 임계값).
+- 잘못된 현재 비밀번호는 `400` (`INVALID_CURRENT_PASSWORD`) — 세션(JWT)은 유지한다.
+- 변경 즉시 `credential_version`을 증가시켜 기존 액세스 토큰을 모두 무효화하고 다시 로그인하게 한다.
+- 발급된 비밀번호 재설정 토큰도 함께 폐기한다.
 
 **`DELETE /api/users/me` 처리 내용**
 

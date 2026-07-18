@@ -164,7 +164,8 @@ public class OAuthAuthService {
 
         String accessToken = jwtTokenProvider.createAccessToken(
                 String.valueOf(user.getId()),
-                user.getRole().name()
+                user.getRole().name(),
+                user.getCredentialVersion()
         );
 
         recordAnalyticsEvent(AnalyticsService.LOGIN_SUCCEEDED, user.getId());

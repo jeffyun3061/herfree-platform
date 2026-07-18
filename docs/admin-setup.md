@@ -7,7 +7,7 @@
 | 항목 | 값 |
 |------|-----|
 | 이메일 | `admin@herfree.local` |
-| 비밀번호 | `HerfreeAdmin01` |
+| 비밀번호 | `HerfreeAdmin01!` (10~24자, 특수문자 포함) |
 | role | `SUPER_ADMIN` (서버 기동 시 자동) |
 
 1. Docker MySQL + `.\gradlew bootRun`
@@ -15,6 +15,8 @@
 3. `/admin` 접속
 
 `sync-existing: true` 이므로 계정이 이미 있어도 **역할·비밀번호가 동기화**됩니다.
+
+`app.demo-seed.sync-existing: true` 이면 `demo1@herfree.local` ~ `demo12@herfree.local` 비밀번호도 기동 시 `Demo1234!`로 재동기화됩니다.
 
 ---
 

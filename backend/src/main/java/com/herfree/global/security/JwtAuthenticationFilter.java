@@ -74,6 +74,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
+        if (jwtTokenProvider.getCredentialVersion(token) != user.getCredentialVersion()) {
+            writeError(response, HttpServletResponse.SC_UNAUTHORIZED, ErrorCode.INVALID_TOKEN);
+            return;
+        }
+
         if (user.getStatus() == UserStatus.SUSPENDED) {
             writeError(response, HttpServletResponse.SC_FORBIDDEN, ErrorCode.SUSPENDED_ACCOUNT);
             return;

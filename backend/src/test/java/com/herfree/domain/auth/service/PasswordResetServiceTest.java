@@ -12,6 +12,7 @@ import com.herfree.domain.auth.dto.request.PasswordResetRequest;
 import com.herfree.domain.auth.entity.PasswordResetToken;
 import com.herfree.domain.auth.exception.InvalidPasswordResetTokenException;
 import com.herfree.domain.auth.repository.PasswordResetTokenRepository;
+import com.herfree.domain.auth.repository.UserOAuthAccountRepository;
 import com.herfree.domain.analytics.service.AnalyticsService;
 import com.herfree.domain.user.entity.User;
 import com.herfree.domain.user.entity.UserStatus;
@@ -45,6 +46,8 @@ class PasswordResetServiceTest {
     private PasswordEncoder passwordEncoder;
     @Mock
     private AnalyticsService analyticsService;
+    @Mock
+    private UserOAuthAccountRepository userOAuthAccountRepository;
 
     @InjectMocks
     private PasswordResetService passwordResetService;
@@ -78,6 +81,25 @@ class PasswordResetServiceTest {
         passwordResetService.requestReset(new PasswordResetRequest("  USER@Test.COM "));
 
         verify(userRepository).findByEmail("user@test.com");
+    }
+
+    @Test
+    @DisplayName("소셜 전용 계정에는 비밀번호 재설정 메일을 보내지 않는다")
+    void requestReset_oauthUser_doesNotIssueToken() {
+        User user = User.builder()
+                .email("social@test.com")
+                .password("encoded")
+                .status(UserStatus.ACTIVE)
+                .build();
+        ReflectionTestUtils.setField(user, "id", 2L);
+        given(userRepository.findByEmail("social@test.com")).willReturn(Optional.of(user));
+        given(userOAuthAccountRepository.existsByUserId(2L)).willReturn(true);
+
+        passwordResetService.requestReset(new PasswordResetRequest("social@test.com"));
+
+        verify(passwordResetTokenRepository, org.mockito.Mockito.never()).save(any());
+        verify(passwordResetMailService, org.mockito.Mockito.never())
+                .sendPasswordResetEmail(any(), any());
     }
 
     @Test

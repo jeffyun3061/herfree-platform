@@ -47,7 +47,7 @@
 
 ## 3. 관리자 — 5분
 
-`admin@herfree.local` / `HerfreeAdmin01` (로컬 기본)
+`admin@herfree.local` / `HerfreeAdmin01!` (로컬 기본)
 
 | # | 해보기 | 결과 |
 |---|--------|------|
