@@ -15,14 +15,27 @@ import {
   EMAIL_MAX_LENGTH,
   PASSWORD_HINT,
   PASSWORD_MAX_LENGTH,
+  validateEmail,
+  validatePassword,
   validateSignup,
 } from '@/domain/auth/validate';
-import { getErrorMessage } from '@/lib/api/client';
+import { getErrorMessage, isApiError } from '@/lib/api/client';
 
 function resolveReturnUrl(from: string | null): string {
   if (!from || !from.startsWith('/') || from.startsWith('//')) return '/journal';
   if (from.startsWith('/login') || from.startsWith('/signup')) return '/journal';
   return from;
+}
+
+function withFieldError(
+  errors: Record<string, string>,
+  field: string,
+  message: string | null,
+): Record<string, string> {
+  const next = { ...errors };
+  if (message) next[field] = message;
+  else delete next[field];
+  return next;
 }
 
 function SignupForm() {
@@ -48,8 +61,52 @@ function SignupForm() {
 
   const allRequiredAgreed = isRequiredSignupAgreed(agreements);
 
+  const handleEmailChange = (value: string) => {
+    setEmail(value);
+    setError(null);
+    setFieldErrors((current) =>
+      current.email ? withFieldError(current, 'email', validateEmail(value)) : current,
+    );
+  };
+
+  const handlePasswordChange = (value: string) => {
+    setPassword(value);
+    setError(null);
+    setFieldErrors((current) => {
+      let next = current.password
+        ? withFieldError(current, 'password', validatePassword(value))
+        : current;
+      if (current.passwordConfirm) {
+        next = withFieldError(
+          next,
+          'passwordConfirm',
+          passwordConfirm && value !== passwordConfirm ? '비밀번호가 일치하지 않습니다.' : null,
+        );
+      }
+      return next;
+    });
+  };
+
+  const handlePasswordConfirmChange = (value: string) => {
+    setPasswordConfirm(value);
+    setError(null);
+    setFieldErrors((current) =>
+      withFieldError(
+        current,
+        'passwordConfirm',
+        value && password !== value ? '비밀번호가 일치하지 않습니다.' : null,
+      ),
+    );
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const errors = validateSignup({ email, password, passwordConfirm, nickname });
+    setFieldErrors(errors);
+    setError(null);
+    if (Object.keys(errors).length > 0) {
+      return;
+    }
     if (!allRequiredAgreed) {
       setError('필수 약관에 동의해 주세요.');
       return;
@@ -58,18 +115,21 @@ function SignupForm() {
       setError('닉네임 중복확인을 먼저 해 주세요.');
       return;
     }
-    const errors = validateSignup({ email, password, passwordConfirm, nickname });
-    if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors);
-      return;
-    }
-    setFieldErrors({});
-    setError(null);
     setIsSubmitting(true);
     try {
       await signup({ email, password, nickname, ...agreements });
       router.replace(resolveReturnUrl(searchParams.get('from')));
     } catch (err) {
+      if (isApiError(err) && err.status === 409) {
+        if (err.message.includes('이메일')) {
+          setFieldErrors((current) => withFieldError(
+            current,
+            'email',
+            '이미 가입된 이메일입니다. 로그인하거나 비밀번호 찾기를 이용해 주세요.',
+          ));
+          return;
+        }
+      }
       setError(getErrorMessage(err));
     } finally {
       setIsSubmitting(false);
@@ -90,7 +150,7 @@ function SignupForm() {
           autoComplete="email"
           placeholder="이메일을 입력해 주세요"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e) => handleEmailChange(e.target.value)}
           maxLength={EMAIL_MAX_LENGTH}
           error={fieldErrors.email}
         />
@@ -101,7 +161,7 @@ function SignupForm() {
           autoComplete="new-password"
           placeholder={`${PASSWORD_HINT} 입력`}
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={(e) => handlePasswordChange(e.target.value)}
           maxLength={PASSWORD_MAX_LENGTH}
           hint={<span className="text-[11px] font-normal text-[#9A9F94]">{PASSWORD_HINT}</span>}
           error={fieldErrors.password}
@@ -112,7 +172,7 @@ function SignupForm() {
           required
           autoComplete="new-password"
           value={passwordConfirm}
-          onChange={(e) => setPasswordConfirm(e.target.value)}
+          onChange={(e) => handlePasswordConfirmChange(e.target.value)}
           maxLength={PASSWORD_MAX_LENGTH}
           error={fieldErrors.passwordConfirm}
         />
