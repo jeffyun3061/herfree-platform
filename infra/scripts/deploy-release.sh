@@ -64,6 +64,10 @@ show_logs() {
 }
 
 echo "deploying ${DEPLOY_ENV} image"
+if [[ "${DEPLOY_ENV}" == "staging" ]]; then
+  systemctl stop nginx 2>/dev/null || true
+  systemctl disable nginx 2>/dev/null || true
+fi
 deploy_image "${NEW_IMAGE}"
 
 healthy=false
