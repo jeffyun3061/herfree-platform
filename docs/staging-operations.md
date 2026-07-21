@@ -1,6 +1,6 @@
 # Herfree staging 운영 가이드
 
-기준일: 2026-07-17
+기준일: 2026-07-21
 대상: AWS Seoul (`ap-northeast-2`), 계정 `439777528445`
 
 이 문서는 staging을 배포·중지·복구할 때 사용하는 운영 기준이다. 리소스 ID와 ARN은 식별자이며 비밀번호가 아니지만, 외부 문서에는 불필요하게 공개하지 않는다.
@@ -16,7 +16,7 @@
 | RDS SG | `sg-0b9fb633cccc74303` | API SG에서 오는 3306만 허용 |
 | S3 | `herfree-staging-uploads-439777528445-ap-northeast-2-an` | Public access block, API instance role만 객체 접근 |
 | ECR | `herfree-api` | push scan, 미태그 이미지 7일 후 삭제, 최신 50개 보관 |
-| Amplify | `herfree-staging` / `d2bcg3vnlv5hkh` | Next.js `WEB_COMPUTE`, Basic Auth 필수 |
+| Amplify | `herfree-staging` / `d2bcg3vnlv5hkh` | Next.js `WEB_COMPUTE`, Basic Auth 필수. **기본 URL:** `https://develop.d2bcg3vnlv5hkh.amplifyapp.com` |
 | API 로그 | `/herfree/staging/api` | CloudWatch 30일 보존 |
 | RDS 오류 로그 | `/aws/rds/instance/herfree-staging-mysql/error` | CloudWatch 30일 보존 |
 | EC2 role | `herfree-staging-ec2` | SSM, ECR pull, staging S3·secret·로그 최소 권한 |
@@ -128,20 +128,34 @@ aws rds create-db-snapshot `
 
 ## 8. 최초 staging 공개 전 남은 작업
 
-- [ ] Gabia DNS: `api-staging.herpfree.co.kr` A 레코드를 `3.37.78.234`로 설정
-- [x] Amplify `herfree-staging` 앱 생성, Next.js 빌드 설정, Basic Auth 적용
-- [ ] Amplify 앱에서 GitHub 저장소 `jeffyun3061/herfree-platform`과 `develop` 브랜치 연결
-- [ ] Amplify에 `staging.herpfree.co.kr` 사용자 지정 도메인을 추가하고 안내된 CNAME을 Gabia DNS에 설정
-- [ ] DNS 적용 후 EC2에서 Let's Encrypt 인증서 발급
-- [ ] `herpfree3@gmail.com`의 AWS SES 인증 메일 승인 (현재 `Pending`)
-- [ ] OAuth Dev 콘솔 3곳에 `https://staging.herpfree.co.kr/auth/callback/{provider}` 추가
-- [x] GitHub Actions가 백엔드 이미지 빌드·취약점 검사·ECR push·EC2 health 배포까지 통과
-- [x] GitHub staging Environment에 Amplify Basic Auth의 `E2E_HTTP_USERNAME`, `E2E_HTTP_PASSWORD` 등록
-- [x] EC2 IMDSv2 `required`, hop limit 2를 적용하고 컨테이너의 S3 instance role 접근 및 startup check 성공 확인
-- [ ] DNS·프론트 연결 후 GitHub Actions 전체 E2E 통과 및 `staging-passed-<SHA>` 생성
-- [ ] 자동 백업을 임시 RDS로 복원하는 연습
+### 프론트 URL 정책 (2026-07-21)
 
-### Amplify GitHub 최초 연결
+커스텀 도메인 `staging.herpfree.co.kr` 연결은 Amplify SSL·CloudFront CNAME 충돌로 **일시 보류**한다.
+staging 검증·E2E·OAuth는 **Amplify 기본 URL**을 canonical로 사용한다.
+
+| 구분 | URL | 상태 |
+| --- | --- | --- |
+| **프론트 (staging)** | `https://develop.d2bcg3vnlv5hkh.amplifyapp.com` | 사용 |
+| API (staging) | `https://api-staging.herpfree.co.kr` | Gabia A → `3.37.78.234` |
+| 프론트 커스텀 | `https://staging.herpfree.co.kr` | **보류** — DNS 리셋 후 재연결 (§9) |
+
+GitHub staging Environment·Secrets Manager `app-config`·OAuth Dev 콘솔·CORS는 위 **프론트 기본 URL** 기준으로 맞춘다.
+
+- [ ] Gabia DNS: `api-staging` A → `3.37.78.234` (유지)
+- [x] Amplify `herfree-staging` 앱 생성, Next.js 빌드 설정, Basic Auth 적용
+- [ ] Amplify GitHub `develop` 브랜치 연결 (§8.1)
+- [ ] **커스텀 도메인:** Amplify에서 제거·Gabia 정리 완료 (§9) — **재추가 전까지 보류**
+- [ ] Secrets / CORS / OAuth를 `develop.d2bcg3vnlv5hkh.amplifyapp.com` 기준으로 반영
+- [ ] DNS 적용 후 EC2에서 `api-staging.herpfree.co.kr` Let's Encrypt 인증서 발급
+- [ ] `herpfree3@gmail.com` AWS SES 인증 메일 승인
+- [ ] OAuth Dev 3곳: `https://develop.d2bcg3vnlv5hkh.amplifyapp.com/auth/callback/{provider}`
+- [x] GitHub Actions 백엔드 ECR push·EC2 health 배포
+- [x] GitHub staging Environment `E2E_HTTP_USERNAME` / `E2E_HTTP_PASSWORD`
+- [x] EC2 IMDSv2·S3 instance role startup check
+- [ ] Amplify 기본 URL + API HTTPS 연결 후 E2E 통과 및 `staging-passed-<SHA>`
+- [ ] RDS snapshot 복원 연습
+
+### 8.1 Amplify GitHub 최초 연결
 
 이 작업만 GitHub App 권한 승인이 필요하므로 AWS 콘솔에서 한 번 수행한다.
 
@@ -149,15 +163,131 @@ aws rds create-db-snapshot `
 2. `Connect branch`에서 GitHub를 선택하고 `jeffyun3061/herfree-platform` 저장소 접근을 승인한다.
 3. 브랜치는 `develop`만 선택한다. `main`은 production 검증 전 연결하지 않는다.
 4. 저장소 루트가 아니라 monorepo 설정의 `appRoot=frontend`가 유지되는지 확인한다.
-5. 연결 후 이 문서의 상태 확인 스크립트를 다시 실행한다.
+5. 연결 후 `scripts/check-staging-status.ps1`을 다시 실행한다.
 
-### DNS 입력 순서
+### 8.2 API DNS (가비아)
 
-1. Gabia에 A 레코드 `api-staging` → `3.37.78.234`를 추가한다.
-2. Amplify 사용자 지정 도메인에서 `staging.herpfree.co.kr`을 추가한다.
-3. Amplify가 보여 주는 인증·호스팅 CNAME을 그대로 Gabia에 입력한다.
-4. DNS가 확인된 뒤 API TLS 인증서를 발급한다. DNS 적용 전에 인증서 발급을 반복하지 않는다.
+1. A 레코드 `api-staging` → `3.37.78.234`만 유지한다.
+2. DNS 전파 후 EC2에서 API TLS(Let's Encrypt)를 발급한다.
 
-현재 `api-staging.herpfree.co.kr`과 `staging.herpfree.co.kr`은 아직 해석되지 않는다. 따라서 최근 Actions의 E2E 실패는 애플리케이션 오류가 아니라 DNS 미설정 결과다.
+---
 
-production은 이 목록과 `go-live-checklist.md`의 NO-GO 항목을 모두 통과한 뒤 별도로 만든다.
+## 9. Amplify 커스텀 도메인 — DNS 리셋 (2026-07-21)
+
+### 지금 따라하기 (순서 고정)
+
+아래는 **지금 당장** 할 일이다. 한 단계 끝날 때까지 다음 단계로 넘어가지 않는다.
+
+| # | 누가 | 할 일 | 완료 기준 |
+| --- | --- | --- | --- |
+| **0** | 우리 | GitHub `STAGING_FRONTEND_URL` → amplifyapp.com | `gh variable list -e staging` 에 amplify URL |
+| **1** | 우리 | Amplify **커스텀 도메인 제거** | 콘솔에 `herpfree.co.kr` 없음 |
+| **2** | 의뢰인 | Gabia **삭제만** (§9.3 문구 전달) | `staging` CNAME·ACM `_0dc`/`_0de` 없음, `api-staging` A 유지 |
+| **3** | 우리 | **24시간 대기** | Amplify 도메인 재추가·재시도 금지 |
+| **4** | 우리 | Amplify **환경 변수** (develop) | `NEXT_PUBLIC_API_URL=http://api-staging.herpfree.co.kr`, `NEXT_PUBLIC_OAUTH_REDIRECT_ORIGIN=https://develop.d2bcg3vnlv5hkh.amplifyapp.com` |
+| **5** | 우리 | Secrets Manager + API 재배포 | 아래 스크립트 |
+| **6** | 우리 | EC2 certbot (API HTTPS) | `https://api-staging.herpfree.co.kr/api/health` → 200 |
+| **7** | 의뢰인 | SES 인증 메일 클릭 | SES `Success` |
+| **8** | 우리 | OAuth Dev redirect 3곳 추가 | amplify URL callback |
+| **9** | 우리 | Release backend (staging) + E2E | Actions success, `staging-passed-*` |
+
+**로컬에서 자동/반자동:**
+
+```powershell
+# 상태 점검 (AWS는 먼저 로그인)
+aws sso login --profile herfree-staging
+powershell -ExecutionPolicy Bypass -File scripts/check-staging-status.ps1
+
+# GitHub URL + 안내 (Secrets는 -UpdateSecretsManager 로)
+powershell -ExecutionPolicy Bypass -File scripts/apply-staging-amplify-url.ps1 -UpdateSecretsManager
+
+# API 재배포
+gh workflow run release-backend.yml -f target=staging
+```
+
+**브라우저 smoke (지금 가능):**  
+`https://develop.d2bcg3vnlv5hkh.amplifyapp.com` — Basic Auth(Amplify 설정값) 입력 후 홈·로그인 화면 확인.
+
+**E2E가 실패했던 이유:** GitHub `STAGING_FRONTEND_URL`이 `staging.herpfree.co.kr`(DNS 없음)을 가리켰음. amplify URL로 바꾸면 smoke는 통과 가능.
+
+---
+
+### 9.1 왜 꼬였는지
+
+- Amplify **「재시도」** 를 DNS 전파 전·CNAME 불일치 상태에서 반복하면 CloudFront 주소(`d2…` / `d3…`)가 바뀐다.
+- Gabia에 넣은 CNAME과 Amplify가 기대하는 배포가 어긋나 **「다른 CloudFront를 가리킨다」**, **「CNAME 전파 시간 초과」** 가 반복된다.
+- Route 53 호스팅 영역은 **이 AWS 계정(439777528445)에 없음**. staging DNS는 **Gabia**에서 관리한다. Route 53 「시작하기」로 새 영역을 만들지 않는다 (이중 관리 방지).
+
+### 9.2 지금 정책
+
+1. **staging 프론트:** `https://develop.d2bcg3vnlv5hkh.amplifyapp.com` 만 사용.
+2. **Amplify 커스텀 도메인:** 제거한 뒤 **24시간 이상** 재추가하지 않는다.
+3. **의뢰인 DNS 요청:** §9.3 **삭제 1회**만. 새 CNAME 요청은 **DNS 권한 확보 후** (§9.6).
+
+### 9.3 DNS 정리 — 의뢰인(Gabia) **마지막 1회**
+
+아래만 **삭제**한다. **새 값을 넣지 않는다.**
+
+| 호스트 | 조치 |
+| --- | --- |
+| `staging` | CNAME **삭제** |
+| `_0dc192722679034dab370f00d2871bf8` | CNAME **삭제** (있으면) |
+| `_0de192722679034dab370f00d2871bf8` | CNAME **삭제** (있으면) |
+| `api-staging` | A → `3.37.78.234` **유지** |
+
+**의뢰인 전달 문구 (복사용):**
+
+> DNS 정리만 부탁드립니다. 새 레코드는 넣지 않아도 됩니다.  
+> - `staging` CNAME 삭제  
+> - `_0dc…` / `_0de…` 로 시작하는 ACM 검증 CNAME 삭제  
+> - `api-staging` A(`3.37.78.234`)는 그대로 유지  
+> 저장 후 알려 주세요.
+
+### 9.4 AWS(우리) — Amplify 커스텀 도메인 제거
+
+1. Amplify → `herfree-staging` → **호스팅** → **사용자 지정 도메인 관리**
+2. `herpfree.co.kr` → **작업** → **도메인 제거**
+3. **24시간** 동안 커스텀 도메인 **추가·재시도 금지**
+4. develop 브랜치 배포·Basic Auth·`amplifyapp.com` URL은 **그대로** 사용
+
+### 9.5 Secrets / OAuth / CORS (amplifyapp.com 기준)
+
+staging Environment·Secrets Manager `herfree/staging/app-config` 에 반영할 값 예시:
+
+| 항목 | 값 |
+| --- | --- |
+| 프론트 origin | `https://develop.d2bcg3vnlv5hkh.amplifyapp.com` |
+| `CORS_ALLOWED_ORIGINS` | 위 origin (필요 시 API health 확인용 origin 추가) |
+| `PASSWORD_RESET_FRONTEND_BASE_URL` | 위 origin |
+| OAuth redirect | `https://develop.d2bcg3vnlv5hkh.amplifyapp.com/auth/callback/{kakao,google,naver}` |
+
+변경 후 `Release backend` (staging)로 API를 재배포한다. Amplify는 `develop` push 시 자동 빌드.
+
+### 9.6 나중에 `staging.herpfree.co.kr` 다시 쓸 때
+
+의뢰인에게 **CNAME 수정을 반복 요청하지 않으려면** 아래 중 **한 번만** 선택한다.
+
+| 방법 | 의뢰인 | 우리 |
+| --- | --- | --- |
+| **A. Gabia DNS 계정 공유/위임** | 1회 | 이후 CNAME 직접 수정 |
+| **B. Route 53 + staging NS 위임** | Gabia에 NS 1회 | 이후 Route 53에서만 관리 |
+| **C. 커스텀 도메인 없이 amplifyapp.com** | 0 | staging은 계속 기본 URL |
+
+재연결 절차 (A 또는 B 확보 후):
+
+1. Gabia(또는 Route 53)에 **아직** `staging` CNAME이 없는지 확인
+2. Amplify → **도메인 추가** → `staging.herpfree.co.kr` only, 브랜치 `develop`
+3. 화면의 **CNAME + ACM 검증** 값을 **복붙**으로 DNS에 반영 (타이핑 금지)
+4. **30~60분** [dnschecker.org](https://dnschecker.org) 전파 확인
+5. **「재시도」 연타 금지** — 활성화될 때까지 새로고침만. 1시간 후에도 실패면 **재시도 1번**
+
+### 9.7 금지 (루프 재발 방지)
+
+- DNS 맞추기 전·전파 전 Amplify **「재시도」** 연타
+- 실패 상태에서 **도메인 삭제·재추가** 를 하루에 여러 번
+- Gabia와 Route 53 **동시에** staging 레코드 유지
+- 예전 스크린샷의 `d2g72…` / `d3dluo…` 등 **과거 CloudFront 값** 재사용
+
+---
+
+production은 §8과 `go-live-checklist.md`의 NO-GO 항목을 모두 통과한 뒤 별도로 만든다.

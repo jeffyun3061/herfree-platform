@@ -9,6 +9,9 @@ $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 Set-Location $root
 
+$StagingFrontendUrl = "https://develop.d2bcg3vnlv5hkh.amplifyapp.com"
+$StagingCustomFrontendHost = "staging.herpfree.co.kr"
+
 $checks = New-Object System.Collections.Generic.List[object]
 
 function Add-Check([string]$Name, [bool]$Passed, [string]$Detail, [bool]$Blocking = $false) {
@@ -35,9 +38,19 @@ function Resolve-ARecord([string]$Name) {
     }
 }
 
-function Test-Https([string]$Url) {
+function Test-Https([string]$Url, [hashtable]$Credential = $null) {
     try {
-        $response = Invoke-WebRequest -Uri $Url -UseBasicParsing -TimeoutSec 15
+        $params = @{
+            Uri             = $Url
+            UseBasicParsing = $true
+            TimeoutSec      = 15
+        }
+        if ($Credential) {
+            $pair = "{0}:{1}" -f $Credential.Username, $Credential.Password
+            $bytes = [System.Text.Encoding]::ASCII.GetBytes($pair)
+            $params.Headers = @{ Authorization = "Basic $([Convert]::ToBase64String($bytes))" }
+        }
+        $response = Invoke-WebRequest @params
         return $response.StatusCode
     }
     catch {
@@ -97,6 +110,19 @@ try {
         --output json | ConvertFrom-Json
     Add-Check "Amplify Basic Auth" ($amplify.BasicAuth -eq $true) "enabled=$($amplify.BasicAuth)" $true
     Add-Check "Amplify GitHub connection" (-not [string]::IsNullOrWhiteSpace($amplify.Repository)) $(if ($amplify.Repository) { $amplify.Repository } else { "repository connection required" }) $true
+    try {
+        $domains = aws amplify list-domain-associations `
+            --profile $AwsProfile --region $Region `
+            --app-id d2bcg3vnlv5hkh `
+            --query "domainAssociations[].domainName" `
+            --output json | ConvertFrom-Json
+        $customDomains = @($domains | Where-Object { $_ })
+        $customOk = $customDomains.Count -eq 0
+        Add-Check "Amplify custom domain removed" $customOk $(if ($customOk) { "none (amplifyapp.com only)" } else { ($customDomains -join ", ") + " — remove per docs/staging-operations.md §9" })
+    }
+    catch {
+        Add-Check "Amplify custom domain removed" $false "could not list domain associations"
+    }
 }
 catch {
     Add-Check "Amplify" $false $_.Exception.Message $true
@@ -115,14 +141,20 @@ catch {
 }
 
 $apiIps = Resolve-ARecord "api-staging.herpfree.co.kr"
-$frontendIps = Resolve-ARecord "staging.herpfree.co.kr"
+$customFrontendIps = Resolve-ARecord $StagingCustomFrontendHost
 Add-Check "API DNS" ($apiIps -contains "3.37.78.234") $(if ($apiIps.Count) { $apiIps -join ", " } else { "not configured" }) $true
-Add-Check "Frontend DNS" ($frontendIps.Count -gt 0) $(if ($frontendIps.Count) { $frontendIps -join ", " } else { "not configured" }) $true
+Add-Check "Custom frontend DNS (optional)" ($customFrontendIps.Count -eq 0) $(if ($customFrontendIps.Count) { "still configured — Gabia cleanup §9.3" } else { "not configured (expected during reset)" })
+
+$apiHttpCode = Test-Https "http://api-staging.herpfree.co.kr/api/health"
+Add-Check "API HTTP health" ($apiHttpCode -eq 200) "HTTP $apiHttpCode" $true
 
 if ($apiIps.Count -gt 0) {
     $healthCode = Test-Https "https://api-staging.herpfree.co.kr/api/health"
-    Add-Check "API HTTPS health" ($healthCode -eq 200) "HTTP $healthCode" $true
+    Add-Check "API HTTPS health" ($healthCode -eq 200) $(if ($healthCode -eq 200) { "HTTP 200" } else { "HTTP $healthCode — run certbot on EC2 §8.2" })
 }
+
+$frontendCode = Test-Https $StagingFrontendUrl
+Add-Check "Amplify frontend" ($frontendCode -in @(200, 401)) "HTTP $frontendCode at $StagingFrontendUrl" $true
 
 try {
     gh auth status 2>&1 | Out-Null
@@ -130,6 +162,9 @@ try {
     foreach ($requiredSecret in @("AWS_DEPLOY_ROLE_ARN", "E2E_HTTP_USERNAME", "E2E_HTTP_PASSWORD")) {
         Add-Check "GitHub secret: $requiredSecret" ($secretNames -contains $requiredSecret) "value hidden" $true
     }
+
+    $frontendVar = gh variable get STAGING_FRONTEND_URL -e staging 2>$null
+    Add-Check "GitHub STAGING_FRONTEND_URL" ($frontendVar -eq $StagingFrontendUrl) $(if ($frontendVar) { $frontendVar } else { "missing" }) $true
 
     $runJson = gh run list --workflow "Release backend" --limit 1 --json databaseId,status,conclusion,headSha,url | ConvertFrom-Json
     if ($runJson.Count -gt 0) {
