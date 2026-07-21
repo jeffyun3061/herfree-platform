@@ -33,31 +33,22 @@ if (-not $SkipGitHub) {
 
 if ($UpdateSecretsManager) {
     $secretId = "herfree/staging/app-config"
+    $fixScript = Join-Path $PSScriptRoot "fix-staging-app-config-urls.py"
     try {
-        $raw = aws secretsmanager get-secret-value `
-            --profile $AwsProfile --region $Region `
-            --secret-id $secretId `
-            --query SecretString --output text
-        $config = $raw | ConvertFrom-Json
-        $config.frontendOrigin = $FrontendUrl
-        foreach ($provider in @("kakao", "google", "naver")) {
-            $config.oauth.$provider.redirectUri = "$FrontendUrl/auth/callback/$provider"
-        }
-        $updated = $config | ConvertTo-Json -Depth 10 -Compress
         if ($DryRun) {
-            Write-Host "[dry-run] would update $secretId frontendOrigin + oauth redirect URIs" -ForegroundColor Yellow
+            Write-Host "[dry-run] would run $fixScript" -ForegroundColor Yellow
         }
         else {
-            aws secretsmanager put-secret-value `
-                --profile $AwsProfile --region $Region `
-                --secret-id $secretId `
-                --secret-string $updated | Out-Null
+            python $fixScript
+            if ($LASTEXITCODE -ne 0) {
+                throw "fix-staging-app-config-urls.py failed with exit code $LASTEXITCODE"
+            }
             Write-Host "[OK] Secrets Manager $secretId updated (CORS/OAuth/password-reset origin)" -ForegroundColor Green
         }
     }
     catch {
         Write-Host "[SKIP] Secrets Manager: $($_.Exception.Message)" -ForegroundColor Yellow
-        Write-Host "       Run: aws sso login --profile $AwsProfile" -ForegroundColor DarkGray
+        Write-Host "       Run: aws login --profile $AwsProfile" -ForegroundColor DarkGray
         Write-Host "       Then re-run with -UpdateSecretsManager" -ForegroundColor DarkGray
     }
 }
