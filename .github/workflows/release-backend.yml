@@ -100,6 +100,9 @@ jobs:
               "cp /opt/herfree/infra/nginx/herfree-staging.conf /etc/nginx/sites-available/herfree-staging",
               "ln -sfn /etc/nginx/sites-available/herfree-staging /etc/nginx/sites-enabled/herfree-staging",
               "nginx -t && systemctl reload nginx",
+              "command -v certbot >/dev/null || (export DEBIAN_FRONTEND=noninteractive && apt-get update -qq && apt-get install -y certbot python3-certbot-nginx)",
+              "certbot --nginx -d api-staging.herpfree.co.kr --non-interactive --agree-tos -m herpfree3@gmail.com --redirect || true",
+              "nginx -t && systemctl reload nginx",
               ("aws ecr get-login-password --region " + $region + " | docker login --username AWS --password-stdin " + $registry),
               ("/opt/herfree/infra/scripts/deploy-release.sh staging " + $image)
             ]}' > /tmp/ssm-parameters.json
