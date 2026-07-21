@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const API_TARGET = (
-  process.env.API_REWRITE_TARGET ||
-  process.env.NEXT_PUBLIC_API_URL ||
-  'http://127.0.0.1:8080'
-).replace(/\/$/, '');
+/** Amplify/호스팅 런타임 env 반영 — 모듈 상단 상수로 두면 build 시점 값에 고정될 수 있다. */
+function resolveApiTarget(): string {
+  return (
+    process.env['API_REWRITE_TARGET'] ||
+    process.env['NEXT_PUBLIC_API_URL'] ||
+    'http://127.0.0.1:8080'
+  ).replace(/\/$/, '');
+}
 
 // 프록시가 그대로 넘기면 안 되는 전송 계층 헤더들이다.
 const HOP_BY_HOP = new Set([
@@ -23,7 +26,7 @@ const HOP_BY_HOP = new Set([
 /** 브라우저 → Next → Spring. Origin 제거로 모바일/ngrok CORS 403 방지 */
 async function proxyToBackend(request: NextRequest, pathSegments: string[]) {
   const path = pathSegments.join('/');
-  const targetUrl = `${API_TARGET}/api/${path}${request.nextUrl.search}`;
+  const targetUrl = `${resolveApiTarget()}/api/${path}${request.nextUrl.search}`;
 
   const headers = new Headers();
   request.headers.forEach((value, key) => {
