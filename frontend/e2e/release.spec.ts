@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL?.trim() || 'http://127.0.0.1:3100';
+const stagingApiURL = process.env.STAGING_API_URL?.trim().replace(/\/$/, '');
 const host = new URL(baseURL).hostname.toLowerCase();
 const mutationEnabled = process.env.E2E_ALLOW_MUTATION === 'true';
 const mutationHostAllowed =
@@ -114,13 +115,17 @@ test.describe('release smoke', () => {
     const home = await request.get('/');
     expect(home.headers()['content-security-policy']).toContain("default-src 'self'");
 
-    const health = await request.get('/api/health');
+    const health = stagingApiURL
+      ? await request.get(`${stagingApiURL}/api/health`)
+      : await request.get('/api/health');
     expect(health.status()).toBe(200);
     expect(health.headers()['x-request-id']).toBeTruthy();
-    await data(await request.get('/api/boards'));
-    await data(await request.get('/api/posts?page=0&size=5'));
+    await data(await request.get(stagingApiURL ? `${stagingApiURL}/api/boards` : '/api/boards'));
+    await data(await request.get(
+      stagingApiURL ? `${stagingApiURL}/api/posts?page=0&size=5` : '/api/posts?page=0&size=5',
+    ));
 
-    const admin = await request.get('/api/admin/reports');
+    const admin = await request.get(stagingApiURL ? `${stagingApiURL}/api/admin/reports` : '/api/admin/reports');
     expect([401, 403]).toContain(admin.status());
   });
 });
