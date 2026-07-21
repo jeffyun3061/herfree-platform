@@ -3,7 +3,7 @@ param(
     [string]$StagingInstanceId,
 
     [string]$StagingFrontendUrl = "https://develop.d2bcg3vnlv5hkh.amplifyapp.com",
-    [string]$StagingApiUrl = "https://api-staging.herpfree.co.kr",
+    [string]$StagingApiUrl = "http://api-staging.herpfree.co.kr",
     [string]$AwsRegion = "ap-northeast-2",
     [string]$EcrRepository = "herfree-api",
     [string]$StagingDeployRoleArn = "arn:aws:iam::439777528445:role/herfree-github-staging-deploy"

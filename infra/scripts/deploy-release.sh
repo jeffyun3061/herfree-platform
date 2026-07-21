@@ -25,9 +25,11 @@ STATE_DIR="${APP_DIR}/.deploy"
 PROJECT="herfree-${DEPLOY_ENV}"
 
 if [[ "${DEPLOY_ENV}" == "staging" ]]; then
-  PORT=8081
+  PORT=80
+  BIND_HOST="0.0.0.0"
 else
   PORT=8080
+  BIND_HOST="127.0.0.1"
 fi
 
 if [[ ! -f "${ENV_FILE}" || ! -f "${COMPOSE_FILE}" ]]; then
@@ -50,13 +52,13 @@ fi
 
 deploy_image() {
   local image="$1"
-  API_IMAGE="${image}" APP_ENV_FILE="${ENV_FILE}" API_BIND_PORT="${PORT}" DEPLOY_ENV="${DEPLOY_ENV}" \
+  API_IMAGE="${image}" APP_ENV_FILE="${ENV_FILE}" API_BIND_PORT="${PORT}" API_BIND_HOST="${BIND_HOST}" DEPLOY_ENV="${DEPLOY_ENV}" \
     docker compose --env-file "${ENV_FILE}" -p "${PROJECT}" -f "${COMPOSE_FILE}" \
       up -d --pull always --no-build --remove-orphans
 }
 
 show_logs() {
-  API_IMAGE="${NEW_IMAGE}" APP_ENV_FILE="${ENV_FILE}" API_BIND_PORT="${PORT}" DEPLOY_ENV="${DEPLOY_ENV}" \
+  API_IMAGE="${NEW_IMAGE}" APP_ENV_FILE="${ENV_FILE}" API_BIND_PORT="${PORT}" API_BIND_HOST="${BIND_HOST}" DEPLOY_ENV="${DEPLOY_ENV}" \
     docker compose --env-file "${ENV_FILE}" -p "${PROJECT}" -f "${COMPOSE_FILE}" \
       logs --tail=120 api || true
 }

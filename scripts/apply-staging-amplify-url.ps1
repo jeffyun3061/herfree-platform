@@ -17,17 +17,19 @@ Set-Location $root
 Write-Host ""
 Write-Host "== Staging amplifyapp.com URL 적용 ==" -ForegroundColor Cyan
 Write-Host "Frontend: $FrontendUrl"
-Write-Host "API proxy target (Amplify env): $ApiBackendUrl"
+Write-Host "API (staging, HTTP direct): $ApiBackendUrl"
 Write-Host ""
 
 if (-not $SkipGitHub) {
     if ($DryRun) {
         Write-Host "[dry-run] gh variable set STAGING_FRONTEND_URL -> $FrontendUrl" -ForegroundColor Yellow
+        Write-Host "[dry-run] gh variable set STAGING_API_URL -> $ApiBackendUrl" -ForegroundColor Yellow
     }
     else {
         gh auth status | Out-Null
         gh variable set STAGING_FRONTEND_URL -R $Repo -e staging --body $FrontendUrl
-        Write-Host "[OK] GitHub STAGING_FRONTEND_URL updated" -ForegroundColor Green
+        gh variable set STAGING_API_URL -R $Repo -e staging --body $ApiBackendUrl
+        Write-Host "[OK] GitHub STAGING_FRONTEND_URL / STAGING_API_URL updated" -ForegroundColor Green
     }
 }
 
@@ -66,7 +68,7 @@ Write-Host "4. AWS 로그인 후 Secrets 반영 + API 재배포:"
 Write-Host "     aws sso login --profile $AwsProfile"
 Write-Host "     powershell -File scripts/apply-staging-amplify-url.ps1 -UpdateSecretsManager"
 Write-Host "     gh workflow run release-backend.yml -f target=staging"
-Write-Host "5. EC2(SSM)에서 API TLS: sudo certbot --nginx -d api-staging.herpfree.co.kr"
+Write-Host "5. (선택) EC2에서 nginx 중지: sudo systemctl stop nginx && sudo systemctl disable nginx"
 Write-Host "6. SES herpfree3@gmail.com 인증 메일 승인"
 Write-Host "7. OAuth Dev 콘솔 redirect: $FrontendUrl/auth/callback/{kakao,google,naver}"
 Write-Host "8. 브라우저에서 $FrontendUrl 접속 (Basic Auth) -> 로그인/커뮤니티 smoke"

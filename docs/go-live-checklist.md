@@ -98,7 +98,7 @@
 - [ ] production과 staging의 RDS, S3, SMTP, OAuth 자격증명을 분리했다.
 - [ ] RDS Public access를 끄고 EC2 보안 그룹에서만 3306 접근을 허용했다.
 - [ ] staging·production에서 Flyway V36 적용과 `post_bookmarks` 유니크 제약 생성을 확인했다.
-- [ ] EC2의 8080/8081과 RDS 3306을 인터넷에 공개하지 않았다.
+- [ ] production EC2의 8080과 RDS 3306을 인터넷에 공개하지 않았다. (staging API는 검증용 `:80` HTTP만 노출)
 - [ ] 외부에는 Nginx 443만 공개하고 HTTP는 HTTPS로 전환한다.
 - [ ] `herpfree.co.kr`, `api.herpfree.co.kr`과 staging 도메인의 DNS·TLS 인증서가 정상이다.
 - [ ] S3 Public access block, CORS, EC2 IAM 최소 권한을 확인했다.

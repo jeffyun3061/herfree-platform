@@ -86,23 +86,16 @@ jobs:
           registry="${IMAGE%%/*}"
           tar -czf /tmp/herfree-release-bundle.tgz \
             docker-compose.release.yml \
-            infra/nginx/herfree-staging.conf \
             infra/scripts/deploy-release.sh \
             infra/scripts/render-release-env.sh \
             infra/scripts/validate-release-env.sh
           bundle="$(base64 -w 0 /tmp/herfree-release-bundle.tgz)"
           jq -n --arg bundle "${bundle}" --arg image "${IMAGE}" --arg registry "${registry}" \
             --arg region "${AWS_REGION}" '{commands:[
-              "install -d -m 0755 /opt/herfree/infra/scripts /opt/herfree/infra/nginx",
+              "install -d -m 0755 /opt/herfree/infra/scripts",
               ("printf %s " + ($bundle|@sh) + " | base64 -d | tar -xzf - -C /opt/herfree"),
               "chmod 0755 /opt/herfree/infra/scripts/*.sh",
               "/opt/herfree/infra/scripts/render-release-env.sh staging",
-              "cp /opt/herfree/infra/nginx/herfree-staging.conf /etc/nginx/sites-available/herfree-staging",
-              "ln -sfn /etc/nginx/sites-available/herfree-staging /etc/nginx/sites-enabled/herfree-staging",
-              "nginx -t && systemctl reload nginx",
-              "command -v certbot >/dev/null || (export DEBIAN_FRONTEND=noninteractive && apt-get update -qq && apt-get install -y certbot python3-certbot-nginx)",
-              "certbot --nginx -d api-staging.herpfree.co.kr --non-interactive --agree-tos -m herpfree3@gmail.com --redirect || true",
-              "nginx -t && systemctl reload nginx",
               ("aws ecr get-login-password --region " + $region + " | docker login --username AWS --password-stdin " + $registry),
               ("/opt/herfree/infra/scripts/deploy-release.sh staging " + $image)
             ]}' > /tmp/ssm-parameters.json
@@ -145,7 +138,7 @@ jobs:
         working-directory: frontend
         env:
           PLAYWRIGHT_BASE_URL: ${{ vars.STAGING_FRONTEND_URL }}
-          E2E_ALLOW_MUTATION: 'false'
+          E2E_ALLOW_MUTATION: 'true'
           E2E_HTTP_USERNAME: ${{ secrets.E2E_HTTP_USERNAME }}
           E2E_HTTP_PASSWORD: ${{ secrets.E2E_HTTP_PASSWORD }}
         run: npm run e2e:staging
