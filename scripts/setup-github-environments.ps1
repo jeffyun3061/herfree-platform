@@ -2,7 +2,7 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$StagingInstanceId,
 
-    [string]$StagingFrontendUrl = "https://staging.herpfree.co.kr",
+    [string]$StagingFrontendUrl = "https://develop.d2bcg3vnlv5hkh.amplifyapp.com",
     [string]$StagingApiUrl = "https://api-staging.herpfree.co.kr",
     [string]$AwsRegion = "ap-northeast-2",
     [string]$EcrRepository = "herfree-api",
