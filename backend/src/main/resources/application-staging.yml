@@ -36,3 +36,5 @@ app:
     enabled: false
   bootstrap:
     enabled: ${ADMIN_BOOTSTRAP_ENABLED:false}
+  auth-rate-limit:
+    enabled: false
