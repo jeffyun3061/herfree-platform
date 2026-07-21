@@ -151,7 +151,7 @@ GitHub staging Environment·Secrets Manager `app-config`·OAuth Dev 콘솔·CORS
 - [x] GitHub Actions 백엔드 ECR push·EC2 health 배포
 - [x] GitHub staging Environment `E2E_HTTP_USERNAME` / `E2E_HTTP_PASSWORD`
 - [x] EC2 IMDSv2·S3 instance role startup check
-- [ ] Amplify 기본 URL + API HTTP 연결 후 E2E 통과 및 `staging-passed-<SHA>`
+- [ ] Amplify 기본 URL + API HTTP 연결 후 release smoke 통과 및 `staging-passed-<SHA>`
 - [ ] RDS snapshot 복원 연습
 
 ### 8.1 Amplify GitHub 최초 연결
@@ -194,7 +194,7 @@ production은 별도로 ALB+ACM 또는 nginx+TLS를 쓴다 (`infra/nginx/herfree
 | **6** | 우리 | `Release backend` (staging) | `http://api-staging.herpfree.co.kr/api/health` → 200 |
 | **7** | 의뢰인 | SES 인증 메일 클릭 | SES `Success` |
 | **8** | 우리 | OAuth Dev redirect 3곳 추가 | amplify URL callback |
-| **9** | 우리 | Release backend (staging) + E2E | Actions success, `staging-passed-*` |
+| **9** | 우리 | Release backend (staging) + smoke E2E | Actions success, `staging-passed-*` (mutation QA는 별도 job, 실패해도 release gate 아님) |
 
 **로컬에서 자동/반자동:**
 
