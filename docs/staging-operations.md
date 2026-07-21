@@ -136,7 +136,7 @@ staging 검증·E2E·OAuth는 **Amplify 기본 URL**을 canonical로 사용한�
 | 구분 | URL | 상태 |
 | --- | --- | --- |
 | **프론트 (staging)** | `https://develop.d2bcg3vnlv5hkh.amplifyapp.com` | 사용 |
-| API (staging) | `https://api-staging.herpfree.co.kr` | Gabia A → `3.37.78.234` |
+| API (staging) | `http://api-staging.herpfree.co.kr` | Gabia A → `3.37.78.234`, Docker `:80` 직접 |
 | 프론트 커스텀 | `https://staging.herpfree.co.kr` | **보류** — DNS 리셋 후 재연결 (§9) |
 
 GitHub staging Environment·Secrets Manager `app-config`·OAuth Dev 콘솔·CORS는 위 **프론트 기본 URL** 기준으로 맞춘다.
@@ -146,13 +146,12 @@ GitHub staging Environment·Secrets Manager `app-config`·OAuth Dev 콘솔·CORS
 - [ ] Amplify GitHub `develop` 브랜치 연결 (§8.1)
 - [ ] **커스텀 도메인:** Amplify에서 제거·Gabia 정리 완료 (§9) — **재추가 전까지 보류**
 - [ ] Secrets / CORS / OAuth를 `develop.d2bcg3vnlv5hkh.amplifyapp.com` 기준으로 반영
-- [ ] DNS 적용 후 EC2에서 `api-staging.herpfree.co.kr` Let's Encrypt 인증서 발급
 - [ ] `herpfree3@gmail.com` AWS SES 인증 메일 승인
 - [ ] OAuth Dev 3곳: `https://develop.d2bcg3vnlv5hkh.amplifyapp.com/auth/callback/{provider}`
 - [x] GitHub Actions 백엔드 ECR push·EC2 health 배포
 - [x] GitHub staging Environment `E2E_HTTP_USERNAME` / `E2E_HTTP_PASSWORD`
 - [x] EC2 IMDSv2·S3 instance role startup check
-- [ ] Amplify 기본 URL + API HTTPS 연결 후 E2E 통과 및 `staging-passed-<SHA>`
+- [ ] Amplify 기본 URL + API HTTP 연결 후 release smoke 통과 및 `staging-passed-<SHA>`
 - [ ] RDS snapshot 복원 연습
 
 ### 8.1 Amplify GitHub 최초 연결
@@ -165,10 +164,16 @@ GitHub staging Environment·Secrets Manager `app-config`·OAuth Dev 콘솔·CORS
 4. 저장소 루트가 아니라 monorepo 설정의 `appRoot=frontend`가 유지되는지 확인한다.
 5. 연결 후 `scripts/check-staging-status.ps1`을 다시 실행한다.
 
-### 8.2 API DNS (가비아)
+### 8.2 API DNS·배포 (가비아 + Docker)
 
-1. A 레코드 `api-staging` → `3.37.78.234`만 유지한다.
-2. DNS 전파 후 EC2에서 API TLS(Let's Encrypt)를 발급한다.
+staging API는 **nginx 없이** EC2에서 Docker가 **80번 포트**로 Spring Boot를 직접 노출한다.
+Amplify(프론트)는 서버 사이드에서 `http://api-staging.herpfree.co.kr` 로 프록시한다.
+
+1. A 레코드 `api-staging` → `3.37.78.234` 유지
+2. `Release backend` (staging)가 `deploy-release.sh`로 컨테이너를 `:80`에 올린다
+3. 확인: `http://api-staging.herpfree.co.kr/api/health` → 200
+
+production은 별도로 ALB+ACM 또는 nginx+TLS를 쓴다 (`infra/nginx/herfree.conf` 참고).
 
 ---
 
@@ -186,10 +191,10 @@ GitHub staging Environment·Secrets Manager `app-config`·OAuth Dev 콘솔·CORS
 | **3** | 우리 | **24시간 대기** | Amplify 도메인 재추가·재시도 금지 |
 | **4** | 우리 | Amplify **환경 변수** (develop) | `NEXT_PUBLIC_API_URL=http://api-staging.herpfree.co.kr`, `NEXT_PUBLIC_OAUTH_REDIRECT_ORIGIN=https://develop.d2bcg3vnlv5hkh.amplifyapp.com` |
 | **5** | 우리 | Secrets Manager + API 재배포 | 아래 스크립트 |
-| **6** | 우리 | EC2 certbot (API HTTPS) | `https://api-staging.herpfree.co.kr/api/health` → 200 |
+| **6** | 우리 | `Release backend` (staging) | `http://api-staging.herpfree.co.kr/api/health` → 200 |
 | **7** | 의뢰인 | SES 인증 메일 클릭 | SES `Success` |
 | **8** | 우리 | OAuth Dev redirect 3곳 추가 | amplify URL callback |
-| **9** | 우리 | Release backend (staging) + E2E | Actions success, `staging-passed-*` |
+| **9** | 우리 | Release backend (staging) + smoke E2E | Actions success, `staging-passed-*` (mutation QA는 별도 job, 실패해도 release gate 아님) |
 
 **로컬에서 자동/반자동:**
 

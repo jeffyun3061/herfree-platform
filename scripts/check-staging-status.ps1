@@ -150,7 +150,7 @@ Add-Check "API HTTP health" ($apiHttpCode -eq 200) "HTTP $apiHttpCode" $true
 
 if ($apiIps.Count -gt 0) {
     $healthCode = Test-Https "https://api-staging.herpfree.co.kr/api/health"
-    Add-Check "API HTTPS health" ($healthCode -eq 200) $(if ($healthCode -eq 200) { "HTTP 200" } else { "HTTP $healthCode — run certbot on EC2 §8.2" })
+    Add-Check "API HTTPS health (optional)" ($healthCode -eq 200) $(if ($healthCode -eq 200) { "HTTP 200" } else { "not configured — staging uses HTTP on port 80" })
 }
 
 $frontendCode = Test-Https $StagingFrontendUrl
