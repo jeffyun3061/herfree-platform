@@ -118,18 +118,14 @@ function mapPostToPreview(post: Post, index: number): PreviewPost {
 function GuestCommunityPreview({
   posts,
   isLoading,
-  totalStories,
 }: {
   posts: Post[];
   isLoading: boolean;
-  totalStories: number;
 }) {
   const previewPosts: PreviewPost[] =
     posts.length > 0
       ? posts.slice(0, 3).map(mapPostToPreview)
       : [...FALLBACK_PREVIEW_POSTS];
-
-  const lockStoryCount = totalStories > 0 ? totalStories : 128;
 
   return (
     <section className="px-5 pt-6">
@@ -162,16 +158,11 @@ function GuestCommunityPreview({
             <LockIcon className="h-5 w-5" />
           </span>
           <p className="text-[15px] font-bold text-[#1E2621]">회원만 볼 수 있는 공간이에요</p>
-          <p className="mt-1.5 text-[12.5px] leading-[1.6] text-[#5C645A]">
-            가입하면 {lockStoryCount.toLocaleString('ko-KR')}개의 이야기를
-            <br />
-            바로 볼 수 있어요
-          </p>
           <Link
-            href="/signup?from=/community"
+            href="/login?from=/community"
             className="mt-[18px] rounded-[12px] bg-[#0B3B36] px-[26px] py-3 text-[13.5px] font-bold text-white"
           >
-            가입하고 둘러보기
+            로그인하기
           </Link>
         </div>
       </div>
@@ -216,7 +207,7 @@ function GuestJournalStartCard() {
         오늘부터 개인 일지를 작성해보세요.
       </p>
       <Link
-        href="/signup?from=/journal"
+        href="/login?from=/journal"
         className="mt-[18px] flex min-h-12 items-center justify-center rounded-[12px] bg-[#0B3B36] text-[14px] font-bold text-white"
       >
         오늘부터 시작하기
@@ -285,8 +276,6 @@ export function GuestHomePage() {
 
   const activeUsersLabel = formatMemberStatus(homeStats?.totalUsers, statsLoading);
   const todayStories = recentLoading ? 0 : recentPosts.totalElements || recentPosts.content.length;
-  const totalStories = recentLoading ? 0 : recentPosts.totalElements || recentPosts.content.length;
-
   return (
     <div className="min-h-screen bg-[#F3EDE3] pb-7">
       <GuestHomeHero />
@@ -294,7 +283,6 @@ export function GuestHomePage() {
       <GuestCommunityPreview
         posts={recentPosts.content}
         isLoading={recentLoading}
-        totalStories={totalStories}
       />
       <GuestJournalStartCard />
       <div className="hf-dashboard-x">

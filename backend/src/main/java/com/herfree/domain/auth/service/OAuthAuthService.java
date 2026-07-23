@@ -75,7 +75,20 @@ public class OAuthAuthService {
                 .findByProviderAndProviderUserId(provider, profile.providerUserId());
 
         if (linkedAccount.isPresent()) {
-            return OAuthLoginResponse.completed(issueLoginResponse(linkedAccount.get().getUser()));
+            User linkedUser = linkedAccount.get().getUser();
+            UserProfile linkedProfile = userProfileRepository.findByUserId(linkedUser.getId())
+                    .orElseThrow(OAuthAuthenticationFailedException::new);
+
+            // An OAuth account is created before the required agreements and
+            // nickname are completed. It must never receive an access token
+            // until that completion step has succeeded.
+            if (linkedProfile.getNickname().startsWith(PENDING_NICKNAME_PREFIX)) {
+                String profileCompletionToken = jwtTokenProvider.createProfileCompletionToken(
+                        String.valueOf(linkedUser.getId()));
+                return OAuthLoginResponse.needsProfile(profileCompletionToken, linkedUser.getId());
+            }
+
+            return OAuthLoginResponse.completed(issueLoginResponse(linkedUser));
         }
 
         String resolvedEmail = profile.resolveEmail(provider);

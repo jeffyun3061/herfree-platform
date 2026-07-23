@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { AuthScreenShell } from '@/components/auth/AuthScreenShell';
-import { SocialLoginBelowEmail } from '@/components/auth/SocialLoginButtons';
+import { SocialLoginSection } from '@/components/auth/SocialLoginButtons';
 import { SignupAgreementFields, isRequiredSignupAgreed, type SignupAgreementState } from '@/components/auth/SignupAgreementFields';
 import { NicknameFieldWithCheck } from '@/components/auth/NicknameFieldWithCheck';
 import { Input } from '@/components/ui/Input';
@@ -142,6 +142,12 @@ function SignupForm() {
       title="헤르프리에 오신 걸 환영해요"
       subtitle="익명 커뮤니티와 개인 기록을 한 곳에서 관리할 수 있어요."
     >
+      <SocialLoginSection
+        returnUrl={resolveReturnUrl(searchParams.get('from'))}
+        mode="signup"
+        order="social-first"
+        className="mt-7"
+      />
       <form onSubmit={(e) => void handleSubmit(e)} className="mt-7 flex flex-col gap-4">
         <Input
           label="이메일"
@@ -197,11 +203,6 @@ function SignupForm() {
         </p>
       </form>
 
-      <SocialLoginBelowEmail
-        returnUrl={resolveReturnUrl(searchParams.get('from'))}
-        mode="signup"
-        className="mt-7"
-      />
     </AuthScreenShell>
   );
 }

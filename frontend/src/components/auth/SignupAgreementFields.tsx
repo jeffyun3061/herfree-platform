@@ -17,14 +17,36 @@ type SignupAgreementFieldsProps = {
 };
 
 export function SignupAgreementFields({ value, onChange }: SignupAgreementFieldsProps) {
+  const allAgreed = Object.values(value).every(Boolean);
+
+  const toggleAll = (checked: boolean) => {
+    onChange({
+      agreeTerms: checked,
+      agreePrivacy: checked,
+      agreeSensitive: checked,
+      agreeAge: checked,
+      agreeMarketing: checked,
+      agreeHealthStatistics: checked,
+    });
+  };
+
   return (
     <div className="space-y-3 rounded-[18px] border border-[#ECE5D8] bg-white p-4 shadow-card">
+      <label className="flex items-center gap-3 border-b border-[#ECE5D8] pb-3 text-sm font-bold text-[#0B3B36]">
+        <input
+          type="checkbox"
+          checked={allAgreed}
+          onChange={(e) => toggleAll(e.target.checked)}
+          className="h-5 w-5 shrink-0 rounded border-[#C9C1B3] text-[#0B3B36] focus:ring-[#0B3B36]"
+        />
+        <span>전체 동의하기</span>
+      </label>
       <label className="flex items-start gap-3 text-sm text-[#1E2621]">
         <input
           type="checkbox"
           checked={value.agreeTerms}
           onChange={(e) => onChange({ ...value, agreeTerms: e.target.checked })}
-          className="mt-0.5 h-4 w-4 rounded border-[#ECE5D8] text-[#0B3B36] focus:ring-[#0B3B36]"
+          className="mt-0.5 h-5 w-5 shrink-0 rounded border-[#C9C1B3] text-[#0B3B36] focus:ring-[#0B3B36]"
         />
         <span>
           <span className="font-medium text-[#0B3B36]">[필수]</span>{' '}
@@ -39,7 +61,7 @@ export function SignupAgreementFields({ value, onChange }: SignupAgreementFields
           type="checkbox"
           checked={value.agreeSensitive}
           onChange={(e) => onChange({ ...value, agreeSensitive: e.target.checked })}
-          className="mt-0.5 h-4 w-4 rounded border-[#ECE5D8] text-[#0B3B36] focus:ring-[#0B3B36]"
+          className="mt-0.5 h-5 w-5 shrink-0 rounded border-[#C9C1B3] text-[#0B3B36] focus:ring-[#0B3B36]"
         />
         <span>
           <span className="font-medium text-[#0B3B36]">[필수]</span>{' '}
@@ -51,7 +73,7 @@ export function SignupAgreementFields({ value, onChange }: SignupAgreementFields
           type="checkbox"
           checked={value.agreePrivacy}
           onChange={(e) => onChange({ ...value, agreePrivacy: e.target.checked })}
-          className="mt-0.5 h-4 w-4 rounded border-[#ECE5D8] text-[#0B3B36] focus:ring-[#0B3B36]"
+          className="mt-0.5 h-5 w-5 shrink-0 rounded border-[#C9C1B3] text-[#0B3B36] focus:ring-[#0B3B36]"
         />
         <span>
           <span className="font-medium text-[#0B3B36]">[필수]</span>{' '}
@@ -66,7 +88,7 @@ export function SignupAgreementFields({ value, onChange }: SignupAgreementFields
           type="checkbox"
           checked={value.agreeAge}
           onChange={(e) => onChange({ ...value, agreeAge: e.target.checked })}
-          className="mt-0.5 h-4 w-4 rounded border-[#ECE5D8] text-[#0B3B36] focus:ring-[#0B3B36]"
+          className="mt-0.5 h-5 w-5 shrink-0 rounded border-[#C9C1B3] text-[#0B3B36] focus:ring-[#0B3B36]"
         />
         <span>
           <span className="font-medium text-[#0B3B36]">[필수]</span> 만 14세 이상입니다.
@@ -77,7 +99,7 @@ export function SignupAgreementFields({ value, onChange }: SignupAgreementFields
           type="checkbox"
           checked={value.agreeHealthStatistics}
           onChange={(e) => onChange({ ...value, agreeHealthStatistics: e.target.checked })}
-          className="mt-0.5 h-4 w-4 rounded border-[#ECE5D8] text-[#0B3B36] focus:ring-[#0B3B36]"
+          className="mt-0.5 h-5 w-5 shrink-0 rounded border-[#C9C1B3] text-[#0B3B36] focus:ring-[#0B3B36]"
         />
         <span>
           <span className="font-medium text-[#5C645A]">[선택]</span>{' '}
@@ -97,7 +119,7 @@ export function SignupAgreementFields({ value, onChange }: SignupAgreementFields
           type="checkbox"
           checked={value.agreeMarketing}
           onChange={(e) => onChange({ ...value, agreeMarketing: e.target.checked })}
-          className="mt-0.5 h-4 w-4 rounded border-[#ECE5D8] text-[#0B3B36] focus:ring-[#0B3B36]"
+          className="mt-0.5 h-5 w-5 shrink-0 rounded border-[#C9C1B3] text-[#0B3B36] focus:ring-[#0B3B36]"
         />
         <span>
           <span className="font-medium text-[#5C645A]">[선택]</span> 마케팅 정보 수신에 동의합니다.
