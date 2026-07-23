@@ -5,14 +5,13 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { AuthScreenShell } from '@/components/auth/AuthScreenShell';
-import { SocialLoginSection } from '@/components/auth/SocialLoginButtons';
+import { EmailFieldWithCheck } from '@/components/auth/EmailFieldWithCheck';
 import { SignupAgreementFields, isRequiredSignupAgreed, type SignupAgreementState } from '@/components/auth/SignupAgreementFields';
 import { NicknameFieldWithCheck } from '@/components/auth/NicknameFieldWithCheck';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import {
-  EMAIL_MAX_LENGTH,
   PASSWORD_HINT,
   PASSWORD_MAX_LENGTH,
   validateEmail,
@@ -55,6 +54,7 @@ function SignupForm() {
     agreeHealthStatistics: false,
   });
   const [nicknameAvailable, setNicknameAvailable] = useState<boolean | null>(null);
+  const [emailAvailable, setEmailAvailable] = useState<boolean | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -111,6 +111,10 @@ function SignupForm() {
       setError('필수 약관에 동의해 주세요.');
       return;
     }
+    if (emailAvailable !== true) {
+      setError('이메일 중복확인을 먼저 해 주세요.');
+      return;
+    }
     if (nicknameAvailable !== true) {
       setError('닉네임 중복확인을 먼저 해 주세요.');
       return;
@@ -142,23 +146,12 @@ function SignupForm() {
       title="헤르프리에 오신 걸 환영해요"
       subtitle="익명 커뮤니티와 개인 기록을 한 곳에서 관리할 수 있어요."
     >
-      <SocialLoginSection
-        returnUrl={resolveReturnUrl(searchParams.get('from'))}
-        mode="signup"
-        order="social-first"
-        className="mt-7"
-      />
       <form onSubmit={(e) => void handleSubmit(e)} className="mt-7 flex flex-col gap-4">
-        <Input
-          label="이메일"
-          type="email"
-          required
-          autoComplete="email"
-          placeholder="이메일을 입력해 주세요"
-          value={email}
-          onChange={(e) => handleEmailChange(e.target.value)}
-          maxLength={EMAIL_MAX_LENGTH}
+        <EmailFieldWithCheck
+          email={email}
+          onEmailChange={handleEmailChange}
           error={fieldErrors.email}
+          onAvailabilityChange={setEmailAvailable}
         />
         <Input
           label="비밀번호"
@@ -192,7 +185,7 @@ function SignupForm() {
         <SignupAgreementFields value={agreements} onChange={setAgreements} />
 
         {error && <ErrorMessage message={error} />}
-        <Button type="submit" fullWidth size="lg" disabled={isSubmitting || !allRequiredAgreed}>
+        <Button type="submit" fullWidth size="lg" disabled={isSubmitting || !allRequiredAgreed || emailAvailable !== true || nicknameAvailable !== true}>
           {isSubmitting ? '가입 중...' : '가입 완료'}
         </Button>
         <p className="text-center text-sm text-[#5C645A]">

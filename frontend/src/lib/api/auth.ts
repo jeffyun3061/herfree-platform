@@ -19,6 +19,11 @@ export function checkNicknameAvailability(nickname: string): Promise<{ available
   return request<{ available: boolean }>(`/api/auth/nickname/check?${params.toString()}`);
 }
 
+export function checkEmailAvailability(email: string): Promise<{ available: boolean }> {
+  const params = new URLSearchParams({ email });
+  return request<{ available: boolean }>(`/api/auth/email/check?${params.toString()}`);
+}
+
 export function login(input: LoginRequest): Promise<LoginResult> {
   return request<LoginResult>('/api/auth/login', { method: 'POST', body: input });
 }

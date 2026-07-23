@@ -2,8 +2,11 @@ package com.herfree.domain.auth.service;
 
 import com.herfree.domain.auth.dto.request.LoginRequest;
 import com.herfree.domain.auth.dto.request.SignupRequest;
+import com.herfree.domain.auth.dto.response.EmailCheckResponse;
+import com.herfree.domain.auth.dto.response.EmailCheckResponse;
 import com.herfree.domain.auth.dto.response.LoginResponse;
 import com.herfree.domain.auth.dto.response.NicknameCheckResponse;
+import com.herfree.domain.auth.policy.CredentialPolicy;
 import com.herfree.domain.auth.exception.InvalidLoginCredentialsException;
 import com.herfree.domain.auth.exception.LoginLockedException;
 import com.herfree.domain.auth.exception.SuspendedAccountException;
@@ -108,6 +111,18 @@ public class AuthService {
             return new NicknameCheckResponse(false);
         }
         return new NicknameCheckResponse(!userProfileRepository.existsByNickname(trimmed));
+    }
+
+    @Transactional(readOnly = true)
+    public EmailCheckResponse checkEmailAvailability(String email) {
+        String normalized = EmailNormalizer.normalize(email);
+        if (normalized.isEmpty() || normalized.length() > CredentialPolicy.EMAIL_MAX_LENGTH) {
+            return new EmailCheckResponse(false);
+        }
+        if (!CredentialPolicy.isValidEmailFormat(normalized)) {
+            return new EmailCheckResponse(false);
+        }
+        return new EmailCheckResponse(!userRepository.existsByEmail(normalized));
     }
 
     // 로그인 — 이메일로 사용자를 찾고, 비밀번호를 검증한 뒤 JWT를 발급한다.

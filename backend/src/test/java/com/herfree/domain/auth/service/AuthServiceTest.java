@@ -126,6 +126,18 @@ class AuthServiceTest {
     }
 
     @Test
+    @DisplayName("이메일 중복 확인 API는 사용 가능 여부를 반환한다")
+    void checkEmailAvailability_returnsAvailability() {
+        given(userRepository.existsByEmail("new@test.com")).willReturn(false);
+        assertThat(authService.checkEmailAvailability("new@test.com").available()).isTrue();
+
+        given(userRepository.existsByEmail("duplicate@test.com")).willReturn(true);
+        assertThat(authService.checkEmailAvailability("duplicate@test.com").available()).isFalse();
+
+        assertThat(authService.checkEmailAvailability("not-an-email").available()).isFalse();
+    }
+
+    @Test
     @DisplayName("이메일이 중복이면 DuplicateEmailException이 발생한다")
     void signup_duplicateEmail_throws() {
         // given — 이미 존재하는 이메일

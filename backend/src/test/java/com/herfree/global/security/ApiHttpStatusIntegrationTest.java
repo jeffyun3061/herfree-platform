@@ -138,6 +138,16 @@ class ApiHttpStatusIntegrationTest {
     }
 
     @Test
+    @DisplayName("비회원도 이메일 중복 확인 API를 호출할 수 있다")
+    void emailCheck_withoutAuth_returns200() throws Exception {
+        mockMvc.perform(get("/api/auth/email/check")
+                        .param("email", "public@test.com"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.available").isBoolean());
+    }
+
+    @Test
     @DisplayName("로그인 10회 연속 실패 시 429를 반환한다")
     void login_tooManyFailures_returns429() throws Exception {
         for (int i = 0; i < LoginLockoutService.MAX_FAILURES - 1; i++) {
