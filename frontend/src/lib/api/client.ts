@@ -1,5 +1,4 @@
 import type { ApiEnvelope } from '@/domain/common/types';
-import { publishAuthRedirect } from '@/lib/auth-redirect';
 import { publishAppNotice } from '@/lib/app-notice';
 import { clearAuth, getAccessToken } from '@/lib/auth-storage';
 
@@ -130,11 +129,8 @@ function handleUnauthorized(hadToken: boolean, tokenAtRequest: string | null): v
   }
 
   publishAppNotice('session_expired');
-
-  if (!path.startsWith('/login')) {
-    const from = encodeURIComponent(path + window.location.search);
-    publishAuthRedirect(`/login?reason=session_expired&from=${from}`);
-  }
+  // staging Amplify Basic Auth 환경에서 /login 자동 이동 시 Chrome HTTP 401이 반복된다.
+  // 현재 페이지에 머물고 토스트의 로그인 링크만 제공한다.
 }
 
 function shouldInvalidateSessionOn401(path: string): boolean {
