@@ -15,6 +15,7 @@ frontend/playwright-report/
 frontend/test-results/
 
 # Environment & secrets (never commit)
+tmp-ssm.json
 .env
 .env.prod
 .env.*.local
