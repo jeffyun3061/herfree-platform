@@ -20,6 +20,8 @@ if ! command -v nginx >/dev/null 2>&1 || ! command -v certbot >/dev/null 2>&1; t
 fi
 
 install -d -m 0755 /etc/nginx/sites-available /etc/nginx/sites-enabled
+# certbot 재실행 시 예전 SSL 설정(herfree-staging)이 남으면 server_name 충돌 경고가 난다.
+rm -f /etc/nginx/sites-enabled/herfree-staging /etc/nginx/sites-available/herfree-staging
 cp "${CONF_SRC}" "/etc/nginx/sites-available/${CONF_NAME}"
 ln -sf "/etc/nginx/sites-available/${CONF_NAME}" "/etc/nginx/sites-enabled/${CONF_NAME}"
 rm -f /etc/nginx/sites-enabled/default
@@ -34,6 +36,11 @@ if [[ ! -f "${CERT_PATH}" ]]; then
 else
   certbot renew --quiet || true
 fi
+
+# certbot --nginx가 SSL server 블록을 만들 때 upstream을 8081로 쓰는 경우가 있다.
+# staging API 컨테이너는 deploy-release.sh 기준 127.0.0.1:8080만 리슨한다.
+find /etc/nginx/sites-enabled/ /etc/nginx/sites-available/ -type f 2>/dev/null \
+  | xargs -r sed -i 's/127.0.0.1:8081/127.0.0.1:8080/g'
 
 nginx -t
 systemctl reload nginx
