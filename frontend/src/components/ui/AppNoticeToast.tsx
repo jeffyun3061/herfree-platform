@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import Link from 'next/link';
+import { AuthEntryLink } from '@/components/auth/AuthEntryLink';
 import {
   APP_NOTICE_EVENT,
   consumeAppNotice,
@@ -57,13 +57,13 @@ export function AppNoticeToast() {
       >
         <p className="flex-1">{message}</p>
         {showLoginLink && (
-          <Link
+          <AuthEntryLink
             href="/login"
             className="shrink-0 font-semibold text-primary underline-offset-2 hover:underline"
             onClick={() => setNotice(null)}
           >
             로그인
-          </Link>
+          </AuthEntryLink>
         )}
         <button
           type="button"

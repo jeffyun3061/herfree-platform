@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { AuthEntryLink } from '@/components/auth/AuthEntryLink';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useBoards } from '@/hooks/useBoards';
@@ -98,12 +99,12 @@ function CommunityLockedPreview({
           <br />
           나누는 익명 공간이에요.
         </p>
-        <Link
+        <AuthEntryLink
           href="/login?from=/community"
           className="mt-4 flex h-[52px] items-center justify-center rounded-[14px] bg-[#0B3B36] text-[14.5px] font-bold text-white shadow-[0_14px_30px_-14px_rgba(11,59,54,.6)]"
         >
           로그인하기
-        </Link>
+        </AuthEntryLink>
         <Link href="/" className="mt-4 block text-[13px] hf-text-muted">
           ← 처음으로
         </Link>

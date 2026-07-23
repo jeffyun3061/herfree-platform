@@ -4,6 +4,8 @@ import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
+import { AuthEntryLink } from '@/components/auth/AuthEntryLink';
+import { getAccessToken } from '@/lib/auth-storage';
 import { AuthScreenShell } from '@/components/auth/AuthScreenShell';
 import { EmailFieldWithCheck } from '@/components/auth/EmailFieldWithCheck';
 import { SignupAgreementFields, isRequiredSignupAgreed, type SignupAgreementState } from '@/components/auth/SignupAgreementFields';
@@ -122,6 +124,10 @@ function SignupForm() {
     setIsSubmitting(true);
     try {
       await signup({ email, password, nickname, ...agreements });
+      if (!getAccessToken()) {
+        setError('가입은 완료됐지만 자동 로그인에 실패했습니다. 아래 로그인 링크에서 다시 시도해 주세요.');
+        return;
+      }
       router.replace(resolveReturnUrl(searchParams.get('from')));
     } catch (err) {
       if (isApiError(err) && err.status === 409) {
@@ -190,9 +196,9 @@ function SignupForm() {
         </Button>
         <p className="text-center text-sm text-[#5C645A]">
           이미 계정이 있나요?{' '}
-          <Link href="/login" className="font-semibold text-[#0B3B36]">
+          <AuthEntryLink href="/login" className="font-semibold text-[#0B3B36]">
             로그인
-          </Link>
+          </AuthEntryLink>
         </p>
       </form>
 
