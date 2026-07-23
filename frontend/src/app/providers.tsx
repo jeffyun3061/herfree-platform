@@ -2,14 +2,12 @@
 
 import { Suspense } from 'react';
 import { AuthProvider } from '@/hooks/useAuth';
-import { AuthRedirectListener } from '@/components/auth/AuthRedirectListener';
 import { AppShell } from '@/components/layout/AppShell';
 import { AnalyticsTracker } from '@/components/analytics/AnalyticsTracker';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <AuthProvider>
-      <AuthRedirectListener />
       <Suspense fallback={null}>
         <AnalyticsTracker />
       </Suspense>
