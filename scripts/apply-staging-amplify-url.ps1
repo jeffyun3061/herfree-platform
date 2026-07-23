@@ -2,7 +2,7 @@
 param(
     [string]$AwsProfile = "herfree-staging",
     [string]$Region = "ap-northeast-2",
-    [string]$FrontendUrl = "https://develop.d2bcg3vnlv5hkh.amplifyapp.com",
+    [string]$FrontendUrl = "https://staging.herpfree.co.kr",
     [string]$ApiBackendUrl = "http://api-staging.herpfree.co.kr",
     [string]$Repo = "jeffyun3061/herfree-platform",
     [switch]$SkipGitHub,
@@ -41,6 +41,7 @@ if ($UpdateSecretsManager) {
             Write-Host "[dry-run] would run $fixScript" -ForegroundColor Yellow
         }
         else {
+            $env:STAGING_FRONTEND_URL = $FrontendUrl
             python $fixScript
             if ($LASTEXITCODE -ne 0) {
                 throw "fix-staging-app-config-urls.py failed with exit code $LASTEXITCODE"
