@@ -52,7 +52,7 @@ function PostDetailBackHeader({
   const router = useRouter();
 
   return (
-    <div className="flex items-center gap-2.5 px-4 pb-3.5 pt-[54px]">
+    <div className="flex items-center gap-2.5 px-4 pb-3.5 hf-subpage-top">
       <button
         type="button"
         onClick={() => navigateBack(router, { pathname, fallbackHref: backHref })}
@@ -218,7 +218,7 @@ export default function PostDetailPage() {
   }
   if (!isLoggedIn) {
     return (
-      <div className="mx-auto max-w-app pb-20">
+      <div className="mx-auto max-w-app hf-scroll-pad-nav-tight">
         <PostDetailBackHeader backHref="/community" pathname={pathname} />
         <div className="px-5">
           <CommunityGuestPostPanel loginFrom={encodeURIComponent(`/community/posts/${postId}`)} />
@@ -282,8 +282,8 @@ export default function PostDetailPage() {
 
   return (
     <>
-      <article className="mx-auto max-w-app pb-20 lg:pb-8">
-        <div className="flex items-center justify-between gap-3 px-4 pb-3.5 pt-[54px]">
+      <article className="mx-auto max-w-app hf-scroll-pad-nav-tight lg:pb-8">
+        <div className="flex items-center justify-between gap-3 px-4 pb-3.5 hf-subpage-top">
           <button
             type="button"
             onClick={() => navigateBack(router, { pathname, fallbackHref: backHref })}

@@ -58,7 +58,7 @@ export function BottomNav() {
 
   return (
     <nav
-      className="fixed bottom-3 left-1/2 z-40 w-[min(calc(100vw-2rem),374px)] -translate-x-1/2 rounded-[20px] bg-[rgba(7,22,18,.9)] px-1.5 pb-[calc(0.45rem+env(safe-area-inset-bottom))] pt-2 shadow-[0_14px_30px_-18px_rgba(7,37,31,.62)] backdrop-blur-[14px]"
+      className="fixed bottom-3 left-1/2 z-40 w-[min(calc(100vw-2rem),374px)] -translate-x-1/2 rounded-[20px] bg-[rgba(7,22,18,.9)] px-1.5 pb-[var(--hf-bottom-nav-inner-pad)] pt-2 shadow-[0_14px_30px_-18px_rgba(7,37,31,.62)] backdrop-blur-[14px]"
       aria-label="하단 메뉴"
     >
       <ul className="flex items-center justify-around">

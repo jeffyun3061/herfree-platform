@@ -189,7 +189,7 @@ production은 별도로 ALB+ACM 또는 nginx+TLS를 쓴다 (`infra/nginx/herfree
 | **1** | 우리 | Amplify **커스텀 도메인 제거** | 콘솔에 `herpfree.co.kr` 없음 |
 | **2** | 의뢰인 | Gabia **삭제만** (§9.3 문구 전달) | `staging` CNAME·ACM `_0dc`/`_0de` 없음, `api-staging` A 유지 |
 | **3** | 우리 | **24시간 대기** | Amplify 도메인 재추가·재시도 금지 |
-| **4** | 우리 | Amplify **환경 변수** (develop) | `NEXT_PUBLIC_API_URL=http://api-staging.herpfree.co.kr`, `NEXT_PUBLIC_OAUTH_REDIRECT_ORIGIN=https://develop.d2bcg3vnlv5hkh.amplifyapp.com` |
+| **4** | 우리 | Amplify **환경 변수** (develop) | `API_REWRITE_TARGET=http://api-staging.herpfree.co.kr`, `NEXT_PUBLIC_API_URL`은 비움, `NEXT_PUBLIC_OAUTH_REDIRECT_ORIGIN=https://develop.d2bcg3vnlv5hkh.amplifyapp.com` |
 | **5** | 우리 | Secrets Manager + API 재배포 | 아래 스크립트 |
 | **6** | 우리 | `Release backend` (staging) | `http://api-staging.herpfree.co.kr/api/health` → 200 |
 | **7** | 의뢰인 | SES 인증 메일 클릭 | SES `Success` |

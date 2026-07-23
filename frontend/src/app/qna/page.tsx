@@ -6,7 +6,7 @@ import { ScreenHeader } from '@/components/layout/ScreenHeader';
 
 export default function QnaPage() {
   return (
-    <div className="content-screen mx-auto max-w-app pb-[96px] lg:max-w-none">
+    <div className="content-screen mx-auto max-w-app hf-scroll-pad-nav lg:max-w-none">
       <Suspense fallback={null}>
         <QnaDeepLinkSync />
       </Suspense>

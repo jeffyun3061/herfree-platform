@@ -55,7 +55,7 @@ export function PrivateBoardFeed({ boardType }: PrivateBoardFeedProps) {
   }
 
   return (
-    <div className="community-screen mx-auto max-w-app pb-20 lg:max-w-none lg:pb-12">
+    <div className="community-screen mx-auto max-w-app hf-scroll-pad-nav-tight lg:max-w-none lg:pb-12">
       <ScreenHeader
         title={meta.title}
         subtitle="서비스 이용과 운영에 관한 문의를 남겨 주세요"
