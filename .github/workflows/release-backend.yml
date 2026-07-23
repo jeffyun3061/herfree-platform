@@ -87,6 +87,7 @@ jobs:
           tar -czf /tmp/herfree-release-bundle.tgz \
             docker-compose.release.yml \
             infra/nginx/herfree-staging.conf \
+            infra/nginx/herfree-staging-bootstrap.conf \
             infra/scripts/deploy-release.sh \
             infra/scripts/setup-staging-tls.sh \
             infra/scripts/render-release-env.sh \
