@@ -1,14 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 /** Amplify/호스팅 런타임 env 반영 — 모듈 상단 상수로 두면 build 시점 값에 고정될 수 있다. */
-function resolveApiTarget(): string {
-  return (
-    process.env['API_REWRITE_TARGET'] ||
-    // Amplify exposes NEXT_PUBLIC_* during the Next.js build. Static property
-    // access is required so Next can inline the value into this server route.
-    process.env.NEXT_PUBLIC_API_URL ||
-    'http://127.0.0.1:8080'
-  ).replace(/\/$/, '');
+function resolveApiTarget(): string | null {
+  const configuredTarget =
+    process.env['API_REWRITE_TARGET']?.trim() ||
+    // Backwards compatibility for hosting configurations created before
+    // API_REWRITE_TARGET was introduced.
+    process.env.NEXT_PUBLIC_API_URL?.trim();
+
+  if (configuredTarget) {
+    return configuredTarget.replace(/\/$/, '');
+  }
+
+  // Local development intentionally targets a locally running Spring API.
+  // A deployed frontend must never silently proxy to its own 127.0.0.1.
+  return process.env.NODE_ENV === 'development' ? 'http://127.0.0.1:8080' : null;
 }
 
 // 프록시가 그대로 넘기면 안 되는 전송 계층 헤더들이다.
@@ -28,7 +34,19 @@ const HOP_BY_HOP = new Set([
 /** 브라우저 → Next → Spring. Origin 제거로 모바일/ngrok CORS 403 방지 */
 async function proxyToBackend(request: NextRequest, pathSegments: string[]) {
   const path = pathSegments.join('/');
-  const targetUrl = `${resolveApiTarget()}/api/${path}${request.nextUrl.search}`;
+  const apiTarget = resolveApiTarget();
+  if (!apiTarget) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: 'API 프록시 주소가 설정되지 않았습니다. 배포 환경의 API_REWRITE_TARGET을 확인해 주세요.',
+        data: null,
+      },
+      { status: 503 },
+    );
+  }
+
+  const targetUrl = `${apiTarget}/api/${path}${request.nextUrl.search}`;
 
   const headers = new Headers();
   request.headers.forEach((value, key) => {
