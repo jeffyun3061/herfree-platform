@@ -33,7 +33,7 @@ export function AppShell({ children }: AppShellProps) {
           <main
             className={cn(
               'min-h-[100dvh] bg-[#F3EDE3] lg:min-h-[min(844px,calc(100vh-4rem))]',
-              showNav && 'pb-[4.75rem]',
+              showNav && 'pb-[calc(4.75rem+env(safe-area-inset-bottom))]',
             )}
           >
             {children}

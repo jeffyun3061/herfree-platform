@@ -115,17 +115,22 @@ test.describe('release smoke', () => {
     const home = await request.get('/');
     expect(home.headers()['content-security-policy']).toContain("default-src 'self'");
 
-    const health = stagingApiURL
-      ? await request.get(`${stagingApiURL}/api/health`)
-      : await request.get('/api/health');
+    // Always exercise the frontend same-origin proxy. Checking only the direct
+    // backend URL would miss a broken Amplify -> Spring connection.
+    const health = await request.get('/api/health');
     expect(health.status()).toBe(200);
     expect(health.headers()['x-request-id']).toBeTruthy();
-    await data(await request.get(stagingApiURL ? `${stagingApiURL}/api/boards` : '/api/boards'));
-    await data(await request.get(
-      stagingApiURL ? `${stagingApiURL}/api/posts?page=0&size=5` : '/api/posts?page=0&size=5',
-    ));
+    await data(await request.get('/api/boards'));
+    await data(await request.get('/api/posts?page=0&size=5'));
+    await data(await request.get('/api/contents?page=0&size=1'));
+    await data(await request.get('/api/videos?page=0&size=1'));
 
-    const admin = await request.get(stagingApiURL ? `${stagingApiURL}/api/admin/reports` : '/api/admin/reports');
+    if (stagingApiURL) {
+      const backendHealth = await request.get(`${stagingApiURL}/api/health`);
+      expect(backendHealth.status()).toBe(200);
+    }
+
+    const admin = await request.get('/api/admin/reports');
     expect([401, 403]).toContain(admin.status());
   });
 });

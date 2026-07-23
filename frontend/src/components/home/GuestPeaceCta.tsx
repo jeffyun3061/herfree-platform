@@ -71,10 +71,10 @@ export function GuestPeaceCta() {
           </div>
 
           <Link
-            href="/signup?from=/journal"
+            href="/login?from=/journal"
             className="mt-5 flex min-h-[46px] items-center justify-center rounded-[14px] bg-[#0B3B36] text-[14px] font-extrabold text-white shadow-[0_16px_30px_-24px_rgba(11,59,54,.75)]"
           >
-            가입 후 기록 시작하기
+            로그인하기
           </Link>
           <Link
             href="/login?from=%2Fjournal"
