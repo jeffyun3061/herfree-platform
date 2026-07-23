@@ -4,10 +4,14 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 
-FRONTEND_URL = "https://develop.d2bcg3vnlv5hkh.amplifyapp.com"
+FRONTEND_URL = os.environ.get(
+    "STAGING_FRONTEND_URL",
+    "https://develop.d2bcg3vnlv5hkh.amplifyapp.com",
+)
 SECRET_ID = "herfree/staging/app-config"
 PROFILE = "herfree-staging"
 REGION = "ap-northeast-2"
