@@ -56,7 +56,7 @@ export function MyPostCollectionPage({
   return (
     <>
       <PageHeader title={title} showBack backHref="/mypage" />
-      <main className="page-container mx-auto w-full max-w-app pb-24 lg:max-w-content lg:pb-12">
+      <main className="page-container mx-auto w-full max-w-app hf-scroll-pad-nav lg:max-w-content lg:pb-12">
         <header className="mb-4 px-0.5">
           <h1 className="hf-display text-[24px] font-extrabold text-[#1E2621] lg:hidden">{title}</h1>
           <p className="mt-1 text-[12.5px] leading-[1.65] text-[#7C8279]">{subtitle}</p>

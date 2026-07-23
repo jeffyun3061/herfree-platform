@@ -45,7 +45,7 @@ export default function VideosPage() {
 
   return (
     <>
-      <div className="media-screen mx-auto max-w-app pb-24 lg:max-w-none">
+      <div className="media-screen mx-auto max-w-app hf-scroll-pad-nav lg:max-w-none">
         <ScreenHeader
           title="헤르프리 영상"
           subtitle="유튜브 채널에서 다뤄온 이야기들"

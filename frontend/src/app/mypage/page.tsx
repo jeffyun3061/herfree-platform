@@ -134,7 +134,7 @@ export default function MyPage() {
 
   return (
     <>
-      <div className="pb-[96px] lg:pb-10">
+      <div className="hf-scroll-pad-nav lg:pb-10">
         <section className="relative h-[172px] overflow-hidden">
           <img
             src={PUBLIC_IMAGES.homeHero}

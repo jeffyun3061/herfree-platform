@@ -70,7 +70,7 @@ function LoggedInHomePage() {
 
   return (
     <div className="min-h-screen bg-[#F3EDE3] lg:pb-10">
-      <div className="home-dashboard-screen mx-auto w-full max-w-app max-lg:pb-28 lg:pb-10">
+      <div className="home-dashboard-screen mx-auto w-full max-w-app">
         <div className="flex w-full flex-col gap-[22px]">
           <ScreenHeader
             align="center"

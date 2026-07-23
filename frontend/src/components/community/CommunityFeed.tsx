@@ -233,7 +233,7 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
   const listError = isLoggedIn ? (boardsError ?? error) : null;
 
   return (
-    <div className="community-screen mx-auto max-w-app pb-24 lg:max-w-none">
+    <div className="community-screen mx-auto max-w-app hf-scroll-pad-nav lg:max-w-none">
       <ScreenHeader
         titleAs="h2"
         title="커뮤니티"

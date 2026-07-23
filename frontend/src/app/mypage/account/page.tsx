@@ -120,7 +120,7 @@ export default function AccountSettingsPage() {
   return (
     <>
       <PageHeader title="회원정보 수정" showBack backHref="/mypage" />
-      <main className="page-container mx-auto w-full max-w-app pb-24 lg:max-w-content lg:pb-12">
+      <main className="page-container mx-auto w-full max-w-app hf-scroll-pad-nav lg:max-w-content lg:pb-12">
         <header className="mb-5 px-0.5">
           <h1 className="hf-display text-[24px] font-extrabold text-[#1E2621] lg:hidden">회원정보 수정</h1>
           <p className="mt-1 text-[12.5px] leading-[1.65] text-[#7C8279]">
