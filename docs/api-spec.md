@@ -81,6 +81,7 @@ DB·API는 UTC, 화면 표시는 브라우저 로컬(KST). 상세: [decision-log
 | Method | URL | 설명 | 권한 |
 |--------|-----|------|------|
 | POST | `/api/auth/signup` | 회원가입 | 비회원 |
+| GET | `/api/auth/email/check?email=` | 이메일 사용 가능 여부 조회 | 비회원 |
 | GET | `/api/auth/nickname/check?nickname=` | 닉네임 사용 가능 여부 조회 | 비회원 |
 | POST | `/api/auth/login` | 로그인 | 비회원 |
 | POST | `/api/auth/logout` | 로그아웃 | 회원 |
@@ -121,6 +122,18 @@ DB·API는 UTC, 화면 표시는 브라우저 로컬(KST). 상세: [decision-log
 | 필드 | 설명 |
 |------|------|
 | `available` | `true`면 가입·프로필 완료에 사용 가능 |
+
+**이메일 중복 확인** (`GET /api/auth/email/check`)
+
+```json
+{ "available": true }
+```
+
+| 필드 | 설명 |
+|------|------|
+| `available` | `true`면 이메일 가입에 사용 가능 (형식 오류·중복·길이 초과 시 `false`) |
+
+프론트 회원가입 UX: 이메일·닉네임 각각 중복 확인(`available: true`) 후 `POST /api/auth/signup` 호출.
 
 | HTTP | 조건 | message (예) |
 |------|------|----------------|

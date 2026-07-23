@@ -1,4 +1,5 @@
 import type { ApiEnvelope } from '@/domain/common/types';
+import { publishAuthRedirect } from '@/lib/auth-redirect';
 import { publishAppNotice } from '@/lib/app-notice';
 import { clearAuth, getAccessToken } from '@/lib/auth-storage';
 
@@ -132,7 +133,7 @@ function handleUnauthorized(hadToken: boolean, tokenAtRequest: string | null): v
 
   if (!path.startsWith('/login')) {
     const from = encodeURIComponent(path + window.location.search);
-    window.location.href = `/login?reason=session_expired&from=${from}`;
+    publishAuthRedirect(`/login?reason=session_expired&from=${from}`);
   }
 }
 

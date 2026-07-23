@@ -7,6 +7,7 @@ package com.herfree.domain.auth.policy;
 public final class CredentialPolicy {
 
     public static final int EMAIL_MAX_LENGTH = 254;
+    private static final String EMAIL_FORMAT_PATTERN = "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$";
     public static final int PASSWORD_MIN_LENGTH = 10;
     /** 신규·변경·로그인·현재 비밀번호 입력 모두 동일 상한 */
     public static final int PASSWORD_MAX_LENGTH = 24;
@@ -20,5 +21,9 @@ public final class CredentialPolicy {
             "비밀번호에 특수문자(!, @, # 등)를 하나 이상 포함해 주세요.";
 
     private CredentialPolicy() {
+    }
+
+    public static boolean isValidEmailFormat(String email) {
+        return email != null && email.matches(EMAIL_FORMAT_PATTERN);
     }
 }

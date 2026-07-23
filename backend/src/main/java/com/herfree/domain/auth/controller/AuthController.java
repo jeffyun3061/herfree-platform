@@ -6,6 +6,7 @@ import com.herfree.domain.auth.dto.request.OAuthLoginRequest;
 import com.herfree.domain.auth.dto.request.PasswordResetConfirmRequest;
 import com.herfree.domain.auth.dto.request.PasswordResetRequest;
 import com.herfree.domain.auth.dto.request.SignupRequest;
+import com.herfree.domain.auth.dto.response.EmailCheckResponse;
 import com.herfree.domain.auth.dto.response.LoginResponse;
 import com.herfree.domain.auth.dto.response.NicknameCheckResponse;
 import com.herfree.domain.auth.dto.response.OAuthLoginResponse;
@@ -54,6 +55,13 @@ public class AuthController {
             @RequestParam String nickname
     ) {
         return ResponseEntity.ok(ApiResponse.success(authService.checkNicknameAvailability(nickname)));
+    }
+
+    @GetMapping("/email/check")
+    public ResponseEntity<ApiResponse<EmailCheckResponse>> checkEmail(
+            @RequestParam String email
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(authService.checkEmailAvailability(email)));
     }
 
     // 로그인 — JWT accessToken을 응답에 포함한다.
