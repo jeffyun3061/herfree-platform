@@ -170,7 +170,7 @@ staging API는 EC2에서 Docker가 **127.0.0.1:8080**으로 Spring Boot를 띄�
 Amplify(프론트)는 서버 사이드에서 `https://api-staging.herpfree.co.kr` 로 프록시한다.
 
 1. A 레코드 `api-staging` → `3.37.78.234` 유지
-2. `Release backend` (staging)가 `deploy-release.sh` + `setup-staging-tls.sh`로 컨테이너·nginx를 갱신한다
+2. `Release backend` (staging)가 `deploy-release.sh` + `setup-staging-tls.sh`(repo nginx + `certbot certonly --webroot`)로 컨테이너·TLS를 갱신한다
 3. 확인: `https://api-staging.herpfree.co.kr/api/health` → 200
 
 production은 별도로 ALB+ACM 또는 nginx+TLS를 쓴다 (`infra/nginx/herfree.conf` 참고).
