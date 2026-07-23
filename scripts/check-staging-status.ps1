@@ -146,11 +146,11 @@ Add-Check "API DNS" ($apiIps -contains "3.37.78.234") $(if ($apiIps.Count) { $ap
 Add-Check "Custom frontend DNS (optional)" ($customFrontendIps.Count -eq 0) $(if ($customFrontendIps.Count) { "still configured — Gabia cleanup §9.3" } else { "not configured (expected during reset)" })
 
 $apiHttpCode = Test-Https "http://api-staging.herpfree.co.kr/api/health"
-Add-Check "API HTTP health" ($apiHttpCode -eq 200) "HTTP $apiHttpCode" $true
+Add-Check "API HTTP redirect/health" ($apiHttpCode -in @(200, 301, 302, 308)) "HTTP $apiHttpCode"
 
 if ($apiIps.Count -gt 0) {
     $healthCode = Test-Https "https://api-staging.herpfree.co.kr/api/health"
-    Add-Check "API HTTPS health (optional)" ($healthCode -eq 200) $(if ($healthCode -eq 200) { "HTTP 200" } else { "not configured — staging uses HTTP on port 80" })
+    Add-Check "API HTTPS health" ($healthCode -eq 200) $(if ($healthCode -eq 200) { "HTTP 200" } else { "HTTPS not ready" }) $true
 }
 
 $frontendCode = Test-Https $StagingFrontendUrl

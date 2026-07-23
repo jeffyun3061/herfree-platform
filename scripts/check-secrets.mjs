@@ -40,6 +40,8 @@ const forbiddenPaths = [
   { name: '실행 환경 설정', pattern: /(^|\/)application-(?:local|prod|secret)\.yml$/ },
   { name: '인증서/개인키', pattern: /\.(?:pem|p12|pfx|jks|keystore|key)$/i },
   { name: 'secrets 폴더', pattern: /(^|\/)secrets\//i },
+  { name: '로컬 운영/SSM 덤프', pattern: /(^|\/)tmp-.*\.json$/i },
+  { name: 'SSM/자격증명 JSON 덤프', pattern: /(?:ssm|credentials|accessKeys).*\.json$/i },
 ];
 const valueRules = [
   { name: '개인키 본문', pattern: /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/ },

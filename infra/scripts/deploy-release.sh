@@ -24,13 +24,8 @@ COMPOSE_FILE="${APP_DIR}/docker-compose.release.yml"
 STATE_DIR="${APP_DIR}/.deploy"
 PROJECT="herfree-${DEPLOY_ENV}"
 
-if [[ "${DEPLOY_ENV}" == "staging" ]]; then
-  PORT=80
-  BIND_HOST="0.0.0.0"
-else
-  PORT=8080
-  BIND_HOST="127.0.0.1"
-fi
+PORT=8080
+BIND_HOST="127.0.0.1"
 
 if [[ ! -f "${ENV_FILE}" || ! -f "${COMPOSE_FILE}" ]]; then
   echo "release config missing for ${DEPLOY_ENV}"
@@ -64,11 +59,11 @@ show_logs() {
 }
 
 echo "deploying ${DEPLOY_ENV} image"
-if [[ "${DEPLOY_ENV}" == "staging" ]]; then
-  systemctl stop nginx 2>/dev/null || true
-  systemctl disable nginx 2>/dev/null || true
-fi
 deploy_image "${NEW_IMAGE}"
+
+if [[ "${DEPLOY_ENV}" == "staging" && -x "${APP_DIR}/infra/scripts/setup-staging-tls.sh" ]]; then
+  "${APP_DIR}/infra/scripts/setup-staging-tls.sh"
+fi
 
 healthy=false
 for _ in {1..150}; do

@@ -3,7 +3,7 @@ param(
     [string]$AwsProfile = "herfree-staging",
     [string]$Region = "ap-northeast-2",
     [string]$FrontendUrl = "https://staging.herpfree.co.kr",
-    [string]$ApiBackendUrl = "http://api-staging.herpfree.co.kr",
+    [string]$ApiBackendUrl = "https://api-staging.herpfree.co.kr",
     [string]$Repo = "jeffyun3061/herfree-platform",
     [switch]$SkipGitHub,
     [switch]$UpdateSecretsManager,
