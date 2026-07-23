@@ -4,7 +4,9 @@ import { NextRequest, NextResponse } from 'next/server';
 function resolveApiTarget(): string {
   return (
     process.env['API_REWRITE_TARGET'] ||
-    process.env['NEXT_PUBLIC_API_URL'] ||
+    // Amplify exposes NEXT_PUBLIC_* during the Next.js build. Static property
+    // access is required so Next can inline the value into this server route.
+    process.env.NEXT_PUBLIC_API_URL ||
     'http://127.0.0.1:8080'
   ).replace(/\/$/, '');
 }

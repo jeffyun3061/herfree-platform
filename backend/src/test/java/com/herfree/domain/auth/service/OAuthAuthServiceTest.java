@@ -248,4 +248,44 @@ class OAuthAuthServiceTest {
         verify(userConsentAgreementService).recordSignupConsent(user, true, true, false);
         verify(healthStatisticsConsentService).recordInitialConsent(user, true);
     }
+
+    @Test
+    @DisplayName("필수 약관과 닉네임을 완료하지 않은 소셜 계정은 액세스 토큰을 받을 수 없다")
+    void loginWithCode_pendingAccount_returnsProfileCompletionToken() {
+        User user = User.builder()
+                .email("naver_1@oauth.herfree.local")
+                .password("hash")
+                .role(UserRole.USER)
+                .status(UserStatus.ACTIVE)
+                .build();
+        org.springframework.test.util.ReflectionTestUtils.setField(user, "id", 11L);
+
+        UserOAuthAccount linked = UserOAuthAccount.builder()
+                .user(user)
+                .provider(OAuthProvider.NAVER)
+                .providerUserId("pending-123")
+                .build();
+        UserProfile pendingProfile = UserProfile.builder()
+                .user(user)
+                .nickname("pending_12345678")
+                .isPublic(true)
+                .build();
+
+        given(oauthClientRegistry.requireClient(OAuthProvider.NAVER)).willReturn(oauthClient);
+        given(oauthClient.fetchProfile("code", "http://localhost:3000/auth/callback/naver", "state-1"))
+                .willReturn(OAuthProviderProfile.of("pending-123", null, null, null));
+        given(userOAuthAccountRepository.findByProviderAndProviderUserId(OAuthProvider.NAVER, "pending-123"))
+                .willReturn(Optional.of(linked));
+        given(userProfileRepository.findByUserId(11L)).willReturn(Optional.of(pendingProfile));
+        given(jwtTokenProvider.createProfileCompletionToken("11")).willReturn("completion-token");
+
+        var response = oauthAuthService.loginWithCode(
+                OAuthProvider.NAVER,
+                new OAuthLoginRequest("code", "http://localhost:3000/auth/callback/naver", "state-1")
+        );
+
+        assertThat(response.needsProfile()).isTrue();
+        assertThat(response.profileCompletionToken()).isEqualTo("completion-token");
+        assertThat(response.accessToken()).isNull();
+    }
 }

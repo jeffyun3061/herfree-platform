@@ -40,13 +40,10 @@ function LockIcon() {
 }
 
 function CommunityLockedPreview({
-  totalStories,
   memberCount,
 }: {
-  totalStories: number;
   memberCount: number | null | undefined;
 }) {
-  const storyCount = totalStories > 0 ? totalStories : 128;
   const memberLine =
     memberCount && memberCount > 0
       ? `${memberCount.toLocaleString('ko-KR')}명의 회원과 함께하는`
@@ -82,7 +79,7 @@ function CommunityLockedPreview({
           <div className="absolute inset-0 flex items-center justify-center">
             <span className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-[#5C645A]">
               <LockIcon />
-              가입하면 바로 글을 볼 수 있어요
+              로그인하면 바로 글을 볼 수 있어요
             </span>
           </div>
         </div>
@@ -101,14 +98,11 @@ function CommunityLockedPreview({
           <br />
           나누는 익명 공간이에요.
         </p>
-        <p className="mt-5 text-[13px] text-[#5C645A]">
-          가입하면 {storyCount.toLocaleString('ko-KR')}개의 이야기를 볼 수 있어요
-        </p>
         <Link
-          href="/signup?from=/community"
+          href="/login?from=/community"
           className="mt-4 flex h-[52px] items-center justify-center rounded-[14px] bg-[#0B3B36] text-[14.5px] font-bold text-white shadow-[0_14px_30px_-14px_rgba(11,59,54,.6)]"
         >
-          30초 만에 가입하기
+          로그인하기
         </Link>
         <Link href="/" className="mt-4 block text-[13px] hf-text-muted">
           ← 처음으로
@@ -145,9 +139,6 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
     postListPeriodQuery(sort, period),
     { enabled: isReady && isLoggedIn },
   );
-  const { postPage: guestPostPage } = usePostList(undefined, 1, '', 'createdAt,desc', undefined, {
-    enabled: isReady && !isLoggedIn,
-  });
   const { data: homeStats } = useJournalPublicHomeStats();
 
   const communityBoards = useMemo(() => getCommunityBoards(boards), [boards]);
@@ -240,7 +231,6 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
 
   const isLoadingAll = isLoggedIn && (boardsLoading || isLoading);
   const listError = isLoggedIn ? (boardsError ?? error) : null;
-  const guestStoryCount = guestPostPage.totalElements || guestPostPage.content.length;
 
   return (
     <div className="community-screen mx-auto max-w-app pb-24 lg:max-w-none">
@@ -263,7 +253,6 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
 
       {!isReady || !isLoggedIn ? (
         <CommunityLockedPreview
-          totalStories={guestStoryCount}
           memberCount={homeStats?.totalUsers}
         />
       ) : (

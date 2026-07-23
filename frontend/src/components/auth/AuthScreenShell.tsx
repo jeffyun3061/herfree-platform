@@ -20,7 +20,7 @@ export function AuthScreenShell({
 }: AuthScreenShellProps) {
   return (
     <div className="min-h-[100dvh] bg-[#F3EDE3] lg:min-h-[min(844px,calc(100vh-4rem))]">
-      <div className="flex min-h-[100dvh] flex-col px-0 pb-11 pt-[max(18px,env(safe-area-inset-top))] lg:min-h-[min(844px,calc(100vh-4rem))] lg:pt-6">
+      <div className="flex min-h-[100dvh] flex-col px-0 pb-[max(2.75rem,calc(1rem+env(safe-area-inset-bottom)))] pt-[max(18px,env(safe-area-inset-top))] lg:min-h-[min(844px,calc(100vh-4rem))] lg:pb-11 lg:pt-6">
         <div className="px-5">
           <Link
             href={backHref}
