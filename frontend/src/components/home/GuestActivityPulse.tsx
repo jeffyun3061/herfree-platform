@@ -114,15 +114,15 @@ export function GuestActivityPulse({ posts, isLoading }: GuestActivityPulseProps
             회원만 이용할 수 있는 공간이에요
           </p>
           <p className="mb-[18px] text-[13px] leading-[1.6] text-[#5C645A]">
-            가입하면 익명으로 올라온 이야기를
+            로그인하면 익명으로 올라온 이야기를
             <br />
             안전하게 확인할 수 있어요
           </p>
           <Link
-            href="/signup?from=/community"
+            href="/login?from=/community"
             className="rounded-[12px] bg-[#0B3B36] px-6 py-3 text-[13.5px] font-bold text-white"
           >
-            가입하고 둘러보기
+            로그인하기
           </Link>
         </div>
       </div>

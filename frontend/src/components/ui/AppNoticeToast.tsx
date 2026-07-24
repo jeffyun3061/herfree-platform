@@ -1,7 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { AuthEntryLink } from '@/components/auth/AuthEntryLink';
 import {
   APP_NOTICE_EVENT,
   consumeAppNotice,
@@ -13,6 +14,7 @@ import { cn } from '@/lib/cn';
 const AUTO_DISMISS_MS = 6000;
 
 export function AppNoticeToast() {
+  const pathname = usePathname();
   const [notice, setNotice] = useState<AppNoticeKind | null>(null);
 
   const showNotice = useCallback((kind: AppNoticeKind) => {
@@ -42,6 +44,10 @@ export function AppNoticeToast() {
 
   const message = getAppNoticeMessage(notice);
   const showLoginLink = notice === 'session_expired' || notice === 'login_required';
+  const loginHref =
+    pathname.startsWith('/login') || pathname.startsWith('/signup')
+      ? '/login'
+      : `/login?reason=session_expired&from=${encodeURIComponent(pathname)}`;
 
   return (
     <div
@@ -57,13 +63,13 @@ export function AppNoticeToast() {
       >
         <p className="flex-1">{message}</p>
         {showLoginLink && (
-          <Link
-            href="/login"
+          <AuthEntryLink
+            href={loginHref}
             className="shrink-0 font-semibold text-primary underline-offset-2 hover:underline"
             onClick={() => setNotice(null)}
           >
             로그인
-          </Link>
+          </AuthEntryLink>
         )}
         <button
           type="button"

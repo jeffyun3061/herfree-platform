@@ -15,7 +15,11 @@ frontend/playwright-report/
 frontend/test-results/
 
 # Environment & secrets (never commit)
+tmp-ssm.json
+tmp-*.json
+**/*-ssm.json
 .env
+.env.staging
 .env.prod
 .env.*.local
 .env.*.production
@@ -51,6 +55,7 @@ frontend/.env.production
 *.pem
 *.p12
 *.pfx
+!infra/certs/rds-global-bundle.pem
 
 # Logs
 *.log

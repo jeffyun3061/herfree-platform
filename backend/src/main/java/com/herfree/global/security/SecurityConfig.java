@@ -74,6 +74,7 @@ public class SecurityConfig {
                             "/api/auth/signup",
                             "/api/auth/login",
                             "/api/auth/nickname/check",
+                            "/api/auth/email/check",
                             "/api/auth/oauth/**",
                             "/api/auth/password-reset/request",
                             "/api/auth/password-reset/confirm",

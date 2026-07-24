@@ -1,6 +1,7 @@
 package com.herfree.domain.auth.dto.request;
 
 import com.herfree.domain.auth.policy.CredentialPolicy;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
@@ -13,7 +14,11 @@ public record PasswordResetConfirmRequest(
         @Size(
                 min = CredentialPolicy.PASSWORD_MIN_LENGTH,
                 max = CredentialPolicy.PASSWORD_MAX_LENGTH,
-                message = "비밀번호는 15자 이상 64자 이하여야 합니다."
+                message = CredentialPolicy.PASSWORD_LENGTH_MESSAGE
+        )
+        @Pattern(
+                regexp = CredentialPolicy.PASSWORD_SPECIAL_CHAR_PATTERN,
+                message = CredentialPolicy.PASSWORD_SPECIAL_CHAR_MESSAGE
         )
         String newPassword
 ) {

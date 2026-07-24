@@ -1,6 +1,6 @@
 plugins {
     java
-    id("org.springframework.boot") version "3.3.6"
+    id("org.springframework.boot") version "3.5.16"
     id("io.spring.dependency-management") version "1.1.6"
 }
 
@@ -12,6 +12,9 @@ java {
         languageVersion = JavaLanguageVersion.of(17)
     }
 }
+
+// Trivy release gate: Netty CVE-2026-59901/55831/55833/56745 (4.1.136.Final+)
+extra["netty.version"] = "4.1.136.Final"
 
 repositories {
     mavenCentral()
@@ -29,7 +32,7 @@ dependencies {
     implementation("org.flywaydb:flyway-core")
     implementation("org.flywaydb:flyway-mysql")
 
-    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.17")
 
     implementation("software.amazon.awssdk:s3:2.29.45")
 
@@ -41,8 +44,11 @@ dependencies {
     annotationProcessor("org.projectlombok:lombok")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework.boot:spring-boot-testcontainers")
     testImplementation("org.springframework.security:spring-security-test")
     testImplementation("com.h2database:h2")
+    testImplementation("org.testcontainers:junit-jupiter")
+    testImplementation("org.testcontainers:mysql")
 
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }

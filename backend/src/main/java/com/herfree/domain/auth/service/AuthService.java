@@ -2,8 +2,11 @@ package com.herfree.domain.auth.service;
 
 import com.herfree.domain.auth.dto.request.LoginRequest;
 import com.herfree.domain.auth.dto.request.SignupRequest;
+import com.herfree.domain.auth.dto.response.EmailCheckResponse;
+import com.herfree.domain.auth.dto.response.EmailCheckResponse;
 import com.herfree.domain.auth.dto.response.LoginResponse;
 import com.herfree.domain.auth.dto.response.NicknameCheckResponse;
+import com.herfree.domain.auth.policy.CredentialPolicy;
 import com.herfree.domain.auth.exception.InvalidLoginCredentialsException;
 import com.herfree.domain.auth.exception.LoginLockedException;
 import com.herfree.domain.auth.exception.SuspendedAccountException;
@@ -110,6 +113,18 @@ public class AuthService {
         return new NicknameCheckResponse(!userProfileRepository.existsByNickname(trimmed));
     }
 
+    @Transactional(readOnly = true)
+    public EmailCheckResponse checkEmailAvailability(String email) {
+        String normalized = EmailNormalizer.normalize(email);
+        if (normalized.isEmpty() || normalized.length() > CredentialPolicy.EMAIL_MAX_LENGTH) {
+            return new EmailCheckResponse(false);
+        }
+        if (!CredentialPolicy.isValidEmailFormat(normalized)) {
+            return new EmailCheckResponse(false);
+        }
+        return new EmailCheckResponse(!userRepository.existsByEmail(normalized));
+    }
+
     // 로그인 — 이메일로 사용자를 찾고, 비밀번호를 검증한 뒤 JWT를 발급한다.
     @Transactional
     public LoginResponse login(LoginRequest request) {
@@ -151,11 +166,9 @@ public class AuthService {
         UserProfile profile = userProfileRepository.findByUserId(user.getId())
                 .orElseThrow(UserNotFoundException::new);
 
-        // JWT subject에는 userId를 문자열로 넣고, role claim에 권한을 함께 담는다.
-        // role을 토큰에 포함하는 이유: 매 요청마다 DB에서 권한을 조회하지 않아도
-        // JwtAuthenticationFilter에서 바로 SecurityContext에 올바른 권한을 설정할 수 있다.
+        // JWT에는 사용자와 발급 시점 문맥을 담되, 실제 역할과 계정 상태는 필터가 DB에서 다시 확인한다.
         String accessToken = jwtTokenProvider.createAccessToken(
-                String.valueOf(user.getId()), user.getRole().name());
+                String.valueOf(user.getId()), user.getRole().name(), user.getCredentialVersion());
 
         return new LoginResponse(
                 accessToken,

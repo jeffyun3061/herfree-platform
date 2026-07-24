@@ -11,8 +11,6 @@ import { PostCard } from '@/components/community/PostCard';
 import { Pagination } from '@/components/common/Pagination';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { LoggedOutMyPagePromptCard } from '@/components/mypage/LoggedOutMyPagePrompt';
@@ -88,7 +86,7 @@ function MenuRow({
 
 export default function MyPage() {
   const router = useRouter();
-  const { isReady, isLoggedIn, user, logout, withdraw, updateNickname } = useAuth();
+  const { isReady, isLoggedIn, user, logout, withdraw } = useAuth();
   const { activity, isLoading: activityLoading } = useMyActivity(isLoggedIn);
   const { data: journalDashboard } = useJournalDashboard(isLoggedIn);
   const [showWrittenPosts, setShowWrittenPosts] = useState(false);
@@ -103,10 +101,7 @@ export default function MyPage() {
     'written',
     10,
   );
-  const [nickname, setNickname] = useState('');
-  const [profileError, setProfileError] = useState<string | null>(null);
-  const [profileSuccess, setProfileSuccess] = useState<string | null>(null);
-  const [isUpdating, setIsUpdating] = useState(false);
+  const [withdrawError, setWithdrawError] = useState<string | null>(null);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [isWithdrawing, setIsWithdrawing] = useState(false);
 
@@ -114,38 +109,14 @@ export default function MyPage() {
 
   if (!isLoggedIn) return <LoggedOutMyPagePromptCard />;
 
-  const handleNicknameUpdate = async () => {
-    const nextNickname = nickname.trim();
-    if (!nextNickname) {
-      setProfileError('닉네임을 입력해 주세요.');
-      return;
-    }
-    if (nextNickname === user?.nickname) {
-      setProfileError('현재 사용 중인 닉네임입니다.');
-      setProfileSuccess(null);
-      return;
-    }
-    setIsUpdating(true);
-    setProfileError(null);
-    setProfileSuccess(null);
-    try {
-      await updateNickname(nextNickname);
-      setProfileSuccess(`${nextNickname}으로 변경됐어요.`);
-      setNickname('');
-    } catch (err) {
-      setProfileError(getErrorMessage(err));
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
   const handleWithdraw = async () => {
     setIsWithdrawing(true);
+    setWithdrawError(null);
     try {
       await withdraw();
       router.replace('/');
     } catch (err) {
-      setProfileError(getErrorMessage(err));
+      setWithdrawError(getErrorMessage(err));
     } finally {
       setIsWithdrawing(false);
       setWithdrawOpen(false);
@@ -163,7 +134,7 @@ export default function MyPage() {
 
   return (
     <>
-      <div className="pb-[96px] lg:pb-10">
+      <div className="hf-scroll-pad-nav lg:pb-10">
         <section className="relative h-[172px] overflow-hidden">
           <img
             src={PUBLIC_IMAGES.homeHero}
@@ -232,48 +203,11 @@ export default function MyPage() {
           <p className="mb-2 px-0.5 text-[11px] font-semibold text-[#9A9F94]">계정</p>
           <div className="mypage-menu-card">
             <MenuRow
-              icon="💬"
-              label="1:1 비밀 상담"
-              sub="상담 안내 및 신청"
-              href="/consult"
+              icon="⚙️"
+              label="회원정보 수정"
+              sub="닉네임 · 비밀번호"
+              href="/mypage/account"
             />
-            <div className="border-b border-[#F2ECE1] px-[17px] py-[15px]">
-              <p className="mb-2 text-[13.5px] font-semibold text-[#15201D]">닉네임 변경</p>
-              <p className="mb-3 text-[11.5px] leading-[1.6] text-[#8A9287]">
-                닉네임은 30일에 한 번만 변경할 수 있어요.
-              </p>
-              <div className="flex items-center gap-2">
-                <div className="min-w-0 flex-1 [&_.wrtn-input]:mt-0">
-                  <Input
-                    placeholder="새 닉네임"
-                    value={nickname}
-                    onChange={(e) => {
-                      setNickname(e.target.value);
-                      setProfileSuccess(null);
-                    }}
-                    maxLength={20}
-                  />
-                </div>
-                <Button
-                  size="sm"
-                  disabled={isUpdating}
-                  className="h-11 shrink-0 px-4"
-                  onClick={() => void handleNicknameUpdate()}
-                >
-                  저장
-                </Button>
-              </div>
-              {profileError && (
-                <div className="mt-2">
-                  <ErrorMessage message={profileError} />
-                </div>
-              )}
-              {profileSuccess && (
-                <p className="mt-2 rounded-[12px] bg-[#EEF7F1] px-3 py-2 text-[11.5px] font-semibold text-[#167A55]">
-                  {profileSuccess}
-                </p>
-              )}
-            </div>
             <MenuRow
               icon="💬"
               label="받은 공감"
@@ -287,6 +221,12 @@ export default function MyPage() {
               sub="나중에 다시 볼 글"
               trailing={activityLoading ? '…' : (activity?.bookmarkCount ?? 0)}
               href="/mypage/bookmarks"
+            />
+            <MenuRow
+              icon="💬"
+              label="1:1 비밀 상담"
+              sub="상담 안내 및 신청"
+              href="/consult"
             />
           </div>
         </div>
@@ -328,6 +268,12 @@ export default function MyPage() {
             로그아웃
           </button>
         </p>
+
+        {withdrawError && (
+          <div className="hf-page-mx mt-3">
+            <ErrorMessage message={withdrawError} />
+          </div>
+        )}
 
         <p className="mt-2 text-center">
           <button

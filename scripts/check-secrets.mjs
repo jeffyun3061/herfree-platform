@@ -31,12 +31,17 @@ const allowedSecretTemplates = [
   /(^|\/)local-secrets\.yml\.example$/,
   /(^|\/)application-(?:local|prod)\.yml\.example$/,
 ];
+const allowedPublicCertificates = new Set([
+  'infra/certs/rds-global-bundle.pem',
+]);
 const forbiddenPaths = [
   { name: '실제 환경변수 파일', pattern: /(^|\/)\.env(?:\..+)?$/ },
   { name: '로컬 비밀 설정', pattern: /(^|\/)local-secrets\.yml$/ },
   { name: '실행 환경 설정', pattern: /(^|\/)application-(?:local|prod|secret)\.yml$/ },
   { name: '인증서/개인키', pattern: /\.(?:pem|p12|pfx|jks|keystore|key)$/i },
   { name: 'secrets 폴더', pattern: /(^|\/)secrets\//i },
+  { name: '로컬 운영/SSM 덤프', pattern: /(^|\/)tmp-.*\.json$/i },
+  { name: 'SSM/자격증명 JSON 덤프', pattern: /(?:ssm|credentials|accessKeys).*\.json$/i },
 ];
 const valueRules = [
   { name: '개인키 본문', pattern: /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/ },
@@ -48,6 +53,10 @@ const secretAssignment = /^\s*([A-Za-z0-9_.-]*(?:client[-_.]?secret|secret[-_.]?
 
 function isTemplate(path) {
   return allowedSecretTemplates.some((pattern) => pattern.test(path));
+}
+
+function isAllowedPublicCertificate(path) {
+  return allowedPublicCertificates.has(path);
 }
 
 function isSafeExampleValue(value) {
@@ -69,7 +78,7 @@ function fileContent(path) {
 
 const findings = [];
 for (const path of files) {
-  if (!isTemplate(path)) {
+  if (!isTemplate(path) && !isAllowedPublicCertificate(path)) {
     for (const rule of forbiddenPaths) {
       if (rule.pattern.test(path)) findings.push(`${path}: ${rule.name}`);
     }

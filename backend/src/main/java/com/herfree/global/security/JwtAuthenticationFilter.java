@@ -40,6 +40,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         return "/api/auth/signup".equals(path)
                 || "/api/auth/login".equals(path)
                 || "/api/auth/nickname/check".equals(path)
+                || "/api/auth/email/check".equals(path)
                 || path.startsWith("/api/auth/oauth/")
                 || "/api/auth/password-reset/request".equals(path)
                 || "/api/auth/password-reset/confirm".equals(path);
@@ -71,6 +72,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (user == null || user.getStatus() == UserStatus.DELETED) {
             writeError(response, HttpServletResponse.SC_UNAUTHORIZED, ErrorCode.UNAUTHORIZED);
+            return;
+        }
+
+        if (jwtTokenProvider.getCredentialVersion(token) != user.getCredentialVersion()) {
+            writeError(response, HttpServletResponse.SC_UNAUTHORIZED, ErrorCode.INVALID_TOKEN);
             return;
         }
 

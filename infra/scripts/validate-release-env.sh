@@ -69,6 +69,13 @@ if [[ "$(value_of CORS_ALLOWED_ORIGINS)" != https://* ]]; then
   echo "CORS_ALLOWED_ORIGINS must use HTTPS"
   exit 1
 fi
+datasource_url="$(value_of SPRING_DATASOURCE_URL)"
+if [[ "${datasource_url}" != *"sslMode=VERIFY_IDENTITY"* \
+   || "${datasource_url}" != *"trustCertificateKeyStoreUrl=file:/app/certs/rds-truststore.p12"* \
+   || "${datasource_url}" != *"fallbackToSystemTrustStore=false"* ]]; then
+  echo "release datasource must verify the RDS certificate and hostname"
+  exit 1
+fi
 if [[ "$(value_of APP_MAIL_MODE)" != "smtp" ]]; then
   echo "APP_MAIL_MODE must be smtp"
   exit 1
@@ -78,7 +85,6 @@ if [[ "${DEPLOY_ENV}" == "production" && "$(value_of ADMIN_BOOTSTRAP_ENABLED)" !
   exit 1
 fi
 if [[ "${DEPLOY_ENV}" == "production" ]]; then
-  datasource_url="$(value_of SPRING_DATASOURCE_URL)"
   datasource_password="$(value_of SPRING_DATASOURCE_PASSWORD)"
   if [[ "${datasource_url}" =~ (localhost|127\.0\.0\.1|herfree-mysql|jdbc:mysql://mysql:) ]]; then
     echo "production datasource must point to the private RDS endpoint, not local MySQL"

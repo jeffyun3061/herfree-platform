@@ -86,17 +86,26 @@
 
 ### AWS와 네트워크
 
+- [x] staging RDS `herfree-staging-mysql` 생성: MySQL 8.0.46, `db.t4g.micro`, 단일 AZ, 20GB gp3, 저장 암호화, 삭제 보호 (2026-07-17)
+- [x] staging RDS Public access 비활성화, 전용 보안 그룹 인바운드 0개, `require_secure_transport=ON` 적용
+- [x] staging RDS 관리형 master secret 사용, error 로그 그룹 30일 보존, 시점 복구 가능 상태 확인
+- [x] staging RDS 자동 백업 1일 적용. 현재 AWS Free plan 제한값이며 staging 검증용으로만 사용한다.
+- [x] staging EC2 생성 후 EC2 보안 그룹에서 staging RDS 3306만 허용하고, 앱 전용 DB 계정을 생성했다.
+- [x] staging EC2는 SSH를 열지 않고 SSM으로만 관리하며, 80/443 외 인바운드를 차단했다.
+- [x] staging ECR·API 로그 그룹·OIDC 배포 role·EC2 instance role을 최소 권한으로 생성했다.
+- [x] staging app/DB/SMTP secret을 분리하고 EC2 `.env.staging` 렌더링·권한 `600` 검증을 통과했다.
+- [ ] production 공개 전 Paid plan에서 production RDS를 별도 생성하고 자동 백업을 7일 이상으로 설정했다.
 - [ ] production과 staging의 RDS, S3, SMTP, OAuth 자격증명을 분리했다.
 - [ ] RDS Public access를 끄고 EC2 보안 그룹에서만 3306 접근을 허용했다.
 - [ ] staging·production에서 Flyway V36 적용과 `post_bookmarks` 유니크 제약 생성을 확인했다.
-- [ ] EC2의 8080/8081과 RDS 3306을 인터넷에 공개하지 않았다.
+- [ ] production EC2의 8080과 RDS 3306을 인터넷에 공개하지 않았다. (staging API는 검증용 `:80` HTTP만 노출)
 - [ ] 외부에는 Nginx 443만 공개하고 HTTP는 HTTPS로 전환한다.
 - [ ] `herpfree.co.kr`, `api.herpfree.co.kr`과 staging 도메인의 DNS·TLS 인증서가 정상이다.
 - [ ] S3 Public access block, CORS, EC2 IAM 최소 권한을 확인했다.
 - [ ] EC2에 AWS access key를 파일로 넣지 않고 instance role을 사용한다.
 - [ ] CloudWatch production/staging 로그 그룹을 만들고 KMS 암호화와 30일 보존을 설정했다.
 - [ ] API 5xx, health, EC2 CPU·메모리·디스크, RDS CPU·연결·저장공간 알람을 만들었다.
-- [ ] RDS 자동 백업 7일 이상, 삭제 보호, 저장 암호화를 켰다.
+- [ ] production RDS 자동 백업 7일 이상, 삭제 보호, 저장 암호화를 켰다.
 - [ ] staging에서 백업을 새 DB로 복원하는 연습을 완료했다.
 
 ### 외부 기능
@@ -138,13 +147,14 @@
 
 ### 4-B. GitHub·AWS 콘솔 (운영자 1회)
 
-- [ ] GitHub `staging`, `production` Environment를 만들었다.
-- [ ] production Environment에 required reviewer를 지정했다.
-- [ ] GitHub Actions용 AWS OIDC 배포 Role을 만들었다.
-- [ ] EC2 instance role에 SSM, ECR pull, CloudWatch Logs, 해당 S3 최소 권한만 부여했다.
-- [ ] ECR `herfree-api` repository를 만들었다.
-- [ ] staging·production EC2에 `/opt/herfree` 배포 파일을 설치했다.
-- [ ] staging에는 `.env.staging`, production에는 `.env.prod`를 만들고 `chmod 600`을 적용했다.
+- [x] GitHub `staging`, `production` Environment를 만들었다.
+- [x] production Environment에 required reviewer를 지정했다.
+- [x] staging GitHub Actions용 AWS OIDC 배포 Role을 만들었다.
+- [x] staging EC2 instance role에 SSM, ECR pull, CloudWatch Logs, 해당 S3·secret 최소 권한만 부여했다.
+- [x] ECR `herfree-api` repository를 만들었다.
+- [x] staging EC2에 `/opt/herfree` 배포 파일을 설치했다.
+- [x] staging `.env.staging`을 secret에서 생성하고 `chmod 600`을 검증했다.
+- [ ] production OIDC role·EC2·`.env.prod`는 staging 통과 후 별도로 만들었다.
 
 GitHub Repository Variables:
 

@@ -49,6 +49,14 @@
   --hf-text-subtle: #9a9f94;
   --hf-text-placeholder: #9aa096;
   --hf-text-faint: #b4b2a6;
+  /* Shell layout — safe-area + nav (기존 px 값과 동일, 한곳에서 관리) */
+  --hf-mobile-header-h: 2.75rem; /* 44px — MobileHeader h-11 */
+  --hf-subpage-top: calc(var(--hf-page-pt) + var(--hf-mobile-header-h));
+  --hf-bottom-nav-shell-pad: calc(4.75rem + env(safe-area-inset-bottom, 0px));
+  --hf-bottom-nav-inner-pad: calc(0.45rem + env(safe-area-inset-bottom, 0px));
+  --hf-scroll-pad-nav: 6rem; /* 96px — pb-24 / pb-[96px] */
+  --hf-scroll-pad-nav-tight: 5rem; /* 80px — pb-20 */
+  --hf-scroll-pad-nav-home: 7rem; /* 112px — pb-28 */
 }
 
 body {
@@ -129,6 +137,29 @@ body {
     padding-top: var(--hf-page-pt);
   }
 
+  /* Shell 헤더 없는 서브화면(게시글·글쓰기) — safe-area + 헤더 높이 */
+  .hf-subpage-top {
+    padding-top: max(3.375rem, var(--hf-subpage-top));
+  }
+
+  /* AppShell main — 하단 BottomNav 공간 */
+  .hf-main-with-bottom-nav {
+    padding-bottom: var(--hf-bottom-nav-shell-pad);
+  }
+
+  /* 탭 화면 스크롤 여백 (Shell padding과 별도 — FAB·마지막 카드 가림 방지) */
+  .hf-scroll-pad-nav {
+    padding-bottom: var(--hf-scroll-pad-nav);
+  }
+
+  .hf-scroll-pad-nav-tight {
+    padding-bottom: var(--hf-scroll-pad-nav-tight);
+  }
+
+  .hf-scroll-pad-nav-home {
+    padding-bottom: var(--hf-scroll-pad-nav-home);
+  }
+
   .hf-screen-subtitle {
     @apply mt-[5px] truncate whitespace-nowrap text-[12.5px] tracking-[-0.02em] text-[#9A9F94];
   }
@@ -199,7 +230,8 @@ body {
   }
 
   .app-phone-shell .home-dashboard-screen {
-    @apply px-0 pb-28 lg:pb-10;
+    @apply px-0 lg:pb-10;
+    padding-bottom: var(--hf-scroll-pad-nav-home);
   }
 
   .app-phone-shell .community-screen {

@@ -48,6 +48,7 @@ type AuthContextValue = {
   logout: () => Promise<void>;
   withdraw: () => Promise<void>;
   updateNickname: (nickname: string) => Promise<void>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -238,6 +239,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(session);
   }, []);
 
+  const changePassword = useCallback(async (currentPassword: string, newPassword: string) => {
+    await usersApi.changePassword({ currentPassword, newPassword });
+    ++restoreGenRef.current;
+    clearAuth();
+    setUser(null);
+    forceUnlockBodyScroll();
+  }, []);
+
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
@@ -250,8 +259,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout,
       withdraw,
       updateNickname,
+      changePassword,
     }),
-    [user, isReady, login, signup, completeOAuthLogin, completeOAuthProfile, logout, withdraw, updateNickname],
+    [user, isReady, login, signup, completeOAuthLogin, completeOAuthProfile, logout, withdraw, updateNickname, changePassword],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

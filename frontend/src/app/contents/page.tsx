@@ -46,7 +46,7 @@ function ContentsPageContent() {
 
   return (
     <>
-      <div className="content-screen mx-auto max-w-app pb-24 lg:max-w-none">
+      <div className="content-screen mx-auto max-w-app hf-scroll-pad-nav lg:max-w-none">
         <ScreenHeader
           title="칼럼"
           subtitle="경험에서 나온 이야기"

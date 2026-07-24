@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { ButtonLink } from '@/components/ui/Button';
 import { cn } from '@/lib/cn';
@@ -76,12 +75,6 @@ export function CommunityGuestPostPanel({
           로그인하고 보기
         </ButtonLink>
 
-        <Link
-          href={`/signup?from=${loginFrom}`}
-          className="mt-3.5 text-[13px] font-semibold leading-snug text-primary"
-        >
-          아직 계정이 없다면 회원가입
-        </Link>
       </div>
     </section>
   );

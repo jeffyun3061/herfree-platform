@@ -3,10 +3,15 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL?.trim() || 'http://127.0.0.1:3100';
+const stagingApiURL = process.env.STAGING_API_URL?.trim().replace(/\/$/, '');
 const host = new URL(baseURL).hostname.toLowerCase();
 const mutationEnabled = process.env.E2E_ALLOW_MUTATION === 'true';
 const mutationHostAllowed =
-  host === 'localhost' || host === '127.0.0.1' || host.includes('staging') || host.includes('dev.');
+  host === 'localhost' ||
+  host === '127.0.0.1' ||
+  host.includes('staging') ||
+  host.includes('amplifyapp.com') ||
+  host.includes('dev.');
 
 type Envelope<T> = { success: boolean; message: string; data: T };
 
@@ -69,6 +74,7 @@ test.describe('release smoke', () => {
     '/journal',
     '/qna',
     '/mypage',
+    '/mypage/account',
     '/mypage/received-reactions',
     '/mypage/bookmarks',
     '/notice',
@@ -109,11 +115,20 @@ test.describe('release smoke', () => {
     const home = await request.get('/');
     expect(home.headers()['content-security-policy']).toContain("default-src 'self'");
 
+    // Always exercise the frontend same-origin proxy. Checking only the direct
+    // backend URL would miss a broken Amplify -> Spring connection.
     const health = await request.get('/api/health');
     expect(health.status()).toBe(200);
     expect(health.headers()['x-request-id']).toBeTruthy();
     await data(await request.get('/api/boards'));
     await data(await request.get('/api/posts?page=0&size=5'));
+    await data(await request.get('/api/contents?page=0&size=1'));
+    await data(await request.get('/api/videos?page=0&size=1'));
+
+    if (stagingApiURL) {
+      const backendHealth = await request.get(`${stagingApiURL}/api/health`);
+      expect(backendHealth.status()).toBe(200);
+    }
 
     const admin = await request.get('/api/admin/reports');
     expect([401, 403]).toContain(admin.status());
@@ -139,6 +154,47 @@ test.describe('staging data flow', () => {
       expect(response?.status()).toBe(200);
       await expect(page.locator('input[type="date"]')).toBeVisible({ timeout: 8_000 });
       await expect(page.getByText('개인일지를 준비하는 중...')).toHaveCount(0);
+    } finally {
+      await request.delete('/api/users/me', { headers: auth(account.token) });
+    }
+  });
+
+  test('mypage account menu and security settings keep their intended order', async ({ page, request }, testInfo) => {
+    const account = await signupAndLogin(request, `account-${testInfo.project.name}`);
+
+    try {
+      await page.goto('/', { waitUntil: 'domcontentloaded' });
+      await page.evaluate(({ token, user }) => {
+        window.sessionStorage.setItem('accessToken', token);
+        window.sessionStorage.setItem('sessionUser', JSON.stringify(user));
+      }, account);
+
+      await page.goto('/mypage', { waitUntil: 'domcontentloaded' });
+      const accountLink = page.getByRole('link', { name: /회원정보 수정/ });
+      const receivedLink = page.getByRole('link', { name: /받은 공감/ });
+      const bookmarkLink = page.getByRole('link', { name: /스크랩한 글/ });
+      const consultLink = page.getByRole('link', { name: /1:1 비밀 상담/ });
+      await expect(accountLink).toBeVisible();
+      await expect(receivedLink).toBeVisible();
+      await expect(bookmarkLink).toBeVisible();
+      await expect(consultLink).toBeVisible();
+
+      const positions = await Promise.all(
+        [accountLink, receivedLink, bookmarkLink, consultLink].map(async (item) => (await item.boundingBox())?.y),
+      );
+      expect(positions.every((value) => value !== undefined)).toBe(true);
+      expect(positions[0]!).toBeLessThan(positions[1]!);
+      expect(positions[1]!).toBeLessThan(positions[2]!);
+      expect(positions[2]!).toBeLessThan(positions[3]!);
+
+      await accountLink.click();
+      await expect(page).toHaveURL(/\/mypage\/account$/);
+      await expect(page.getByRole('heading', { name: '닉네임 변경' })).toBeVisible();
+      await expect(page.getByLabel('새 닉네임')).toBeVisible();
+      await expect(page.getByRole('heading', { name: '비밀번호 변경' })).toBeVisible();
+      await expect(page.getByLabel('현재 비밀번호')).toBeVisible();
+      await expect(page.locator('#new-password')).toBeVisible();
+      await expect(page.getByLabel('새 비밀번호 확인')).toBeVisible();
     } finally {
       await request.delete('/api/users/me', { headers: auth(account.token) });
     }

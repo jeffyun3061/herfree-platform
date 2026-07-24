@@ -126,6 +126,18 @@ class AuthServiceTest {
     }
 
     @Test
+    @DisplayName("이메일 중복 확인 API는 사용 가능 여부를 반환한다")
+    void checkEmailAvailability_returnsAvailability() {
+        given(userRepository.existsByEmail("new@test.com")).willReturn(false);
+        assertThat(authService.checkEmailAvailability("new@test.com").available()).isTrue();
+
+        given(userRepository.existsByEmail("duplicate@test.com")).willReturn(true);
+        assertThat(authService.checkEmailAvailability("duplicate@test.com").available()).isFalse();
+
+        assertThat(authService.checkEmailAvailability("not-an-email").available()).isFalse();
+    }
+
+    @Test
     @DisplayName("이메일이 중복이면 DuplicateEmailException이 발생한다")
     void signup_duplicateEmail_throws() {
         // given — 이미 존재하는 이메일
@@ -162,7 +174,7 @@ class AuthServiceTest {
         given(userRepository.findByEmail(request.email())).willReturn(Optional.of(activeUser));
         given(passwordEncoder.matches(request.password(), activeUser.getPassword())).willReturn(true);
         given(userProfileRepository.findByUserId(1L)).willReturn(Optional.of(profile));
-        given(jwtTokenProvider.createAccessToken(any(), any())).willReturn("mock.jwt.token");
+        given(jwtTokenProvider.createAccessToken(any(), any(), any(Integer.class))).willReturn("mock.jwt.token");
         given(jwtProperties.accessExpirationSeconds()).willReturn(3600L);
 
         // when
@@ -196,7 +208,7 @@ class AuthServiceTest {
         given(passwordEncoder.upgradeEncoding("legacy_encoded_password")).willReturn(true);
         given(passwordEncoder.encode(request.password())).willReturn("current_encoded_password");
         given(userProfileRepository.findByUserId(1L)).willReturn(Optional.of(profile));
-        given(jwtTokenProvider.createAccessToken(any(), any())).willReturn("mock.jwt.token");
+        given(jwtTokenProvider.createAccessToken(any(), any(), any(Integer.class))).willReturn("mock.jwt.token");
         given(jwtProperties.accessExpirationSeconds()).willReturn(3600L);
 
         authService.login(request);
@@ -223,7 +235,7 @@ class AuthServiceTest {
         given(userRepository.findByEmail("user@test.com")).willReturn(Optional.of(activeUser));
         given(passwordEncoder.matches(request.password(), activeUser.getPassword())).willReturn(true);
         given(userProfileRepository.findByUserId(1L)).willReturn(Optional.of(profile));
-        given(jwtTokenProvider.createAccessToken(any(), any())).willReturn("mock.jwt.token");
+        given(jwtTokenProvider.createAccessToken(any(), any(), any(Integer.class))).willReturn("mock.jwt.token");
         given(jwtProperties.accessExpirationSeconds()).willReturn(3600L);
 
         authService.login(request);

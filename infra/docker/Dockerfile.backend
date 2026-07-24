@@ -1,5 +1,5 @@
 # Herfree API — multi-stage build (Gradle bootJar → JRE 17 runtime)
-FROM eclipse-temurin:17-jdk AS builder
+FROM eclipse-temurin:17-jdk@sha256:068a8f9ae4b74d9a20de3ecca771ba1a6437f1d7a8a8ad6deaf9dbdd2274397a AS builder
 WORKDIR /workspace
 
 COPY backend/gradlew backend/gradle backend/build.gradle.kts backend/settings.gradle.kts ./
@@ -9,13 +9,24 @@ RUN chmod +x gradlew
 COPY backend/src ./src
 RUN ./gradlew bootJar --no-daemon -x test
 
-FROM eclipse-temurin:17-jre
+# RDS uses an AWS private CA. Build a dedicated truststore instead of weakening
+# hostname verification or replacing the JVM truststore used by HTTPS clients.
+COPY infra/certs/rds-global-bundle.pem /tmp/rds-global-bundle.pem
+RUN mkdir -p /tmp/rds-certs \
+    && awk '/-----BEGIN CERTIFICATE-----/ {n++} n > 0 {print > ("/tmp/rds-certs/rds-ca-" n ".pem")}' /tmp/rds-global-bundle.pem \
+    && for cert in /tmp/rds-certs/*.pem; do \
+         alias="$(basename "${cert}" .pem)"; \
+         keytool -importcert -noprompt -alias "${alias}" -file "${cert}" \
+           -keystore /workspace/rds-truststore.p12 -storetype PKCS12 -storepass changeit; \
+       done \
+    && keytool -list -keystore /workspace/rds-truststore.p12 -storetype PKCS12 -storepass changeit >/dev/null \
+    && rm -rf /tmp/rds-certs /tmp/rds-global-bundle.pem
+
+FROM gcr.io/distroless/java17-debian13:nonroot@sha256:4f682dfb4d9721e3f139fff791cd065b94e8dde1d3a4ae60b9ae86e165c4acf4
 WORKDIR /app
 
-RUN useradd -r -u 10001 appuser
-USER appuser
-
-COPY --from=builder /workspace/build/libs/*.jar app.jar
+COPY --from=builder --chown=nonroot:nonroot /workspace/build/libs/*.jar app.jar
+COPY --from=builder --chown=nonroot:nonroot /workspace/rds-truststore.p12 /app/certs/rds-truststore.p12
 
 EXPOSE 8080
 ENTRYPOINT ["java", "-Duser.timezone=UTC", "-jar", "/app/app.jar"]

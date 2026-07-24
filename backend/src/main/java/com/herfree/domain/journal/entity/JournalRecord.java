@@ -22,6 +22,8 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Getter
 @Entity
@@ -59,6 +61,7 @@ public class JournalRecord extends BaseTimeEntity {
     @Column(length = 500)
     private List<String> prodromalSymptoms = new ArrayList<>();
 
+    @JdbcTypeCode(SqlTypes.TINYINT)
     private Integer severity;
 
     @Convert(converter = StringListAttributeConverter.class)

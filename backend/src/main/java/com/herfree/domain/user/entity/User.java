@@ -14,6 +14,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.ColumnDefault;
 
 // 회원 인증 정보 엔티티
 // 이메일·비밀번호·역할·상태만 보관한다.
@@ -37,6 +38,11 @@ public class User extends BaseTimeEntity {
     // 단방향 해시값이 저장된다. 평문 비밀번호를 절대 넣지 않는다.
     @Column(nullable = false)
     private String password;
+
+    // 토큰 발급 시 함께 넣고 매 요청마다 비교해 비밀번호 변경 전 JWT를 무효화한다.
+    @Column(name = "credential_version", nullable = false)
+    @ColumnDefault("0")
+    private int credentialVersion;
 
     // DB에는 문자열("USER", "ADMIN" 등)로 저장하되,
     // 코드에서는 enum 타입으로 다뤄 오타로 인한 오류를 방지한다.
@@ -75,6 +81,7 @@ public class User extends BaseTimeEntity {
     // 비밀번호 변경 — 호출 전 반드시 PasswordEncoder로 인코딩해야 한다
     public void changePassword(String encodedPassword) {
         this.password = encodedPassword;
+        this.credentialVersion++;
     }
 
     // 관리자에 의한 계정 정지 — 로그인은 막히지만 데이터는 보존된다

@@ -63,7 +63,7 @@ Write-Host "== 5. Admin stats has no PII fields =="
 # Use bootstrap admin if available — skip if 401/403
 try {
     $adminLogin = Invoke-RestMethod -Uri "$Base/api/auth/login" -Method POST -Body (@{
-        email = "admin@herfree.local"; password = "HerfreeAdmin01"
+        email = "admin@herfree.local"; password = "HerfreeAdmin01!"
     } | ConvertTo-Json) -ContentType "application/json; charset=utf-8"
     $adminHeaders = @{ Authorization = "Bearer $($adminLogin.data.accessToken)" }
     $stats = Invoke-RestMethod -Uri "$Base/api/admin/journal/stats" -Method GET -Headers $adminHeaders

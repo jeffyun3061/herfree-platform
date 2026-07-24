@@ -16,6 +16,7 @@
 **/*.pfx
 **/*.jks
 **/*.keystore
+!infra/certs/rds-global-bundle.pem
 
 backend/build
 backend/.gradle
@@ -24,4 +25,3 @@ frontend
 docs
 logs
 *.log
-

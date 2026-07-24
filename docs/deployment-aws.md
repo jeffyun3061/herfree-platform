@@ -209,6 +209,36 @@ docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
 
 ## 5. RDS 전환 (B안, 선택)
 
+### 현재 staging 구성 (2026-07-17)
+
+| 항목 | 값 |
+| --- | --- |
+| DB identifier | `herfree-staging-mysql` |
+| 엔진/크기 | MySQL 8.0.46 / `db.t4g.micro` / Single-AZ |
+| 저장소 | 암호화된 gp3 20GB, 최대 자동 확장 50GB |
+| 네트워크 | Public access 비활성화, RDS SG 인바운드 0개 |
+| 전송 보안 | `require_secure_transport=ON` |
+| 비밀번호 | RDS 관리형 Secrets Manager secret, Git/문서에 원문 저장 금지 |
+| 자동 백업 | 매일 02:00~02:30 KST, 1일 보존 (AWS Free plan 제한) |
+| 운영 로그 | RDS error 로그만 CloudWatch로 전송, 30일 보존 |
+
+staging EC2가 생기면 EC2 보안 그룹만 RDS의 3306 인바운드에 추가한다. 로컬 IP나 `0.0.0.0/0`은 추가하지 않는다. 앱은 master 계정을 직접 사용하지 않고 `herfree_db`에만 권한이 있는 별도 계정을 사용한다.
+
+production은 staging과 별도 RDS로 만든다. 운영 공개 전 Paid plan에서 자동 백업을 7일 이상으로 설정하고, 최신 백업을 임시 DB로 복원하는 연습을 통과해야 한다.
+
+Flyway migration이나 대량 데이터 변경 직전에는 자동 백업과 별도로 수동 스냅샷을 만든다.
+
+```powershell
+$stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
+aws rds create-db-snapshot `
+  --profile herfree-staging `
+  --region ap-northeast-2 `
+  --db-instance-identifier herfree-staging-mysql `
+  --db-snapshot-identifier "herfree-staging-before-deploy-$stamp"
+```
+
+수동 스냅샷은 자동 삭제되지 않으므로 검증이 끝난 오래된 staging 스냅샷은 월 1회 정리한다. production 스냅샷 삭제 주기는 개인정보 보존·파기 정책과 함께 확정한다.
+
 1. RDS MySQL 8.0 생성 (`utf8mb4_unicode_ci`)
 2. 보안 그룹: **EC2 SG → RDS 3306** 만 허용
 3. `.env.prod`에 JDBC URL 추가:

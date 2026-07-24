@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { ButtonLink } from '@/components/ui/Button';
 import { cn } from '@/lib/cn';
 
@@ -77,7 +76,7 @@ export function GuestJournalPromo({ className }: GuestJournalPromoProps) {
               <p className="mt-2 text-[13px] leading-[1.65] text-[#65706B]">
                 개인 일지는 로그인한 본인만 열람할 수 있어요.
                 <br />
-                가입 후 안전하게 기록을 시작해 보세요.
+                로그인 후 안전하게 기록을 시작해 보세요.
               </p>
               <ButtonLink
                 href="/login?from=%2Fjournal"
@@ -87,12 +86,6 @@ export function GuestJournalPromo({ className }: GuestJournalPromoProps) {
               >
                 로그인하고 시작하기
               </ButtonLink>
-              <Link
-                href="/signup?from=/journal"
-                className="mt-3 block text-[12.5px] font-semibold text-primary"
-              >
-                아직 계정이 없다면 회원가입
-              </Link>
             </div>
           </div>
         </div>
