@@ -34,7 +34,7 @@ dependencies {
 
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.17")
 
-    implementation("software.amazon.awssdk:s3:2.29.45")
+    implementation("software.amazon.awssdk:s3:2.49.2")
 
     implementation("io.jsonwebtoken:jjwt-api:0.12.6")
     runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.6")
