@@ -65,6 +65,10 @@ if [[ "${DEPLOY_ENV}" == "staging" && -x "${APP_DIR}/infra/scripts/setup-staging
   "${APP_DIR}/infra/scripts/setup-staging-tls.sh"
 fi
 
+if [[ "${DEPLOY_ENV}" == "production" && -x "${APP_DIR}/infra/scripts/setup-production-tls.sh" ]]; then
+  "${APP_DIR}/infra/scripts/setup-production-tls.sh"
+fi
+
 healthy=false
 for _ in {1..150}; do
   if curl --fail --silent --show-error "http://127.0.0.1:${PORT}/actuator/health" \
