@@ -13,6 +13,9 @@ java {
     }
 }
 
+// Trivy release gate: Netty CVE-2026-59901/55831/55833/56745 (4.1.136.Final+)
+extra["netty.version"] = "4.1.136.Final"
+
 repositories {
     mavenCentral()
 }
