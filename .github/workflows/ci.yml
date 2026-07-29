@@ -81,5 +81,7 @@ jobs:
           npm audit --audit-level=high
           npm run check:security-headers
           npm run lint
+          npm run test
           npm run build
-          npx playwright test --list
+          npx playwright install --with-deps chromium
+          npx playwright test --project=chromium --grep "signup validation"
