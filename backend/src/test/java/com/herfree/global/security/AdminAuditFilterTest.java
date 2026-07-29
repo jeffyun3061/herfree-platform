@@ -7,6 +7,7 @@ import com.herfree.domain.audit.service.AdminAuditService;
 import com.herfree.global.web.RequestCorrelationFilter;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -36,7 +37,8 @@ class AdminAuditFilterTest {
         request.setAttribute(RequestCorrelationFilter.ATTRIBUTE, "request-123");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        new AdminAuditFilter(adminAuditService).doFilter(request, response, (req, res) -> response.setStatus(204));
+        new AdminAuditFilter(adminAuditService, new SimpleMeterRegistry())
+                .doFilter(request, response, (req, res) -> response.setStatus(204));
 
         verify(adminAuditService).record(
                 42L, "PATCH", "/api/admin/users/7/status", 204, "request-123");
@@ -47,7 +49,8 @@ class AdminAuditFilterTest {
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/admin/users");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        new AdminAuditFilter(adminAuditService).doFilter(request, response, (req, res) -> { });
+        new AdminAuditFilter(adminAuditService, new SimpleMeterRegistry())
+                .doFilter(request, response, (req, res) -> { });
 
         verify(adminAuditService, never()).record(
                 org.mockito.ArgumentMatchers.anyLong(),
