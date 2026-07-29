@@ -19,12 +19,15 @@ export function Input({
   className,
   id,
   value,
+  'aria-describedby': ariaDescribedBy,
   ...props
 }: InputProps) {
   const inputId = id ?? label;
   const strValue = typeof value === 'string' ? value : '';
   const count = strValue.length;
   const max = maxCharCount ?? props.maxLength;
+  const errorId = error && inputId ? `${inputId}-error` : undefined;
+  const describedBy = [ariaDescribedBy, errorId].filter(Boolean).join(' ') || undefined;
 
   return (
     <div className="wrtn-field">
@@ -40,6 +43,9 @@ export function Input({
       <input
         id={inputId}
         value={value}
+        required={required}
+        aria-invalid={Boolean(error)}
+        aria-describedby={describedBy}
         className={cn(
           'wrtn-input',
           error && 'border-red-400 focus:border-red-400',
@@ -52,7 +58,7 @@ export function Input({
           {count}/{max}
         </p>
       )}
-      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+      {error && <p id={errorId} className="mt-1 text-xs text-red-600">{error}</p>}
     </div>
   );
 }
