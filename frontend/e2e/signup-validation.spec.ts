@@ -9,8 +9,19 @@ async function fillRequiredAgreements(page: import('@playwright/test').Page) {
   }
 }
 
+async function mockAvailableDuplicateChecks(page: import('@playwright/test').Page) {
+  const available = {
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ success: true, message: '', data: { available: true } }),
+  };
+  await page.route('**/api/auth/email/check?*', (route) => route.fulfill(available));
+  await page.route('**/api/auth/nickname/check?*', (route) => route.fulfill(available));
+}
+
 test.describe('signup validation', () => {
   test('uses the 10~24 character policy and clears a corrected confirmation error', async ({ page }) => {
+    await mockAvailableDuplicateChecks(page);
     await page.goto('/signup');
 
     await expect(page.getByText('10~24자, 특수문자 1개 이상', { exact: true })).toBeVisible();
@@ -21,6 +32,8 @@ test.describe('signup validation', () => {
     await page.getByRole('button', { name: '중복확인' }).first().click();
     await page.locator('input[type="password"]').nth(0).fill(VALID_PASSWORD);
     await page.locator('input[type="password"]').nth(1).fill('Different-Test!1');
+    await page.locator('input[maxlength="20"]').fill('검증닉네임');
+    await page.getByRole('button', { name: '중복확인' }).nth(1).click();
     await fillRequiredAgreements(page);
     await page.getByRole('button', { name: '가입 완료' }).click();
 
@@ -30,20 +43,7 @@ test.describe('signup validation', () => {
   });
 
   test('requires email and nickname duplicate checks before submit', async ({ page }) => {
-    await page.route('**/api/auth/email/check?*', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ success: true, message: '', data: { available: true } }),
-      });
-    });
-    await page.route('**/api/auth/nickname/check?*', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ success: true, message: '', data: { available: true } }),
-      });
-    });
+    await mockAvailableDuplicateChecks(page);
 
     await page.goto('/signup');
     await page.locator('#signup-email').fill('ready@example.com');
