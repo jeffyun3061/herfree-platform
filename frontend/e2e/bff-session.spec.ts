@@ -4,12 +4,13 @@ const baseURL = process.env.PLAYWRIGHT_BASE_URL?.trim() || 'http://127.0.0.1:310
 const origin = new URL(baseURL).origin;
 const host = new URL(baseURL).hostname.toLowerCase();
 const mutationEnabled = process.env.E2E_ALLOW_MUTATION === 'true';
-const mutationHostAllowed =
-  host === 'localhost'
-  || host === '127.0.0.1'
-  || host.includes('staging')
-  || host.includes('amplifyapp.com')
-  || host.includes('dev.');
+const mutationAllowedHosts = new Set([
+  'localhost',
+  '127.0.0.1',
+  'staging.herpfree.co.kr',
+  'develop.d2bcg3vnlv5hkh.amplifyapp.com',
+]);
+const mutationHostAllowed = mutationAllowedHosts.has(host);
 
 type Envelope<T> = { success: boolean; message: string; data: T };
 
