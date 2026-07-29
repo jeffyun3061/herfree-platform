@@ -25,8 +25,12 @@ backend/src/main/java/com/herfree
 │  ├─ comment
 │  ├─ reaction
 │  ├─ report
+│  ├─ journal
 │  ├─ content
-│  └─ video
+│  ├─ video
+│  ├─ product
+│  ├─ analytics
+│  └─ audit
 └─ global
    ├─ config
    ├─ security
@@ -43,6 +47,14 @@ backend/src/main/java/com/herfree
 - Entity: 도메인 상태와 상태 변경 메서드를 가진다.
 
 Controller에서 권한, 상태 변경, 복잡한 조회 조건을 직접 처리하지 않는다.
+
+### 책임 분리와 의존 규칙
+
+- Service는 파일 크기 대신 **변경 이유**를 기준으로 나눈다. 기록 CRUD, 개인 분석, 공개 통계, 운영 통계처럼 보안·변경 주기가 다른 책임은 같은 service에 두지 않는다.
+- Controller는 DTO와 application service만 의존한다. 다른 도메인 Repository를 직접 읽지 않는다.
+- 다른 도메인의 운영 수치를 조합해야 할 때만 이름이 드러나는 facade를 사용한다. 개인 기능 service에 교차 도메인 Repository를 주입하지 않는다.
+- Policy·Vocabulary·Calculator는 가능한 순수 함수로 만들고 단위 테스트한다. 단순 DTO 변환을 위해 인터페이스나 BaseMapper를 만들지 않는다.
+- `BaseCrudService`, 범용 `RecordService<T>` 같은 선제적 추상화는 금지한다. 두 개 이상의 실제 기능에서 동일한 불변식과 변경 축이 확인될 때만 공통화한다.
 
 ### 예외와 응답
 
@@ -85,6 +97,16 @@ Controller에서 권한, 상태 변경, 복잡한 조회 조건을 직접 처리
 - 토큰과 사용자 세션은 필요한 범위만 저장한다.
 - 접근 제한 화면은 단순히 숨기는 것에 그치지 않고 API 권한과 맞춘다.
 - 버튼, 입력, 오류 메시지는 로딩/실패 상태를 함께 고려한다.
+- page는 route 조립만 맡고, API 호출·mutation·confirm 상태는 feature hook/container에 둔다. page가 `lib/api`를 직접 import하지 않는다.
+- `useAsyncMutation` 같은 공통 hook은 pending/error/중복 실행 방지까지만 제공한다. feature hook의 성공·실패 반환 의미를 강제로 통일하지 않는다.
+- 화면 전용 field 조합은 feature 내부 컴포넌트로 둔다. 공통 UI는 이미 있는 Modal·ConfirmModal·Pagination·Input·Textarea를 우선 재사용한다.
+
+### 건강 기록 변경 기준
+
+- 일지의 날짜는 KST `LocalDate`이며, 타인 기록 조회·삭제는 존재를 숨기기 위해 404를 유지한다.
+- 공개 집계에는 최신 동의가 유효한 회원의 구조화된 선택값만 사용한다. 메모·식별자·미등록 값은 집계하지 않는다.
+- 구조 분리 PR에는 보존한 REST 계약, 트랜잭션, 권한, 동의 규칙을 PR 설명과 테스트에 명시한다.
+- 동작을 바꾸는 수정은 리팩터와 분리한다. 단, 노출·동의·권한·데이터 유실 같은 P0 문제는 별도 긴급 수정으로 즉시 처리한다.
 
 ## 문서 갱신 기준
 
@@ -108,6 +130,7 @@ cd backend
 
 ```powershell
 cd frontend
+npm run test
 npm run lint
 npm run build
 ```
