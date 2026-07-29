@@ -347,3 +347,8 @@ docker exec -it herfree-mysql-prod mysql -uherfree_user -p herfree_db
 | 2026-07-10 | §3.7 SMTP 체크리스트, 탈퇴 시 일지 삭제·S3 IAM Role 업로드 정책 반영 |
 | 2026-07-10 | §3.6 타임존 정책 추가 (EC2 KST, API·DB UTC), 체크리스트 #8 |
 | 2026-07-09 | AWS 배포 가이드 초안 (Amplify + EC2 + S3, RDS 선택) |
+# CANONICAL AWS DEPLOYMENT
+
+> 운영 토폴로지와 공개 전 증적의 단일 기준은
+> [production-architecture.md](./production-architecture.md)다.
+> 기존 리소스에는 먼저 import와 plan-only drift audit을 수행하며 검토 없이 apply하지 않는다.

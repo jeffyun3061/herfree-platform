@@ -16,7 +16,7 @@
 | 영역 | 내용 |
 |------|------|
 | **프론트** | Next.js App Router, 모바일 퍼스트 UI, 게스트/회원 분기, 하단 탭 네비게이션 |
-| **백엔드** | Spring Boot 3.3 REST API, JWT 인증, 도메인별 계층 분리 |
+| **백엔드** | Spring Boot 3.5 REST API, JWT 인증, 책임 기반 도메인 계층 분리 |
 | **UX** | 비로그인 시 탭·구조는 보이고 **콘텐츠만 잠금** (커뮤니티·일지·마이페이지) |
 | **운영** | 관리자 CMS(공지·칼럼·영상), 신고·숨김 처리, Flyway 마이그레이션 |
 | **인프라** | MySQL 8, S3 이미지 프록시 업로드, 로컬/ngrok 모바일 데모 |
@@ -25,8 +25,8 @@
 
 ## 기술 스택
 
-- **Frontend:** Next.js 14, TypeScript, Tailwind CSS, custom hooks
-- **Backend:** Java 17, Spring Boot 3.3, Spring Security, JPA, Flyway
+- **Frontend:** Next.js 15, TypeScript, Tailwind CSS, custom hooks
+- **Backend:** Java 17, Spring Boot 3.5, Spring Security, JPA, Flyway
 - **DB:** MySQL 8
 - **Auth:** JWT (Stateless)
 - **Storage:** AWS S3 (게시글 이미지, API 경유 업로드)
@@ -157,6 +157,15 @@ Forwarding   https://xxxx-xxxx.ngrok-free.dev -> http://localhost:3000
 - 상세 README: [../README.md](../README.md)
 - API 명세: [api-spec.md](./api-spec.md)
 - 요구사항: [requirements.md](./requirements.md)
+- 리팩터 설계 사례: [refactoring-case-study.md](./refactoring-case-study.md)
+
+---
+
+## 구조 리팩터링 사례
+
+- 민감한 건강 기록의 REST·동의·날짜 계약을 유지한 채, CRUD·개인 분석·공개 통계·운영 통계를 책임별로 분리했습니다.
+- 순수 Calculator와 Policy를 테스트 대상으로 만들고, 운영 지표 조합만 facade에 격리해 개인정보 검토 범위를 줄였습니다.
+- 프론트는 범용 CRUD 추상화 대신 feature hook과 저수준 async primitive를 사용해, 관리자 제재·신고·일지처럼 규칙이 다른 흐름의 의미를 보존했습니다.
 
 ---
 

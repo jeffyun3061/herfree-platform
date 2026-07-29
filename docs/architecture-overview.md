@@ -110,7 +110,11 @@ com.herfree
 | `CommentService` | comment | 댓글 CRUD |
 | `ReactionService` | reaction | 공감 toggle |
 | `ReportService` | report | 신고·처리 근거 |
-| `JournalService` | journal | 비공개 일지·공개 insight |
+| `JournalRecordService` | journal | 본인 기록 CRUD·소유자 검증 |
+| `JournalDashboardService` | journal | 개인 대시보드 조립 |
+| `JournalReviewService` | journal | 최근 30일 리뷰 요약 |
+| `JournalInsightService` | journal | 동의 기반 비식별 공개 인사이트 |
+| `AdminJournalStatisticsFacade` | journal | 운영 화면용 교차 도메인 집계 |
 | `ContentService` | content | 정보글 CMS |
 | `VideoService` | video | YouTube CMS |
 | `ProductService` | product | 제품 큐레이션 CMS |
@@ -128,8 +132,8 @@ POST /api/auth/signup
   → AuthService (User + UserProfile + 약관·건강통계 동의)
   → JWT access token
 
-PUT /api/journal/records/{date}
-  → JournalService.upsert (본인 userId만)
+POST /api/journal/records
+  → JournalRecordService.upsert (본인 userId만, 동일 recordDate면 갱신)
   → journal_records 테이블
 ```
 
@@ -145,7 +149,7 @@ PUT /api/journal/records/{date}
 
 ```text
 GET /api/journal/insights (비로그인 가능)
-  → JournalService: 동의 유효 회원만 집계
+  → JournalInsightService: 동의 유효 회원만 집계
   → 전체 20명 미만 또는 셀 5명 미만이면 해당 항목 미공개
 ```
 
@@ -228,3 +232,46 @@ GET /api/journal/insights (비로그인 가능)
 - **하지 않음**: 환경별 주석 on/off, 당연한 getter/setter 설명, 사용하지 않는 dead code 주석 보관
 
 새 기능 추가 시 이 문서의 표에 한 줄 추가하거나, 해당 Service JavaDoc을 함께 갱신한다.
+
+---
+
+## 9. 변경에 강한 경계 (리팩터 기준)
+
+### 9.1 백엔드 의존성
+
+```mermaid
+flowchart LR
+  Controller[Controller] --> Application[Application Service]
+  Application --> Repository[Repository]
+  Application --> Policy[Policy / Vocabulary]
+  Application --> Calculator[Pure Calculator]
+  AdminController[Admin Controller] --> Facade[Admin Statistics Facade]
+  Facade --> Journal[Journal Query]
+  Facade --> Operations[Post / Comment / Report Query]
+```
+
+- Controller는 HTTP·인증 principal·DTO 변환만 맡고 Repository를 직접 참조하지 않는다.
+- 개인 기록 service는 자신의 도메인 Repository와 정책만 의존한다.
+- 여러 도메인의 운영 지표를 조합해야 할 때만 이름이 드러나는 facade를 사용한다. facade는 개인 건강 원문이나 식별자를 반환하지 않는다.
+- Calculator와 Policy는 시간·DB·Spring에 의존하지 않는 순수 객체로 두어 경계값을 빠르게 검증한다.
+
+### 9.2 프론트엔드 의존성
+
+```mermaid
+flowchart LR
+  Page[Route Page] --> Container[Feature Container / Hook]
+  Container --> Api[lib/api]
+  Container --> View[Presentational View]
+  View --> UI[Shared UI]
+  Domain[domain: type / policy] -. React·API import 금지 .-> View
+```
+
+- page는 route와 feature 조립만 한다. API mutation·권한 계산·confirm 상태는 feature hook/container로 이동한다.
+- 공통화는 pending/error/중복 실행 방지 같은 낮은 수준 primitive에 한정한다. 업무 규칙이 다른 화면을 `useCrud()`나 범용 Form으로 묶지 않는다.
+- 일지 옵션은 서버 vocabulary와 프론트 옵션 모듈에서 관리하며, 간편 기록과 상세 기록의 차이는 암묵적인 복제가 아닌 명시적인 subset으로 표현한다.
+
+### 9.3 건강 기록 안전 규칙
+
+- 구조 리팩터는 REST URL·DTO·DB 스키마·기존 기록 값을 바꾸지 않는다. 기능 수정은 characterization test를 가진 별도 배치로 처리한다.
+- 기존의 미등록 선택값은 삭제하거나 자동 변환하지 않는다. 공개 집계에서는 제외하고, 새 입력의 엄격한 검증은 데이터 현황과 클라이언트 배포를 확인한 뒤 단계적으로 적용한다.
+- 동의, 최소 표본, KST `recordDate`, 타인 기록의 404 비노출 규칙은 구현 위치가 바뀌어도 반드시 보존한다.
