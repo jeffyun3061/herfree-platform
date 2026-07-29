@@ -36,10 +36,34 @@ jobs:
       image: ${{ steps.image.outputs.uri }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
+      - name: Verify the staging frontend is the same release
+        env:
+          AMPLIFY_APP_ID: ${{ vars.STAGING_AMPLIFY_APP_ID }}
+          AMPLIFY_BRANCH: develop
+        run: |
+          set -euo pipefail
+          test "${GITHUB_REF}" = "refs/heads/main"
+          : "${AMPLIFY_APP_ID:?STAGING_AMPLIFY_APP_ID is required}"
+          git fetch --no-tags origin "${AMPLIFY_BRANCH}"
+          frontend_sha="$(git rev-parse "origin/${AMPLIFY_BRANCH}")"
+          if ! git diff --quiet "${GITHUB_SHA}" "${frontend_sha}" -- frontend amplify.yml; then
+            echo "main and ${AMPLIFY_BRANCH} do not contain the same frontend release."
+            exit 1
+          fi
+          latest_job="$(aws amplify list-jobs \
+            --app-id "${AMPLIFY_APP_ID}" \
+            --branch-name "${AMPLIFY_BRANCH}" \
+            --max-results 1 \
+            --output json)"
+          jq -e --arg commit "${frontend_sha}" \
+            '.jobSummaries[0] | .status == "SUCCEED" and .commitId == $commit' \
+            <<<"${latest_job}" >/dev/null
       - id: ecr
         uses: aws-actions/amazon-ecr-login@v2
       - id: image

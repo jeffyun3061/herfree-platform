@@ -162,6 +162,7 @@ GitHub Repository Variables:
 | --- | --- |
 | `AWS_REGION` | `ap-northeast-2` |
 | `ECR_REPOSITORY` | `herfree-api` |
+| `STAGING_AMPLIFY_APP_ID` | staging Amplify app ID |
 | `STAGING_INSTANCE_ID` | staging EC2 instance ID |
 | `PRODUCTION_INSTANCE_ID` | production EC2 instance ID |
 | `PRODUCTION_RDS_INSTANCE_ID` | production RDS instance identifier |
@@ -180,11 +181,12 @@ GitHub Repository Variables:
 4. 변경 파일과 migration을 직접 검토하고 커밋한다.
 5. Pull Request의 CI·CodeQL을 통과시킨다.
 6. `main`에 병합한다.
-7. GitHub Actions `Release backend`를 `target=staging`으로 실행한다.
-8. staging smoke와 변경형 BFF E2E를 모두 통과한다.
-9. 두 검증 뒤에 생성된 `staging-passed-<commit SHA>` 태그를 확인한다.
-10. production 승인 후 배포 직전 암호화 RDS snapshot을 만들고 같은 태그로 운영 배포한다.
-11. 배포 후 5분 smoke와 30분 모니터링을 수행한다.
+7. `main`과 Amplify `develop`의 frontend tree를 일치시키고 Amplify 배포 성공을 확인한다.
+8. GitHub Actions `Release backend`를 `main`, `target=staging`으로 실행한다.
+9. staging smoke와 변경형 BFF E2E를 모두 통과한다.
+10. 두 검증 뒤에 생성된 `staging-passed-<commit SHA>` 태그를 확인한다.
+11. production 승인 후 배포 직전 암호화 RDS snapshot을 만들고 같은 태그로 운영 배포한다.
+12. 배포 후 5분 smoke와 30분 모니터링을 수행한다.
 
 운영 서버에서 코드를 직접 수정하거나 `git pull`로 즉석 배포하지 않는다.
 
