@@ -1,3 +1,5 @@
+import { safeInternalReturnPath } from '@/domain/auth/returnPath';
+
 /**
  * OAuth 리다이렉트 state·return URL을 sessionStorage로 관리.
  * callback URL은 환경별 OAuth 콘솔 등록값과 일치해야 한다 (docs/oauth-setup.md).
@@ -93,12 +95,12 @@ export function buildOAuthAuthorizeUrl(provider: OAuthProvider, state: string): 
 
 export function rememberOAuthReturnUrl(returnUrl: string): void {
   if (typeof window === 'undefined') return;
-  sessionStorage.setItem(OAUTH_RETURN_URL_KEY, returnUrl);
+  sessionStorage.setItem(OAUTH_RETURN_URL_KEY, safeInternalReturnPath(returnUrl, '/'));
 }
 
 export function consumeOAuthReturnUrl(): string {
   if (typeof window === 'undefined') return '/';
-  const value = sessionStorage.getItem(OAUTH_RETURN_URL_KEY) ?? '/';
+  const value = safeInternalReturnPath(sessionStorage.getItem(OAUTH_RETURN_URL_KEY), '/');
   sessionStorage.removeItem(OAUTH_RETURN_URL_KEY);
   return value;
 }

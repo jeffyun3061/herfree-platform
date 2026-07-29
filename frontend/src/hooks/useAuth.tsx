@@ -18,10 +18,8 @@ import { isApiError } from '@/lib/api/client';
 import {
   bumpAuthEpoch,
   clearAuth,
-  getAccessToken,
   getAuthEpoch,
   getSessionUser,
-  setAccessToken,
   setSessionUser,
 } from '@/lib/auth-storage';
 import { forceUnlockBodyScroll } from '@/lib/body-scroll-lock';
@@ -82,12 +80,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const restore = async () => {
       const gen = ++restoreGenRef.current;
       const epochAtStart = getAuthEpoch();
-      const token = getAccessToken();
-
-      if (!token) {
-        setIsReady(true);
-        return;
-      }
 
       const cachedUser = getSessionUser();
       setUser(cachedUser);
@@ -129,13 +121,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const establishSession = useCallback((result: {
-    accessToken: string;
     userId: number;
     nickname: string;
     role: SessionUser['role'];
   }) => {
     ++restoreGenRef.current;
-    setAccessToken(result.accessToken);
     const session = toSessionUser(result);
     setSessionUser(session);
     setUser(session);
@@ -166,7 +156,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const completeOAuthLogin = useCallback((result: OAuthLoginResult) => {
     if (
       result.needsProfile ||
-      !result.accessToken ||
       result.userId == null ||
       !result.nickname ||
       !result.role
@@ -179,7 +168,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     ++restoreGenRef.current;
     bumpAuthEpoch();
     establishSession({
-      accessToken: result.accessToken,
       userId: result.userId,
       nickname: result.nickname,
       role: result.role,

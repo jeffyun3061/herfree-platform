@@ -28,9 +28,6 @@ export type PasswordResetConfirmRequest = {
 
 // POST /api/auth/login 응답 (LoginResponse)
 export type LoginResult = {
-  accessToken: string;
-  tokenType: string;
-  expiresIn: number;
   userId: number;
   nickname: string;
   role: UserRole;
@@ -39,9 +36,6 @@ export type LoginResult = {
 export type OAuthLoginResult = {
   needsProfile: boolean;
   profileCompletionToken?: string | null;
-  accessToken?: string | null;
-  tokenType?: string | null;
-  expiresIn?: number | null;
   userId?: number | null;
   nickname?: string | null;
   role?: UserRole | null;
