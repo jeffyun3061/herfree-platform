@@ -145,23 +145,12 @@ jobs:
           E2E_HTTP_USERNAME: ${{ secrets.E2E_HTTP_USERNAME }}
           E2E_HTTP_PASSWORD: ${{ secrets.E2E_HTTP_PASSWORD }}
         run: npm run e2e:staging:smoke
-      - uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
-      - name: Mark the exact image as staging-tested
-        run: |
-          set -euo pipefail
-          manifest="$(aws ecr batch-get-image --repository-name "${ECR_REPOSITORY}" --image-ids imageTag="${GITHUB_SHA}" --query 'images[0].imageManifest' --output text)"
-          test -n "${manifest}" && test "${manifest}" != "None"
-          aws ecr put-image --repository-name "${ECR_REPOSITORY}" --image-tag "staging-passed-${GITHUB_SHA}" --image-manifest "${manifest}"
 
   staging-mutation-qa:
     if: inputs.target == 'staging'
     needs: verify-staging
     runs-on: ubuntu-latest
     environment: staging
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -174,7 +163,7 @@ jobs:
         run: |
           npm ci
           npx playwright install --with-deps chromium
-      - name: Run staging mutation QA (non-blocking)
+      - name: Run staging mutation QA
         working-directory: frontend
         env:
           PLAYWRIGHT_BASE_URL: ${{ vars.STAGING_FRONTEND_URL }}
@@ -182,6 +171,23 @@ jobs:
           E2E_HTTP_USERNAME: ${{ secrets.E2E_HTTP_USERNAME }}
           E2E_HTTP_PASSWORD: ${{ secrets.E2E_HTTP_PASSWORD }}
         run: npm run e2e:staging:mutation
+
+  promote-staging-image:
+    if: inputs.target == 'staging'
+    needs: [build-staging, staging-mutation-qa]
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Mark the exact image as staging-tested
+        run: |
+          set -euo pipefail
+          manifest="$(aws ecr batch-get-image --repository-name "${ECR_REPOSITORY}" --image-ids imageTag="${GITHUB_SHA}" --query 'images[0].imageManifest' --output text)"
+          test -n "${manifest}" && test "${manifest}" != "None"
+          aws ecr put-image --repository-name "${ECR_REPOSITORY}" --image-tag "staging-passed-${GITHUB_SHA}" --image-manifest "${manifest}"
 
   deploy-production:
     if: inputs.target == 'production'
@@ -200,6 +206,8 @@ jobs:
           ECR_REGISTRY: ${{ steps.ecr.outputs.registry }}
           INSTANCE_ID: ${{ vars.PRODUCTION_INSTANCE_ID }}
           IMAGE_TAG: ${{ inputs.image_tag }}
+          RDS_INSTANCE_ID: ${{ vars.PRODUCTION_RDS_INSTANCE_ID }}
+          RELEASE_ID: ${{ github.run_id }}-${{ github.run_attempt }}
         run: |
           set -euo pipefail
           if [[ ! "${IMAGE_TAG}" =~ ^staging-passed-[0-9a-f]{40}$ ]]; then
@@ -207,6 +215,7 @@ jobs:
             exit 2
           fi
           aws ecr describe-images --repository-name "${ECR_REPOSITORY}" --image-ids imageTag="${IMAGE_TAG}" >/dev/null
+          ./infra/scripts/create-rds-predeploy-snapshot.sh
           image="${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}"
           tar -czf /tmp/herfree-release-bundle.tgz \
             docker-compose.release.yml \
@@ -255,7 +264,14 @@ jobs:
           API_URL: ${{ vars.PRODUCTION_API_URL }}
         run: |
           set -euo pipefail
-          curl --fail --silent --show-error "${API_URL}/api/health"
+          curl --fail --silent --show-error --dump-header /tmp/health-headers "${API_URL}/api/health"
+          grep -qi '^x-request-id:' /tmp/health-headers
+          curl --fail --silent --show-error \
+            --dump-header /tmp/journal-headers \
+            --output /tmp/journal-home-stats.json \
+            "${API_URL}/api/journal/public/home-stats"
+          grep -qi '^cache-control:.*no-store' /tmp/journal-headers
+          jq -e '.success == true and (.data | has("usersRecordingToday") | not)' /tmp/journal-home-stats.json
           test "$(curl --silent --output /dev/null --write-out '%{http_code}' "${API_URL}/swagger-ui.html")" = "404"
           code="$(curl --silent --output /dev/null --write-out '%{http_code}' "${API_URL}/api/admin/reports")"
           test "${code}" = "401" || test "${code}" = "403"

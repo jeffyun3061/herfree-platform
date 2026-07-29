@@ -164,6 +164,7 @@ GitHub Repository Variables:
 | `ECR_REPOSITORY` | `herfree-api` |
 | `STAGING_INSTANCE_ID` | staging EC2 instance ID |
 | `PRODUCTION_INSTANCE_ID` | production EC2 instance ID |
+| `PRODUCTION_RDS_INSTANCE_ID` | production RDS instance identifier |
 | `STAGING_FRONTEND_URL` | staging frontend HTTPS URL |
 | `PRODUCTION_API_URL` | `https://api.herpfree.co.kr` |
 
@@ -180,9 +181,9 @@ GitHub Repository Variables:
 5. Pull Request의 CI·CodeQL을 통과시킨다.
 6. `main`에 병합한다.
 7. GitHub Actions `Release backend`를 `target=staging`으로 실행한다.
-8. staging 자동 E2E와 아래 수동 검사를 통과한다.
-9. 생성된 `staging-passed-<commit SHA>` 태그를 확인한다.
-10. production 승인 후 같은 태그로 운영 배포한다.
+8. staging smoke와 변경형 BFF E2E를 모두 통과한다.
+9. 두 검증 뒤에 생성된 `staging-passed-<commit SHA>` 태그를 확인한다.
+10. production 승인 후 배포 직전 암호화 RDS snapshot을 만들고 같은 태그로 운영 배포한다.
 11. 배포 후 5분 smoke와 30분 모니터링을 수행한다.
 
 운영 서버에서 코드를 직접 수정하거나 `git pull`로 즉석 배포하지 않는다.
