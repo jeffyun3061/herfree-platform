@@ -55,8 +55,6 @@ export function AdminReportsSection() {
     actionError,
     isProcessing,
     processReport,
-    hidePost,
-    hideComment,
     refetch,
   } = useAdminReports(status);
   const {
@@ -75,13 +73,12 @@ export function AdminReportsSection() {
   };
 
   const handleAccept = async (reportId: number, targetType: string, targetId: number) => {
-    const ok = await processReport(reportId, {
+    const ok = await adminApi.decideReport(reportId, {
       status: 'ACCEPTED',
+      moderationAction: targetType === 'USER' ? 'NONE' : 'HIDE',
       processNote: targetType === 'USER' ? '회원 제재 검토 필요' : '신고 승인 및 숨김 처리',
     });
     if (!ok) return;
-    if (targetType === 'POST') await hidePost(targetId);
-    if (targetType === 'COMMENT') await hideComment(targetId);
     await refetchTargets();
   };
 
@@ -108,10 +105,9 @@ export function AdminReportsSection() {
     setTargetProcessingKey(targetKey(target));
     setTargetActionError(null);
     try {
-      if (target.targetType === 'POST') await adminApi.hidePost(target.targetId);
-      if (target.targetType === 'COMMENT') await adminApi.hideComment(target.targetId);
-      await adminApi.processReportTarget(target.targetType, target.targetId, {
+      await adminApi.decideReportTarget(target.targetType, target.targetId, {
         status: 'ACCEPTED',
+        moderationAction: 'HIDE',
         processNote: '누적 신고 검토 후 숨김 처리',
       });
       await refreshQueues();
@@ -126,10 +122,9 @@ export function AdminReportsSection() {
     setTargetProcessingKey(targetKey(target));
     setTargetActionError(null);
     try {
-      if (target.targetType === 'POST') await adminApi.deletePost(target.targetId);
-      if (target.targetType === 'COMMENT') await adminApi.deleteComment(target.targetId);
-      await adminApi.processReportTarget(target.targetType, target.targetId, {
+      await adminApi.decideReportTarget(target.targetType, target.targetId, {
         status: 'ACCEPTED',
+        moderationAction: 'DELETE',
         processNote: '누적 신고 검토 후 삭제 처리',
       });
       await refreshQueues();

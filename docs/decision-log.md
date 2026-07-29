@@ -10,7 +10,7 @@
 
 
 
-## ADR-001: Java 17 + Spring Boot 3.3.x
+## ADR-001: Java 17 + Spring Boot 3.5.16
 
 
 
@@ -20,7 +20,7 @@
 
 - **배경:** LTS 안정성, Spring Boot 3.x Jakarta, 포트폴리오·CI·EC2 환경 통일. Java 21도 가능하나 팀·호스팅 편차를 줄이기 위해 단일 LTS 선택.
 
-- **결정:** **Java 17** + **Spring Boot 3.3.x** (로컬·Docker·GitHub Actions·EC2 JRE 동일)
+- **결정:** **Java 17** + **Spring Boot 3.5.16** (로컬·Docker·GitHub Actions·EC2 JRE 동일)
 
 - **대안:** Java 21 단독 상향 — toolchain 변경 시 별도 ADR
 
@@ -342,7 +342,9 @@
 
 
 
-## ADR-016: AWS S3 SDK — 게시글 이미지 업로드
+## ADR-017: AWS S3 SDK — 게시글 이미지 업로드
+
+> **식별자 정정(2026-07-28):** 검색 ADR은 `V18__add_posts_fulltext_ngram.sql`의 참조를 보존하기 위해 ADR-016으로 유지한다. 이 ADR과 이후 UTC·OAuth ADR은 중복 번호를 제거해 각각 ADR-017·018·019로 정정했다.
 
 
 
@@ -403,7 +405,7 @@
 
 ---
 
-## ADR-017: API·DB 타임스탬프 UTC 저장
+## ADR-018: API·DB 타임스탬프 UTC 저장
 
 - **상태:** 승인
 - **날짜:** 2026-07-10
@@ -419,7 +421,7 @@
 
 ---
 
-## ADR-018: 소셜 로그인 (카카오·구글·네이버)
+## ADR-019: 소셜 로그인 (카카오·구글·네이버)
 
 - **상태:** 승인
 - **날짜:** 2026-07-10
@@ -435,6 +437,39 @@
 
 ---
 
+## ADR-020: 변경 이유 기준의 Journal application service와 운영 facade
+
+- **상태:** 승인
+- **날짜:** 2026-07-28
+- **배경:** 하나의 JournalService가 개인 기록 CRUD, 개인 대시보드, 30일 리뷰, 동의 기반 공개 통계, 관리자 운영 통계를 함께 처리하면 변경과 권한 검토 범위가 불필요하게 커진다.
+- **결정:** 기록·대시보드·리뷰·공개 인사이트를 별도 application service로 나누고, 계산 규칙은 Spring 의존성이 없는 Calculator/Policy로 추출한다. 신고·게시글·댓글을 함께 읽는 관리자 수치는 `AdminJournalStatisticsFacade`에만 둔다.
+- **대안:** 범용 BaseService 또는 모든 도메인 Repository를 JournalService에 유지 — 책임과 개인정보 검토 경계가 흐려져 거부.
+- **영향:** Controller는 목적별 service만 의존한다. 개인 일지 service는 다른 도메인 Repository를 직접 의존하지 않으며, facade만 운영 read-model 조합의 예외가 된다.
+
+---
+
+## ADR-021: 프론트 feature 경계와 저수준 비동기 primitive
+
+- **상태:** 승인
+- **날짜:** 2026-07-28
+- **배경:** 페이지와 큰 컴포넌트에 조회·권한·확인·mutation·렌더링이 섞여 있고, 기존 feature hook마다 성공/실패 반환 계약이 다르다.
+- **결정:** page는 route 조립, feature container/hook은 상태와 API orchestration, view는 표시를 담당한다. `useAsyncMutation`은 pending/error/중복 실행 방지까지만 공통화하고, 각 feature hook이 기존 업무 의미를 유지한다. UI는 기존 Modal·ConfirmModal·Pagination·Input을 우선 재사용한다.
+- **대안:** `useCrud()`와 범용 CRUD Form으로 모든 화면을 통합 — 관리자 제재·신고·일지처럼 규칙이 다른 흐름을 숨기므로 거부.
+- **영향:** raw API import는 page에서 제거하고 feature hook으로 이관한다. Vitest/RTL은 순수 정책, hook, 표시 컴포넌트의 빠른 회귀 검증에 사용하며 Playwright는 사용자 여정에 유지한다.
+
+---
+
+## ADR-022: 실제 공통성이 확인될 때만 건강 기록 추상화
+
+- **상태:** 승인
+- **날짜:** 2026-07-28
+- **배경:** Health Card·Medication 등 미래 기능을 이유로 지금 `RecordService<T>`나 상속 계층을 만들면 Journal 고유의 동의·익명 집계·날짜 규칙까지 잘못 일반화할 위험이 있다.
+- **결정:** 현재는 Journal 내부 책임과 vocabulary/consent 경계만 명확히 한다. 두 번째 기록 도메인이 도입되어 소유자, 날짜, 보존, 동의, 집계 규칙이 실제로 공통임이 테스트와 요구사항으로 확인될 때 공통 정책 또는 port를 추출한다.
+- **대안:** 선제적 범용 Record 모델 — 추측 기반 추상화와 불필요한 상속으로 거부.
+- **영향:** 새 기록 기능은 Journal을 수정하지 않고 자체 feature로 시작하며, 중복이 검증된 축만 공통 모듈로 승격한다.
+
+---
+
 ## 변경 이력
 
 
@@ -443,8 +478,7 @@
 
 |------|-----------|
 
-| 2026-07-10 | ADR-018: 카카오·구글·네이버 소셜 로그인 (Authorization Code → Herfree JWT) |
+| 2026-07-10 | ADR-019: 카카오·구글·네이버 소셜 로그인 (Authorization Code → Herfree JWT) |
 | 2026-07-10 | ADR: API·DB 타임스탬프 UTC, 일지 record_date KST 유지 |
 | 2026-06-03 | ADR-001~012: Java 17, JWT, MySQL/H2, Docker/RDS, ddl-auto, 패키지·auth/user 분리, 배포·프론트 |
 | 2026-06-03 | ADR-012~014: PostgreSQL 미채택, AI FastAPI·Vector DB 로드맵, Spring/FastAPI 역할; compose 경로 루트 통합 |
-

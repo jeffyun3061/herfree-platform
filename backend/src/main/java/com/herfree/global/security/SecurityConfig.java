@@ -14,6 +14,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
@@ -42,12 +43,15 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AdminAuditFilter adminAuditFilter() {
-        return new AdminAuditFilter(adminAuditService);
+    public AdminAuditFilter adminAuditFilter(MeterRegistry meterRegistry) {
+        return new AdminAuditFilter(adminAuditService, meterRegistry);
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(
+            HttpSecurity http,
+            AdminAuditFilter adminAuditFilter
+    ) throws Exception {
         boolean isPublicEnvironment = RuntimeProfilePolicy.isPublicEnvironment(environment);
 
         http
@@ -128,7 +132,7 @@ public class SecurityConfig {
         http
                 .addFilterBefore(authRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
-                .addFilterAfter(adminAuditFilter(), JwtAuthenticationFilter.class);
+                .addFilterAfter(adminAuditFilter, JwtAuthenticationFilter.class);
 
         return http.build();
     }

@@ -1,11 +1,11 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { emptyPage } from '@/domain/common/types';
 import type { Post } from '@/domain/post/types';
 import type { PostCreateInput, PostUpdateInput } from '@/domain/post/types';
 import { useApiQuery } from '@/hooks/useApiQuery';
-import { getErrorMessage } from '@/lib/api/client';
+import { useAsyncMutation } from '@/hooks/useAsyncMutation';
 import * as postsApi from '@/lib/api/posts';
 
 // 게시판별 게시글 목록 — 페이지 상태까지 훅이 관리한다
@@ -39,25 +39,7 @@ export function usePostDetail(postId: number) {
 
 // 작성·수정·삭제 — 페이지 컴포넌트에서 fetch를 직접 다루지 않도록 mutation을 훅으로 분리
 export function usePostMutation() {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const inFlightRef = useRef(false);
-
-  const run = async <T,>(action: () => Promise<T>): Promise<T | null> => {
-    if (inFlightRef.current) return null;
-    inFlightRef.current = true;
-    setIsSubmitting(true);
-    setError(null);
-    try {
-      return await action();
-    } catch (err) {
-      setError(getErrorMessage(err));
-      return null;
-    } finally {
-      inFlightRef.current = false;
-      setIsSubmitting(false);
-    }
-  };
+  const { run, isPending: isSubmitting, error } = useAsyncMutation();
 
   return {
     isSubmitting,

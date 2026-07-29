@@ -18,6 +18,8 @@ public interface JournalRecordRepository extends JpaRepository<JournalRecord, Lo
 
     Page<JournalRecord> findByUserIdOrderByRecordDateDesc(Long userId, Pageable pageable);
 
+    Optional<JournalRecord> findFirstByUserIdOrderByRecordDateAsc(Long userId);
+
     Page<JournalRecord> findByUserIdAndHadSymptomsTrueOrderByRecordDateDesc(Long userId, Pageable pageable);
 
     List<JournalRecord> findByUserIdAndRecordDateBetweenOrderByRecordDateDesc(

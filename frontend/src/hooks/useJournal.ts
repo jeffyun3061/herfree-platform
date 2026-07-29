@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import type { JournalRecordInput } from '@/domain/journal/types';
 import { useApiQuery } from '@/hooks/useApiQuery';
 import { getErrorMessage } from '@/lib/api/client';
@@ -39,6 +39,30 @@ export function useJournalRecordByDate(date: string, enabled = true) {
     [date],
     { enabled },
   );
+}
+
+/**
+ * Imperative date lookup for calendar/timeline actions.
+ * `null` means no record exists; transport and authorization errors remain errors so a blank form is not opened.
+ */
+export function useJournalRecordLookup() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const lookup = useCallback(async (date: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      return await journalApi.fetchJournalRecordByDate(date);
+    } catch (cause) {
+      setError(getErrorMessage(cause));
+      throw cause;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { lookup, isLoading, error };
 }
 
 export function useJournalRecords(

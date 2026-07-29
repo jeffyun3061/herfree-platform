@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# LEGACY ONLY: Docker/MySQL backup helper. Never use this as the RDS production backup path.
+# Production uses encrypted RDS snapshots plus a documented restore drill.
 # MySQL 일일 백업 — cron 예: 0 3 * * * /opt/herfree/infra/scripts/backup-db.sh
 set -euo pipefail
 

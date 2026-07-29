@@ -8,8 +8,6 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 type GuestActivityPulseProps = {
   posts: Post[];
   isLoading: boolean;
-  usersRecordingToday: number | null;
-  statsLoading: boolean;
 };
 
 function postSnippet(post: Post): string {
