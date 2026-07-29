@@ -72,6 +72,7 @@ function RecordPageContent() {
         initialRecord={initialRecord ?? null}
         entryMode={initialRecord ? 'edit' : entryMode}
         isSubmitting={isSubmitting}
+        closeOnSave={false}
         onClose={() => router.push('/journal')}
         onSave={handleSave}
       />
