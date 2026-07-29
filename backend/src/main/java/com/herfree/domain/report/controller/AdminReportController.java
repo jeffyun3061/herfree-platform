@@ -1,11 +1,13 @@
 package com.herfree.domain.report.controller;
 
 import com.herfree.domain.report.dto.request.ReportProcessRequest;
+import com.herfree.domain.report.dto.request.ReportDecisionRequest;
 import com.herfree.domain.report.dto.response.AdminReportTargetResponse;
 import com.herfree.domain.report.dto.response.ReportResponse;
 import com.herfree.domain.report.entity.ReportStatus;
 import com.herfree.domain.report.entity.ReportTargetType;
 import com.herfree.domain.report.service.ReportService;
+import com.herfree.domain.report.service.ReportModerationFacade;
 import com.herfree.global.response.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AdminReportController {
 
     private final ReportService reportService;
+    private final ReportModerationFacade reportModerationFacade;
 
     // status 파라미터가 없으면 PENDING(처리 대기) 신고만 조회한다
     @GetMapping
@@ -57,6 +60,16 @@ public class AdminReportController {
                 reportService.processReport(adminId, reportId, request)));
     }
 
+    @PatchMapping("/{reportId}/decision")
+    public ResponseEntity<ApiResponse<ReportResponse>> decideReport(
+            @AuthenticationPrincipal Long adminId,
+            @PathVariable Long reportId,
+            @Valid @RequestBody ReportDecisionRequest request
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(
+                reportModerationFacade.decideReport(adminId, reportId, request)));
+    }
+
     @PatchMapping("/targets/{targetType}/{targetId}/process")
     public ResponseEntity<ApiResponse<java.util.List<ReportResponse>>> processTargetReports(
             @AuthenticationPrincipal Long adminId,
@@ -66,5 +79,16 @@ public class AdminReportController {
     ) {
         return ResponseEntity.ok(ApiResponse.success(
                 reportService.processTargetReports(adminId, targetType, targetId, request)));
+    }
+
+    @PatchMapping("/targets/{targetType}/{targetId}/decision")
+    public ResponseEntity<ApiResponse<java.util.List<ReportResponse>>> decideTarget(
+            @AuthenticationPrincipal Long adminId,
+            @PathVariable ReportTargetType targetType,
+            @PathVariable Long targetId,
+            @Valid @RequestBody ReportDecisionRequest request
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(
+                reportModerationFacade.decideTarget(adminId, targetType, targetId, request)));
     }
 }
