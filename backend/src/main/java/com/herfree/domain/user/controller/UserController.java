@@ -83,7 +83,7 @@ public class UserController {
     @PatchMapping("/me/consents/health-statistics")
     public ResponseEntity<ApiResponse<HealthStatisticsConsentResponse>> updateHealthStatisticsConsent(
             @AuthenticationPrincipal Long userId,
-            @RequestBody UpdateHealthStatisticsConsentRequest request
+            @Valid @RequestBody UpdateHealthStatisticsConsentRequest request
     ) {
         return ResponseEntity.ok(ApiResponse.success(
                 healthStatisticsConsentService.updateConsent(userId, request.agreed())));

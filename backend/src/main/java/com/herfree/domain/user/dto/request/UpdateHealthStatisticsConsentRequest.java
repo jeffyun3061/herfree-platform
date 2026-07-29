@@ -1,4 +1,6 @@
 package com.herfree.domain.user.dto.request;
 
-public record UpdateHealthStatisticsConsentRequest(boolean agreed) {
+import jakarta.validation.constraints.NotNull;
+
+public record UpdateHealthStatisticsConsentRequest(@NotNull Boolean agreed) {
 }
