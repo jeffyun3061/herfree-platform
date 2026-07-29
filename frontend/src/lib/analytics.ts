@@ -1,7 +1,5 @@
 'use client';
 
-import { getAccessToken } from '@/lib/auth-storage';
-
 export type AnalyticsEventName =
   | 'page_view'
   | 'signup_started'
@@ -41,19 +39,18 @@ function getSessionId(): string {
 }
 
 function currentRoute(): string {
-  return `${window.location.pathname}${window.location.search}`;
+  return window.location.pathname;
 }
 
 async function sendBackendEvent(eventName: AnalyticsEventName, route: string, sessionId: string) {
-  const token = getAccessToken();
   await fetch('/api/events', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
-    body: JSON.stringify({ eventName, route, sessionId }),
+    body: JSON.stringify({ eventName, route: route.split('?')[0], sessionId }),
     keepalive: true,
+    credentials: 'same-origin',
   });
 }
 

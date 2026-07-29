@@ -1,4 +1,5 @@
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
+import { safeInternalReturnPath } from '@/domain/auth/returnPath';
 
 const NAV_STACK_KEY = 'herfree_nav_stack';
 
@@ -18,9 +19,7 @@ function writeStack(stack: string[]) {
 }
 
 function resolveReturnUrl(from: string | null): string {
-  if (!from || !from.startsWith('/') || from.startsWith('//')) return '/';
-  if (from.startsWith('/login') || from.startsWith('/signup')) return '/';
-  return from;
+  return safeInternalReturnPath(from, '/');
 }
 
 /** 브라우저 히스토리 없을 때 이동할 맥락별 부모 경로 */

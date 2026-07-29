@@ -4,8 +4,8 @@ import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
+import { safeInternalReturnPath } from '@/domain/auth/returnPath';
 import { AuthEntryLink } from '@/components/auth/AuthEntryLink';
-import { getAccessToken } from '@/lib/auth-storage';
 import { AuthScreenShell } from '@/components/auth/AuthScreenShell';
 import { EmailFieldWithCheck } from '@/components/auth/EmailFieldWithCheck';
 import { SignupAgreementFields, isRequiredSignupAgreed, type SignupAgreementState } from '@/components/auth/SignupAgreementFields';
@@ -23,9 +23,7 @@ import {
 import { getErrorMessage, isApiError } from '@/lib/api/client';
 
 function resolveReturnUrl(from: string | null): string {
-  if (!from || !from.startsWith('/') || from.startsWith('//')) return '/journal';
-  if (from.startsWith('/login') || from.startsWith('/signup')) return '/journal';
-  return from;
+  return safeInternalReturnPath(from, '/journal');
 }
 
 function withFieldError(
@@ -124,10 +122,6 @@ function SignupForm() {
     setIsSubmitting(true);
     try {
       await signup({ email, password, nickname, ...agreements });
-      if (!getAccessToken()) {
-        setError('가입은 완료됐지만 자동 로그인에 실패했습니다. 아래 로그인 링크에서 다시 시도해 주세요.');
-        return;
-      }
       router.replace(resolveReturnUrl(searchParams.get('from')));
     } catch (err) {
       if (isApiError(err) && err.status === 409) {

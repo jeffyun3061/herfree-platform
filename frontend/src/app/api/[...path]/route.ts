@@ -1,61 +1,160 @@
 import { NextRequest, NextResponse } from 'next/server';
+import {
+  accessCookieName,
+  csrfCookieName,
+  hasValidCsrfToken,
+  hasValidOrigin,
+  isCsrfExemptPath,
+  isSessionEstablishingPath,
+  isUnsafeMethod,
+  requestBodyLimit,
+  shouldClearSession,
+} from '@/lib/bff/security';
 
-/** Amplify/호스팅 런타임 env 반영 — 모듈 상단 상수로 두면 build 시점 값에 고정될 수 있다. */
+const REQUEST_HEADER_ALLOWLIST = new Set([
+  'accept',
+  'accept-language',
+  'content-type',
+  'user-agent',
+  'x-request-id',
+]);
+const RESPONSE_HEADER_ALLOWLIST = new Set([
+  'cache-control',
+  'content-disposition',
+  'content-length',
+  'content-type',
+  'etag',
+  'expires',
+  'last-modified',
+  'pragma',
+  'x-request-id',
+]);
+const production = process.env.NODE_ENV === 'production';
+const ACCESS_COOKIE = accessCookieName(production);
+const CSRF_COOKIE = csrfCookieName(production);
+
 function resolveApiTarget(): string | null {
-  const configuredTarget =
-    process.env['API_REWRITE_TARGET']?.trim() ||
-    // Backwards compatibility for hosting configurations created before
-    // API_REWRITE_TARGET was introduced.
-    process.env.NEXT_PUBLIC_API_URL?.trim();
-
-  if (configuredTarget) {
-    return configuredTarget.replace(/\/$/, '');
+  const configuredTarget = process.env.API_REWRITE_TARGET?.trim();
+  if (!configuredTarget) {
+    return production ? null : 'http://127.0.0.1:8080';
   }
-
-  // Local development intentionally targets a locally running Spring API.
-  // A deployed frontend must never silently proxy to its own 127.0.0.1.
-  return process.env.NODE_ENV === 'development' ? 'http://127.0.0.1:8080' : null;
+  try {
+    const target = new URL(configuredTarget);
+    if (production && target.protocol !== 'https:') return null;
+    return target.origin;
+  } catch {
+    return null;
+  }
 }
 
-// 프록시가 그대로 넘기면 안 되는 전송 계층 헤더들이다.
-const HOP_BY_HOP = new Set([
-  'connection',
-  'keep-alive',
-  'proxy-authenticate',
-  'proxy-authorization',
-  'te',
-  'trailers',
-  'transfer-encoding',
-  'upgrade',
-  'host',
-  'content-length',
-]);
+function errorResponse(status: number, message: string) {
+  return NextResponse.json({ success: false, message, data: null }, { status });
+}
 
-/** 브라우저 → Next → Spring. Origin 제거로 모바일/ngrok CORS 403 방지 */
+async function readBodyWithLimit(
+  body: ReadableStream<Uint8Array> | null,
+  limit: number,
+): Promise<ArrayBuffer | undefined> {
+  if (!body) return undefined;
+  const reader = body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > limit) {
+      await reader.cancel();
+      throw new Error('BODY_TOO_LARGE');
+    }
+    chunks.push(value);
+  }
+  const combined = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    combined.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return combined.buffer;
+}
+
+function setSessionCookies(response: NextResponse, accessToken: string) {
+  const common = {
+    secure: production,
+    sameSite: 'strict' as const,
+    path: '/',
+    maxAge: 60 * 60,
+  };
+  response.cookies.set(ACCESS_COOKIE, accessToken, { ...common, httpOnly: true });
+  response.cookies.set(CSRF_COOKIE, crypto.randomUUID(), { ...common, httpOnly: false });
+}
+
+function clearSessionCookies(response: NextResponse) {
+  const options = { secure: production, sameSite: 'strict' as const, path: '/', maxAge: 0 };
+  response.cookies.set(ACCESS_COOKIE, '', { ...options, httpOnly: true });
+  response.cookies.set(CSRF_COOKIE, '', { ...options, httpOnly: false });
+  response.headers.set('Clear-Site-Data', '"cache", "storage"');
+}
+
+async function sessionResponse(backendResponse: Response, path: string): Promise<NextResponse | null> {
+  if (!isSessionEstablishingPath(path)
+      || !backendResponse.ok
+      || !(backendResponse.headers.get('content-type') ?? '').includes('application/json')) {
+    return null;
+  }
+  const payload = await backendResponse.json() as {
+    success?: boolean;
+    message?: string;
+    data?: Record<string, unknown> | null;
+  };
+  const accessToken = typeof payload.data?.accessToken === 'string'
+    ? payload.data.accessToken
+    : null;
+  if (payload.data) {
+    delete payload.data.accessToken;
+    delete payload.data.tokenType;
+    delete payload.data.expiresIn;
+  }
+  const response = NextResponse.json(payload, { status: backendResponse.status });
+  response.headers.set('Cache-Control', 'private, no-store');
+  response.headers.set('Pragma', 'no-cache');
+  if (accessToken) setSessionCookies(response, accessToken);
+  return response;
+}
+
 async function proxyToBackend(request: NextRequest, pathSegments: string[]) {
   const path = pathSegments.join('/');
   const apiTarget = resolveApiTarget();
   if (!apiTarget) {
-    return NextResponse.json(
-      {
-        success: false,
-        message: 'API 프록시 주소가 설정되지 않았습니다. 배포 환경의 API_REWRITE_TARGET을 확인해 주세요.',
-        data: null,
-      },
-      { status: 503 },
-    );
+    return errorResponse(503, 'API_REWRITE_TARGET must be a valid HTTPS origin in production.');
   }
 
-  const targetUrl = `${apiTarget}/api/${path}${request.nextUrl.search}`;
+  const accessToken = request.cookies.get(ACCESS_COOKIE)?.value;
+  if (isUnsafeMethod(request.method)) {
+    if (!hasValidOrigin(request.headers.get('origin'), request.nextUrl.origin)) {
+      return errorResponse(403, 'Invalid request origin.');
+    }
+    if (accessToken && !isCsrfExemptPath(path)
+        && !hasValidCsrfToken(
+          request.cookies.get(CSRF_COOKIE)?.value,
+          request.headers.get('x-herfree-csrf'),
+        )) {
+      return errorResponse(403, 'Invalid CSRF token.');
+    }
+  }
+
+  const contentType = request.headers.get('content-type') ?? '';
+  const limit = requestBodyLimit(path, contentType);
+  const declaredLength = Number(request.headers.get('content-length') ?? '0');
+  if (Number.isFinite(declaredLength) && declaredLength > limit) {
+    return errorResponse(413, 'Request body is too large.');
+  }
 
   const headers = new Headers();
   request.headers.forEach((value, key) => {
-    const lower = key.toLowerCase();
-    if (HOP_BY_HOP.has(lower) || lower === 'origin' || lower === 'referer') {
-      return;
-    }
-    headers.set(key, value);
+    if (REQUEST_HEADER_ALLOWLIST.has(key.toLowerCase())) headers.set(key, value);
   });
+  if (accessToken) headers.set('Authorization', `Bearer ${accessToken}`);
 
   const init: RequestInit = {
     method: request.method,
@@ -63,37 +162,40 @@ async function proxyToBackend(request: NextRequest, pathSegments: string[]) {
     redirect: 'manual',
     cache: 'no-store',
   };
-
-  if (request.method !== 'GET' && request.method !== 'HEAD') {
-    const contentType = request.headers.get('content-type') ?? '';
-    if (contentType.includes('multipart/form-data')) {
-      init.body = await request.arrayBuffer();
-    } else {
-      init.body = await request.text();
+  if (isUnsafeMethod(request.method)) {
+    try {
+      init.body = await readBodyWithLimit(request.body, limit);
+    } catch {
+      return errorResponse(413, 'Request body is too large.');
     }
   }
 
   let backendResponse: Response;
   try {
-    backendResponse = await fetch(targetUrl, init);
-  } catch {
-    return NextResponse.json(
-      { success: false, message: '백엔드에 연결할 수 없습니다. API 서버 실행을 확인해 주세요.', data: null },
-      { status: 502 },
+    backendResponse = await fetch(
+      `${apiTarget}/api/${path}${request.nextUrl.search}`,
+      init,
     );
+  } catch {
+    return errorResponse(502, 'Unable to connect to the API server.');
   }
+
+  const established = await sessionResponse(backendResponse.clone(), path);
+  if (established) return established;
 
   const responseHeaders = new Headers();
   backendResponse.headers.forEach((value, key) => {
-    if (HOP_BY_HOP.has(key.toLowerCase())) return;
-    responseHeaders.set(key, value);
+    if (RESPONSE_HEADER_ALLOWLIST.has(key.toLowerCase())) responseHeaders.set(key, value);
   });
-
-  return new NextResponse(backendResponse.body, {
+  const response = new NextResponse(backendResponse.body, {
     status: backendResponse.status,
     statusText: backendResponse.statusText,
     headers: responseHeaders,
   });
+  if (backendResponse.ok && shouldClearSession(path, request.method)) {
+    clearSessionCookies(response);
+  }
+  return response;
 }
 
 type RouteContext = { params: Promise<{ path: string[] }> };
@@ -106,23 +208,18 @@ async function resolvePath(context: RouteContext): Promise<string[]> {
 export async function GET(request: NextRequest, context: RouteContext) {
   return proxyToBackend(request, await resolvePath(context));
 }
-
 export async function POST(request: NextRequest, context: RouteContext) {
   return proxyToBackend(request, await resolvePath(context));
 }
-
 export async function PUT(request: NextRequest, context: RouteContext) {
   return proxyToBackend(request, await resolvePath(context));
 }
-
 export async function PATCH(request: NextRequest, context: RouteContext) {
   return proxyToBackend(request, await resolvePath(context));
 }
-
 export async function DELETE(request: NextRequest, context: RouteContext) {
   return proxyToBackend(request, await resolvePath(context));
 }
-
 export async function OPTIONS(request: NextRequest, context: RouteContext) {
   return proxyToBackend(request, await resolvePath(context));
 }
