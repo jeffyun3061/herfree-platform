@@ -1,7 +1,7 @@
 package com.herfree.domain.journal.controller;
 
 import com.herfree.domain.journal.dto.response.AdminJournalStatsResponse;
-import com.herfree.domain.journal.service.JournalService;
+import com.herfree.domain.journal.service.AdminJournalStatisticsFacade;
 import com.herfree.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -14,10 +14,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class AdminJournalController {
 
-    private final JournalService journalService;
+    private final AdminJournalStatisticsFacade adminJournalStatisticsFacade;
 
     @GetMapping("/stats")
     public ResponseEntity<ApiResponse<AdminJournalStatsResponse>> getStats() {
-        return ResponseEntity.ok(ApiResponse.success(journalService.getAdminStats()));
+        return ResponseEntity.ok(ApiResponse.success(adminJournalStatisticsFacade.getAdminStats()));
     }
 }

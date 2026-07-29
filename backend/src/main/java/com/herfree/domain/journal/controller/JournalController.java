@@ -6,7 +6,10 @@ import com.herfree.domain.journal.dto.response.JournalInsightsResponse;
 import com.herfree.domain.journal.dto.response.JournalPublicHomeStatsResponse;
 import com.herfree.domain.journal.dto.response.JournalRecordResponse;
 import com.herfree.domain.journal.dto.response.JournalReviewSummaryResponse;
-import com.herfree.domain.journal.service.JournalService;
+import com.herfree.domain.journal.service.JournalDashboardService;
+import com.herfree.domain.journal.service.JournalInsightService;
+import com.herfree.domain.journal.service.JournalRecordService;
+import com.herfree.domain.journal.service.JournalReviewService;
 import com.herfree.global.response.ApiResponse;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
@@ -33,14 +36,17 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class JournalController {
 
-    private final JournalService journalService;
+    private final JournalRecordService journalRecordService;
+    private final JournalDashboardService journalDashboardService;
+    private final JournalReviewService journalReviewService;
+    private final JournalInsightService journalInsightService;
 
     @PostMapping("/records")
     public ResponseEntity<ApiResponse<JournalRecordResponse>> upsertRecord(
             @AuthenticationPrincipal Long userId,
             @Valid @RequestBody JournalRecordUpsertRequest request
     ) {
-        return ResponseEntity.ok(ApiResponse.success(journalService.upsertRecord(userId, request)));
+        return ResponseEntity.ok(ApiResponse.success(journalRecordService.upsertRecord(userId, request)));
     }
 
     @GetMapping("/records")
@@ -49,7 +55,7 @@ public class JournalController {
             @RequestParam(required = false) Boolean hadSymptoms,
             @PageableDefault(size = 20) Pageable pageable
     ) {
-        return ResponseEntity.ok(ApiResponse.success(journalService.getMyRecords(userId, hadSymptoms, pageable)));
+        return ResponseEntity.ok(ApiResponse.success(journalRecordService.getMyRecords(userId, hadSymptoms, pageable)));
     }
 
     @GetMapping("/records/month")
@@ -59,7 +65,7 @@ public class JournalController {
             @RequestParam int month,
             @RequestParam(required = false) Boolean hadSymptoms
     ) {
-        return ResponseEntity.ok(ApiResponse.success(journalService.getMonthlyRecords(userId, year, month, hadSymptoms)));
+        return ResponseEntity.ok(ApiResponse.success(journalRecordService.getMonthlyRecords(userId, year, month, hadSymptoms)));
     }
 
     @GetMapping("/records/{recordId}")
@@ -67,7 +73,7 @@ public class JournalController {
             @AuthenticationPrincipal Long userId,
             @PathVariable Long recordId
     ) {
-        return ResponseEntity.ok(ApiResponse.success(journalService.getRecord(userId, recordId)));
+        return ResponseEntity.ok(ApiResponse.success(journalRecordService.getRecord(userId, recordId)));
     }
 
     @DeleteMapping("/records/{recordId}")
@@ -75,7 +81,7 @@ public class JournalController {
             @AuthenticationPrincipal Long userId,
             @PathVariable Long recordId
     ) {
-        journalService.deleteRecord(userId, recordId);
+        journalRecordService.deleteRecord(userId, recordId);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
@@ -84,7 +90,7 @@ public class JournalController {
             @AuthenticationPrincipal Long userId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
     ) {
-        JournalRecordResponse response = journalService.getRecordByDate(userId, date).orElse(null);
+        JournalRecordResponse response = journalRecordService.getRecordByDate(userId, date).orElse(null);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
@@ -92,23 +98,23 @@ public class JournalController {
     public ResponseEntity<ApiResponse<JournalDashboardResponse>> getDashboard(
             @AuthenticationPrincipal Long userId
     ) {
-        return ResponseEntity.ok(ApiResponse.success(journalService.getDashboard(userId)));
+        return ResponseEntity.ok(ApiResponse.success(journalDashboardService.getDashboard(userId)));
     }
 
     @GetMapping("/review-summary")
     public ResponseEntity<ApiResponse<JournalReviewSummaryResponse>> getReviewSummary(
             @AuthenticationPrincipal Long userId
     ) {
-        return ResponseEntity.ok(ApiResponse.success(journalService.getReviewSummary(userId)));
+        return ResponseEntity.ok(ApiResponse.success(journalReviewService.getReviewSummary(userId)));
     }
 
     @GetMapping("/insights")
     public ResponseEntity<ApiResponse<JournalInsightsResponse>> getInsights() {
-        return ResponseEntity.ok(ApiResponse.success(journalService.getCommunityInsights()));
+        return ResponseEntity.ok(ApiResponse.success(journalInsightService.getCommunityInsights()));
     }
 
     @GetMapping("/public/home-stats")
     public ResponseEntity<ApiResponse<JournalPublicHomeStatsResponse>> getPublicHomeStats() {
-        return ResponseEntity.ok(ApiResponse.success(journalService.getPublicHomeStats()));
+        return ResponseEntity.ok(ApiResponse.success(journalInsightService.getPublicHomeStats()));
     }
 }

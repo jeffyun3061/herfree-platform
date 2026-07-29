@@ -1,3 +1,3 @@
 package com.herfree.domain.journal.dto.response;
 
-public record JournalPublicHomeStatsResponse(long usersRecordingToday, long totalUsers) {}
+public record JournalPublicHomeStatsResponse(long totalUsers) {}
