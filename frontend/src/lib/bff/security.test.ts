@@ -6,6 +6,7 @@ import {
   hasValidOrigin,
   requestBodyLimit,
   resolveExternalOrigin,
+  shouldAlwaysClearSession,
 } from '@/lib/bff/security';
 
 describe('BFF security policy', () => {
@@ -45,5 +46,11 @@ describe('BFF security policy', () => {
     expect(requestBodyLimit('posts/images/upload', 'multipart/form-data; boundary=x'))
       .toBe(IMAGE_BODY_LIMIT);
     expect(requestBodyLimit('journal/records', 'application/json')).toBe(JSON_BODY_LIMIT);
+  });
+
+  it('always clears the local session only for a real logout mutation', () => {
+    expect(shouldAlwaysClearSession('auth/logout', 'POST')).toBe(true);
+    expect(shouldAlwaysClearSession('auth/logout', 'GET')).toBe(false);
+    expect(shouldAlwaysClearSession('users/me', 'DELETE')).toBe(false);
   });
 });

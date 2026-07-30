@@ -79,7 +79,11 @@ export function isSessionEstablishingPath(path: string): boolean {
 }
 
 export function shouldClearSession(path: string, method: string): boolean {
-  return path === 'auth/logout'
+  return (path === 'auth/logout' && method.toUpperCase() === 'POST')
     || (path === 'users/me' && method.toUpperCase() === 'DELETE')
     || path === 'users/me/password';
+}
+
+export function shouldAlwaysClearSession(path: string, method: string): boolean {
+  return path === 'auth/logout' && method.toUpperCase() === 'POST';
 }

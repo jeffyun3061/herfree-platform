@@ -128,4 +128,31 @@ test.describe('bff staging data flow', () => {
       await api.dispose();
     }
   });
+
+  test('does not render a cached member before the server verifies the session', async ({ page }) => {
+    await page.route('**/api/users/me', async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      await route.fulfill({
+        status: 401,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: false, message: 'Unauthorized', data: null }),
+      });
+    });
+    await page.addInitScript(() => {
+      window.sessionStorage.setItem('sessionUser', JSON.stringify({
+        userId: 999_999,
+        nickname: 'stale-member',
+        role: 'USER',
+      }));
+    });
+
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(150);
+    await expect(page.locator('.home-dashboard-screen')).toHaveCount(0);
+
+    await page.waitForTimeout(500);
+    const cachedUser = await page.evaluate(() => window.sessionStorage.getItem('sessionUser'));
+    expect(cachedUser).toBeNull();
+    await expect(page.locator('.home-dashboard-screen')).toHaveCount(0);
+  });
 });

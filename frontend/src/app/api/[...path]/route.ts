@@ -9,6 +9,7 @@ import {
   isUnsafeMethod,
   requestBodyLimit,
   resolveExternalOrigin,
+  shouldAlwaysClearSession,
   shouldClearSession,
 } from '@/lib/bff/security';
 
@@ -184,7 +185,11 @@ async function proxyToBackend(request: NextRequest, pathSegments: string[]) {
       init,
     );
   } catch {
-    return errorResponse(502, 'Unable to connect to the API server.');
+    const response = errorResponse(502, 'Unable to connect to the API server.');
+    if (shouldAlwaysClearSession(path, request.method)) {
+      clearSessionCookies(response);
+    }
+    return response;
   }
 
   const established = await sessionResponse(backendResponse.clone(), path);
@@ -199,7 +204,8 @@ async function proxyToBackend(request: NextRequest, pathSegments: string[]) {
     statusText: backendResponse.statusText,
     headers: responseHeaders,
   });
-  if (backendResponse.ok && shouldClearSession(path, request.method)) {
+  if ((backendResponse.ok && shouldClearSession(path, request.method))
+      || shouldAlwaysClearSession(path, request.method)) {
     clearSessionCookies(response);
   }
   return response;

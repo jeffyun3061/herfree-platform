@@ -19,9 +19,9 @@ import {
   bumpAuthEpoch,
   clearAuth,
   getAuthEpoch,
-  getSessionUser,
   setSessionUser,
 } from '@/lib/auth-storage';
+import { clearAppNotice } from '@/lib/app-notice';
 import { forceUnlockBodyScroll } from '@/lib/body-scroll-lock';
 
 type AuthContextValue = {
@@ -70,6 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const onAuthCleared = () => {
       ++restoreGenRef.current;
       setUser(null);
+      setIsReady(true);
       forceUnlockBodyScroll();
     };
     window.addEventListener('herfree:auth-cleared', onAuthCleared);
@@ -81,12 +82,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const gen = ++restoreGenRef.current;
       const epochAtStart = getAuthEpoch();
 
-      const cachedUser = getSessionUser();
-      setUser(cachedUser);
-      // 저장된 세션이 있으면 화면은 즉시 복원하고, 서버 토큰 검증은 백그라운드에서 계속한다.
-      if (cachedUser) {
-        setIsReady(true);
-      }
+      // sessionStorage의 사용자 정보는 표시용 캐시일 뿐 인증 근거가 아니다.
+      // HttpOnly 쿠키를 서버가 검증하기 전에는 개인 화면을 렌더링하지 않는다.
+      setUser(null);
+      setIsReady(false);
       try {
         const me = await Promise.race([
           usersApi.fetchMe(),
@@ -96,7 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         ]);
         if (me === null) {
           if (gen !== restoreGenRef.current || epochAtStart !== getAuthEpoch()) return;
-          setUser(cachedUser);
+          clearAuth();
           return;
         }
         if (gen !== restoreGenRef.current || epochAtStart !== getAuthEpoch()) return;
@@ -107,10 +106,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (gen !== restoreGenRef.current || epochAtStart !== getAuthEpoch()) return;
         if (isApiError(error) && (error.status === 401 || error.status === 403)) {
           clearAuth();
-          setUser(null);
           return;
         }
-        setUser(cachedUser);
+        clearAuth();
       } finally {
         if (gen === restoreGenRef.current) {
           setIsReady(true);
@@ -127,8 +125,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }) => {
     ++restoreGenRef.current;
     const session = toSessionUser(result);
+    clearAppNotice();
     setSessionUser(session);
     setUser(session);
+    setIsReady(true);
   }, []);
 
   const login = useCallback(async (input: LoginRequest) => {
