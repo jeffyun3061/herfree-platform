@@ -8,6 +8,7 @@ import {
   isSessionEstablishingPath,
   isUnsafeMethod,
   requestBodyLimit,
+  resolveExternalOrigin,
   shouldClearSession,
 } from '@/lib/bff/security';
 
@@ -131,7 +132,13 @@ async function proxyToBackend(request: NextRequest, pathSegments: string[]) {
 
   const accessToken = request.cookies.get(ACCESS_COOKIE)?.value;
   if (isUnsafeMethod(request.method)) {
-    if (!hasValidOrigin(request.headers.get('origin'), request.nextUrl.origin)) {
+    const externalOrigin = resolveExternalOrigin(
+      request.nextUrl.origin,
+      request.headers.get('host'),
+      request.headers.get('x-forwarded-proto'),
+      production,
+    );
+    if (!externalOrigin || !hasValidOrigin(request.headers.get('origin'), externalOrigin)) {
       return errorResponse(403, 'Invalid request origin.');
     }
     if (accessToken && !isCsrfExemptPath(path)

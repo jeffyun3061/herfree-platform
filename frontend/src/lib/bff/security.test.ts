@@ -5,6 +5,7 @@ import {
   hasValidCsrfToken,
   hasValidOrigin,
   requestBodyLimit,
+  resolveExternalOrigin,
 } from '@/lib/bff/security';
 
 describe('BFF security policy', () => {
@@ -12,6 +13,27 @@ describe('BFF security policy', () => {
     expect(hasValidOrigin('https://herfree.example', 'https://herfree.example')).toBe(true);
     expect(hasValidOrigin('https://evil.example', 'https://herfree.example')).toBe(false);
     expect(hasValidOrigin(null, 'https://herfree.example')).toBe(false);
+  });
+
+  it('uses the external host instead of the server bind address', () => {
+    expect(resolveExternalOrigin(
+      'http://0.0.0.0:3000',
+      'localhost:3000',
+      null,
+      false,
+    )).toBe('http://localhost:3000');
+    expect(resolveExternalOrigin(
+      'http://127.0.0.1:3000',
+      'develop.example.com',
+      'https',
+      true,
+    )).toBe('https://develop.example.com');
+    expect(resolveExternalOrigin(
+      'http://127.0.0.1:3000',
+      null,
+      null,
+      false,
+    )).toBeNull();
   });
 
   it('requires matching double-submit CSRF values', () => {

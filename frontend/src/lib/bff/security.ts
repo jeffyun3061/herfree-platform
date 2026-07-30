@@ -43,6 +43,28 @@ export function hasValidOrigin(requestOrigin: string | null, expectedOrigin: str
   }
 }
 
+export function resolveExternalOrigin(
+  requestUrlOrigin: string,
+  hostHeader: string | null,
+  forwardedProtoHeader: string | null,
+  isProduction: boolean,
+): string | null {
+  if (!hostHeader) return null;
+
+  try {
+    const requestProtocol = new URL(requestUrlOrigin).protocol.replace(':', '');
+    const forwardedProtocol = forwardedProtoHeader?.split(',')[0]?.trim().toLowerCase();
+    const protocol = isProduction
+      ? 'https'
+      : (forwardedProtocol === 'http' || forwardedProtocol === 'https'
+        ? forwardedProtocol
+        : requestProtocol);
+    return new URL(`${protocol}://${hostHeader}`).origin;
+  } catch {
+    return null;
+  }
+}
+
 export function hasValidCsrfToken(
   cookieToken: string | undefined,
   headerToken: string | null,
