@@ -7,7 +7,6 @@ package com.herfree.domain.auth.policy;
 public final class CredentialPolicy {
 
     public static final int EMAIL_MAX_LENGTH = 254;
-    private static final String EMAIL_FORMAT_PATTERN = "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$";
     public static final int PASSWORD_MIN_LENGTH = 10;
     /** 신규·변경·로그인·현재 비밀번호 입력 모두 동일 상한 */
     public static final int PASSWORD_MAX_LENGTH = 24;
@@ -24,8 +23,34 @@ public final class CredentialPolicy {
     }
 
     public static boolean isValidEmailFormat(String email) {
-        return email != null
-                && email.length() <= EMAIL_MAX_LENGTH
-                && email.matches(EMAIL_FORMAT_PATTERN);
+        if (email == null || email.length() > EMAIL_MAX_LENGTH) {
+            return false;
+        }
+
+        int atIndex = email.indexOf('@');
+        if (atIndex <= 0 || atIndex != email.lastIndexOf('@')) {
+            return false;
+        }
+
+        String localPart = email.substring(0, atIndex);
+        String domainPart = email.substring(atIndex + 1);
+        return hasOnlyNonWhitespaceNonAtCharacters(localPart)
+                && hasOnlyNonWhitespaceNonAtCharacters(domainPart)
+                && domainPart.indexOf('.') > 0
+                && !domainPart.endsWith(".");
+    }
+
+    private static boolean hasOnlyNonWhitespaceNonAtCharacters(String value) {
+        if (value.isEmpty()) {
+            return false;
+        }
+
+        for (int index = 0; index < value.length(); index++) {
+            char character = value.charAt(index);
+            if (character == '@' || Character.isWhitespace(character)) {
+                return false;
+            }
+        }
+        return true;
     }
 }
