@@ -24,6 +24,8 @@ public final class CredentialPolicy {
     }
 
     public static boolean isValidEmailFormat(String email) {
-        return email != null && email.matches(EMAIL_FORMAT_PATTERN);
+        return email != null
+                && email.length() <= EMAIL_MAX_LENGTH
+                && email.matches(EMAIL_FORMAT_PATTERN);
     }
 }

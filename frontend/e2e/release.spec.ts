@@ -9,9 +9,8 @@ const mutationEnabled = process.env.E2E_ALLOW_MUTATION === 'true';
 const mutationHostAllowed =
   host === 'localhost' ||
   host === '127.0.0.1' ||
-  host.includes('staging') ||
-  host.includes('amplifyapp.com') ||
-  host.includes('dev.');
+  host === 'staging.herpfree.co.kr' ||
+  host.endsWith('.amplifyapp.com');
 
 type Envelope<T> = { success: boolean; message: string; data: T };
 
