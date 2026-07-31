@@ -308,3 +308,8 @@ cp .env.prod.example .env.prod   # 값 채우기
 |------|-----------|
 | 2026-06-03 | EC2·Vercel·RDS·CI/CD 초안 |
 | 2026-06-10 | **1단계 확정:** Vercel+VPS+S3, Supabase/AWS Free Tier 미채택, 이미지 presigned, 트래픽·Go/No-Go·계정 소유권 반영 |
+# LEGACY NOTICE
+
+> 이 문서는 과거 VPS/Docker MySQL 절차의 참고 자료다. 신규 운영 배포의 단일 기준은
+> [production-architecture.md](./production-architecture.md)와 `deployment-aws.md`다.
+> `backup-db.sh`를 RDS 운영 백업에 사용하지 않는다.

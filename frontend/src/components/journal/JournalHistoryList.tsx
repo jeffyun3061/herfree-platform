@@ -3,6 +3,16 @@
 import { useEffect, useMemo, useState } from 'react';
 import { PRODROMAL_OPTIONS, formatTriggerLabels, type JournalRecord } from '@/domain/journal/types';
 import {
+  addJournalMonths,
+  buildJournalMonthCalendar,
+  buildJournalMonthDays,
+  formatJournalDateTitle,
+  formatJournalDayNumber,
+  formatJournalMonthTitle,
+  formatJournalWeekday,
+  todayJournalDate,
+} from '@/domain/journal/calendar';
+import {
   formatConditionSummary,
   formatSleepLabel,
   formatStressLabel,
@@ -31,78 +41,6 @@ type JournalHistoryListProps = {
   onDelete: (recordId: number) => void;
 };
 
-function parseRecordDate(date: string): Date {
-  const parsed = new Date(`${date}T00:00:00`);
-  return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
-}
-
-function formatMonthTitle(date: string): string {
-  return parseRecordDate(date).toLocaleDateString('ko-KR', {
-    year: 'numeric',
-    month: 'long',
-  });
-}
-
-function formatDateTitle(date: string): string {
-  return parseRecordDate(date).toLocaleDateString('ko-KR', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
-}
-
-function formatWeekday(date: string): string {
-  return ['일', '월', '화', '수', '목', '금', '토'][parseRecordDate(date).getDay()];
-}
-
-function formatDayNumber(date: string): string {
-  return String(parseRecordDate(date).getDate());
-}
-
-function toIsoDate(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
-}
-
-function buildMonthDays(anchorDate: string): string[] {
-  const anchor = parseRecordDate(anchorDate);
-  const year = anchor.getFullYear();
-  const month = anchor.getMonth();
-  const lastDay = new Date(year, month + 1, 0).getDate();
-
-  return Array.from({ length: lastDay }, (_, index) => toIsoDate(new Date(year, month, index + 1)));
-}
-
-function buildMonthCalendar(anchorDate: string): Array<{ date: string | null; inMonth: boolean }> {
-  const anchor = parseRecordDate(anchorDate);
-  const year = anchor.getFullYear();
-  const month = anchor.getMonth();
-  const firstDay = new Date(year, month, 1).getDay();
-  const lastDay = new Date(year, month + 1, 0).getDate();
-  const cells: Array<{ date: string | null; inMonth: boolean }> = [];
-
-  for (let index = 0; index < firstDay; index += 1) {
-    cells.push({ date: null, inMonth: false });
-  }
-
-  for (let day = 1; day <= lastDay; day += 1) {
-    cells.push({ date: toIsoDate(new Date(year, month, day)), inMonth: true });
-  }
-
-  while (cells.length % 7 !== 0) {
-    cells.push({ date: null, inMonth: false });
-  }
-
-  return cells;
-}
-
-function addMonths(monthDate: string, amount: number): string {
-  const date = parseRecordDate(monthDate);
-  return toIsoDate(new Date(date.getFullYear(), date.getMonth() + amount, 1));
-}
-
 /** 디자이너 원본 카드 좌측 강조선 색: 증상 > 전조 > 루틴 완료 > 나머지. */
 function recordAccent(record: JournalRecord): string {
   if (record.hadSymptoms) return '#CF5B36';
@@ -127,7 +65,6 @@ function severityColor(severity: number | null | undefined): string {
 
 /** 전조증상 코드(ITCHING 등) → 한글 라벨. 직접 입력 값은 그대로 표시. */
 function prodromeLabel(value: string): string {
-  if (value === 'PAIN') return '통증';
   return PRODROMAL_OPTIONS.find((option) => option.value === value)?.label ?? value;
 }
 
@@ -200,9 +137,9 @@ function JournalRecordDetailScreen({
 
         <div className="flex flex-wrap items-center gap-2 px-1">
           <span className="text-[17px] font-bold text-[#1E2621]">
-            {formatDateTitle(record.recordDate)}
+            {formatJournalDateTitle(record.recordDate)}
           </span>
-          <span className="text-[12px] text-[#B4B2A6]">{formatWeekday(record.recordDate)}</span>
+          <span className="text-[12px] text-[#B4B2A6]">{formatJournalWeekday(record.recordDate)}</span>
           <RoutineBadge record={record} />
           {record.hadSymptoms && (
             <span className="rounded-[7px] bg-[#F6E0D2] px-2 py-[3px] text-[10.5px] font-bold text-[#8A3D1E]">
@@ -320,30 +257,26 @@ export function JournalHistoryList({
   onDelete,
 }: JournalHistoryListProps) {
   const [selectedRecordId, setSelectedRecordId] = useState<number | null>(null);
-  const todayIso = toIsoDate(new Date());
+  const todayIso = todayJournalDate();
   const sortedRecords = useMemo(
     () =>
-      [...records].sort(
-        (a, b) =>
-          new Date(`${b.recordDate}T00:00:00`).getTime() -
-          new Date(`${a.recordDate}T00:00:00`).getTime(),
-      ),
+      [...records].sort((a, b) => b.recordDate.localeCompare(a.recordDate)),
     [records],
   );
   const selectedRecord =
     [...sortedRecords, ...calendarRecords].find((record) => record.id === selectedRecordId) ??
     null;
   const monthAnchor = calendarMonth ?? sortedRecords[0]?.recordDate ?? todayIso;
-  const monthTitle = formatMonthTitle(monthAnchor);
+  const monthTitle = formatJournalMonthTitle(monthAnchor);
   const recordsByDate = new Map(
     [...calendarRecords, ...records].map((record) => [record.recordDate, record]),
   );
-  const monthDays = buildMonthDays(monthAnchor);
-  const calendarCells = buildMonthCalendar(monthAnchor);
+  const monthDays = buildJournalMonthDays(monthAnchor);
+  const calendarCells = buildJournalMonthCalendar(monthAnchor);
   const monthRecordCount = monthDays.filter((date) => recordsByDate.has(date)).length;
   const recordTotal = totalElements ?? records.length;
-  const goPrevMonth = () => onCalendarMonthChange?.(addMonths(monthAnchor, -1));
-  const goNextMonth = () => onCalendarMonthChange?.(addMonths(monthAnchor, 1));
+  const goPrevMonth = () => onCalendarMonthChange?.(addJournalMonths(monthAnchor, -1));
+  const goNextMonth = () => onCalendarMonthChange?.(addJournalMonths(monthAnchor, 1));
 
   return (
     <section className="mx-auto w-full max-w-app">
@@ -433,7 +366,7 @@ export function JournalHistoryList({
                         isToday ? 'font-bold text-white' : 'font-semibold text-[#3C443E]',
                       )}
                     >
-                      {formatDayNumber(date)}
+                      {formatJournalDayNumber(date)}
                     </span>
                     <span
                       className="h-[5px] w-[5px] rounded-full"
@@ -524,12 +457,12 @@ export function JournalHistoryList({
                       }}
                       className="cursor-pointer rounded-[16px] border-[0.5px] border-[#EADFCB] bg-[#FBF6EA] px-[17px] py-4 shadow-[0_12px_28px_-26px_rgba(7,37,31,.4)] transition-colors hover:bg-[#F8F1E2]"
                       style={{ borderLeft: `3px solid ${recordAccent(record)}` }}
-                      aria-label={`${formatDateTitle(record.recordDate)} 기록 상세 보기`}
+                      aria-label={`${formatJournalDateTitle(record.recordDate)} 기록 상세 보기`}
                     >
                       <div className="mb-2.5 flex items-center justify-between gap-2">
                         <div className="flex min-w-0 items-center gap-2">
                           <span className="whitespace-nowrap text-[14.5px] font-bold text-[#1E2621]">
-                            {formatDateTitle(record.recordDate)}
+                            {formatJournalDateTitle(record.recordDate)}
                           </span>
                           <RoutineBadge record={record} />
                           {record.hadSymptoms && (
@@ -539,7 +472,7 @@ export function JournalHistoryList({
                           )}
                         </div>
                         <span className="shrink-0 text-[11px] text-[#B4B2A6]">
-                          {formatWeekday(record.recordDate)}
+                          {formatJournalWeekday(record.recordDate)}
                         </span>
                       </div>
                       <p className="mb-1.5 truncate text-[12.5px] text-[#5C645A]">

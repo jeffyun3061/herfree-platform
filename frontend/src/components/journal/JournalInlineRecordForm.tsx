@@ -5,9 +5,13 @@ import {
   toDateInputValue,
   type JournalRecord,
   type JournalRecordInput,
-  type StressLevel,
 } from '@/domain/journal/types';
 import { recordToSheetForm, sheetFormToInput } from '@/domain/journal/recordForm';
+import {
+  JOURNAL_DETAIL_PRODROMAL_OPTIONS,
+  JOURNAL_DETAIL_PRODROMAL_VALUES,
+  JOURNAL_DETAIL_STRESS_OPTIONS,
+} from '@/domain/journal/options';
 import { JournalIcon } from '@/components/journal/JournalIcon';
 import { cn } from '@/lib/cn';
 
@@ -16,21 +20,6 @@ type JournalInlineRecordFormProps = {
   isSubmitting: boolean;
   onSave: (input: JournalRecordInput) => Promise<void>;
 };
-
-const STRESS_OPTIONS: { value: StressLevel; label: string }[] = [
-  { value: 'LOW', label: '낮음' },
-  { value: 'MEDIUM', label: '보통' },
-  { value: 'HIGH', label: '높음' },
-];
-
-const PRODROMAL_OPTIONS = [
-  { value: 'ITCHING', label: '가려움' },
-  { value: 'NUMBNESS', label: '저림' },
-  { value: 'WARMTH', label: '열감' },
-  { value: 'PAIN', label: '통증' },
-];
-
-const PRESET_PRODROME_VALUES = new Set(PRODROMAL_OPTIONS.map((option) => option.value));
 
 /** 디자이너 원본 심각도 셀 색상 (1~5). */
 const SEVERITY_CELLS: Array<[string, string]> = [
@@ -161,7 +150,9 @@ export function JournalInlineRecordForm({
   const currentRecordDate = form.recordDate || (mounted ? toDateInputValue() : '');
   const hasProdromal = (form.prodromalSymptoms ?? []).length > 0;
   const hasSymptoms = Boolean(form.hadSymptoms);
-  const customProdromeValues = (form.prodromalSymptoms ?? []).filter((value) => !PRESET_PRODROME_VALUES.has(value));
+  const customProdromeValues = (form.prodromalSymptoms ?? []).filter(
+    (value) => !JOURNAL_DETAIL_PRODROMAL_VALUES.has(value),
+  );
 
   const toggleProdromalChip = (value: string) => {
     setForm((prev) => {
@@ -257,7 +248,7 @@ export function JournalInlineRecordForm({
             <span>스트레스</span>
           </div>
           <div className="flex gap-2">
-            {STRESS_OPTIONS.map((option) => (
+            {JOURNAL_DETAIL_STRESS_OPTIONS.map((option) => (
               <SegmentButton
                 key={option.value}
                 selected={form.stressLevel === option.value}
@@ -286,7 +277,7 @@ export function JournalInlineRecordForm({
           <div className="mt-4 border-t border-[#EFE6D5] pt-4">
             <p className="mb-2.5 text-[12.5px] text-[#5C645A]">어떤 전조였나요</p>
             <div className="flex flex-wrap gap-2">
-              {PRODROMAL_OPTIONS.map((option) => (
+              {JOURNAL_DETAIL_PRODROMAL_OPTIONS.map((option) => (
                 <ChipButton
                   key={option.value}
                   selected={(form.prodromalSymptoms ?? []).includes(option.value)}

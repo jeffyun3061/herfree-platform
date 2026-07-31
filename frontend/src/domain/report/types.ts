@@ -42,6 +42,10 @@ export type ReportProcessInput = {
   processNote: string;
 };
 
+export type ReportDecisionInput = ReportProcessInput & {
+  moderationAction: 'NONE' | 'HIDE' | 'DELETE';
+};
+
 // 운영 정책에 맞춘 신고 사유. 서버는 자유 문자를 받지만 클라이언트에서 선택지를 제공한다.
 export const REPORT_REASONS: string[] = [
   '욕설/비방/혐오 표현',

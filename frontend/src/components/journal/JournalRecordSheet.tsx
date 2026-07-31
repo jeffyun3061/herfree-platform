@@ -5,9 +5,13 @@ import {
   toDateInputValue,
   type JournalRecord,
   type JournalRecordInput,
-  type StressLevel,
 } from '@/domain/journal/types';
 import { recordToSheetForm, sheetFormToInput } from '@/domain/journal/recordForm';
+import {
+  JOURNAL_DETAIL_PRODROMAL_OPTIONS,
+  JOURNAL_DETAIL_PRODROMAL_VALUES,
+  JOURNAL_DETAIL_STRESS_OPTIONS,
+} from '@/domain/journal/options';
 import type { WizardEntryMode } from '@/domain/journal/wizard';
 import { JournalIcon } from '@/components/journal/JournalIcon';
 import { cn } from '@/lib/cn';
@@ -19,29 +23,11 @@ type JournalRecordSheetProps = {
   initialRecord?: JournalRecord | null;
   entryMode?: WizardEntryMode;
   isSubmitting: boolean;
+  /** Containers that navigate after a save own their close action to avoid a second route transition. */
+  closeOnSave?: boolean;
   onClose: () => void;
   onSave: (input: JournalRecordInput) => Promise<void>;
 };
-
-type StressOption = {
-  value: StressLevel;
-  label: string;
-};
-
-const STRESS_OPTIONS: StressOption[] = [
-  { value: 'LOW', label: '낮음' },
-  { value: 'MEDIUM', label: '보통' },
-  { value: 'HIGH', label: '높음' },
-];
-
-const PRODROMAL_OPTIONS = [
-  { value: 'ITCHING', label: '가려움' },
-  { value: 'NUMBNESS', label: '저림' },
-  { value: 'WARMTH', label: '열감' },
-  { value: 'PAIN', label: '통증' },
-];
-
-const PRESET_PRODROME_VALUES = new Set(PRODROMAL_OPTIONS.map((option) => option.value));
 
 /** 디자이너 원본 심각도 셀 색상 (1~5). */
 const SEVERITY_CELLS: Array<[string, string]> = [
@@ -155,6 +141,7 @@ export function JournalRecordSheet({
   initialRecord,
   entryMode = 'edit',
   isSubmitting,
+  closeOnSave = true,
   onClose,
   onSave,
 }: JournalRecordSheetProps) {
@@ -185,7 +172,7 @@ export function JournalRecordSheet({
   const hasProdromal = (form.prodromalSymptoms ?? []).length > 0;
   const hasSymptoms = Boolean(form.hadSymptoms);
   const customProdromeValues = (form.prodromalSymptoms ?? []).filter(
-    (value) => !PRESET_PRODROME_VALUES.has(value),
+    (value) => !JOURNAL_DETAIL_PRODROMAL_VALUES.has(value),
   );
 
   const toggleProdromal = () => {
@@ -235,7 +222,7 @@ export function JournalRecordSheet({
   const handleSave = async () => {
     const payload = sheetFormToInput({ ...form, recordDate: currentRecordDate }, sleepHours);
     await onSave(payload);
-    onClose();
+    if (closeOnSave) onClose();
   };
 
   return (
@@ -317,7 +304,7 @@ export function JournalRecordSheet({
               <span>스트레스</span>
             </div>
             <div className="flex gap-2">
-              {STRESS_OPTIONS.map((option) => (
+            {JOURNAL_DETAIL_STRESS_OPTIONS.map((option) => (
                 <SegmentButton
                   key={option.value}
                   selected={form.stressLevel === option.value}
@@ -343,7 +330,7 @@ export function JournalRecordSheet({
             <div className="mt-4 border-t border-[#F2ECE1] pt-4">
               <p className="mb-2.5 text-[12.5px] text-[#5C645A]">어떤 느낌이었나요</p>
               <div className="flex flex-wrap gap-2">
-                {PRODROMAL_OPTIONS.map((option) => (
+              {JOURNAL_DETAIL_PRODROMAL_OPTIONS.map((option) => (
                   <ChipButton
                     key={option.value}
                     selected={(form.prodromalSymptoms ?? []).includes(option.value)}

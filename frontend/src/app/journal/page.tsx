@@ -25,8 +25,7 @@ import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 import { type JournalRecord } from '@/domain/journal/types';
-
-import { fetchJournalRecordByDate } from '@/lib/api/journal';
+import { todayJournalDate } from '@/domain/journal/calendar';
 
 import { useAuth } from '@/hooks/useAuth';
 
@@ -43,6 +42,8 @@ import {
   useJournalMutation,
 
   useJournalMonthlyRecords,
+
+  useJournalRecordLookup,
 
   useJournalRecords,
 
@@ -77,10 +78,7 @@ function JournalPageContent() {
   const [historyFilter, setHistoryFilter] = useState<'relapse' | 'all'>('all');
 
   const [calendarMonth, setCalendarMonth] = useState(() => {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    return `${year}-${month}-01`;
+    return `${todayJournalDate().slice(0, 7)}-01`;
   });
 
   const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
@@ -120,9 +118,8 @@ function JournalPageContent() {
 
     useJournalRecords(historyPage, 10, recordsEnabled, historyHadSymptoms);
 
-  const calendarDate = new Date(`${calendarMonth}T00:00:00`);
-  const calendarYear = calendarDate.getFullYear();
-  const calendarMonthNumber = calendarDate.getMonth() + 1;
+  const calendarYear = Number(calendarMonth.slice(0, 4));
+  const calendarMonthNumber = Number(calendarMonth.slice(5, 7));
   const { data: monthlyRecordsRaw, refetch: refetchMonthlyRecords } = useJournalMonthlyRecords(
     calendarYear,
     calendarMonthNumber,
@@ -130,6 +127,7 @@ function JournalPageContent() {
     historyHadSymptoms,
   );
   const monthlyRecords = monthlyRecordsRaw ?? [];
+  const { lookup: lookupRecordByDate, error: recordLookupError } = useJournalRecordLookup();
 
   const { remove, isDeleting, error: deleteError } = useJournalDelete();
   const {
@@ -208,13 +206,12 @@ function JournalPageContent() {
 
     try {
 
-      const record = await fetchJournalRecordByDate(date);
+      const record = await lookupRecordByDate(date);
 
-      openWizard(date, record, 'edit');
+      openWizard(date, record, record ? 'edit' : 'daily');
 
     } catch {
-
-      openWizard(date, null, 'daily');
+      // A failed request is not evidence that the date has no record.
 
     }
 
@@ -376,8 +373,8 @@ function JournalPageContent() {
 
 
 
-        {(dashboardError || error || deleteError || inlineSaveError) && (
-          <ErrorMessage message={dashboardError ?? error ?? deleteError ?? inlineSaveError ?? ''} />
+        {(dashboardError || error || deleteError || inlineSaveError || recordLookupError) && (
+          <ErrorMessage message={dashboardError ?? error ?? deleteError ?? inlineSaveError ?? recordLookupError ?? ''} />
         )}
 
       </div>

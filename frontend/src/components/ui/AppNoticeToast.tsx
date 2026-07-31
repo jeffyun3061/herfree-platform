@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { AuthEntryLink } from '@/components/auth/AuthEntryLink';
 import {
+  APP_NOTICE_CLEAR_EVENT,
   APP_NOTICE_EVENT,
   consumeAppNotice,
   getAppNoticeMessage,
@@ -29,9 +30,14 @@ export function AppNoticeToast() {
       const detail = (event as CustomEvent<AppNoticeKind>).detail;
       if (detail) showNotice(detail);
     };
+    const onClear = () => setNotice(null);
 
     window.addEventListener(APP_NOTICE_EVENT, onEvent);
-    return () => window.removeEventListener(APP_NOTICE_EVENT, onEvent);
+    window.addEventListener(APP_NOTICE_CLEAR_EVENT, onClear);
+    return () => {
+      window.removeEventListener(APP_NOTICE_EVENT, onEvent);
+      window.removeEventListener(APP_NOTICE_CLEAR_EVENT, onClear);
+    };
   }, [showNotice]);
 
   useEffect(() => {

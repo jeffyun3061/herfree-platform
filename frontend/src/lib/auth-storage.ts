@@ -1,7 +1,7 @@
 import type { SessionUser } from '@/domain/user/types';
 
 // 토큰·세션 저장 키를 한곳에 모아 오타로 인한 키 불일치를 방지한다
-const ACCESS_TOKEN_KEY = 'accessToken';
+const LEGACY_ACCESS_TOKEN_KEY = 'accessToken';
 const SESSION_USER_KEY = 'sessionUser';
 const REMEMBERED_EMAIL_KEY = 'rememberedEmail';
 
@@ -21,17 +21,6 @@ export function bumpAuthEpoch(): number {
 // rememberedEmail처럼 민감도가 낮은 편의 값만 localStorage에 남긴다.
 function isBrowser(): boolean {
   return typeof window !== 'undefined';
-}
-
-export function getAccessToken(): string | null {
-  if (!isBrowser()) return null;
-  return window.sessionStorage.getItem(ACCESS_TOKEN_KEY);
-}
-
-export function setAccessToken(token: string): void {
-  if (!isBrowser()) return;
-  bumpAuthEpoch();
-  window.sessionStorage.setItem(ACCESS_TOKEN_KEY, token);
 }
 
 export function getSessionUser(): SessionUser | null {
@@ -68,9 +57,9 @@ export function clearRememberedEmail(): void {
 export function clearAuth(): void {
   if (!isBrowser()) return;
   bumpAuthEpoch();
-  window.sessionStorage.removeItem(ACCESS_TOKEN_KEY);
+  window.sessionStorage.removeItem(LEGACY_ACCESS_TOKEN_KEY);
   window.sessionStorage.removeItem(SESSION_USER_KEY);
-  window.localStorage.removeItem(ACCESS_TOKEN_KEY);
+  window.localStorage.removeItem(LEGACY_ACCESS_TOKEN_KEY);
   window.localStorage.removeItem(SESSION_USER_KEY);
   window.dispatchEvent(new CustomEvent('herfree:auth-cleared'));
 }

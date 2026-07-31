@@ -4,6 +4,7 @@ export type AppNoticeKind = 'session_expired' | 'login_required';
 
 const SESSION_NOTICE_KEY = 'herfree:session-notice';
 export const APP_NOTICE_EVENT = 'herfree:app-notice';
+export const APP_NOTICE_CLEAR_EVENT = 'herfree:app-notice-clear';
 
 export function publishAppNotice(kind: AppNoticeKind): void {
   if (typeof window === 'undefined') return;
@@ -20,6 +21,12 @@ export function consumeAppNotice(): AppNoticeKind | null {
     return value;
   }
   return null;
+}
+
+export function clearAppNotice(): void {
+  if (typeof window === 'undefined') return;
+  sessionStorage.removeItem(SESSION_NOTICE_KEY);
+  window.dispatchEvent(new Event(APP_NOTICE_CLEAR_EVENT));
 }
 
 export function getAppNoticeMessage(kind: AppNoticeKind): string {

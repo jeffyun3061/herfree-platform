@@ -27,7 +27,7 @@ export default defineConfig({
   webServer: isLocal && process.env.PLAYWRIGHT_NO_WEBSERVER !== 'true'
     ? {
         command: `node ./node_modules/next/dist/bin/next start -H 127.0.0.1 -p ${parsedBaseURL.port || '3100'}`,
-        url: `${baseURL}/api/health`,
+        url: `${baseURL}/login`,
         reuseExistingServer: true,
         timeout: 60_000,
         env: {

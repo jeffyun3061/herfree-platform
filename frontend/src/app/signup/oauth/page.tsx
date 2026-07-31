@@ -4,6 +4,7 @@ import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
+import { safeInternalReturnPath } from '@/domain/auth/returnPath';
 import { AuthScreenShell } from '@/components/auth/AuthScreenShell';
 import { SignupAgreementFields, isRequiredSignupAgreed, type SignupAgreementState } from '@/components/auth/SignupAgreementFields';
 import { NicknameFieldWithCheck } from '@/components/auth/NicknameFieldWithCheck';
@@ -13,9 +14,7 @@ import { validateNickname } from '@/domain/auth/validate';
 import { getErrorMessage } from '@/lib/api/client';
 
 function resolveReturnUrl(from: string | null): string {
-  if (!from || !from.startsWith('/') || from.startsWith('//')) return '/journal';
-  if (from.startsWith('/login') || from.startsWith('/signup')) return '/journal';
-  return from;
+  return safeInternalReturnPath(from, '/journal');
 }
 
 function OAuthSignupForm() {

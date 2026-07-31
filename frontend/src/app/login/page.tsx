@@ -21,11 +21,10 @@ import {
   getRememberedEmail,
   setRememberedEmail,
 } from '@/lib/auth-storage';
+import { safeInternalReturnPath } from '@/domain/auth/returnPath';
 
 function resolveReturnUrl(from: string | null): string {
-  if (!from || !from.startsWith('/') || from.startsWith('//')) return '/';
-  if (from.startsWith('/login') || from.startsWith('/signup')) return '/';
-  return from;
+  return safeInternalReturnPath(from, '/');
 }
 
 function LoginForm() {
