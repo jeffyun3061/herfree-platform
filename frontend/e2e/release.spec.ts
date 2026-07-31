@@ -122,7 +122,8 @@ test.describe('release smoke', () => {
     expect(health.headers()['x-request-id']).toBeTruthy();
     const homeStats = await request.get('/api/journal/public/home-stats');
     const homeStatsData = await data<Record<string, unknown>>(homeStats);
-    expect(homeStatsData).not.toHaveProperty('usersRecordingToday');
+    expect(homeStatsData).toHaveProperty('usersRecordingToday');
+    expect(typeof homeStatsData.usersRecordingToday).toBe('number');
     expect(homeStats.headers()['cache-control']).toContain('no-store');
     await data(await request.get('/api/boards'));
     await data(await request.get('/api/posts?page=0&size=5'));
