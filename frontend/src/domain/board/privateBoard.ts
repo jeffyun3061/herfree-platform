@@ -51,7 +51,7 @@ export const COMMUNITY_ALL_TAB_LABEL = '전체';
 
 export const COMMUNITY_TAB_BOARD_TYPES = [
   { boardType: 'NOTICE', label: '공지' },
-  { boardType: 'FREE', label: '자유·응원' },
+  { boardType: 'FREE', label: '자유/수다' },
   { boardType: 'QUESTION', label: '질문' },
   { boardType: 'PHOBIA', label: '검사대기' },
   { boardType: 'SYMPTOM', label: '확진초기' },

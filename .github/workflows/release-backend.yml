@@ -14,6 +14,10 @@ on:
         description: Production only - staging-passed-<commit SHA>
         required: false
         type: string
+      image_digest:
+        description: Production only - immutable ECR digest from staging promotion
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -230,6 +234,7 @@ jobs:
           ECR_REGISTRY: ${{ steps.ecr.outputs.registry }}
           INSTANCE_ID: ${{ vars.PRODUCTION_INSTANCE_ID }}
           IMAGE_TAG: ${{ inputs.image_tag }}
+          IMAGE_DIGEST: ${{ inputs.image_digest }}
           RDS_INSTANCE_ID: ${{ vars.PRODUCTION_RDS_INSTANCE_ID }}
           RELEASE_ID: ${{ github.run_id }}-${{ github.run_attempt }}
         run: |
@@ -238,9 +243,13 @@ jobs:
             echo "Production requires staging-passed-<40 character commit SHA>."
             exit 2
           fi
-          aws ecr describe-images --repository-name "${ECR_REPOSITORY}" --image-ids imageTag="${IMAGE_TAG}" >/dev/null
+          if [[ ! "${IMAGE_DIGEST}" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+            echo "Production requires the immutable sha256 digest recorded by staging promotion."
+            exit 2
+          fi
+          aws ecr describe-images --repository-name "${ECR_REPOSITORY}" --image-ids imageDigest="${IMAGE_DIGEST}" >/dev/null
           ./infra/scripts/create-rds-predeploy-snapshot.sh
-          image="${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}"
+          image="${ECR_REGISTRY}/${ECR_REPOSITORY}@${IMAGE_DIGEST}"
           tar -czf /tmp/herfree-release-bundle.tgz \
             docker-compose.release.yml \
             infra/nginx/herfree-production.conf \
@@ -295,7 +304,7 @@ jobs:
             --output /tmp/journal-home-stats.json \
             "${API_URL}/api/journal/public/home-stats"
           grep -qi '^cache-control:.*no-store' /tmp/journal-headers
-          jq -e '.success == true and (.data | has("usersRecordingToday") | not)' /tmp/journal-home-stats.json
+          jq -e '.success == true and (.data | has("usersRecordingToday"))' /tmp/journal-home-stats.json
           test "$(curl --silent --output /dev/null --write-out '%{http_code}' "${API_URL}/swagger-ui.html")" = "404"
           code="$(curl --silent --output /dev/null --write-out '%{http_code}' "${API_URL}/api/admin/reports")"
           test "${code}" = "401" || test "${code}" = "403"
