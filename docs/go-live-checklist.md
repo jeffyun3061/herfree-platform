@@ -1,12 +1,18 @@
 ﻿# Herfree 실서비스 배포 한방 체크리스트
 
-기준일: 2026-07-17
+기준일: 2026-07-31
 
 이 문서 하나를 배포 기준으로 사용한다. `[x]`는 코드와 로컬 자동 검증이 끝난 항목이고, `[ ]`는 AWS·외부 콘솔·법적 검토처럼 운영자가 직접 완료해야 하는 항목이다.
 
 > **공개 배포 원칙:** `NO-GO` 항목이 하나라도 비어 있으면 운영 공개하지 않는다. 먼저 staging에 배포하고 같은 이미지를 production으로 승격한다.
 >
 > **건강정보 상위 기준:** [`health-data-security-standard.md`](./health-data-security-standard.md)의 `BLOCK` 또는 `DECISION`이 남아 있으면 이 문서가 완료되어도 production 공개는 `NO-GO`다.
+
+현재 판정:
+
+- **staging GO (자동 게이트):** Release run `30621103854`에서 Amplify revision, 이미지 취약점, EC2 health, smoke, mutation QA를 모두 통과했다. 검증 이미지 태그는 `staging-passed-aa1a5b5a7d3644e103d6d83b02d7355af71ed23a`다.
+- **staging 수동 검수:** 아래 7절의 실제 브라우저·OAuth·관리자 흐름은 운영자가 직접 확인하기 전까지 `NO-GO`로 본다.
+- **production NO-GO:** staging 통과와 3절의 운영·법무·의료·복구 증적이 모두 필요하다.
 
 ## 1. 환경별로 무엇이 다른가
 
@@ -27,12 +33,18 @@
 ## 2. 현재 완료된 코드·자동 검증
 
 - [x] 백엔드 `clean build` 성공
-- [x] 백엔드 테스트 188개 통과, 실패 0개
-- [x] 프론트 lint와 production build 성공
-- [x] Next.js 15.5.20 전환 후 주요 라우트와 API 흐름 검증
-- [x] npm audit 취약점 0건
-- [x] 데스크톱·모바일 공개 화면, health·권한 경계, 로그인 일지·마이페이지 목록 E2E 31개 통과 (중복 mutation 1개 의도적 생략)
-- [ ] S3를 포함한 회원가입·게시글·댓글·일지·비공개 이미지 mutation E2E는 staging에서 통과
+- [x] 백엔드 테스트 221개 통과, 실패 0개
+- [x] 프론트 lint, 단위 테스트 21개, production build 성공
+- [x] Next.js 15.5.21 주요 라우트와 API 흐름 검증
+- [x] npm audit production high/critical 0건, 전체 critical 0건 (개발용 ESLint 8 high는 ADR-025로 추적)
+- [x] 로컬 BFF E2E: 가입·로그인·HttpOnly 세션·일지 CRUD·탈퇴와 stale session 차단 2개 통과
+- [x] staging Release `30621103854`: revision gate·immutable image·Trivy HIGH/CRITICAL 0·ECR push·EC2 SSM health rollback gate·smoke·mutation QA 통과
+- [ ] S3를 포함한 회원가입·게시글·댓글·일지·비공개 이미지 mutation E2E는 운영자가 staging에서 실제 데이터로 재확인
+- [x] 서버 `/users/me` 검증 전에는 sessionStorage 사용자 캐시로 개인 화면을 렌더링하지 않는다.
+- [x] 401·403·검증 시간 초과 시 인증 복원을 guest 상태로 끝내고 stale 사용자 캐시를 제거한다.
+- [x] 로그인·OAuth 세션 성공 시 이전 `session_expired` 알림을 즉시 제거한다.
+- [x] BFF Origin 검사는 외부 Host 기준 exact-origin을 사용하고 다른 origin은 403으로 차단한다.
+- [x] 로그아웃 요청이 동일 origin·CSRF 검사를 통과하면 백엔드 장애가 있어도 HttpOnly 쿠키를 제거한다.
 - [x] 로그인 계정 열거와 비밀번호 검증 타이밍 보완
 - [x] 비밀번호 재설정 토큰·URL·이메일 민감 로그 방지
 - [x] 비공개 게시판 소유자·관리자 조회 범위 제한
@@ -162,8 +174,10 @@ GitHub Repository Variables:
 | --- | --- |
 | `AWS_REGION` | `ap-northeast-2` |
 | `ECR_REPOSITORY` | `herfree-api` |
+| `STAGING_AMPLIFY_APP_ID` | staging Amplify app ID |
 | `STAGING_INSTANCE_ID` | staging EC2 instance ID |
 | `PRODUCTION_INSTANCE_ID` | production EC2 instance ID |
+| `PRODUCTION_RDS_INSTANCE_ID` | production RDS instance identifier |
 | `STAGING_FRONTEND_URL` | staging frontend HTTPS URL |
 | `PRODUCTION_API_URL` | `https://api.herpfree.co.kr` |
 
@@ -179,11 +193,12 @@ GitHub Repository Variables:
 4. 변경 파일과 migration을 직접 검토하고 커밋한다.
 5. Pull Request의 CI·CodeQL을 통과시킨다.
 6. `main`에 병합한다.
-7. GitHub Actions `Release backend`를 `target=staging`으로 실행한다.
-8. staging 자동 E2E와 아래 수동 검사를 통과한다.
-9. 생성된 `staging-passed-<commit SHA>` 태그를 확인한다.
-10. production 승인 후 같은 태그로 운영 배포한다.
-11. 배포 후 5분 smoke와 30분 모니터링을 수행한다.
+7. `main`과 Amplify `develop`의 frontend tree를 일치시키고 Amplify 배포 성공을 확인한다.
+8. GitHub Actions `Release backend`를 `main`, `target=staging`으로 실행한다.
+9. staging smoke와 변경형 BFF E2E를 모두 통과한다.
+10. 두 검증 뒤에 생성된 `staging-passed-<commit SHA>` 태그를 확인한다.
+11. production 승인 후 배포 직전 암호화 RDS snapshot을 만들고 같은 태그로 운영 배포한다.
+12. 배포 후 5분 smoke와 30분 모니터링을 수행한다.
 
 운영 서버에서 코드를 직접 수정하거나 `git pull`로 즉석 배포하지 않는다.
 
@@ -219,8 +234,12 @@ Docker가 없으면 `-SkipDocker`로 workflow·preflight만 검사할 수 있다
 
 ## 7. staging 수동 사용자 흐름
 
-- [ ] 비회원 홈 → 회원가입 → 이메일 로그인 → 로그아웃
+- [ ] 비회원 홈 → 회원가입 → 이메일 로그인 → 로그아웃 (자동 mutation QA 외 실제 브라우저 확인)
 - [ ] Kakao·Naver·Google 로그인
+- [ ] 만료 쿠키와 stale `sessionUser`가 있어도 개인 홈·일지·관리자 UI가 노출되지 않는다.
+- [ ] 세션 만료 직후 개인 화면이 사라지고, 재로그인 성공 즉시 만료 알림도 사라진다.
+- [ ] 로그아웃 직후 새로고침·뒤로가기에서도 로그인 상태가 복원되지 않는다.
+- [ ] 로그인 상태에서 새로고침하면 서버 검증 후 동일 계정으로 정상 복원된다.
 - [ ] 닉네임 변경과 30일 제한·동일 닉네임 안내
 - [ ] 가입 시 건강정보 통계 선택 동의를 거부해도 기본 기능을 이용할 수 있다.
 - [ ] 마이페이지에 현재 통계 동의 상태가 표시되고, 확인 후 철회·재동의가 되며 철회 후 공개·관리자 통계에서 제외된다.
@@ -242,6 +261,7 @@ Docker가 없으면 `-SkipDocker`로 workflow·preflight만 검사할 수 있다
 - [ ] 비로그인 글 작성은 401이다.
 - [ ] 일반 사용자의 관리자 API 접근은 403이다.
 - [ ] 회원가입·일반 로그인·OAuth 3종 로그인이 된다.
+- [ ] 세션 만료·재로그인·로그아웃 후 UI와 `/api/users/me` 상태가 서로 일치한다.
 - [ ] 이미지 게시글 작성·조회·삭제가 된다.
 - [ ] 비공개 문의와 개인일지를 다른 계정에서 볼 수 없다.
 - [ ] 비밀번호 재설정 메일과 변경 로그인이 된다.

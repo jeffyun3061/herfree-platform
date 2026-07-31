@@ -22,11 +22,18 @@ RUN mkdir -p /tmp/rds-certs \
     && keytool -list -keystore /workspace/rds-truststore.p12 -storetype PKCS12 -storepass changeit >/dev/null \
     && rm -rf /tmp/rds-certs /tmp/rds-global-bundle.pem
 
-FROM gcr.io/distroless/java17-debian13:nonroot@sha256:4f682dfb4d9721e3f139fff791cd065b94e8dde1d3a4ae60b9ae86e165c4acf4
+FROM eclipse-temurin:17-jre-jammy@sha256:475d8e96b4b2bfe08999e5e854755c773af1581acdf959a4545d88f0696a2339
+USER root
+RUN apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get upgrade -y \
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd --system --gid 65532 nonroot \
+    && useradd --system --uid 65532 --gid 65532 --no-create-home nonroot
 WORKDIR /app
 
-COPY --from=builder --chown=nonroot:nonroot /workspace/build/libs/*.jar app.jar
-COPY --from=builder --chown=nonroot:nonroot /workspace/rds-truststore.p12 /app/certs/rds-truststore.p12
+COPY --from=builder --chown=65532:65532 /workspace/build/libs/*.jar app.jar
+COPY --from=builder --chown=65532:65532 /workspace/rds-truststore.p12 /app/certs/rds-truststore.p12
 
 EXPOSE 8080
+USER 65532:65532
 ENTRYPOINT ["java", "-Duser.timezone=UTC", "-jar", "/app/app.jar"]

@@ -79,12 +79,14 @@ class JournalInsightServiceTest {
     }
 
     @Test
-    void publicHomeStatsDoesNotExposeWhetherAnyoneRecordedHealthDataToday() {
+    void publicHomeStatsKeepsExistingHomeCounters() {
         given(userRepository.count()).willReturn(100L);
+        given(journalRecordRepository.countDistinctConsentedUsersByRecordDate(any())).willReturn(7L);
 
         var response = journalInsightService.getPublicHomeStats();
 
         assertThat(response.totalUsers()).isEqualTo(100);
+        assertThat(response.usersRecordingToday()).isEqualTo(7);
     }
 
     @Test
