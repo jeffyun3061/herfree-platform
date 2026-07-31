@@ -99,6 +99,11 @@ body {
     padding-right: var(--hf-page-px);
   }
 
+  .hf-page-frame {
+    width: 100%;
+    min-height: 100%;
+  }
+
   .hf-dashboard-x {
     padding-left: var(--hf-dashboard-px);
     padding-right: var(--hf-dashboard-px);
