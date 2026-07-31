@@ -72,7 +72,7 @@ Base path: `/api` · 인증: `Authorization: Bearer {accessToken}` (공개 API �
 | `createdAt`, `updatedAt`, 기타 시각 | ISO-8601 **UTC** (`Instant`) | `"2026-06-16T05:30:00Z"` |
 | `recordDate` (개인일지) | ISO-8601 **날짜** (KST 달력) | `"2026-06-16"` |
 
-DB·API는 UTC, 화면 표시는 브라우저 로컬(KST). 상세: [decision-log.md](decision-log.md) ADR-017.
+DB·API는 UTC, 화면 표시는 브라우저 로컬(KST). 상세: [decision-log.md](decision-log.md) ADR-018.
 
 ---
 
@@ -539,6 +539,7 @@ Refresh Token·재발급·토큰 블랙리스트는 운영 고도화 항목으�
 |--------|------|------|
 | POST | `/api/journal/records` | 일지 upsert (동일 `recordDate`면 갱신) |
 | GET | `/api/journal/records` | 내 기록 목록 (`hadSymptoms` 필터 가능) |
+| GET | `/api/journal/records/month?year=YYYY&month=MM` | 월별 내 기록 목록 (`hadSymptoms` 필터 가능) |
 | GET | `/api/journal/records/{recordId}` | 내 기록 단건 |
 | GET | `/api/journal/records/by-date?date=YYYY-MM-DD` | 날짜별 조회 (없으면 `data: null`) |
 | **DELETE** | `/api/journal/records/{recordId}` | **내 기록 영구 삭제** (`204 No Content`) |

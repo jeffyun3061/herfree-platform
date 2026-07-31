@@ -8,8 +8,8 @@ import com.herfree.domain.post.dto.response.PostImageUploadResponse;
 import com.herfree.domain.post.dto.response.PostImageUploadUrlResponse;
 import com.herfree.domain.post.dto.response.PostResponse;
 import com.herfree.domain.post.dto.response.PostBookmarkStatusResponse;
-import com.herfree.domain.post.service.PostImageAccessService;
 import com.herfree.domain.post.service.PostBookmarkService;
+import com.herfree.domain.post.service.PostImageServingService;
 import com.herfree.domain.post.service.PostService;
 import com.herfree.global.exception.BusinessException;
 import com.herfree.global.exception.ErrorCode;
@@ -49,7 +49,7 @@ public class PostController {
     private final PostService postService;
     private final PostBookmarkService postBookmarkService;
     private final PostImageStorageService postImageStorageService;
-    private final PostImageAccessService postImageAccessService;
+    private final PostImageServingService postImageServingService;
 
     // boardId를 쿼리 파라미터로 받는 이유:
     // 특정 게시판 필터링은 리소스 계층 구조가 아닌 조회 조건이므로 쿼리스트링이 적합하다
@@ -118,28 +118,14 @@ public class PostController {
             @AuthenticationPrincipal Long userId,
             HttpServletRequest request
     ) {
-        String uri = request.getRequestURI();
-        String prefix = PostImageStorageService.IMAGE_OBJECT_PATH_PREFIX;
-        if (!uri.startsWith(prefix)) {
-            throw new BusinessException(ErrorCode.INVALID_IMAGE_URL);
-        }
-        String objectKey = postImageStorageService.normalizeAndValidateObjectKey(
-                uri.substring(prefix.length()));
-
-        PostImageAccessService.ImageObjectAccess access = postImageAccessService.check(objectKey, userId);
-        if (!access.allowed()) {
-            // 존재 여부를 숨기기 위해 잘못된 key와 같은 응답을 준다.
-            throw new BusinessException(ErrorCode.INVALID_IMAGE_URL);
-        }
-
-        PostImageStorageService.ImageObjectPayload payload = postImageStorageService.fetchImageObject(objectKey);
-        CacheControl cacheControl = access.privateScope()
+        PostImageServingService.ServedPostImage image = postImageServingService.serve(request.getRequestURI(), userId);
+        CacheControl cacheControl = image.privateScope()
                 ? CacheControl.noStore().cachePrivate()
                 : CacheControl.maxAge(Duration.ofDays(1)).cachePublic();
         return ResponseEntity.ok()
                 .cacheControl(cacheControl)
-                .header("Content-Type", payload.contentType())
-                .body(payload.bytes());
+                .header("Content-Type", image.contentType())
+                .body(image.bytes());
     }
 
     @PostMapping("/images/upload-url")

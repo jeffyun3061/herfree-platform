@@ -1,6 +1,6 @@
 import type { ApiEnvelope } from '@/domain/common/types';
 import { publishAppNotice } from '@/lib/app-notice';
-import { clearAuth, getAccessToken } from '@/lib/auth-storage';
+import { clearAuth } from '@/lib/auth-storage';
 
 /**
  * 브라우저에서는 항상 현재 페이지 origin + /api 프록시를 사용한다.
@@ -10,16 +10,23 @@ function resolveApiBaseUrl(): string {
   if (typeof window !== 'undefined') {
     return window.location.origin;
   }
-  const configured = process.env.NEXT_PUBLIC_API_URL?.trim();
-  return configured || 'http://localhost:8080';
+  return process.env.APP_ORIGIN?.trim() || 'http://localhost:3000';
 }
 
-function buildRequestHeaders(path: string, tokenAtRequest: string | null): Record<string, string> {
-  const headers: Record<string, string> = {};
-  const attachAuth = Boolean(tokenAtRequest) && !isPublicAuthPath(path);
+function readCsrfCookie(): string | null {
+  if (typeof document === 'undefined') return null;
+  const name = process.env.NODE_ENV === 'production' ? '__Host-herfree-csrf' : 'herfree-csrf';
+  const prefix = `${name}=`;
+  const item = document.cookie.split(';').map((value) => value.trim())
+    .find((value) => value.startsWith(prefix));
+  return item ? decodeURIComponent(item.slice(prefix.length)) : null;
+}
 
-  if (attachAuth) {
-    headers.Authorization = `Bearer ${tokenAtRequest}`;
+function buildRequestHeaders(method: string): Record<string, string> {
+  const headers: Record<string, string> = {};
+  if (!['GET', 'HEAD', 'OPTIONS'].includes(method)) {
+    const csrfToken = readCsrfCookie();
+    if (csrfToken) headers['X-Herfree-CSRF'] = csrfToken;
   }
 
   if (typeof window !== 'undefined') {
@@ -104,9 +111,8 @@ function buildUrl(path: string, query?: Record<string, QueryValue>): string {
   return url.toString();
 }
 
-function handleUnauthorized(hadToken: boolean, tokenAtRequest: string | null): void {
-  if (!hadToken || typeof window === 'undefined') return;
-  if (tokenAtRequest && getAccessToken() !== tokenAtRequest) return;
+function handleUnauthorized(): void {
+  if (typeof window === 'undefined') return;
 
   const path = window.location.pathname;
   if (path.startsWith('/login') || path.startsWith('/signup')) return;
@@ -147,8 +153,8 @@ function isPublicAuthPath(path: string): boolean {
 }
 
 export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const tokenAtRequest = getAccessToken();
-  const headers = buildRequestHeaders(path, tokenAtRequest);
+  const method = options.method ?? 'GET';
+  const headers = buildRequestHeaders(method);
 
   if (options.body !== undefined) {
     headers['Content-Type'] = 'application/json';
@@ -159,10 +165,11 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
   const timeoutId = globalThis.setTimeout(() => controller.abort(), API_TIMEOUT_MS);
   try {
     response = await fetch(buildUrl(path, options.query), {
-      method: options.method ?? 'GET',
+      method,
       headers,
       body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
       signal: controller.signal,
+      credentials: 'same-origin',
     });
   } catch (error) {
     if (isAbortError(error)) {
@@ -174,7 +181,7 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
   }
 
   if (response.status === 401 && !isPublicAuthPath(path) && shouldInvalidateSessionOn401(path)) {
-    handleUnauthorized(Boolean(tokenAtRequest), tokenAtRequest);
+    handleUnauthorized();
   }
 
   if (response.status === 204) {
@@ -210,8 +217,7 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
 
 /** multipart/form-data 업로드 — Content-Type은 브라우저가 boundary 포함해 설정 */
 export async function requestMultipart<T>(path: string, formData: FormData): Promise<T> {
-  const tokenAtRequest = getAccessToken();
-  const headers = buildRequestHeaders(path, tokenAtRequest);
+  const headers = buildRequestHeaders('POST');
 
   let response: Response;
   const controller = new AbortController();
@@ -222,6 +228,7 @@ export async function requestMultipart<T>(path: string, formData: FormData): Pro
       headers,
       body: formData,
       signal: controller.signal,
+      credentials: 'same-origin',
     });
   } catch (error) {
     if (isAbortError(error)) {
@@ -233,7 +240,7 @@ export async function requestMultipart<T>(path: string, formData: FormData): Pro
   }
 
   if (response.status === 401 && shouldInvalidateSessionOn401(path)) {
-    handleUnauthorized(Boolean(tokenAtRequest), tokenAtRequest);
+    handleUnauthorized();
   }
 
   const contentType = response.headers.get('content-type') ?? '';

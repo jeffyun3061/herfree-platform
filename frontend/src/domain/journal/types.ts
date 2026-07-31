@@ -125,7 +125,7 @@ export type JournalInsightItem = {
 };
 
 export type JournalInsights = {
-  sampleSize: number;
+  sampleSize: number | null;
   sufficientData: boolean;
   topTriggers: JournalInsightItem[];
   topProdromalSymptoms: JournalInsightItem[];
@@ -134,7 +134,6 @@ export type JournalInsights = {
 };
 
 export type JournalPublicHomeStats = {
-  usersRecordingToday: number;
   totalUsers: number;
 };
 
@@ -194,6 +193,7 @@ export const PRODROMAL_OPTIONS: { value: string; label: string }[] = [
   { value: 'HEAVINESS', label: '묵직함' },
   { value: 'WARMTH', label: '열감' },
   { value: 'ITCHING', label: '가려움' },
+  { value: 'PAIN', label: '통증' },
   { value: 'FATIGUE', label: '피로감' },
   { value: 'NONE', label: '없었음' },
 ];

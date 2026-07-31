@@ -78,8 +78,13 @@ jobs:
           NEXT_PUBLIC_OAUTH_NAVER_CLIENT_ID: ci-naver-client-id
         run: |
           npm ci
-          npm audit --audit-level=high
+          # Shipped dependencies block on high/critical findings. Development
+          # tooling also blocks on critical findings; see ADR-025.
+          npm audit --omit=dev --audit-level=high
+          npm audit --audit-level=critical
           npm run check:security-headers
           npm run lint
+          npm run test
           npm run build
-          npx playwright test --list
+          npx playwright install --with-deps chromium
+          npx playwright test --project=chromium --grep "signup validation"
