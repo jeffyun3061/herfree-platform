@@ -1,6 +1,6 @@
 ﻿# Herfree 실서비스 배포 한방 체크리스트
 
-기준일: 2026-07-30
+기준일: 2026-07-31
 
 이 문서 하나를 배포 기준으로 사용한다. `[x]`는 코드와 로컬 자동 검증이 끝난 항목이고, `[ ]`는 AWS·외부 콘솔·법적 검토처럼 운영자가 직접 완료해야 하는 항목이다.
 
@@ -10,7 +10,8 @@
 
 현재 판정:
 
-- **staging NO-GO:** PR #56 병합, `develop` 동기화, Amplify 동일 revision 확인 전에는 배포하지 않는다.
+- **staging GO (자동 게이트):** Release run `30621103854`에서 Amplify revision, 이미지 취약점, EC2 health, smoke, mutation QA를 모두 통과했다. 검증 이미지 태그는 `staging-passed-aa1a5b5a7d3644e103d6d83b02d7355af71ed23a`다.
+- **staging 수동 검수:** 아래 7절의 실제 브라우저·OAuth·관리자 흐름은 운영자가 직접 확인하기 전까지 `NO-GO`로 본다.
 - **production NO-GO:** staging 통과와 3절의 운영·법무·의료·복구 증적이 모두 필요하다.
 
 ## 1. 환경별로 무엇이 다른가
@@ -37,7 +38,8 @@
 - [x] Next.js 15.5.21 주요 라우트와 API 흐름 검증
 - [x] npm audit production high/critical 0건, 전체 critical 0건 (개발용 ESLint 8 high는 ADR-025로 추적)
 - [x] 로컬 BFF E2E: 가입·로그인·HttpOnly 세션·일지 CRUD·탈퇴와 stale session 차단 2개 통과
-- [ ] S3를 포함한 회원가입·게시글·댓글·일지·비공개 이미지 mutation E2E는 staging에서 통과
+- [x] staging Release `30621103854`: revision gate·immutable image·Trivy HIGH/CRITICAL 0·ECR push·EC2 SSM health rollback gate·smoke·mutation QA 통과
+- [ ] S3를 포함한 회원가입·게시글·댓글·일지·비공개 이미지 mutation E2E는 운영자가 staging에서 실제 데이터로 재확인
 - [x] 서버 `/users/me` 검증 전에는 sessionStorage 사용자 캐시로 개인 화면을 렌더링하지 않는다.
 - [x] 401·403·검증 시간 초과 시 인증 복원을 guest 상태로 끝내고 stale 사용자 캐시를 제거한다.
 - [x] 로그인·OAuth 세션 성공 시 이전 `session_expired` 알림을 즉시 제거한다.
@@ -232,7 +234,7 @@ Docker가 없으면 `-SkipDocker`로 workflow·preflight만 검사할 수 있다
 
 ## 7. staging 수동 사용자 흐름
 
-- [ ] 비회원 홈 → 회원가입 → 이메일 로그인 → 로그아웃
+- [ ] 비회원 홈 → 회원가입 → 이메일 로그인 → 로그아웃 (자동 mutation QA 외 실제 브라우저 확인)
 - [ ] Kakao·Naver·Google 로그인
 - [ ] 만료 쿠키와 stale `sessionUser`가 있어도 개인 홈·일지·관리자 UI가 노출되지 않는다.
 - [ ] 세션 만료 직후 개인 화면이 사라지고, 재로그인 성공 즉시 만료 알림도 사라진다.
