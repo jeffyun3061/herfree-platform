@@ -39,8 +39,10 @@ public class JournalInsightService {
     private final HealthInsightPublicationPolicy publicationPolicy;
 
     public JournalPublicHomeStatsResponse getPublicHomeStats() {
+        long usersRecordingToday = journalRecordRepository.countDistinctConsentedUsersByRecordDate(
+                AppTimeZone.todayKst());
         long totalUsers = userRepository.count();
-        return new JournalPublicHomeStatsResponse(totalUsers);
+        return new JournalPublicHomeStatsResponse(usersRecordingToday, totalUsers);
     }
 
     public JournalInsightsResponse getCommunityInsights() {
