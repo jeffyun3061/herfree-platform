@@ -22,7 +22,7 @@ RUN mkdir -p /tmp/rds-certs \
     && keytool -list -keystore /workspace/rds-truststore.p12 -storetype PKCS12 -storepass changeit >/dev/null \
     && rm -rf /tmp/rds-certs /tmp/rds-global-bundle.pem
 
-FROM gcr.io/distroless/java17-debian13:nonroot@sha256:4f682dfb4d9721e3f139fff791cd065b94e8dde1d3a4ae60b9ae86e165c4acf4
+FROM gcr.io/distroless/java17-debian13:nonroot@sha256:0be8a887d880a9a2b4734f3cef50c5c4f594d983db4dae5878eb6c218bfb3d7e
 WORKDIR /app
 
 COPY --from=builder --chown=nonroot:nonroot /workspace/build/libs/*.jar app.jar
