@@ -8,6 +8,8 @@ import {
   isSessionEstablishingPath,
   isUnsafeMethod,
   requestBodyLimit,
+  resolveExternalOrigin,
+  shouldAlwaysClearSession,
   shouldClearSession,
 } from '@/lib/bff/security';
 
@@ -131,7 +133,13 @@ async function proxyToBackend(request: NextRequest, pathSegments: string[]) {
 
   const accessToken = request.cookies.get(ACCESS_COOKIE)?.value;
   if (isUnsafeMethod(request.method)) {
-    if (!hasValidOrigin(request.headers.get('origin'), request.nextUrl.origin)) {
+    const externalOrigin = resolveExternalOrigin(
+      request.nextUrl.origin,
+      request.headers.get('host'),
+      request.headers.get('x-forwarded-proto'),
+      production,
+    );
+    if (!externalOrigin || !hasValidOrigin(request.headers.get('origin'), externalOrigin)) {
       return errorResponse(403, 'Invalid request origin.');
     }
     if (accessToken && !isCsrfExemptPath(path)
@@ -177,7 +185,11 @@ async function proxyToBackend(request: NextRequest, pathSegments: string[]) {
       init,
     );
   } catch {
-    return errorResponse(502, 'Unable to connect to the API server.');
+    const response = errorResponse(502, 'Unable to connect to the API server.');
+    if (shouldAlwaysClearSession(path, request.method)) {
+      clearSessionCookies(response);
+    }
+    return response;
   }
 
   const established = await sessionResponse(backendResponse.clone(), path);
@@ -192,7 +204,8 @@ async function proxyToBackend(request: NextRequest, pathSegments: string[]) {
     statusText: backendResponse.statusText,
     headers: responseHeaders,
   });
-  if (backendResponse.ok && shouldClearSession(path, request.method)) {
+  if ((backendResponse.ok && shouldClearSession(path, request.method))
+      || shouldAlwaysClearSession(path, request.method)) {
     clearSessionCookies(response);
   }
   return response;

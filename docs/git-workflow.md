@@ -115,8 +115,9 @@ cd C:\dev\herfree-platform
 feature/* → develop (PR, CI)
          → main (PR, CI)
          → GitHub Actions Release backend (target=staging)
-         → E2E → staging-passed-<SHA>
-         → target=production (동일 이미지)
+         → main/develop frontend tree + Amplify develop revision 확인
+         → smoke + 변경형 BFF E2E → staging-passed-<SHA>
+         → target=production (RDS snapshot, 동일 이미지)
          → smoke test
 ```
 

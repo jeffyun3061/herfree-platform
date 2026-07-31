@@ -43,6 +43,28 @@ export function hasValidOrigin(requestOrigin: string | null, expectedOrigin: str
   }
 }
 
+export function resolveExternalOrigin(
+  requestUrlOrigin: string,
+  hostHeader: string | null,
+  forwardedProtoHeader: string | null,
+  isProduction: boolean,
+): string | null {
+  if (!hostHeader) return null;
+
+  try {
+    const requestProtocol = new URL(requestUrlOrigin).protocol.replace(':', '');
+    const forwardedProtocol = forwardedProtoHeader?.split(',')[0]?.trim().toLowerCase();
+    const protocol = isProduction
+      ? 'https'
+      : (forwardedProtocol === 'http' || forwardedProtocol === 'https'
+        ? forwardedProtocol
+        : requestProtocol);
+    return new URL(`${protocol}://${hostHeader}`).origin;
+  } catch {
+    return null;
+  }
+}
+
 export function hasValidCsrfToken(
   cookieToken: string | undefined,
   headerToken: string | null,
@@ -57,7 +79,11 @@ export function isSessionEstablishingPath(path: string): boolean {
 }
 
 export function shouldClearSession(path: string, method: string): boolean {
-  return path === 'auth/logout'
+  return (path === 'auth/logout' && method.toUpperCase() === 'POST')
     || (path === 'users/me' && method.toUpperCase() === 'DELETE')
     || path === 'users/me/password';
+}
+
+export function shouldAlwaysClearSession(path: string, method: string): boolean {
+  return path === 'auth/logout' && method.toUpperCase() === 'POST';
 }
