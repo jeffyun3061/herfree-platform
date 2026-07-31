@@ -5,7 +5,7 @@ import type { Comment, CommentCreateInput } from '@/domain/comment/types';
 import { emptyPage } from '@/domain/common/types';
 import { useApiQuery } from '@/hooks/useApiQuery';
 import { getErrorMessage } from '@/lib/api/client';
-import * as commentsApi from '@/lib/api/comments';
+import * as commentsApi from '@/features/community/api';
 
 export function useComments(postId: number) {
   const [page, setPage] = useState(0);

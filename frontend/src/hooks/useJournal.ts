@@ -4,7 +4,7 @@ import { useCallback, useState } from 'react';
 import type { JournalRecordInput } from '@/domain/journal/types';
 import { useApiQuery } from '@/hooks/useApiQuery';
 import { getErrorMessage } from '@/lib/api/client';
-import * as journalApi from '@/lib/api/journal';
+import * as journalApi from '@/features/journal/api';
 
 export function useJournalDashboard(enabled = true) {
   return useApiQuery<import('@/domain/journal/types').JournalDashboard>(
