@@ -2,8 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import { BottomNav } from '@/components/layout/BottomNav';
-import { DesktopHeader } from '@/components/layout/DesktopHeader';
-import { MobileHeader } from '@/components/layout/MobileHeader';
+import { AppHeader } from '@/components/layout/AppHeader';
 import { SiteFooter } from '@/components/layout/SiteFooter';
 import { PageHeaderProvider } from '@/contexts/PageHeaderContext';
 import { useAuth } from '@/hooks/useAuth';
@@ -27,9 +26,9 @@ export function AppShell({ children }: AppShellProps) {
   return (
     <PageHeaderProvider>
       <div className="app-canvas">
-        {showHeader && <DesktopHeader />}
+        <AppHeader visible={showHeader} desktopOnly />
         <div className={cn('app-phone-shell', isAdminPage && 'admin-shell')}>
-          {showHeader && <MobileHeader />}
+          <AppHeader visible={showHeader} mobileOnly />
           <main
             className={cn(
               'min-h-[100dvh] bg-[#F3EDE3] lg:min-h-[min(844px,calc(100vh-4rem))]',

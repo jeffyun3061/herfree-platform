@@ -1,6 +1,6 @@
 import type { ApiEnvelope } from '@/domain/common/types';
 import { publishAppNotice } from '@/lib/app-notice';
-import { clearAuth } from '@/lib/auth-storage';
+import { clearAuth, getSessionUser } from '@/lib/auth-storage';
 
 /**
  * 브라우저에서는 항상 현재 페이지 origin + /api 프록시를 사용한다.
@@ -128,13 +128,14 @@ function handleUnauthorized(): void {
     path.startsWith('/privacy') ||
     path.startsWith('/consult');
 
+  const hadSession = getSessionUser() !== null;
   clearAuth();
 
   if (publicPath) {
     return;
   }
 
-  publishAppNotice('session_expired');
+  publishAppNotice(hadSession ? 'session_expired' : 'login_required');
   // staging Amplify Basic Auth 환경에서 /login 자동 이동 시 Chrome HTTP 401이 반복된다.
   // 현재 페이지에 머물고 토스트의 로그인 링크만 제공한다.
 }

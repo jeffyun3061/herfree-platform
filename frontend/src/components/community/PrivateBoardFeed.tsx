@@ -98,13 +98,13 @@ export function PrivateBoardFeed({ boardType }: PrivateBoardFeedProps) {
       {!isLoadingAll && !listError && board && postPage.content.length === 0 && (
         <div className="py-8">
           <EmptyState
-            title={boardType === 'INQUIRY' ? '등록된 문의가 없습니다' : '등록된 상담 글이 없습니다'}
+            title={boardType === 'INQUIRY' ? '등록된 문의가 없습니다' : '등록된 상담문의가 없습니다'}
             description={
               canWrite
                 ? boardType === 'INQUIRY'
                   ? '운영팀에 전달할 문의·건의·신고를 자유롭게 남겨 주세요.'
-                  : '관리자와 나눌 상담 내용을 작성해 주세요.'
-                : '회원이 등록한 문의·상담 글이 여기에 표시됩니다.'
+                  : '운영자에게 전달할 상담문의 내용을 작성해 주세요.'
+                : '회원이 등록한 문의·상담문의가 여기에 표시됩니다.'
             }
             action={
               canWrite ? (

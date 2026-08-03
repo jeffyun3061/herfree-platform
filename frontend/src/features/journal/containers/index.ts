@@ -1,0 +1,1 @@
+export { JournalPageContainer } from './JournalPageContainer';

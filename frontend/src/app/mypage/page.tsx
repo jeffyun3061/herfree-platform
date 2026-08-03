@@ -224,8 +224,8 @@ export default function MyPage() {
             />
             <MenuRow
               icon="💬"
-              label="1:1 비밀 상담"
-              sub="상담 안내 및 신청"
+              label="상담문의"
+              sub="서비스 이용·운영 문의"
               href="/consult"
             />
           </div>

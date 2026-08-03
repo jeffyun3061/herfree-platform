@@ -2,7 +2,6 @@
 
 import { useEffect } from 'react';
 import { usePageHeaderContext, type PageHeaderState } from '@/contexts/PageHeaderContext';
-import { TopBar } from '@/components/layout/TopBar';
 
 type PageHeaderProps = PageHeaderState & {
   /** 모바일: 상단 MobileHeader에만 표시. 데스크톱 TopBar 없음 (탭 페이지용) */
@@ -27,19 +26,13 @@ export function PageHeader({
 
   useEffect(() => {
     if (!setHeader) return undefined;
-    setHeader({ title, showBack, backHref });
+    setHeader({ title, showBack, backHref, rightSlot, desktopVisible: !mobileOnly });
     return () => setHeader(null);
-  }, [title, showBack, backHref, setHeader]);
+  }, [title, showBack, backHref, rightSlot, mobileOnly, setHeader]);
 
-  if (mobileOnly) return null;
-
-  return (
-    <TopBar
-      title={title}
-      showBack={showBack}
-      backHref={backHref}
-      rightSlot={rightSlot}
-      className={className ?? 'hidden lg:flex'}
-    />
-  );
+  // Header markup is owned by AppHeader. Keeping this component declarative
+  // avoids a desktop TopBar plus a mobile shell header being rendered together.
+  void mobileOnly;
+  void className;
+  return null;
 }
