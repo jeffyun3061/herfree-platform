@@ -14,6 +14,10 @@ on:
         description: Production only - staging-passed-<commit SHA>
         required: false
         type: string
+      image_digest:
+        description: Production only - immutable ECR digest from staging promotion
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -323,6 +327,8 @@ jobs:
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "${PROMOTED_SHA}"
+          [[ "${IMAGE_DIGEST}" =~ ^sha256:[0-9a-f]{64}$ ]]
+          aws ecr describe-images --repository-name "${ECR_REPOSITORY}" --image-ids imageDigest="${IMAGE_DIGEST}" >/dev/null
           bash ./infra/scripts/create-rds-predeploy-snapshot.sh
           image="${ECR_REGISTRY}/${ECR_REPOSITORY}@${IMAGE_DIGEST}"
           tar -czf /tmp/herfree-release-bundle.tgz \
