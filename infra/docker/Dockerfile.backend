@@ -1,5 +1,5 @@
 # Herfree API — multi-stage build (Gradle bootJar → JRE 17 runtime)
-FROM eclipse-temurin:17-jdk@sha256:068a8f9ae4b74d9a20de3ecca771ba1a6437f1d7a8a8ad6deaf9dbdd2274397a AS builder
+FROM eclipse-temurin:25-jdk@sha256:201fbb8886b2d273218aa3a192f0afbf7b5ff65ee8cc6ef47f5dce2171f013ea AS builder
 WORKDIR /workspace
 
 COPY backend/gradlew backend/gradle backend/build.gradle.kts backend/settings.gradle.kts ./
@@ -22,7 +22,7 @@ RUN mkdir -p /tmp/rds-certs \
     && keytool -list -keystore /workspace/rds-truststore.p12 -storetype PKCS12 -storepass changeit >/dev/null \
     && rm -rf /tmp/rds-certs /tmp/rds-global-bundle.pem
 
-FROM eclipse-temurin:17-jre-jammy@sha256:475d8e96b4b2bfe08999e5e854755c773af1581acdf959a4545d88f0696a2339
+FROM eclipse-temurin:25-jre-jammy@sha256:b8ba5fca9d88b6ecc3a46c8e75b744f84aca9a9d08587901b5ab480baf641ab5
 USER root
 RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get upgrade -y \
