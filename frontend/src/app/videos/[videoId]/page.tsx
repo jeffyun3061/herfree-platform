@@ -101,7 +101,7 @@ export default function VideoDetailPage() {
         <span className="min-w-0 flex-1">
           <span className="block text-[13.5px] font-bold text-white">영상만으로 부족하다면</span>
           <span className="mt-[3px] block text-[12px] text-white/72">
-            1:1 비밀상담으로 편하게 물어보세요.
+            상담문의로 서비스 이용 관련 내용을 남겨보세요.
           </span>
         </span>
         <span className="text-[20px] text-[#F0C778]">›</span>

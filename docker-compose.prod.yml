@@ -1,5 +1,7 @@
-# VPS 저비용 운영 — API + MySQL 단일 서버 (프론트는 Vercel)
-# 사용: .env.prod 를 채운 뒤 docker compose -f docker-compose.prod.yml up -d --build
+# LEGACY / REFERENCE ONLY — do not use for health-data staging or production.
+# This file runs API + Docker MySQL without the RDS certificate verification path.
+# Production uses docker-compose.release.yml + private RDS + Secrets Manager.
+# Use docker-compose.local.yml for local development.
 services:
   mysql:
     image: mysql:8.0

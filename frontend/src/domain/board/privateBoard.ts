@@ -24,7 +24,7 @@ export function isQuestionBoardType(boardType: string): boolean {
   return boardType === 'QUESTION';
 }
 
-/** 푸터·전용 글쓰기 경로 — 운영 문의·1:1 상담 (커뮤니티 탭에는 상담 게시판 노출) */
+/** 푸터·전용 글쓰기 경로 — 운영 문의·상담문의 (커뮤니티 탭에는 비공개 게시판 미노출) */
 export function isOffCommunityPrivateBoardType(boardType: string): boolean {
   return isInquiryBoardType(boardType) || isSecretConsultBoardType(boardType);
 }
@@ -34,7 +34,7 @@ export function isPrivateBoardType(boardType: string): boolean {
   return isOffCommunityPrivateBoardType(boardType);
 }
 
-/** 제목 마스킹·운영자 답글 정책 (비밀사연·문의·상담) */
+/** 제목 마스킹·운영자 답글 정책 (비밀사연·문의·상담문의) */
 export function isMaskedBoardType(boardType: string): boolean {
   return isInquiryBoardType(boardType)
     || isSecretConsultBoardType(boardType)
@@ -96,10 +96,10 @@ export const PRIVATE_BOARD_META: Record<
   PRIVATE_CONSULT: {
     path: '/consult',
     writePath: '/consult/write',
-    title: '1:1 비밀 상담',
+    title: '상담문의',
     description:
-      '관리자와 1:1로 나누는 비공개 상담 게시판입니다. 다른 회원 글은 제목만 마스킹되어 보이며, 본인 글만 열람·수정할 수 있습니다. 답글은 운영자만 작성합니다.',
-    writeLabel: '상담 글쓰기',
+      '서비스 이용·운영 관련 문의를 남기는 비공개 게시판입니다. 작성 내용은 권한이 있는 운영자만 확인하며, 의료 진단·처방·치료 상담은 제공하지 않습니다. 보관·삭제는 개인정보 처리방침을 따릅니다.',
+    writeLabel: '문의 남기기',
   },
 };
 

@@ -39,8 +39,9 @@ app:
 ```env
 S3_BUCKET=herfree-prod-uploads
 S3_REGION=ap-northeast-2
-S3_ACCESS_KEY=...
-S3_SECRET_KEY=...
+# 운영 EC2에서는 두 값을 비워 두고 instance role을 사용한다.
+S3_ACCESS_KEY=
+S3_SECRET_KEY=
 ```
 
 ## 5. 이미지 조회 (GetObject)

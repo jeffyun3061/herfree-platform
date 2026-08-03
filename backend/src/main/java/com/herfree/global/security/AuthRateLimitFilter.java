@@ -28,6 +28,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public class AuthRateLimitFilter extends OncePerRequestFilter {
 
     private static final int MAX_ATTEMPTS_PER_WINDOW = 20;
+    private static final int MAX_TRACKED_CLIENTS = 10_000;
+    private static final int CLEANUP_THRESHOLD = 2_000;
     private static final long WINDOW_SECONDS = 60L;
     private static final MediaType JSON_UTF8 = new MediaType("application", "json", StandardCharsets.UTF_8);
 
@@ -64,8 +66,18 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
             return;
         }
         String clientKey = resolveClientKey(request);
+        if (!org.springframework.util.StringUtils.hasText(clientKey)) {
+            clientKey = "unknown-client";
+        }
+        long now = Instant.now().getEpochSecond();
+        if (windows.size() >= CLEANUP_THRESHOLD) {
+            windows.entrySet().removeIf(entry -> now - entry.getValue().startEpochSecond >= WINDOW_SECONDS);
+        }
+        if (!windows.containsKey(clientKey) && windows.size() >= MAX_TRACKED_CLIENTS) {
+            writeTooManyRequests(response);
+            return;
+        }
         Window window = windows.compute(clientKey, (key, current) -> {
-            long now = Instant.now().getEpochSecond();
             if (current == null || now - current.startEpochSecond >= WINDOW_SECONDS) {
                 return new Window(now, new AtomicInteger(0));
             }
@@ -75,6 +87,7 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
         int attempt = window.counter.incrementAndGet();
         if (attempt > MAX_ATTEMPTS_PER_WINDOW) {
             response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
+            response.setHeader("Retry-After", String.valueOf(WINDOW_SECONDS));
             response.setContentType(JSON_UTF8.toString());
             objectMapper.writeValue(
                     response.getOutputStream(),
@@ -88,6 +101,16 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
 
     private String resolveClientKey(HttpServletRequest request) {
         return clientIpExtractor.extract(request);
+    }
+
+    private void writeTooManyRequests(HttpServletResponse response) throws IOException {
+        response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
+        response.setHeader("Retry-After", String.valueOf(WINDOW_SECONDS));
+        response.setContentType(JSON_UTF8.toString());
+        objectMapper.writeValue(
+                response.getOutputStream(),
+                ErrorResponse.of("Too many requests. Please retry later.")
+        );
     }
 
     private static final class Window {

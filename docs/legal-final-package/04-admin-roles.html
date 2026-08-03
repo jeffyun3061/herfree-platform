@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>04. 관리자 권한</title>
+  <link rel="stylesheet" href="_styles.css" />
+</head>
+<body>
+
+<h1>관리자 권한 · 운영 접근 범위</h1>
+<p class="meta">Herfree · 2026년 7월 · 실제 코드 기준</p>
+
+<h2>1. 역할 종류</h2>
+<table>
+  <tr><th>USER</th><td>일반 회원 — 커뮤니티·일지·마이페이지</td></tr>
+  <tr><th>MODERATOR</th><td>운영 스태프 — 신고·콘텐츠 숨김·비공개 게시판 열람</td></tr>
+  <tr><th>ADMIN</th><td>관리자 — 회원 상태·정지·닉네임 초기화 등</td></tr>
+  <tr><th>SUPER_ADMIN</th><td>최고 관리자 — 역할 변경 등</td></tr>
+  <tr><th>CREATOR / DOCTOR</th><td>칼럼·콘텐츠 작성 권한 (커뮤니티 일반 글과 분리)</td></tr>
+</table>
+
+<h2>2. 운영자(스태프)가 할 수 있는 것</h2>
+<ul>
+  <li>공개·비공개 게시판 글·댓글 열람 (비밀사연, 1:1 상담, 운영 문의 포함)</li>
+  <li>신고 처리 — 게시글·댓글 숨김·삭제·<strong>본문 수정</strong></li>
+  <li>회원 계정 정지·해제 (ADMIN 이상)</li>
+  <li>회원 닉네임 초기화 (ADMIN 이상)</li>
+  <li>공지·칼럼·유튜브·제품 등 운영 콘텐츠 관리</li>
+  <li>일지 <strong>건수·익명 집계</strong> 통계 (관리자 대시보드)</li>
+</ul>
+
+<h2>3. 법적 요청 시 (검토 필요)</h2>
+<ul>
+  <li>수사기관·법원 등 공식 요청 시 제공 가능 범위 — 체크리스트 D절에서 확인</li>
+  <li>일반 운영과 별도로 대응 절차·보관 자료 범위 정리 필요</li>
+</ul>
+
+<h2>4. 운영자가 하지 않는 것 (현재 구현)</h2>
+<ul>
+  <li><strong>개별 회원 건강 일지 원문</strong> 조회 API 없음</li>
+  <li>회원 이메일·비밀번호 평문 조회 없음</li>
+  <li>임의 DB 직접 수정 (운영 정책상 금지, API·관리 화면만)</li>
+</ul>
+
+<h2>5. 감사 · 기록</h2>
+<table>
+  <tr><th>admin_audit_logs</th><td>관리자 주요 조작 기록</td></tr>
+  <tr><th>role_audit_logs</th><td>역할 변경 기록</td></tr>
+</table>
+
+<h2>6. 보안 (현재 · 검토 필요)</h2>
+<table>
+  <tr><th>적용</th><td>관리 API JWT 인증, 역할별 권한 분리</td></tr>
+  <tr><th>미적용</th><td>관리자 2단계 인증(MFA) — 오픈 전 보완 검토 항목</td></tr>
+</table>
+
+<div class="note">처리방침 「운영자 필요 범위 접근」과 위 실제 범위의 일치 여부는 법률 검토 체크리스트 D-4에서 확인.</div>
+
+<div class="footer">Herfree · 관리자 권한 설명 · StaffRolePolicy 기준</div>
+</body>
+</html>

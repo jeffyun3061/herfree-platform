@@ -1,7 +1,7 @@
 # Herfree 운영 보안 · 환경변수 체크리스트
 
 > 배포 전 **복사해서 ✅ 채우기** · 상세 배포: [`deployment.md`](./deployment.md)  
-> 검증일 기준: 코드·`docker-compose.prod.yml` 대조 (자동화 아님 — 배포 직전 사람이 확인)
+> 검증일 기준: release 코드·`docker-compose.release.yml` 대조 (자동화 아님 — 배포 직전 사람이 확인). `docker-compose.prod.yml`는 legacy/reference only다.
 
 ---
 
@@ -17,7 +17,7 @@
 | Flyway clean 금지 | `clean-disabled: true` | ✅ |
 | prod Swagger 끔 | `springdoc.enabled: false` | ✅ |
 | prod 데모 시드 끔 | `app.demo-seed.enabled: false` + `@Profile("local")` | ✅ |
-| API **127.0.0.1 바인딩** | `docker-compose.prod.yml` `127.0.0.1:8080:8080` | ✅ |
+| API **127.0.0.1 바인딩** | `docker-compose.release.yml` `127.0.0.1:8080:8080` | ✅ |
 | Nginx → 로컬 Spring | `infra/nginx/herfree.conf` | ✅ |
 | 이미지 URL 화이트리스트 | `PostImageStorageService.assertImageUrlAllowed` | ✅ |
 | 비공개 게시판 정책 | `PrivateBoardPolicy` + 테스트 | ✅ |
@@ -91,7 +91,7 @@ cd backend && ./gradlew test
 rg "JWT_SECRET|change_me" backend/src/main/resources --glob '!*.example'
 ```
 
-- `docker-compose.prod.yml`에 `127.0.0.1:8080` 있는지
+- `docker-compose.release.yml`에 `127.0.0.1:8080` 있는지
 - `.env.prod`가 `.gitignore`에 있는지
 
 ---

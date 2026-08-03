@@ -1,9 +1,14 @@
 # Journal API smoke test — signup, CRUD, date format, admin aggregate privacy
+param(
+    [string]$BaseUrl = "http://localhost:8080",
+    [switch]$RequireAdmin
+)
+
 $ErrorActionPreference = "Stop"
-$Base = "http://localhost:8080"
+$Base = $BaseUrl.TrimEnd('/')
 $Suffix = [Guid]::NewGuid().ToString("N").Substring(0, 8)
 $Email = "journaltest+$Suffix@example.com"
-$Password = "TestPass01"
+$Password = "TestPass!01"
 $Nickname = "jt$Suffix"
 
 function Assert($cond, $msg) {
@@ -11,7 +16,17 @@ function Assert($cond, $msg) {
 }
 
 Write-Host "== 1. Signup + Login =="
-$signupBody = @{ email = $Email; password = $Password; nickname = $Nickname } | ConvertTo-Json
+$signupBody = @{
+    email = $Email
+    password = $Password
+    nickname = $Nickname
+    agreeTerms = $true
+    agreePrivacy = $true
+    agreeSensitive = $true
+    agreeAge = $true
+    agreeMarketing = $false
+    agreeHealthStatistics = $false
+} | ConvertTo-Json
 $r = Invoke-RestMethod -Uri "$Base/api/auth/signup" -Method POST -Body $signupBody -ContentType "application/json; charset=utf-8"
 Assert ($r.success -eq $true) "signup failed: $($r.message)"
 
@@ -60,10 +75,14 @@ $byDate = Invoke-RestMethod -Uri "$Base/api/journal/records/by-date?date=$today"
 Assert ($byDate.data -eq $null) "record should be deleted"
 
 Write-Host "== 5. Admin stats has no PII fields =="
-# Use bootstrap admin if available — skip if 401/403
+# Use bootstrap admin if configured; skip if credentials are not supplied.
 try {
+    if ([string]::IsNullOrWhiteSpace($env:ADMIN_EMAIL) -or [string]::IsNullOrWhiteSpace($env:ADMIN_PASSWORD)) {
+        if ($RequireAdmin) { throw "ADMIN_EMAIL/ADMIN_PASSWORD are not set" }
+        throw "SKIP_ADMIN_SMOKE"
+    }
     $adminLogin = Invoke-RestMethod -Uri "$Base/api/auth/login" -Method POST -Body (@{
-        email = "admin@herfree.local"; password = "HerfreeAdmin01!"
+        email = $env:ADMIN_EMAIL; password = $env:ADMIN_PASSWORD
     } | ConvertTo-Json) -ContentType "application/json; charset=utf-8"
     $adminHeaders = @{ Authorization = "Bearer $($adminLogin.data.accessToken)" }
     $stats = Invoke-RestMethod -Uri "$Base/api/admin/journal/stats" -Method GET -Headers $adminHeaders
@@ -73,6 +92,7 @@ try {
     Assert ($stats.data.totalRecords -ge 0) "totalRecords present"
     Write-Host "Admin stats OK (aggregate only)"
 } catch {
+    if ($RequireAdmin) { throw }
     Write-Host "SKIP admin stats (no SUPER_ADMIN creds): $($_.Exception.Message)"
 }
 

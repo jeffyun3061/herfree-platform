@@ -5,6 +5,7 @@
 @tailwind utilities;
 
 :root {
+  --font-display: 'AppleMyungjo', 'Batang', 'Noto Serif KR', Georgia, serif;
   /* Surface */
   --color-background-primary: #ffffff;
   --color-background-secondary: #e9ebea;

@@ -95,6 +95,7 @@
 - [ ] `ADMIN_BOOTSTRAP_ENABLED=false`이고 demo 계정이 운영 DB에 없다.
 - [ ] 관리자 계정은 개인별로 발급하고 공용 계정을 사용하지 않는다.
 - [ ] 관리자 MFA를 적용하거나 도입 전까지 `/api/admin/**`를 VPN, Cloudflare Access 또는 고정 IP로 제한했다.
+- [ ] `ADMIN_ACCESS_ALLOWED_CIDRS`가 실제 운영자 VPN/고정 관리망으로 설정됐고 `0.0.0.0/0`이 아니다. 코드 게이트가 외부 IP에 403을 반환하는 것을 확인했다.
 
 ### AWS와 네트워크
 
@@ -137,7 +138,7 @@
 - [ ] 탈퇴 후 동의 이력·감사 로그·게시물의 보존기간과 재가입 정책을 운영 책임자가 승인했다.
 - [x] 공개 일지 통계가 서로 다른 사용자 20명 최소 표본과 5명 미만 소수 셀 억제를 적용한다.
 - [ ] RDS JDBC 연결이 서버 인증서를 검증하는 TLS를 사용하고 비암호화 연결을 거부한다.
-- [ ] 건강정보 저장 암호화와 field-level encryption 적용 범위를 승인했다.
+- [ ] 건강정보 저장 암호화와 field-level encryption 적용 범위를 운영 책임자가 승인했다. (코드: `journal_records.memo` AES-GCM + `HEALTH_DATA_ENCRYPTION_KEY`; staging re-key 증적 필요)
 - [ ] 자동 파기 보유기간을 운영 책임자가 승인하고 staging/production 실행 로그를 증거로 남겼다.
 - [ ] 침해 신고 담당자와 사용자 공지·신고 절차를 정했다.
 - [ ] `docs/templates/security-incident-record.md`로 SEV-1 모의훈련을 수행했다.

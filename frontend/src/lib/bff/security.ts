@@ -48,17 +48,26 @@ export function resolveExternalOrigin(
   hostHeader: string | null,
   forwardedProtoHeader: string | null,
   isProduction: boolean,
+  configuredOrigin?: string | null,
 ): string | null {
+  if (configuredOrigin?.trim()) {
+    try {
+      const configured = new URL(configuredOrigin.trim());
+      if (isProduction && configured.protocol !== 'https:') return null;
+      return configured.origin;
+    } catch {
+      return null;
+    }
+  }
+  if (isProduction) return null;
   if (!hostHeader) return null;
 
   try {
     const requestProtocol = new URL(requestUrlOrigin).protocol.replace(':', '');
     const forwardedProtocol = forwardedProtoHeader?.split(',')[0]?.trim().toLowerCase();
-    const protocol = isProduction
-      ? 'https'
-      : (forwardedProtocol === 'http' || forwardedProtocol === 'https'
-        ? forwardedProtocol
-        : requestProtocol);
+    const protocol = forwardedProtocol === 'http' || forwardedProtocol === 'https'
+      ? forwardedProtocol
+      : requestProtocol;
     return new URL(`${protocol}://${hostHeader}`).origin;
   } catch {
     return null;
@@ -76,6 +85,10 @@ export function isSessionEstablishingPath(path: string): boolean {
   return path === 'auth/login'
     || path === 'auth/oauth/complete-profile'
     || /^auth\/oauth\/(kakao|google|naver)$/.test(path);
+}
+
+export function shouldInvalidateSessionOnUnauthorized(path: string): boolean {
+  return path !== 'users/me/password' && !isSessionEstablishingPath(path);
 }
 
 export function shouldClearSession(path: string, method: string): boolean {

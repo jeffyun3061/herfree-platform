@@ -10,6 +10,7 @@ import {
   resolveExternalOrigin,
   shouldAlwaysClearSession,
   shouldClearSession,
+  shouldInvalidateSessionOnUnauthorized,
 } from '@/lib/bff/security';
 import { readBodyWithLimit } from '@/lib/bff/body-limit';
 import { errorResponse } from '@/lib/bff/errors';
@@ -54,6 +55,7 @@ export async function proxyToBackend(request: NextRequest, pathSegments: string[
       request.headers.get('host'),
       request.headers.get('x-forwarded-proto'),
       production,
+      process.env.NEXT_PUBLIC_OAUTH_REDIRECT_ORIGIN,
     );
     if (!externalOrigin || !hasValidOrigin(request.headers.get('origin'), externalOrigin)) {
       return errorResponse(403, 'Invalid request origin.');
@@ -114,11 +116,18 @@ export async function proxyToBackend(request: NextRequest, pathSegments: string[
     statusText: backendResponse.statusText,
     headers: buildBackendResponseHeaders(backendResponse),
   });
-  if (
+  const shouldClearForUserAction =
     (backendResponse.ok && shouldClearSession(path, request.method)) ||
-    shouldAlwaysClearSession(path, request.method)
-  ) {
+    shouldAlwaysClearSession(path, request.method);
+  if (shouldClearForUserAction) {
     clearSessionCookies(response, sessionConfig);
+  } else if (
+    backendResponse.status === 401 &&
+    accessToken &&
+    shouldInvalidateSessionOnUnauthorized(path)
+  ) {
+    // 만료된 HttpOnly 쿠키만 먼저 지우고, 화면 안내에 필요한 sessionStorage는 client가 정리한다.
+    clearSessionCookies(response, sessionConfig, false);
   }
   return response;
 }

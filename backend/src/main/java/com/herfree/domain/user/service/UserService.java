@@ -178,7 +178,8 @@ public class UserService {
     // requirements.md §6: 계정 상태 DELETED 처리 + 커뮤니티 맥락 보존
     @Transactional
     public void withdraw(Long userId) {
-        User user = userRepository.findByIdAndStatus(userId, UserStatus.ACTIVE)
+        // 탈퇴와 다른 쓰기 요청이 같은 users 행을 먼저 잠그도록 순서를 통일한다.
+        User user = userRepository.findByIdAndStatusForUpdate(userId, UserStatus.ACTIVE)
                 .orElseThrow(UserNotFoundException::new);
 
         UserProfile profile = userProfileRepository.findByUserId(userId)

@@ -95,7 +95,7 @@ export default function ContentDetailPage() {
               더 깊은 이야기가 필요하다면
             </span>
             <span className="mt-[3px] block text-[12px] text-white/72">
-              1:1 비밀상담으로 편하게 나눠보세요
+              상담문의로 서비스 이용 관련 내용을 남겨보세요
             </span>
           </span>
           <span className="text-[20px] text-[#F0C778]">›</span>

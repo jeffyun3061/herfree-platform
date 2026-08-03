@@ -7,6 +7,7 @@ import {
   requestBodyLimit,
   resolveExternalOrigin,
   shouldAlwaysClearSession,
+  shouldInvalidateSessionOnUnauthorized,
 } from '@/lib/bff/security';
 
 describe('BFF security policy', () => {
@@ -28,7 +29,21 @@ describe('BFF security policy', () => {
       'develop.example.com',
       'https',
       true,
+      'https://develop.example.com',
     )).toBe('https://develop.example.com');
+    expect(resolveExternalOrigin(
+      'http://127.0.0.1:3000',
+      'attacker.example',
+      'https',
+      true,
+      'https://develop.example.com',
+    )).toBe('https://develop.example.com');
+    expect(resolveExternalOrigin(
+      'http://127.0.0.1:3000',
+      'develop.example.com',
+      'https',
+      true,
+    )).toBeNull();
     expect(resolveExternalOrigin(
       'http://127.0.0.1:3000',
       null,
@@ -46,6 +61,13 @@ describe('BFF security policy', () => {
     expect(requestBodyLimit('posts/images/upload', 'multipart/form-data; boundary=x'))
       .toBe(IMAGE_BODY_LIMIT);
     expect(requestBodyLimit('journal/records', 'application/json')).toBe(JSON_BODY_LIMIT);
+  });
+
+  it('keeps credential-check failures but invalidates rejected API sessions', () => {
+    expect(shouldInvalidateSessionOnUnauthorized('users/me')).toBe(true);
+    expect(shouldInvalidateSessionOnUnauthorized('journal/records')).toBe(true);
+    expect(shouldInvalidateSessionOnUnauthorized('users/me/password')).toBe(false);
+    expect(shouldInvalidateSessionOnUnauthorized('auth/login')).toBe(false);
   });
 
   it('always clears the local session only for a real logout mutation', () => {

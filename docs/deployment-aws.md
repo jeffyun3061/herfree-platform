@@ -6,6 +6,10 @@
 
 ---
 
+> **운영 기준(중요):** 질병·건강정보가 포함된 staging/production은 `docker-compose.release.yml` + private RDS + Secrets Manager 경로만 사용한다. `docker-compose.prod.yml`, `deploy-vps.sh`, Docker MySQL은 legacy/reference 경로이며 실서비스 공개에 사용하지 않는다. release env에는 `HEALTH_DATA_ENCRYPTION_KEY`가 필수이고 RDS JDBC URL의 `sslMode=VERIFY_IDENTITY` 및 truststore 검증을 유지한다.
+
+운영 배포 순서는 `render-release-env.sh <env>` → `validate-release-env.sh <env> <env-file>` → digest가 고정된 `deploy-release.sh`이다. staging에서 통과한 동일 digest만 production으로 승격한다.
+
 ## 0. AWS 아키텍처 (권장 2안)
 
 ### A안 — 런칭 초기 (월 ~3~5만 원, 트래픽 일 400 이하)

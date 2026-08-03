@@ -48,7 +48,7 @@ foreach ($path in $requiredFiles) {
 
 $dirty = git status --porcelain
 if ([string]::IsNullOrWhiteSpace($dirty)) { Pass "Git working tree clean" }
-else { Warn "Git working tree dirty" "commit the reviewed deployment candidate before release" }
+else { Fail "Git working tree dirty" "commit the reviewed deployment candidate before release" }
 Pass "current commit: $(git rev-parse --short HEAD)"
 
 if (-not $SkipPreflight) {

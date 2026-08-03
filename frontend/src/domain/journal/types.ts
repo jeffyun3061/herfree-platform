@@ -134,6 +134,7 @@ export type JournalInsights = {
 };
 
 export type JournalPublicHomeStats = {
+  usersRecordingToday: number;
   totalUsers: number;
 };
 

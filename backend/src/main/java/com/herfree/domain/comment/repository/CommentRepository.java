@@ -2,16 +2,30 @@ package com.herfree.domain.comment.repository;
 
 import com.herfree.domain.comment.entity.Comment;
 import com.herfree.domain.comment.entity.CommentStatus;
+import jakarta.persistence.LockModeType;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface CommentRepository extends JpaRepository<Comment, Long> {
+
+    // 상태 전이는 같은 댓글 행을 잠근 뒤 현재 상태를 다시 확인해야 카운터가 한 번만 바뀐다.
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+            select c from Comment c
+            join fetch c.post p
+            join fetch p.board
+            join fetch c.user
+            where c.id = :id
+            """)
+    Optional<Comment> findByIdForUpdate(@Param("id") Long id);
 
     // 특정 게시글의 활성 댓글을 등록순(오름차순)으로 조회한다
     // 댓글은 게시글과 달리 등록 순서대로 읽는 것이 자연스럽다

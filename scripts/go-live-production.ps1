@@ -46,8 +46,11 @@ if (-not $SkipStagingFix) {
 
 # 2. Staging status
 Write-Step "2. Staging status"
-$statusArgs = @("-File", (Join-Path $PSScriptRoot "check-staging-status.ps1"), "-AwsProfile", $AwsProfile)
+$statusArgs = @("-File", (Join-Path $PSScriptRoot "check-staging-status.ps1"), "-AwsProfile", $AwsProfile, "-Strict")
 powershell -ExecutionPolicy Bypass @statusArgs
+if ($LASTEXITCODE -ne 0) {
+    throw "Staging has blocking checks; production setup is refused."
+}
 
 # 3. Production AWS
 if (-not $SkipProductionAws) {

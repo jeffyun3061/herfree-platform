@@ -8,6 +8,7 @@ import com.herfree.domain.journal.entity.SleepRange;
 import com.herfree.domain.journal.exception.JournalRecordNotFoundException;
 import com.herfree.domain.journal.repository.JournalRecordRepository;
 import com.herfree.domain.user.entity.User;
+import com.herfree.domain.user.entity.UserStatus;
 import com.herfree.domain.user.exception.UserNotFoundException;
 import com.herfree.domain.user.repository.UserRepository;
 import java.math.BigDecimal;
@@ -35,7 +36,9 @@ public class JournalRecordService {
     @Transactional
     public JournalRecordResponse upsertRecord(Long userId, JournalRecordUpsertRequest request) {
         inputValidator.validate(request);
-        User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
+        // 같은 회원의 같은 날짜 기록 요청을 직렬화해 선조회 후 INSERT 경쟁을 막는다.
+        User user = userRepository.findByIdAndStatusForUpdate(userId, UserStatus.ACTIVE)
+                .orElseThrow(UserNotFoundException::new);
 
         boolean supplementTaken = Boolean.TRUE.equals(request.supplementTaken());
         boolean exerciseDone = Boolean.TRUE.equals(request.exerciseDone());

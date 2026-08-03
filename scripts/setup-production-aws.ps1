@@ -67,8 +67,8 @@ if (-not $DryRun) {
         --output text 2>$null
     if (-not $existing) {
         aws logs create-log-group --profile $AwsProfile --region $Region --log-group-name $LogGroup | Out-Null
-        aws logs put-retention-policy --profile $AwsProfile --region $Region --log-group-name $LogGroup --retention-in-days 30 | Out-Null
     }
+    aws logs put-retention-policy --profile $AwsProfile --region $Region --log-group-name $LogGroup --retention-in-days 30 | Out-Null
     Write-Host "[OK] log group ready" -ForegroundColor Green
 }
 
@@ -85,9 +85,15 @@ if (-not $DryRun) {
                 --create-bucket-configuration "LocationConstraint=$Region" `
                 --profile $AwsProfile --region $Region | Out-Null
         }
-        aws s3api put-public-access-block --bucket $ProductionBucket --profile $AwsProfile --region $Region `
-            --public-access-block-configuration "BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true" | Out-Null
     }
+    # Re-apply these controls even when the bucket already exists; drift must
+    # not silently make uploaded health-related images public or unencrypted.
+    aws s3api put-public-access-block --bucket $ProductionBucket --profile $AwsProfile --region $Region `
+        --public-access-block-configuration "BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true" | Out-Null
+    aws s3api put-bucket-ownership-controls --bucket $ProductionBucket --profile $AwsProfile --region $Region `
+        --ownership-controls "Rules=[{ObjectOwnership=BucketOwnerEnforced}]" | Out-Null
+    aws s3api put-bucket-encryption --bucket $ProductionBucket --profile $AwsProfile --region $Region `
+        --server-side-encryption-configuration "Rules=[{ApplyServerSideEncryptionByDefault={SSEAlgorithm=AES256}}]" | Out-Null
     Write-Host "[OK] S3 bucket ready" -ForegroundColor Green
 }
 
@@ -243,32 +249,72 @@ if ($prodInstance -and -not $DryRun) {
     Write-Host "Gabia DNS: api.herpfree.co.kr A -> $publicIp" -ForegroundColor Yellow
 }
 
-# --- Secrets (from staging template) ---
+# --- Production secrets (never copy staging credentials) ---
 if ($rdsExists -and -not $DryRun) {
     Write-Host "-> Secrets Manager herfree/production/*"
-    $stagingAppRaw = aws secretsmanager get-secret-value --profile $AwsProfile --region $Region `
-        --secret-id "herfree/staging/app-config" --query SecretString --output text
-    $stagingDbRaw = aws secretsmanager get-secret-value --profile $AwsProfile --region $Region `
-        --secret-id "herfree/staging/db-app" --query SecretString --output text
-    $stagingSmtpRaw = aws secretsmanager get-secret-value --profile $AwsProfile --region $Region `
-        --secret-id "herfree/staging/smtp" --query SecretString --output text
+    $secretIds = @(
+        "herfree/production/app-config",
+        "herfree/production/db-app",
+        "herfree/production/smtp"
+    )
+    foreach ($secretId in $secretIds) {
+        $secretCheck = aws secretsmanager describe-secret --profile $AwsProfile --region $Region --secret-id $secretId 2>&1
+        if ($LASTEXITCODE -ne 0) {
+            throw "Missing $secretId. Provision production-only secrets before running setup-production-aws.ps1; staging secrets are never copied."
+        }
+    }
 
-    $appConfig = $stagingAppRaw | ConvertFrom-Json
+    $appJsonRaw = aws secretsmanager get-secret-value --profile $AwsProfile --region $Region `
+        --secret-id "herfree/production/app-config" --query SecretString --output text
+    $dbJsonRaw = aws secretsmanager get-secret-value --profile $AwsProfile --region $Region `
+        --secret-id "herfree/production/db-app" --query SecretString --output text
+    $smtpJsonRaw = aws secretsmanager get-secret-value --profile $AwsProfile --region $Region `
+        --secret-id "herfree/production/smtp" --query SecretString --output text
+
+    $appConfig = $appJsonRaw | ConvertFrom-Json
+    if ([string]::IsNullOrWhiteSpace($appConfig.healthDataEncryptionKey)) {
+        $appConfig.healthDataEncryptionKey = New-RandomSecret 32
+    }
+    $healthKey = [string]$appConfig.healthDataEncryptionKey
+    $healthKeyValid = $healthKey -match '^[0-9a-fA-F]{64}$'
+    if (-not $healthKeyValid) {
+        try { $healthKeyValid = ([Convert]::FromBase64String($healthKey)).Length -eq 32 } catch { $healthKeyValid = $false }
+    }
+    if (-not $healthKeyValid) {
+        throw "Production app-config healthDataEncryptionKey must be a 32-byte base64 value or 64-character hex value."
+    }
     $appConfig.frontendOrigin = $FrontendOrigin
     $appConfig.dbHost = $rdsEndpoint
     $appConfig.s3Bucket = $ProductionBucket
     $appConfig.cloudWatchLogGroup = $LogGroup
-    $appConfig.jwtSecret = New-RandomSecret 32
-    $appConfig.analyticsHashSalt = New-RandomSecret 32
+    $adminAccessCidrs = [string]$appConfig.adminAccessAllowedCidrs
+    if ([string]::IsNullOrWhiteSpace($adminAccessCidrs) -or $adminAccessCidrs.Contains("0.0.0.0/0") -or $adminAccessCidrs.Contains("::/0")) {
+        throw "Production app-config must contain a restricted adminAccessAllowedCidrs VPN/admin gate."
+    }
+    if (([string]::IsNullOrWhiteSpace($appConfig.jwtSecret) -or ([string]$appConfig.jwtSecret).Length -lt 32) -or ([string]::IsNullOrWhiteSpace($appConfig.analyticsHashSalt) -or ([string]$appConfig.analyticsHashSalt).Length -lt 32)) {
+        throw "Production app-config must contain pre-provisioned JWT and analytics salt values of at least 32 characters."
+    }
     foreach ($provider in @("kakao", "google", "naver")) {
         $appConfig.oauth.$provider.redirectUri = "$FrontendOrigin/auth/callback/$provider"
     }
     $appJson = $appConfig | ConvertTo-Json -Compress -Depth 8
+    $dbConfig = $dbJsonRaw | ConvertFrom-Json
+    foreach ($field in @("database", "username", "password")) {
+        if ([string]::IsNullOrWhiteSpace([string]$dbConfig.$field)) {
+            throw "Production db-app is missing $field."
+        }
+    }
+    $smtpConfig = $smtpJsonRaw | ConvertFrom-Json
+    foreach ($field in @("from", "host", "port", "username", "password")) {
+        if ([string]::IsNullOrWhiteSpace([string]$smtpConfig.$field)) {
+            throw "Production smtp secret is missing $field."
+        }
+    }
 
     foreach ($pair in @(
             @{ Id = "herfree/production/app-config"; Value = $appJson },
-            @{ Id = "herfree/production/db-app"; Value = $stagingDbRaw },
-            @{ Id = "herfree/production/smtp"; Value = $stagingSmtpRaw }
+            @{ Id = "herfree/production/db-app"; Value = $dbJsonRaw },
+            @{ Id = "herfree/production/smtp"; Value = $smtpJsonRaw }
         )) {
         $exists = $false
         try {
@@ -286,7 +332,7 @@ if ($rdsExists -and -not $DryRun) {
                 --name $pair.Id --secret-string $pair.Value | Out-Null
         }
     }
-    Write-Host "[OK] production secrets written (JWT/salt regenerated)" -ForegroundColor Green
+    Write-Host "[OK] production-only secrets verified and infrastructure fields refreshed" -ForegroundColor Green
 }
 
 Write-Host ""

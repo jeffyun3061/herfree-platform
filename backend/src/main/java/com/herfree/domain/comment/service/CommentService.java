@@ -79,7 +79,7 @@ public class CommentService {
                 .build();
 
         commentRepository.save(comment);
-        post.increaseCommentCount();
+        postRepository.incrementCommentCount(postId);
 
         UserProfile profile = userProfileRepository.findByUserId(userId)
                 .orElseThrow(UserNotFoundException::new);
@@ -115,7 +115,7 @@ public class CommentService {
     // soft delete — 물리 삭제 대신 DELETED 상태로 전환한다
     @Transactional
     public void deleteComment(Long commentId, Long userId) {
-        Comment comment = commentRepository.findById(commentId)
+        Comment comment = commentRepository.findByIdForUpdate(commentId)
                 .filter(c -> c.getStatus() == CommentStatus.ACTIVE)
                 .orElseThrow(CommentNotFoundException::new);
 
@@ -133,40 +133,40 @@ public class CommentService {
         }
 
         comment.delete();
-        post.decreaseCommentCount();
+        postRepository.decrementCommentCount(post.getId());
     }
 
     // 관리자 전용 숨김 처리 — AdminCommentController에서 호출한다
     @Transactional
     public void hideComment(Long commentId) {
-        Comment comment = commentRepository.findById(commentId)
+        Comment comment = commentRepository.findByIdForUpdate(commentId)
                 .filter(c -> c.getStatus() == CommentStatus.ACTIVE)
                 .orElseThrow(CommentNotFoundException::new);
 
         comment.hide();
-        comment.getPost().decreaseCommentCount();
+        postRepository.decrementCommentCount(comment.getPost().getId());
     }
 
     @Transactional
     public void restoreComment(Long commentId) {
-        Comment comment = commentRepository.findByIdAndStatusIn(
-                        commentId, java.util.List.of(CommentStatus.HIDDEN))
+        Comment comment = commentRepository.findByIdForUpdate(commentId)
+                .filter(c -> c.getStatus() == CommentStatus.HIDDEN)
                 .orElseThrow(CommentNotFoundException::new);
 
         comment.restore();
-        comment.getPost().increaseCommentCount();
+        postRepository.incrementCommentCount(comment.getPost().getId());
     }
 
     @Transactional
     public void adminDeleteComment(Long commentId) {
-        Comment comment = commentRepository.findByIdAndStatusIn(
-                        commentId, java.util.List.of(CommentStatus.ACTIVE, CommentStatus.HIDDEN))
+        Comment comment = commentRepository.findByIdForUpdate(commentId)
+                .filter(c -> c.getStatus() == CommentStatus.ACTIVE || c.getStatus() == CommentStatus.HIDDEN)
                 .orElseThrow(CommentNotFoundException::new);
         boolean wasActive = comment.getStatus() == CommentStatus.ACTIVE;
 
         comment.delete();
         if (wasActive) {
-            comment.getPost().decreaseCommentCount();
+            postRepository.decrementCommentCount(comment.getPost().getId());
         }
     }
 

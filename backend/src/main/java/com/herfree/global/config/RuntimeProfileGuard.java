@@ -15,5 +15,6 @@ public class RuntimeProfileGuard {
     void validateProfile() {
         // 배포 설정 누락을 로컬 기본값으로 숨기지 않고 서버 시작 단계에서 즉시 차단한다.
         RuntimeProfilePolicy.requireExplicitSingleProfile(environment);
+        RuntimeProfilePolicy.requirePublicDeploymentSettings(environment);
     }
 }
