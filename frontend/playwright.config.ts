@@ -8,6 +8,7 @@ const basicAuthPassword = process.env.E2E_HTTP_PASSWORD?.trim();
 const httpCredentials = basicAuthUsername && basicAuthPassword
   ? { username: basicAuthUsername, password: basicAuthPassword }
   : undefined;
+const useDevServer = process.env.PLAYWRIGHT_USE_DEV_SERVER === 'true';
 
 export default defineConfig({
   testDir: './e2e',
@@ -26,7 +27,9 @@ export default defineConfig({
   },
   webServer: isLocal && process.env.PLAYWRIGHT_NO_WEBSERVER !== 'true'
     ? {
-        command: `node ./node_modules/next/dist/bin/next start -H 127.0.0.1 -p ${parsedBaseURL.port || '3100'}`,
+        command: useDevServer
+          ? `node ./node_modules/next/dist/bin/next dev -H 127.0.0.1 -p ${parsedBaseURL.port || '3100'}`
+          : `node ./node_modules/next/dist/bin/next start -H 127.0.0.1 -p ${parsedBaseURL.port || '3100'}`,
         url: `${baseURL}/login`,
         reuseExistingServer: true,
         timeout: 60_000,

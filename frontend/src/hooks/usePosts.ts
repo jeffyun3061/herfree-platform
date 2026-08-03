@@ -6,7 +6,7 @@ import type { Post } from '@/domain/post/types';
 import type { PostCreateInput, PostUpdateInput } from '@/domain/post/types';
 import { useApiQuery } from '@/hooks/useApiQuery';
 import { useAsyncMutation } from '@/hooks/useAsyncMutation';
-import * as postsApi from '@/lib/api/posts';
+import * as postsApi from '@/features/community/api';
 
 // 게시판별 게시글 목록 — 페이지 상태까지 훅이 관리한다
 export function usePostList(

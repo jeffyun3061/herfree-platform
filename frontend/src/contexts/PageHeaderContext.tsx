@@ -6,6 +6,8 @@ export type PageHeaderState = {
   title: string;
   showBack?: boolean;
   backHref?: string;
+  rightSlot?: ReactNode;
+  desktopVisible?: boolean;
 };
 
 type PageHeaderContextValue = {
@@ -26,7 +28,9 @@ export function PageHeaderProvider({ children }: { children: ReactNode }) {
         next !== null &&
         prev.title === next.title &&
         prev.showBack === next.showBack &&
-        prev.backHref === next.backHref
+        prev.backHref === next.backHref &&
+        prev.rightSlot === next.rightSlot &&
+        prev.desktopVisible === next.desktopVisible
       ) {
         return prev;
       }

@@ -133,11 +133,11 @@ export function PrivateBoardWriteForm({ boardType }: PrivateBoardWriteFormProps)
 
   const writeTitle = isEditMode ? `${meta.title} 수정` : meta.writeLabel;
   const titlePlaceholder =
-    boardType === 'INQUIRY' ? '문의 제목을 입력해 주세요' : '상담 제목을 입력해 주세요';
+    boardType === 'INQUIRY' ? '문의 제목을 입력해 주세요' : '상담문의 제목을 입력해 주세요';
   const contentPlaceholder =
     boardType === 'INQUIRY'
       ? '서비스 이용·건의·신고 등 운영팀에 전달할 내용을 자세히 적어 주세요.'
-      : '상담하고 싶은 내용을 편하게 적어 주세요. 관리자만 열람할 수 있습니다.';
+      : '서비스 이용·운영 관련 문의를 적어 주세요. 의료 진단·처방·치료 상담은 제공하지 않습니다.';
   const titleCounterMax = Math.min(TITLE_UI_MAX, POST_TITLE_MAX_LENGTH);
 
   return (
@@ -187,7 +187,7 @@ export function PrivateBoardWriteForm({ boardType }: PrivateBoardWriteFormProps)
               ? '수정하기'
               : boardType === 'INQUIRY'
                 ? '문의 등록하기'
-                : '상담 등록하기'}
+                : '문의 등록하기'}
         </Button>
       </form>
     </div>

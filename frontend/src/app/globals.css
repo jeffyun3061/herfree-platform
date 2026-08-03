@@ -5,6 +5,7 @@
 @tailwind utilities;
 
 :root {
+  --font-display: 'AppleMyungjo', 'Batang', 'Noto Serif KR', Georgia, serif;
   /* Surface */
   --color-background-primary: #ffffff;
   --color-background-secondary: #e9ebea;
@@ -97,6 +98,11 @@ body {
   .hf-page-x {
     padding-left: var(--hf-page-px);
     padding-right: var(--hf-page-px);
+  }
+
+  .hf-page-frame {
+    width: 100%;
+    min-height: 100%;
   }
 
   .hf-dashboard-x {
