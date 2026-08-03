@@ -5,17 +5,17 @@ import { KAKAO_CONSULT_URL } from '@/domain/consult/constants';
 
 const consultFaqs = [
   {
-    question: '어떤 주제든 괜찮나요?',
-    answer: '연애고지, 재발 불안, 확진 초기 등 어떤 이야기도 괜찮아요. 의학적 진단·처방은 다루지 않아요.',
+    question: '어떤 내용을 문의할 수 있나요?',
+    answer: '회원가입·게시글·개인일지 등 서비스 이용과 운영에 관한 내용을 남겨 주세요. 의료 진단·처방·치료 상담은 제공하지 않습니다.',
   },
   {
-    question: '신청하면 바로 시작되나요?',
-    answer: '신청 순서대로 채팅방이 열려요. 보통 1~2일 안에 연결돼요.',
+    question: '답변은 어떻게 받나요?',
+    answer: '문의 순서대로 권한이 있는 운영자가 확인합니다. 답변 시간은 운영 상황에 따라 달라질 수 있습니다.',
   },
 ] as const;
 
 const consultInfo = [
-  ['상담 방식', '카카오톡 오픈채팅'],
+  ['문의 방식', '카카오톡 문의'],
   ['소요 시간', '30분'],
   ['비용', '무료'],
 ] as const;
@@ -34,7 +34,7 @@ export function ConsultIntroPage() {
         >
           ‹
         </Link>
-        <h1 className="text-[15px] font-bold text-[#1E2621]">1:1 비밀 상담</h1>
+        <h1 className="text-[15px] font-bold text-[#1E2621]">상담문의</h1>
       </header>
 
       <section className="relative overflow-hidden bg-[#04342C] px-6 py-[30px] text-white">
@@ -43,12 +43,13 @@ export function ConsultIntroPage() {
           aria-hidden
         />
         <h2 className="hf-display relative z-10 mb-3 text-[20px] font-semibold leading-[1.5] text-white">
-          말 꺼내기 어려운 이야기,
+          서비스 이용 중 궁금한 점,
           <br />
-          1:1로 편하게.
+          편하게 남겨 주세요.
         </h2>
         <p className="relative z-10 text-[12.5px] leading-[1.7] text-white/78">
-          13년 경험과 2급 심리상담 자격을 바탕으로, 1:1로 깊은 이야기를 나눕니다.
+          서비스 이용·운영 관련 문의를 남기면 권한이 있는 운영자가 확인합니다.
+          의료 진단·처방·치료 상담은 제공하지 않습니다.
         </p>
       </section>
 
@@ -57,7 +58,7 @@ export function ConsultIntroPage() {
           🔒
         </span>
         <p className="text-[12px] leading-[1.6] text-[#04342C]">
-          커뮤니티와 분리된 100% 비공개 상담이에요. 닉네임·IP 정책과 무관하게 운영됩니다.
+          작성 내용은 커뮤니티와 분리되어 권한이 있는 운영자만 확인합니다. 개인정보 처리방침에 따라 보관·삭제됩니다.
         </p>
       </section>
 
@@ -78,8 +79,8 @@ export function ConsultIntroPage() {
           🌿
         </div>
         <div>
-          <h2 className="text-[13.5px] font-bold text-[#1E2621]">헤르프리 상담사</h2>
-          <p className="mt-0.5 text-[12px] text-[#9A9F94]">13년 경험 · 2급 심리상담 자격</p>
+          <h2 className="text-[13.5px] font-bold text-[#1E2621]">운영 문의 담당자</h2>
+          <p className="mt-0.5 text-[12px] text-[#9A9F94]">서비스 이용 안내 및 운영 문의</p>
         </div>
       </section>
 
@@ -102,8 +103,11 @@ export function ConsultIntroPage() {
           rel="noopener noreferrer"
           className="flex min-h-[48px] w-full items-center justify-center rounded-[14px] bg-[#0B3B36] px-4 py-[15px] text-center text-[14.5px] font-bold text-white"
         >
-          카카오톡 상담 신청
+          카카오톡으로 문의하기
         </a>
+        <p className="mt-2 text-[11px] leading-[1.6] text-[#9A9F94]">
+          카카오톡으로 이동하면 카카오의 서비스 약관·개인정보 처리방침이 적용될 수 있습니다. 민감한 건강정보는 꼭 필요한 범위에서만 작성해 주세요.
+        </p>
       </section>
     </main>
   );

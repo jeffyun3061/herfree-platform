@@ -256,7 +256,7 @@ function WritePostForm() {
     : privateMeta
       ? selectedBoard?.boardType === 'INQUIRY'
         ? '문의·건의·신고 내용을 자세히 적어 주세요. 운영팀만 전체 내용을 확인합니다.'
-        : '상담하고 싶은 내용을 편하게 적어 주세요. 관리자만 열람할 수 있습니다.'
+        : '서비스 이용·운영 관련 문의를 적어 주세요. 의료 진단·처방·치료 상담은 제공하지 않습니다.'
       : selectedBoard?.boardType === 'QUESTION'
         ? '궁금한 점을 구체적으로 적어 주세요. 다른 회원들이 댓글로 답해 줄 수 있습니다.'
         : '같은 경험을 가진 사람들에게 하고 싶은 이야기를 편하게 적어주세요. 담담하게, 솔직하게.';
@@ -480,4 +480,3 @@ export function CommunityWriteContainer() {
     </Suspense>
   );
 }
-

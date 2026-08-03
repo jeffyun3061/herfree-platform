@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>03. 개인정보 흐름도</title>
+  <link rel="stylesheet" href="_styles.css" />
+</head>
+<body>
+
+<h1>개인정보 처리 흐름</h1>
+<p class="meta">Herfree · AWS 한국(서울) · 2026년 7월</p>
+
+<h2>1. 회원가입 · 로그인</h2>
+<div class="flow">[회원 브라우저]
+    │ HTTPS
+    ▼
+[Herfree 웹 · AWS Amplify]
+    │ API (HTTPS)
+    ▼
+[Herfree API · AWS EC2]
+    │
+    ├─► [RDS MySQL]  이메일, 비밀번호(해시), 닉네임, 동의 이력
+    │
+    └─► [OAuth] 카카오·네이버·구글 — 인증 후 provider ID만 RDS 저장
+
+소셜 로그인: 카카오/네이버/구글에서 받은 이메일·이름은 Herfree DB에 별도 저장하지 않음</div>
+
+<h2>2. 개인 일지 (민감정보)</h2>
+<div class="flow">[회원] 일지 입력
+    │ HTTPS · 로그인 JWT
+    ▼
+[API] 본인 user_id 검증 → 타인 접근 404
+    ▼
+[RDS] journal_records 저장 (메모 포함)
+    │
+    └─ 운영자: 개별 일지 원문 조회 API 없음 (건수·익명 집계만)</div>
+
+<h2>3. 커뮤니티 · 사진</h2>
+<div class="flow">[회원] 게시글·댓글·사진
+    ▼
+[RDS] posts, comments, post_images 메타
+[S3]  게시글 사진 파일 (비공개 버킷, API 경유 조회)
+
+비공개 게시판(운영문의·1:1상담·비밀사연): 작성자 + 운영자(관리자)만 열람</div>
+
+<h2>4. 건강정보 통계 (선택)</h2>
+<div class="flow">[선택 동의 회원] 일지 선택값만
+    ▼
+[집계] 20명 미만 → 공개 안 함 · 메모·게시글 제외
+    ▼
+[서비스 개선·익명 통계] (개인 식별 불가 형태)</div>
+
+<h2>5. 비밀번호 재설정</h2>
+<div class="flow">[회원] 이메일 입력
+    ▼
+[API] 재설정 토큰(해시) RDS 저장
+    ▼
+[SMTP] 이메일로 링크 발송 (Herfree → 회원 메일함)</div>
+
+<h2>6. 분석 · 로그</h2>
+<div class="flow">[브라우저] page_view, signup_completed 등 (허용 목록만)
+    ▼
+[RDS] app_event_logs — IP·UA 해시, 이메일·일지·게시글 본문 미포함
+
+[CloudWatch] 서버 접근·오류 로그 — 비밀번호·토큰·일지 원문 미기록</div>
+
+<h2>7. 회원 탈퇴</h2>
+<div class="flow">[회원] 마이페이지 탈퇴
+    ▼
+[RDS] 일지 전 삭제 · 계정 비식별 · OAuth 연결 삭제
+[RDS] 게시글·댓글 익명 처리
+[S3]  해당 회원 게시글 사진 삭제</div>
+
+<h2>8. 외부 (회원 데이터 저장 없음)</h2>
+<table>
+  <tr><th>Gabia</th><td>DNS(도메인 연결)만</td></tr>
+  <tr><th>카카오 오픈채팅</th><td>외부 링크 — Herfree 밖 상담</td></tr>
+</table>
+
+<div class="footer">Herfree · 개인정보 흐름도 · 기술팀 작성</div>
+</body>
+</html>

@@ -18,7 +18,7 @@
     "e2e": "playwright test",
     "e2e:staging": "playwright test --project=chromium",
     "e2e:staging:smoke": "playwright test --project=chromium --grep \"release smoke\"",
-    "e2e:staging:mutation": "playwright test e2e/bff-session.spec.ts --project=chromium"
+    "e2e:staging:mutation": "playwright test e2e/bff-session.spec.ts e2e/release.spec.ts --project=chromium --grep \"staging data flow\""
   },
   "dependencies": {
     "next": "^15.5.21",
@@ -42,6 +42,11 @@
     "vitest": "^3.2.6"
   },
   "overrides": {
+    "eslint": {
+      "minimatch": {
+        "brace-expansion": "1.1.17"
+      }
+    },
     "form-data": ">=4.0.6",
     "postcss": "^8.5.10",
     "sharp": "0.35.1"

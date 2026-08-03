@@ -15,6 +15,37 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  release-scripts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate release shell scripts
+        run: |
+          set -euo pipefail
+          bash -n infra/scripts/*.sh
+          grep -q 'sslMode=VERIFY_IDENTITY' .env.staging.example
+          grep -q 'sslMode=VERIFY_IDENTITY' .env.prod.example
+          grep -q 'ADMIN_BOOTSTRAP_ENABLED=false' .env.staging.example
+          grep -q 'ADMIN_BOOTSTRAP_ENABLED=false' .env.prod.example
+          grep -q 'HEALTH_DATA_ENCRYPTION_KEY=' .env.staging.example
+          grep -q 'HEALTH_DATA_ENCRYPTION_KEY=' .env.prod.example
+          ! grep -q 'herfree/staging/app-config' scripts/setup-production-aws.ps1
+          ! grep -q 'herfree/staging/db-app' scripts/setup-production-aws.ps1
+          ! grep -q 'herfree/staging/smtp' scripts/setup-production-aws.ps1
+          grep -q 'check-staging-status.ps1.*-Strict' scripts/go-live-production.ps1
+          grep -q 'deploy-release.sh.*rollback' infra/scripts/rollback-release.sh
+          grep -q 'put-bucket-encryption' scripts/setup-production-aws.ps1
+          grep -q 'put-public-access-block' scripts/setup-production-aws.ps1
+          grep -q 'put-retention-policy' scripts/setup-production-aws.ps1
+          grep -q 'CONFIRM_RESTORE_DRILL.*YES' infra/scripts/restore-rds-drill.sh
+          grep -q -- '--no-publicly-accessible' infra/scripts/restore-rds-drill.sh
+          grep -q 'delete-db-instance' infra/scripts/restore-rds-drill.sh
+          grep -q 'static S3 credentials' infra/scripts/validate-release-env.sh
+          grep -q 'HEALTH_DATA_REKEY_ON_STARTUP' infra/scripts/validate-release-env.sh
+          grep -q 'ADMIN_ACCESS_ALLOWED_CIDRS' infra/scripts/validate-release-env.sh
+          grep -q 'AdminAccessGateFilter' backend/src/main/java/com/herfree/global/security/SecurityConfig.java
+
   secret-scan:
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -25,6 +56,8 @@ jobs:
           node-version: "20"
       - name: Reject committed secrets
         run: node scripts/check-secrets.mjs --tracked
+      - name: Reject sensitive logger arguments
+        run: node scripts/check-sensitive-logging.mjs
 
   backend:
     runs-on: ubuntu-latest
@@ -55,8 +88,11 @@ jobs:
         run: |
           set -euo pipefail
           ! git grep -n "logPasswordResetLink\|resetUrl=.*log\|readAllBytes" -- backend/src/main/java
-          ! git grep -n "0.0.0.0/0" -- . ':!docs/**' ':!.env.prod.example' ':!.github/**'
-          ! git grep -n "change_me_jwt_secret" -- . ':!.env.prod.example' ':!.github/**'
+          # Test fixtures and release validators intentionally mention rejected
+          # values. Scan shipped application/runtime source only; the dedicated
+          # secret and release-env checks cover fixtures and deployment scripts.
+          ! git grep -n "0.0.0.0/0" -- backend/src/main/java infra/nginx docker-compose.release.yml
+          ! git grep -n "change_me_jwt_secret" -- backend/src/main
 
   frontend:
     runs-on: ubuntu-latest

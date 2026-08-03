@@ -57,4 +57,15 @@ class ClientIpExtractorTest {
 
         assertThat(extractor.extract(request)).isEqualTo("2001:db8::10");
     }
+
+    @Test
+    @DisplayName("관리자 CIDR 게이트는 literal IP만 허용한다")
+    void matchesAnyCidr_rejectsHostnameAndAcceptsConfiguredRange() {
+        ClientIpExtractor extractor = new ClientIpExtractor(
+                new ForwardedHeaderProperties("127.0.0.1/32"));
+
+        assertThat(extractor.matchesAnyCidr("10.20.3.4", "10.20.0.0/16")).isTrue();
+        assertThat(extractor.matchesAnyCidr("10.21.3.4", "10.20.0.0/16")).isFalse();
+        assertThat(extractor.matchesAnyCidr("admin.example", "10.20.0.0/16")).isFalse();
+    }
 }

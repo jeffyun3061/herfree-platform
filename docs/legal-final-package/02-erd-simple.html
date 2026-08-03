@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>02. ERD 간단 버전</title>
+  <link rel="stylesheet" href="_styles.css" />
+</head>
+<body>
+
+<h1>Herfree 데이터 구조 (간단 ERD)</h1>
+<p class="meta">법률 검토용 요약 · 2026년 7월 · MySQL 8 (AWS RDS 서울)</p>
+
+<div class="note">실명·주민번호는 수집하지 않습니다. 이메일·닉네임·게시글·일지·OAuth 연결 ID가 주요 개인정보입니다.</div>
+
+<h2>1. 회원 · 인증</h2>
+<table>
+  <tr><th>users</th><td>이메일, 비밀번호(암호화), 역할, 계정상태(ACTIVE/SUSPENDED/DELETED)</td></tr>
+  <tr><th>user_profiles</th><td>닉네임, 프로필 이미지, 자기소개</td></tr>
+  <tr><th>user_oauth_accounts</th><td>카카오·네이버·구글 provider + provider_user_id</td></tr>
+  <tr><th>user_consent_agreements</th><td>약관·처리방침·민감정보·14세·마케팅 동의 이력</td></tr>
+  <tr><th>health_statistics_consents</th><td>건강정보 통계 선택 동의·철회 이력</td></tr>
+</table>
+
+<h2>2. 커뮤니티</h2>
+<table>
+  <tr><th>boards</th><td>게시판 종류(공지, 자유, 증상, 비공개 등)</td></tr>
+  <tr><th>posts</th><td>제목, 본문, 작성자, 익명 여부, 상태(ACTIVE/HIDDEN/DELETED)</td></tr>
+  <tr><th>comments</th><td>댓글, 작성자, 익명 여부</td></tr>
+  <tr><th>post_images</th><td>게시글 첨부 사진 → S3 저장</td></tr>
+  <tr><th>reports</th><td>신고 (게시글·댓글·회원)</td></tr>
+  <tr><th>reactions</th><td>공감 등 반응</td></tr>
+</table>
+
+<h2>3. 개인 일지 (민감정보)</h2>
+<table>
+  <tr><th>journal_records</th><td>증상, 전조, 유발, 투약, 수면, 스트레스, 기분, 영양제·운동, 메모 — user_id 연결</td></tr>
+</table>
+
+<h2>4. 정보 콘텐츠 · 기타</h2>
+<table>
+  <tr><th>contents</th><td>칼럼 (운영자 등록)</td></tr>
+  <tr><th>videos</th><td>유튜브 URL·메타정보</td></tr>
+  <tr><th>products</th><td>외부 구매 링크 (1차 MVP)</td></tr>
+  <tr><th>app_event_logs</th><td>행동 이벤트, IP·UA 해시 (원문 아님)</td></tr>
+  <tr><th>admin_audit_logs</th><td>관리자 조작 감사</td></tr>
+</table>
+
+<h2>5. 관계 요약 (텍스트)</h2>
+<div class="flow">users 1 ── 1 user_profiles
+users 1 ── N user_oauth_accounts
+users 1 ── N user_consent_agreements / health_statistics_consents
+users 1 ── N journal_records          ← 민감정보, 본인만 접근
+users 1 ── N posts / comments
+posts 1 ── N post_images              → AWS S3
+boards 1 ── N posts</div>
+
+<h2>6. 저장 위치</h2>
+<p class="fact">실서비스 회원·일지·게시글 데이터: AWS RDS·S3 (ap-northeast-2, 서울)</p>
+
+<div class="footer">Herfree · ERD 간단 버전 · docs/erd.md 기준 요약</div>
+</body>
+</html>

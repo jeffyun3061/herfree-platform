@@ -201,6 +201,10 @@ public class DemoDataSeedRunner implements ApplicationRunner {
         if (!properties.enabled()) {
             return;
         }
+        if (properties.resolvedPassword().isBlank()) {
+            log.error("Demo seed is enabled but DEMO_PASSWORD is empty; refusing to create local accounts");
+            return;
+        }
         if (userRepository.findByEmail(DEMO_MARKER_EMAIL).isPresent()) {
             if (properties.syncExisting()) {
                 syncDemoUserPasswords();

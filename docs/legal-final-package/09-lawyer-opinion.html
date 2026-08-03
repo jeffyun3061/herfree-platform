@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>09. 법률 검토 의견서 (작성본)</title>
+  <link rel="stylesheet" href="_styles.css" />
+  <style>
+    .checked { font-weight: bold; color: #0b3b36; }
+    .verdict { background: #fff8e6; border: 2px solid #c9a000; padding: 5mm 6mm; margin: 5mm 0; font-size: 11pt; }
+    .verdict strong { color: #8a6d00; }
+    .warn { background: #fff0f0; border-left: 3px solid #c44; padding: 3mm 4mm; margin: 4mm 0; font-size: 9pt; }
+    .item .q::before { content: "▸ "; color: #0b3b36; }
+    .fix .text { color: #333; }
+  </style>
+</head>
+<body>
+
+<div class="cover">
+  <h1>Herfree 법률 검토 의견서<br/>(체크리스트 작성본)</h1>
+  <p class="sub">herpfree.co.kr · 검토 기준일 2026년 7월 28일</p>
+  <div class="box">
+    <strong>검토 범위</strong><br/>
+    제출 패키지(체크리스트·ERD·흐름도·약관·처리방침·관리자 권한) 및 기술팀 설명 자료<br/><br/>
+    <strong>검토 관점</strong><br/>
+    IT·플랫폼·개인정보보호법 중심 1차 실무 검토 (의료분쟁·세무·상표 등은 별도)<br/><br/>
+    <div class="warn">
+      본 문서는 AI가 IT·개인정보 실무 관점에서 작성한 <strong>사전 검토 시뮬레이션</strong>입니다.
+      변호사·법률 자문 계약을 대체하지 않으며, 실제 소송·과징금·행정 지도에 대한 확답이 아닙니다.
+      최종 의사결정 전 반드시 대한변협 등록 변호사의 서명·날인 의견서를 받으십시오.
+    </div>
+  </div>
+</div>
+
+<div class="verdict">
+  <strong>■ 운영(공개 배포) 판단: 조건부 가능</strong><br/><br/>
+  서비스 <strong>모델 자체</strong>(익명 건강 커뮤니티 + 본인 일지, 의료행위·결제·AI 진료 없음)는 위법으로 보기 어렵습니다.<br/>
+  다만 <strong>현재 약관·처리방침·고지·연령 확인·운영정책이 실제 기능과 어긋나거나 미비</strong>하여,
+  <strong>P0 5건을 반영하기 전 herpfree.co.kr 전면 공개는 권하지 않습니다.</strong><br/>
+  P0 반영 후 <strong>제한적·단계적 오픈(베타 공지 포함)</strong>은 가능하다고 봅니다. 예상 소요: 문서·고지 중심 1~2주.
+</div>
+
+<div class="section">
+  <h1>A. 서비스 전체</h1>
+  <div class="item"><div class="q">현재 서비스 구조 그대로 배포 가능한가?</div><div class="ans"><span class="checked">☑ 조건부</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">기능 구조는 가능. 문서·고지 P0 미반영 시 불가에 가깝게 판단.</span></div></div>
+  <div class="item"><div class="q">의료법, 개인정보보호법 및 서비스 운영 관련 법령상 문제가 없는가?</div><div class="ans"><span class="checked">☑ 조건부</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">의료행위 오인만 지속 고지하면 의료법 리스크는 관리 가능. 개정 PIPA(민감정보·동의·파기) 및 플랫폼 고지 의무가 핵심.</span></div></div>
+  <div class="item"><div class="q">「의료행위가 아닌 정보 제공 및 커뮤니티 서비스」 구조로 충분한가?</div><div class="ans"><span class="checked">☑ 가능</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">진단·처방·개별 처方·원격진료 유도 없음. 칼럼·유튜브에 「참고용·전문의 상담 권고」 유지.</span></div></div>
+  <div class="item"><div class="q">오픈 전 반드시 수정·삭제해야 하는 기능이 있는가?</div><div class="ans"><span class="checked">☑ 없음</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">기능 삭제보다 약관·처리방침·고지·운영정책 정합이 우선. 관리자 게시글 수정은 유지 가능하나 약관 반영 필수.</span></div></div>
+  <div class="item"><div class="q">오픈 전 반드시 추가해야 하는 약관·고지·운영정책이 있는가?</div><div class="ans"><span class="checked">☑ 있음</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">커뮤니티 운영정책(신고·금지행위·사진·정지), 사이트 하단 운영자 고지, 처리방침·약관 보완 필수.</span></div></div>
+  <div class="item"><div class="q">사업자등록 전 개인 명의 운영 · 전자상거래법 신고</div><div class="ans"><span class="checked">☑ 조건부</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">현재 유료·자체 판매 없음 → 통신판매업 신고 대상 아님. 다만 정보통신망 이용촉진 및 정보보호 등에 관한 법률상 <strong>영리 목적 웹서비스 운영자 표시</strong>(상호·연락처 등)는 사업자등록 전에도 필요. 사업자등록은 수익·광고·제휴 발생 시 검토.</span></div></div>
+  <div class="item"><div class="q">현재 그대로 herpfree.co.kr 공개 배포 가능한가?</div><div class="ans"><span class="checked">☑ 조건부</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">P0 완료 전 공개 배포 비권고. 완료 후 공개 가능.</span></div></div>
+</div>
+
+<div class="section">
+  <h1>B. 회원가입 · 연령 · 인증</h1>
+  <div class="item"><div class="q">회원가입 방식이 적절한가?</div><div class="ans"><span class="checked">☑ 가능</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">이메일·OAuth·필수 동의 구조 적절.</span></div></div>
+  <div class="item"><div class="q">이메일·닉네임만 수집 — 최소수집</div><div class="ans"><span class="checked">☑ 가능</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">가입 단계 최소수집 원칙 충족. 일지·게시는 이용 과정 수집으로 별도 동의로 커버됨.</span></div></div>
+  <div class="item"><div class="q">소셜로그인 구조</div><div class="ans"><span class="checked">☑ 조건부</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">provider ID만 저장은 적절. 처리방침에 OAuth 위탁·제3자(카카오·네이버·구글) 명칭·목적·보관 기간 기재 필요(P0).</span></div></div>
+  <div class="item"><div class="q">14세 미만 가입 처리 (현재 체크만)</div><div class="ans"><span class="checked">☑ 조건부</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">민감정보(건강) 처리 서비스에서 체크만은 취약. P0: ① 만 14세 이상만 가입(연령 확인 문구 강화) 또는 ② 14세 미만 시 법정대리인 동의 절차. 실무상 ①이 단순.</span></div></div>
+  <div class="item"><div class="q">성인(만 19세)만 가입이 더 적절한가?</div><div class="ans"><span class="checked">☑ 아니오</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">필수는 아님. 14세 이상 + 민감정보 동의로도 가능하나 연령 검증 강화는 필요.</span></div></div>
+  <div class="item"><div class="q">본인인증 필요 여부</div><div class="ans"><span class="checked">☑ 불필요</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">MVP 단계 필수 아님. 분쟁·재가입 남용 증가 시 P1에서 검토.</span></div></div>
+  <div class="item"><div class="q">필수·선택 동의 구조</div><div class="ans"><span class="checked">☑ 가능</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">민감정보·통계·마케팅 분리 적절. 서버 검증 유지.</span></div></div>
+  <div class="item"><div class="q">동의 이력(버전·시각)</div><div class="ans"><span class="checked">☑ 가능</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">append-only 이력 적절. 약관 개정 시 재동의 프로세스는 P0(약관 조항).</span></div></div>
+</div>
+
+<div class="section">
+  <h1>C. 개인정보 · 처리방침 · 이용약관</h1>
+  <div class="item"><div class="q">AWS 서울 저장 · 위탁 고지</div><div class="ans"><span class="checked">☑ 조건부</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">국내 저장 적절. 처리방침에 AWS(Amazon Web Services) 위탁 업무·국가(Republic of Korea) 명시 필요(P0).</span></div></div>
+  <div class="item"><div class="q">수집 항목 적절성</div><div class="ans"><span class="checked">☑ 가능</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">목적 대비 합리적.</span></div></div>
+  <div class="item"><div class="q">개인정보처리방침</div><div class="ans"><span class="checked">☑ 수정 필요</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">P0. ①운영자 일지 접근 문구↔실제 불일치 ②위탁(AWS·OAuth·SMTP) ③보호책임자·연락처 ④항목별 보관기간 ⑤수사·법원 요청 ⑥약관 변경·동의 철회 절차 보강.</span></div></div>
+  <div class="item"><div class="q">이용약관</div><div class="ans"><span class="checked">☑ 수정 필요</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">P0. 계정 정지·게시물 숨김·삭제·운영자 수정, 신고·분쟁, 약관 변경, 서비스 중단·종료, 면책 범위 보강. 현재 6조는 MVP에 부족.</span></div></div>
+  <div class="item"><div class="q">OAuth·SMTP 위탁 고지</div><div class="ans"><span class="checked">☑ 조건부</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">처리방침 보완 전까지 불충분.</span></div></div>
+  <div class="item"><div class="q">접속·행동 로그(IP 해시)</div><div class="ans"><span class="checked">☑ 조건부</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">해시 처리는 방향 적절. 보관 기간·파기를 처리방침에 구체화(P0).</span></div></div>
+  <div class="item"><div class="q">보관기간 설정</div><div class="ans"><span class="checked">☑ 조건부</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">탈퇴 즉시 파기 원칙 OK. 로그·백업·익명 게시글 보관 기간 문서화 필요(P1).</span></div></div>
+  <div class="item"><div class="q">보호책임자 지정</div><div class="ans"><span class="checked">☑ 예</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">개인정보 처리 시 지정·공개 권장(사실상 P0). 성명·연락처 처리방침·푸터 반영.</span></div></div>
+  <div class="item"><div class="q">문의 이메일만 운영</div><div class="ans"><span class="checked">☑ 가능</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">MVP 규모에서 가능. 처리 기한(예: 10일) 내부 기준 권장.</span></div></div>
+  <div class="item"><div class="q">운영자 정보 공개 범위</div><div class="ans"><span class="checked">☑ 조건부</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">P0. 푸터·처리방침에 운영자(상호 또는 성명)·연락처·호스팅 사업자. 사업자 미등록 시 「개인」 표시 + 주소(통신판매 아닌 정보제공자 고지).</span></div></div>
+  <div class="item"><div class="q">해외 거주자 가입·접속</div><div class="ans"><span class="checked">☑ 조건부</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">국내 법 우선·서울 저장이면 MVP는 가능. 약관에 준거법(대한민국)·EU 타깃 아님 명시 권장(P1). GDPR 전면 대응은 불필요(현 단계).</span></div></div>
+  <div class="item"><div class="q">약관·처리방침 변경 공지</div><div class="ans"><span class="checked">☑ 수정 필요</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">P0. 시행 7일 전 공지·중요 변경 시 재동의 또는 거부·탈퇴권 조항 추가.</span></div></div>
+</div>
+
+<div class="section">
+  <h1>D. 민감정보 · 개인 일지</h1>
+  <div class="item"><div class="q">현재 구조 가능 여부</div><div class="ans"><span class="checked">☑ 조건부</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">별도 필수 동의 + 본인 열람 + 탈퇴 삭제면 원칙 OK. 처리방침 정합 후 가능.</span></div></div>
+  <div class="item"><div class="q">서버 저장</div><div class="ans"><span class="checked">☑ 가능</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">클라우드 저장 자체 불법 아님. 동의·기술·접근통제가 관건.</span></div></div>
+  <div class="item"><div class="q">운영자 개별 원문 미열람</div><div class="ans"><span class="checked">☑ 가능</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">프라이버시·신뢰 측면 유리. 처리방침 문구를 실제와 일치시킬 것.</span></div></div>
+  <div class="item"><div class="q">처리방침 「운영자 접근」 문구</div><div class="ans"><span class="checked">☑ 수정 필요</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">「일반적으로 운영자는 개별 일지 원문에 접근하지 않으며, 법령·수사기관 적법 요청·시스템 장애 복구 등 예외」 형태로 수정.</span></div></div>
+  <div class="item"><div class="q">입력 가능·자제 권장 구분</div><div class="ans"><span class="checked">☑ 확인</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">일지·커뮤니티에 「실명·주소·연락처·주민번호 입력 금지」 UI 안내 권장(P1).</span></div></div>
+  <div class="item"><div class="q">메모(자유 입력) 저장</div><div class="ans"><span class="checked">☑ 가능</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">동의 범위 내 가능. 과도한 식별정보 입력 자제 안내.</span></div></div>
+  <div class="item"><div class="q">암호화 필요 항목</div><div class="ans"><span class="checked">☑ 확인</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">비밀번호 해시(현행) 필수. 일지 DB 필드 암호화는 P1 권장(법적 필수까지는 아님, 건강정보이므로 권장).</span></div></div>
+  <div class="item"><div class="q">민감정보 별도 필수 동의</div><div class="ans"><span class="checked">☑ 가능</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">적절. 동의 거부 시 가입 불가도 OK.</span></div></div>
+  <div class="item"><div class="q">탈퇴 시 일지 즉시 삭제</div><div class="ans"><span class="checked">☑ 가능</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">적절. 백업·로그 잔존은 P1에서 기간 정리.</span></div></div>
+  <div class="item"><div class="q">수사기관·법원 요청 시 제공 범위</div><div class="ans"><span class="checked">☑ 조건부</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">적법한 영장·공문 요청 시 이메일·접속기록·게시글·내부 ID 제공 가능. 일지는 본인 동의·수사 필요성에 따라 제한적 제공. 내부 대응 SOP·처리방침 기재(P0).</span></div></div>
+</div>
+
+<div class="section">
+  <h1>E. 건강정보 통계</h1>
+  <div class="item"><div class="q">통계 구조 활용</div><div class="ans"><span class="checked">☑ 가능</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">선택 동의·최소 필드·k-익명(20명) 적절. 현 구조 유지.</span></div></div>
+  <div class="item"><div class="q">추가 동의</div><div class="ans"><span class="checked">☑ 불필요</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">현행 선택 동의·처리방침 §7로 충분.</span></div></div>
+  <div class="item"><div class="q">향후 연구·AI·제휴</div><div class="ans"><span class="checked">☑ 예</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">별도 동의·법률 검토 필수. 처리방침에 이미 배제 명시되어 있어 방향 양호.</span></div></div>
+</div>
+
+<div class="section">
+  <h1>F. 커뮤니티 · 게시판</h1>
+  <div class="item"><div class="q">카테고리 구성</div><div class="ans"><span class="checked">☑ 가능</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">주제별 분리 적절. 「제품 후기」는 광고·약사법 리스크 — 운영정책에 광고성 표시·허위 후기 금지(P1).</span></div></div>
+  <div class="item"><div class="q">증상·경험 자유 작성</div><div class="ans"><span class="checked">☑ 조건부</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">가능. 단 타인·의료인·기관 실명·연락처 노출 금지 규칙 필요.</span></div></div>
+  <div class="item"><div class="q">댓글 치료법·약 추천 관리</div><div class="ans"><span class="checked">☑ 확인</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">「개인 경험 공유, 처방·용량 권고 금지」 운영정책 + 신고·숨김.</span></div></div>
+  <div class="item"><div class="q">제품 후기 — 표시광고법·약사법</div><div class="ans"><span class="checked">☑ 조건부</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">대가 후기·제조사 협찬 시 표시 의무. 현재는 UGC 경험담 수준 — 고지·모니터링.</span></div></div>
+  <div class="item"><div class="q">신고·숨김·삭제 기준</div><div class="ans"><span class="checked">☑ 수정 필요</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">약관·운영정책에 구체화(P0).</span></div></div>
+  <div class="item"><div class="q">회원 정지·영구정지·삭제</div><div class="ans"><span class="checked">☑ 수정 필요</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">구현(1·7·30·영구) 대비 약관 공백. 정지 사유·절차·이의(P0).</span></div></div>
+  <div class="item"><div class="q">신고 처리 기간·절차</div><div class="ans"><span class="checked">☑ 필요</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">법적 필수까지는 MVP에서 모호하나, 플랫폼 신뢰·분쟁 예방 위해 「영업일 3~7일 내 1차 조치」 등 운영정책 권장(P1).</span></div></div>
+  <div class="item"><div class="q">운영자 게시글 수정 vs 삭제만</div><div class="ans"><span class="checked">☑ 조건부</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">불법·개인정보·명백한 오인 정도만 수정 허용, 감사로그·「운영자에 의해 편집됨」 표시·약관 명시(P0). 무단 의미 변경 금지.</span></div></div>
+  <div class="item"><div class="q">비공개 3종 운영·고지</div><div class="ans"><span class="checked">☑ 조건부</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">작성 시 「운영자 열람 가능」 고지 필요(P0). 1:1 상담은 「의료 상담 아님」 재고지.</span></div></div>
+  <div class="item"><div class="q">탈퇴 후 익명 처리</div><div class="ans"><span class="checked">☑ 가능</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">커뮤니티 연속성·법적 분쟁 대비 적절. 삭제 요청권은 별도 문의 처리.</span></div></div>
+  <div class="item"><div class="q">내부 작성자 ID 보관</div><div class="ans"><span class="checked">☑ 가능</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">신고·법적 요청 대응 목적 정당. 처리방침에 관리 목적 명시.</span></div></div>
+  <div class="item"><div class="q">병원·의사·제품명 언급</div><div class="ans"><span class="checked">☑ 조건부</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">사실 기반 경험담 허용 가능. 허위·비방·광고성은 제한. 의료인·기관 명예훼손 주의.</span></div></div>
+  <div class="item"><div class="q">명예훼손·허위·개인정보 노출 — 운영자 책임</div><div class="ans"><span class="checked">☑ 확인</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">온라인 플랫폼: 신고 접수 후 조치·삭제(「게시중단」) 의무 인지. 약관·운영정책 반영.</span></div></div>
+</div>
+
+<div class="section">
+  <h1>G. 사진 업로드</h1>
+  <div class="item"><div class="q">사진 업로드 운영</div><div class="ans"><span class="checked">☑ 조건부</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">가능. 금지·주의 사항을 운영정책·업로드 안내에 명시.</span></div></div>
+  <div class="item"><div class="q">피부 증상 사진</div><div class="ans"><span class="checked">☑ 조건부</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">익명 커뮤니티 특성상 허용 가능. 「진단 목적 아님」·과도한 노출 자제 안내.</span></div></div>
+  <div class="item"><div class="q">의료기록·처방전·검사결과 금지</div><div class="ans"><span class="checked">☑ 예</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">적절. 주민번호·실명 포함 가능성 높아 금지 권고.</span></div></div>
+  <div class="item"><div class="q">얼굴 식별 가능 사진</div><div class="ans"><span class="checked">☑ 조건부</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">본인 얼굴: 가능하나 권장하지 않음. 타인 얼굴: 동의 없는 업로드 금지(P1 운영정책). 초상권·개인정보 리스크.</span></div></div>
+</div>
+
+<div class="section">
+  <h1>H. 정보 제공</h1>
+  <div class="item"><div class="q">칼럼 제공</div><div class="ans"><span class="checked">☑ 조건부</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">운영자·CREATOR 작성, 출처 표기, 「의료행위·진단 아님」 면책 유지.</span></div></div>
+  <div class="item"><div class="q">유튜브 임베드</div><div class="ans"><span class="checked">☑ 가능</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">임베드 자체 문제 없음. 의료 광고성 채널 선별 권장.</span></div></div>
+  <div class="item"><div class="q">의료광고·의료행위 오인</div><div class="ans"><span class="checked">☑ 조건부</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">푸터·칼럼 상단 면책 유지. 「치료 효과 보장」 표현 금지.</span></div></div>
+  <div class="item"><div class="q">추가 면책문구</div><div class="ans"><span class="checked">☑ 필요</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">일지·커뮤니티 입력 화면 짧은 고지 1줄 권장(P1).</span></div></div>
+  <div class="item"><div class="q">향후 번역·요약 제공</div><div class="ans"><span class="checked">☑ 필요</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">도입 전 별도 검토. 저작권·의학정보 정확성·2차 의료 오인 리스크.</span></div></div>
+</div>
+
+<div class="section">
+  <h1>I. 외부 연동</h1>
+  <div class="item"><div class="q">카카오 오픈채팅 고지</div><div class="ans"><span class="checked">☑ 필요</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">Herfree 밖 서비스임·개인정보 Herfree 미적용 고지(P1).</span></div></div>
+  <div class="item"><div class="q">소셜 로그인</div><div class="ans"><span class="checked">☑ 조건부</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">C절 위탁 고지와 동일.</span></div></div>
+</div>
+
+<div class="section">
+  <h1>J. 회원 탈퇴 · 서비스 종료</h1>
+  <div class="item"><div class="q">회원정보 삭제</div><div class="ans"><span class="checked">☑ 적절</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">비식별·일지 삭제 적절.</span></div></div>
+  <div class="item"><div class="q">게시글·댓글 익명화</div><div class="ans"><span class="checked">☑ 적절</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">적절. 처리방침에 명시되어 있음.</span></div></div>
+  <div class="item"><div class="q">사진 S3 삭제</div><div class="ans"><span class="checked">☑ 적절</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">적절.</span></div></div>
+  <div class="item"><div class="q">재가입 정책</div><div class="ans"><span class="checked">☑ 확인</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">영구 정지·탈퇴 후 동일 이메일 재가입 — 내부 기준 문서화(P1). 악용 방지.</span></div></div>
+  <div class="item"><div class="q">서비스 종료(폐업) 시 처리</div><div class="ans"><span class="checked">☑ 수정 필요</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">약관에 30일 전 공지·일지·개인정보 파기·게시글 처리 방침 추가(P1).</span></div></div>
+</div>
+
+<div class="section">
+  <h1>K. 운영 · 보안</h1>
+  <div class="item"><div class="q">백업·로그 보관기간</div><div class="ans"><span class="checked">☑ 확인</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">처리방침·내부 정책에 30~90일(로그)·1년(감사) 등 명시(P1).</span></div></div>
+  <div class="item"><div class="q">장기 미접속 회원</div><div class="ans"><span class="checked">☑ 확인</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">1년 미접속 시 사전 메일·휴면 처리 — P2. MVP 필수 아님.</span></div></div>
+  <div class="item"><div class="q">유출 시 법적 의무</div><div class="ans"><span class="checked">☑ 확인</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">PIPA상 통지·신고·기록 의무. 내부 유출 대응 절차서 권장(P1).</span></div></div>
+  <div class="item"><div class="q">관리자 MFA</div><div class="ans"><span class="checked">☑ 확인</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">건강·민감정보 플랫폼 — 오픈 후 3개월 내 MFA 도입 권장(P1). P0까지는 아님.</span></div></div>
+  <div class="item"><div class="q">현재 보안으로 오픈</div><div class="ans"><span class="checked">☑ 조건부</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">JWT·역할분리·일지 접근통제 양호. MFA·유출 대응 문서는 P1.</span></div></div>
+</div>
+
+<div class="section">
+  <h1>L. 저작권</h1>
+  <div class="item"><div class="q">타인 사진·콘텐츠 업로드</div><div class="ans"><span class="checked">☑ 확인</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">약관 제4조 보강 + 신고·삭제.</span></div></div>
+  <div class="item"><div class="q">유튜브 임베드·썸네일</div><div class="ans"><span class="checked">☑ 가능</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">플랫폼 제공 임베드 이용 일반적.</span></div></div>
+  <div class="item"><div class="q">칼럼 출처 표기</div><div class="ans"><span class="checked">☑ 확인</span></div><div class="fix"><span class="fix-label">의견:</span> <span class="text">인용·번역 시 출처·링크 필수(P1).</span></div></div>
+</div>
+
+<div class="section">
+  <h1>M. 최종 확인</h1>
+  <table>
+    <tr><th>운영자</th><td>개인 (사업자등록 없음 — 제출 자료 기준)</td></tr>
+    <tr><th>보호책임자</th><td>미지정 → P0에서 지정·공개</td></tr>
+    <tr><th>사업자등록</th><td>☑ 없음</td></tr>
+  </table>
+
+  <h2>배포 가능 여부</h2>
+  <p><span class="checked">☑ 조건부 가능</span>　　☐ 가능　　☐ 불가</p>
+
+  <h2>반드시 수정 (P0) — 오픈 전</h2>
+  <div class="p0"><span class="num">P0-1</span> <strong>개인정보처리방침 보완</strong> — AWS·OAuth·SMTP 위탁, 보호책임자, 보관·파기 기간, 운영자 일지 비접근(예외 포함), 수사·법원 요청, 약관 변경·동의</div>
+  <div class="p0"><span class="num">P0-2</span> <strong>이용약관 보완</strong> — 계정 정지(1·7·30·영구), 게시물 숨김·삭제·운영자 수정, 신고·분쟁, 약관 변경(7일 전 공지·중요 변경 재동의), 서비스 성격·면책</div>
+  <div class="p0"><span class="num">P0-3</span> <strong>사이트 운영자 고지</strong> — 푸터·처리방침에 운영자(성명 또는 상호)·연락처·호스팅(AWS). 정보통신망법상 표시</div>
+  <div class="p0"><span class="num">P0-4</span> <strong>14세 미만 방지 강화</strong> — 연령 확인 문구·가입 차단 정책 명확화(또는 법정대리인 동의 절차). 민감정보 서비스 필수</div>
+  <div class="p0"><span class="num">P0-5</span> <strong>커뮤니티·비공개 게시판 운영정책</strong> — 금지 콘텐츠, 신고·정지·운영자 수정 기준, 비공개 게시판 운영자 열람 고지, 사진(처방전·타인 얼굴) 규칙</div>
+
+  <h2>오픈 후 보완 (P1)</h2>
+  <ul>
+    <li>관리자 MFA · 개인정보 유출 대응 절차서</li>
+    <li>신고 처리 SLA(영업일 3~7일) · 재가입·영구정지 정책</li>
+    <li>서비스 종료 시 데이터 처리(약관 조항)</li>
+    <li>일지 DB 필드 암호화 · EXIF 제거(기술)</li>
+    <li>카카오 오픈채팅 외부 서비스 고지</li>
+    <li>로그·백업 보관 기간 처리방침 반영</li>
+  </ul>
+
+  <h2>권장 (P2)</h2>
+  <ul>
+    <li>장기 미접속 휴면·파기</li>
+    <li>해외 이용자 준거법·EU 비타깃 명시</li>
+    <li>사업자등록(수익화 시)</li>
+  </ul>
+
+  <h2>수정 필요 문서</h2>
+  <p>이용약관: <strong>전면 보완(조항 추가)</strong></p>
+  <p>개인정보처리방침: <strong>전면 보완</strong></p>
+  <p>추가 운영정책: <strong>커뮤니티·콘텐츠·신고·정지 (신규)</strong></p>
+  <p>추가 동의서: <strong>불필요(현행 유지)</strong></p>
+
+  <h2>최종 의견</h2>
+  <p>
+    Herfree는 <strong>불법 서비스가 아닙니다.</strong> 건강 관련 민감정보를 다루므로 일반 SNS보다
+    <strong>고지·동의·약관·운영정책의 정밀도</strong>가 요구됩니다. 기술 구현(본인 일지 접근통제, 탈퇴 삭제, 선택 통계)은
+    양호한 편이나, <strong>법률 문서와 실제 기능(정지·운영자 수정·비공개 열람)의 정합</strong>이 미흡합니다.
+    P0 5건은 대부분 <strong>문서·고지·푸터 수정</strong>으로 해결 가능하며, 코드 대규모 변경 없이 1~2주 내
+    「조건부 가능」→「가능」 전환이 현실적입니다.
+  </p>
+
+  <h2>추후 기능 추가 시 재검토 필요</h2>
+  <ul>
+    <li><strong>AI 상담·챗봇</strong> — 의료기기·의료법·민감정보 자동 처리 전면 검토</li>
+    <li><strong>결제·유료 멤버십</strong> — 전자상거래법·환불·사업자등록</li>
+    <li><strong>병원·의료기관 예약·연동</strong> — 의료법·제휴 계약</li>
+    <li><strong>건강데이터 연구·제3자 제공·AI 학습</strong> — 별도 동의·IRB·PIA 검토</li>
+    <li><strong>의학 논문·공공자료 번역·요약 자동화</strong> — 저작권·의료 정보 책임</li>
+    <li><strong>네이티브 앱·PWA·푸시</strong> — 추가 수집·권한·스토어 정책</li>
+  </ul>
+</div>
+
+<div class="footer">Herfree · 법률 검토 의견서(시뮬레이션) · 2026-07-28 · 법적 효력 없음 · 등록 변호사 확인 필수</div>
+</body>
+</html>

@@ -31,10 +31,52 @@ public class ClientIpExtractor {
         return remoteAddr;
     }
 
+    /** Returns true only when an already-extracted literal IP belongs to one of the configured CIDRs. */
+    public boolean matchesAnyCidr(String ip, String cidrs) {
+        if (!isValidIpLiteral(ip) || !isRestrictedCidrList(cidrs)) {
+            return false;
+        }
+        return Arrays.stream(cidrs.split(","))
+                .map(String::trim)
+                .filter(StringUtils::hasText)
+                .anyMatch(range -> ipMatchesRange(ip, range));
+    }
+
+    /** Validates a configured admin/proxy CIDR list without resolving hostnames. */
+    public static boolean isRestrictedCidrList(String cidrs) {
+        if (!StringUtils.hasText(cidrs)) {
+            return false;
+        }
+        return Arrays.stream(cidrs.split(","))
+                .map(String::trim)
+                .filter(StringUtils::hasText)
+                .allMatch(ClientIpExtractor::isRestrictedRange);
+    }
+
+    private static boolean isRestrictedRange(String range) {
+        if (!StringUtils.hasText(range)) {
+            return false;
+        }
+        if (!range.contains("/")) {
+            return isValidIpLiteral(range.trim());
+        }
+        String[] parts = range.split("/", 2);
+        if (!isValidIpLiteral(parts[0].trim())) {
+            return false;
+        }
+        try {
+            int prefixLength = Integer.parseInt(parts[1].trim());
+            int maxPrefix = parts[0].contains(":") ? 128 : 32;
+            return prefixLength > 0 && prefixLength <= maxPrefix;
+        } catch (NumberFormatException ignored) {
+            return false;
+        }
+    }
+
     private String firstValidForwardedIp(String forwardedFor) {
         return Arrays.stream(forwardedFor.split(","))
                 .map(String::trim)
-                .filter(this::isValidIpLiteral)
+                .filter(ClientIpExtractor::isValidIpLiteral)
                 .findFirst()
                 .orElse(null);
     }
@@ -52,12 +94,21 @@ public class ClientIpExtractor {
 
     private boolean ipMatchesRange(String ip, String range) {
         try {
+            if (!isValidIpLiteral(ip) || !isRestrictedRange(range.trim())) {
+                return false;
+            }
             InetAddress address = InetAddress.getByName(ip);
             if (!range.contains("/")) {
+                if (!isValidIpLiteral(range.trim())) {
+                    return false;
+                }
                 return address.equals(InetAddress.getByName(range));
             }
 
             String[] parts = range.split("/", 2);
+            if (!isValidIpLiteral(parts[0].trim())) {
+                return false;
+            }
             InetAddress network = InetAddress.getByName(parts[0].trim());
             int prefixLength = Integer.parseInt(parts[1].trim());
             byte[] addressBytes = address.getAddress();
@@ -78,9 +129,26 @@ public class ClientIpExtractor {
         }
     }
 
-    private boolean isValidIpLiteral(String value) {
+    private static boolean isValidIpLiteral(String value) {
+        if (!StringUtils.hasText(value)) {
+            return false;
+        }
+        String candidate = value.trim();
+        if (candidate.matches("\\d{1,3}(\\.\\d{1,3}){3}")) {
+            for (String octet : candidate.split("\\.")) {
+                if (Integer.parseInt(octet) > 255) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        // Avoid InetAddress resolving attacker-controlled hostnames from a
+        // forwarded header; only hexadecimal IPv6 literals are accepted.
+        if (!candidate.contains(":") || !candidate.matches("[0-9A-Fa-f:]+")) {
+            return false;
+        }
         try {
-            InetAddress.getByName(value);
+            InetAddress.getByName(candidate);
             return true;
         } catch (Exception ignored) {
             return false;

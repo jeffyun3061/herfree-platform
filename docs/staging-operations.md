@@ -265,6 +265,7 @@ staging Environment·Secrets Manager `herfree/staging/app-config` 에 반영할 
 | `CORS_ALLOWED_ORIGINS` | 위 origin (필요 시 API health 확인용 origin 추가) |
 | `PASSWORD_RESET_FRONTEND_BASE_URL` | 위 origin |
 | OAuth redirect | `https://develop.d2bcg3vnlv5hkh.amplifyapp.com/auth/callback/{kakao,google,naver}` |
+| `adminAccessAllowedCidrs` / `ADMIN_ACCESS_ALLOWED_CIDRS` | 운영자 VPN 또는 고정 관리망 CIDR. `0.0.0.0/0` 금지 |
 
 변경 후 `Release backend` (staging)로 API를 재배포한다. Amplify는 `develop` push 시 자동 빌드.
 

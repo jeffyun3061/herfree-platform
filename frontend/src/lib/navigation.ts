@@ -91,8 +91,8 @@ const MOBILE_TAB_ROOT_TITLES: Record<string, string> = {
   '/qna': 'FAQ',
   '/inquiry': '운영 문의',
   '/inquiry/write': '문의하기',
-  '/consult': '1:1 비밀상담',
-  '/consult/write': '상담 글쓰기',
+  '/consult': '상담문의',
+  '/consult/write': '문의 남기기',
 };
 
 export function getMobileTabRootTitle(pathname: string): string | null {

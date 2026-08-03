@@ -48,12 +48,12 @@
 
 | 영역 | 선택 |
 |------|------|
-| Backend | Java 17, Spring Boot 3.3, Spring Security, JPA, Flyway, MySQL 8 |
+| Backend | Java 17, Spring Boot 3.5.16, Spring Security, JPA, Flyway, MySQL 8 |
 | Frontend | Next.js App Router, TypeScript, Tailwind CSS |
 | 인증 | JWT Bearer |
 | 스토리지 | 게시글 이미지 AWS S3 (API 경유 업로드) |
 | CI | GitHub Actions — `./gradlew test`, `npm run lint && build` |
-| 배포(확정안) | Frontend Vercel · API+DB VPS Docker · [deployment.md](docs/deployment.md) |
+| 배포(기준안) | Frontend Amplify/Next.js · API EC2 · private RDS MySQL · [production-architecture.md](docs/production-architecture.md) |
 
 백엔드는 **도메인 단위 패키지**(`auth`, `user`, `post`, `journal`, `content`, `video` …) + `global`(보안·예외·공통). 프론트는 `domain/`(순수 타입·정책), `hooks/`, `components/` 분리.
 
@@ -67,7 +67,7 @@ herfree-platform/
 │   └── src/main/resources/db/migration/   # Flyway V1~
 ├── frontend/                # Next.js
 ├── docs/                    # 요구사항, API, ERD, ADR, 배포
-├── infra/scripts/           # VPS 배포·DB 백업 스크립트
+├── infra/scripts/           # AWS release 배포·검증·legacy 백업 스크립트
 ├── scripts/                 # 로컬 실행·데모용 PowerShell
 └── docker-compose.local.yml # 로컬 MySQL 8
 ```
@@ -113,8 +113,8 @@ cp backend/src/main/resources/application-local.yml.example \
 
 | | |
 |---|---|
-| 이메일 | `admin@herfree.local` |
-| 비밀번호 | `HerfreeAdmin01!` |
+| 이메일 | `ADMIN_EMAIL`에 직접 지정한 로컬 관리자 계정 |
+| 비밀번호 | `ADMIN_PASSWORD`에 직접 지정한 로컬 전용 값 |
 
 로그인 후 **정보 올리기** / **영상 등록** 탭에서 콘텐츠를 바로 등록할 수 있습니다.
 
@@ -132,7 +132,7 @@ Git·빌드·커밋은 **`C:\dev\herfree-platform`** 기준으로 합니다. One
 | [api-spec.md](docs/api-spec.md) | REST 엔드포인트 (커뮤니티·일지·admin) |
 | [erd.md](docs/erd.md) | 테이블·enum |
 | [convention.md](docs/convention.md) | 코딩·커밋 규칙 |
-| [deployment.md](docs/deployment.md) | Vercel + VPS + S3 배포 |
+| [deployment-aws.md](docs/deployment-aws.md) | AWS staging/production 배포 (RDS release 경로) |
 | [oauth-setup.md](docs/oauth-setup.md) | 카카오·구글·네이버 Dev/Prod OAuth 설정 |
 | [decision-log.md](docs/decision-log.md) | ADR (JWT, MySQL, S3 프록시 등) |
 | [CONTRIBUTING.md](docs/CONTRIBUTING.md) | 브랜치·PR |
@@ -140,6 +140,20 @@ Git·빌드·커밋은 **`C:\dev\herfree-platform`** 기준으로 합니다. One
 | [git-workflow.md](docs/git-workflow.md) | `develop`/`main` 브랜치·PR·GitHub 보호·배포 흐름 |
 | [health-data-security-standard.md](docs/health-data-security-standard.md) | 건강정보 보안·개인정보·DB·사고 대응 상위 기준 |
 | [go-live-checklist.md](docs/go-live-checklist.md) | 실서비스 production 배포 승인 체크리스트 |
+| [production-service-operations.md](docs/production-service-operations.md) | 실서비스 하네스·배포·로그·장애 대응 가이드 |
+| [beta-release-control-plane.md](docs/beta-release-control-plane.md) | 소규모 베타의 구조·데이터 통제·배포 승인·운영 지점 |
+| [production-security-controls.md](docs/production-security-controls.md) | production 보안 불변조건과 코드 검증 위치 |
+| [rds-restore-drill.md](docs/rds-restore-drill.md) | 승인형 private RDS 복구훈련과 RPO/RTO 증적 절차 |
+
+### 실서비스 검증 하네스
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\service-harness.ps1
+```
+
+하네스 결과는 `artifacts/service-harness/latest.md`에 기록되며, 실제 AWS 자격증명·staging 브라우저 검수·백업 복원·법률/운영 승인은 별도 release gate입니다.
+
+로컬 MySQL/API가 실행 중이면 `service-harness.ps1 -RunLocalSmoke`로 가입·일지 CRUD·삭제·집계 개인정보 smoke를 추가 실행할 수 있습니다.
 
 로컬에서 Swagger: `http://localhost:8080/swagger-ui.html` (기동 시)
 

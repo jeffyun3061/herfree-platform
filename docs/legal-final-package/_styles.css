@@ -1,0 +1,40 @@
+@page { size: A4; margin: 16mm 14mm; }
+* { box-sizing: border-box; }
+body {
+  font-family: "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+  font-size: 10.5pt;
+  line-height: 1.55;
+  color: #1a1a1a;
+  margin: 0;
+  padding: 0;
+}
+.cover { page-break-after: always; text-align: center; padding-top: 28mm; }
+.cover h1 { font-size: 20pt; color: #0b3b36; margin: 0 0 6mm; border: none; }
+.cover .sub { font-size: 11pt; color: #444; line-height: 1.7; }
+.cover .box { text-align: left; margin: 12mm auto 0; max-width: 150mm; background: #f7f9f8; padding: 5mm 6mm; border-left: 3px solid #0b3b36; font-size: 10pt; }
+h1 { font-size: 15pt; color: #0b3b36; margin: 0 0 3mm; padding-bottom: 2mm; border-bottom: 2px solid #0b3b36; }
+h2 { font-size: 12pt; color: #0b3b36; margin: 6mm 0 2mm; page-break-after: avoid; }
+h3 { font-size: 10.5pt; margin: 3mm 0 2mm; }
+.section { page-break-before: always; }
+.section:first-of-type { page-break-before: auto; }
+.meta { font-size: 9pt; color: #666; margin-bottom: 4mm; }
+.note { background: #f5f5f0; border-left: 3px solid #999; padding: 3mm 4mm; margin: 3mm 0; font-size: 9.5pt; }
+.fact { background: #f0f4f3; padding: 3mm 4mm; margin: 2mm 0 4mm; font-size: 9.5pt; }
+.item { margin: 0 0 4mm; padding: 3mm 0; border-bottom: 1px solid #e8e8e8; page-break-inside: avoid; }
+.item .q { margin-left: 6mm; text-indent: -6mm; }
+.item .q::before { content: "☐ "; font-size: 11pt; }
+.ans { margin: 2mm 0 0 6mm; font-size: 9.5pt; color: #333; }
+.ans span { display: inline-block; margin-right: 4mm; }
+.fix { margin: 2mm 0 0 6mm; font-size: 9.5pt; }
+.fix-label { color: #8a6d00; font-weight: bold; }
+.line { border-bottom: 1px solid #bbb; display: inline-block; min-width: 100mm; height: 4mm; }
+table { width: 100%; border-collapse: collapse; margin: 3mm 0; font-size: 9.5pt; }
+th, td { border: 1px solid #bbb; padding: 2mm 2.5mm; vertical-align: top; text-align: left; }
+th { background: #eef2f1; width: 28%; }
+ul { margin: 2mm 0; padding-left: 5mm; }
+li { margin-bottom: 1mm; }
+.flow { font-family: Consolas, monospace; font-size: 8.5pt; background: #fafafa; border: 1px solid #ddd; padding: 4mm; white-space: pre-wrap; line-height: 1.45; }
+.footer { margin-top: 8mm; font-size: 8.5pt; color: #888; text-align: center; border-top: 1px solid #ddd; padding-top: 2mm; }
+.blank { border-bottom: 1px solid #999; min-height: 6mm; margin: 2mm 0; }
+.p0 { margin: 3mm 0; }
+.p0 .num { font-weight: bold; color: #0b3b36; }

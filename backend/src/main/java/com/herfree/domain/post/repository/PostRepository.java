@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -22,6 +23,27 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     // 게시글 상세 조회 — 삭제/숨김 상태 게시글은 404로 처리하기 위해 status도 함께 조회한다
     Optional<Post> findByIdAndStatus(Long id, PostStatus status);
+
+    // 카운터는 엔티티 값을 읽고 다시 저장하지 않고 DB에서 바로 증가시켜 동시 요청 손실을 막는다.
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+            update Post p
+            set p.viewCount = p.viewCount + 1
+            where p.id = :postId and p.status = com.herfree.domain.post.entity.PostStatus.ACTIVE
+            """)
+    int incrementViewCount(@Param("postId") Long postId);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("update Post p set p.commentCount = p.commentCount + 1 where p.id = :postId")
+    int incrementCommentCount(@Param("postId") Long postId);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+            update Post p
+            set p.commentCount = case when p.commentCount > 0 then p.commentCount - 1 else 0 end
+            where p.id = :postId
+            """)
+    int decrementCommentCount(@Param("postId") Long postId);
 
     // 내 게시글 목록 조회에 사용 — 삭제된 글도 관리자 목적으로 조회할 수 있도록 상태를 파라미터로 받는다
     @EntityGraph(attributePaths = {"board", "user"})

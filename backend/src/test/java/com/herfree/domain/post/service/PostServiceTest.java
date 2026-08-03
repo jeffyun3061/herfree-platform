@@ -281,15 +281,14 @@ class PostServiceTest {
                 .build();
 
         given(postRepository.findByIdAndStatus(postId, PostStatus.ACTIVE)).willReturn(Optional.of(post));
+        given(postRepository.incrementViewCount(postId)).willReturn(1);
         given(userProfileRepository.findByUserId(userId)).willReturn(Optional.of(profile));
-
-        int viewCountBefore = post.getViewCount();
 
         // when
         postService.getPost(postId, userId);
 
-        // then — increaseViewCount() 도메인 메서드가 호출되었는지 viewCount 값으로 검증한다
-        assertThat(post.getViewCount()).isEqualTo(viewCountBefore + 1);
+        // then — 조회수는 DB 원자 UPDATE로 증가시켜 동시 요청의 증가분이 유실되지 않는다.
+        verify(postRepository).incrementViewCount(postId);
     }
 
     @Test
@@ -320,6 +319,7 @@ class PostServiceTest {
                 .build();
 
         given(postRepository.findByIdAndStatus(postId, PostStatus.ACTIVE)).willReturn(Optional.of(post));
+        given(postRepository.incrementViewCount(postId)).willReturn(1);
         given(userProfileRepository.findByUserId(authorId)).willReturn(Optional.of(profile));
 
         PostDetailResponse response = postService.getPost(postId, viewerId);

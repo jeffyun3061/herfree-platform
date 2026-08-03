@@ -101,7 +101,7 @@ Herfree는 건강·질병, 증상, 투약, 수면, 스트레스, 상담 내용�
 | 공개 건강 통계 | `CODE` | 선택 동의 회원만 집계하고, 서로 다른 사용자 20명 이상·항목별 5명 이상일 때만 공개하도록 구현·테스트 |
 | 건강 통계 동의 철회 | `CODE` | 별도 이력 테이블과 마이페이지 API를 사용하며 최신 철회 상태는 공개·관리자 집계에서 즉시 제외 |
 | DB 전송 암호화 | `BLOCK` | RDS CA 검증을 포함한 TLS JDBC 연결과 RDS TLS 강제 필요 |
-| 건강정보 DB 보호 | `DECISION` | RDS 저장 암호화는 필수. 일지 memo 등 필드 단위 KMS envelope 암호화 도입 범위 결정 필요 |
+| 건강정보 DB 보호 | `IMPLEMENTED / DECISION` | RDS 저장 암호화는 필수. 일지 `memo`는 AES-GCM field-level encryption과 staging 전용 re-key runner를 적용했다. 키 보관·교체·운영 승인 증적은 production 공개 전 필요 |
 | 자동 보존·파기 | `CODE` | 이벤트·reset token·감사 로그 파기 job과 탈퇴 즉시 비식별화 구현. 운영 보존기간 승인·실행 증거 필요 |
 | 사고 대응 체계 | `BLOCK` | 연락망, 권한, 72시간 타이머, 공지 초안, 모의훈련 기록 필요 |
 | refresh token 회전 | `ROADMAP` | 현재 access token을 sessionStorage에 저장. XSS 영향 축소를 위해 HttpOnly cookie 기반 회전 구조 검토 |

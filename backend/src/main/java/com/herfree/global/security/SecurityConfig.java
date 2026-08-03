@@ -31,6 +31,7 @@ public class SecurityConfig {
     private final org.springframework.web.cors.CorsConfigurationSource corsConfigurationSource;
     private final Environment environment;
     private final AdminAuditService adminAuditService;
+    private final AdminAccessGateFilter adminAccessGateFilter;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -130,6 +131,7 @@ public class SecurityConfig {
         });
 
         http
+                .addFilterBefore(adminAccessGateFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(authRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(adminAuditFilter, JwtAuthenticationFilter.class);

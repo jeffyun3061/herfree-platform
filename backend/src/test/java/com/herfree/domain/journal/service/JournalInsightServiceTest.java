@@ -79,14 +79,14 @@ class JournalInsightServiceTest {
     }
 
     @Test
-    void publicHomeStatsKeepsExistingHomeCounters() {
+    void publicHomeStatsKeepExistingHomeCounters() {
         given(userRepository.count()).willReturn(100L);
         given(journalRecordRepository.countDistinctConsentedUsersByRecordDate(any())).willReturn(7L);
 
         var response = journalInsightService.getPublicHomeStats();
 
-        assertThat(response.totalUsers()).isEqualTo(100);
         assertThat(response.usersRecordingToday()).isEqualTo(7);
+        assertThat(response.totalUsers()).isEqualTo(100);
     }
 
     @Test

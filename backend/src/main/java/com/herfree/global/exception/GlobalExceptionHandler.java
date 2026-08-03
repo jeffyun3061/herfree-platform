@@ -75,6 +75,16 @@ public class GlobalExceptionHandler {
                     ErrorCode.DUPLICATE_NICKNAME.getHttpStatus(),
                     ErrorResponse.of(ErrorCode.DUPLICATE_NICKNAME.getMessage()));
         }
+        if (normalized.contains("uk_reactions_user_target_type")) {
+            return jsonResponse(
+                    ErrorCode.DUPLICATE_REACTION.getHttpStatus(),
+                    ErrorResponse.of(ErrorCode.DUPLICATE_REACTION.getMessage()));
+        }
+        if (normalized.contains("uk_journal_user_date")) {
+            return jsonResponse(
+                    ErrorCode.CONFLICT.getHttpStatus(),
+                    ErrorResponse.of(ErrorCode.CONFLICT.getMessage()));
+        }
 
         log.error(
                 "Unhandled data integrity violation. failureType={}",

@@ -19,7 +19,7 @@ const SERVICE_LINKS = [
   { href: '/contents', label: '칼럼', description: '경험에서 나온 이야기' },
   { href: '/videos', label: '헤르프리 영상', description: '함께 보는 회복 이야기' },
   { href: '/qna', label: 'FAQ', description: '자주 묻는 질문' },
-  { href: '/consult', label: '1:1 비밀상담', description: '편하게 나누는 1:1' },
+  { href: '/consult', label: '상담문의', description: '서비스 이용·운영 문의' },
   { href: '/mypage', label: '마이페이지', description: '내 활동과 기록' },
 ] as const;
 

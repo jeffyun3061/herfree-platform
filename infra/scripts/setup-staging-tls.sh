@@ -50,7 +50,7 @@ install_nginx_config "${CONF_SRC}"
 nginx -t
 systemctl reload nginx
 
-certbot renew --quiet || true
+certbot renew --quiet
 
 nginx -t
 systemctl reload nginx

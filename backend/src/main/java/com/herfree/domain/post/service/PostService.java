@@ -245,7 +245,14 @@ public class PostService {
         UserRole viewerRole = resolveViewerRole(userId);
         PostVisibilityPolicy.assertReadable(post, userId, viewerRole);
 
-        post.increaseViewCount();
+        int updated = postRepository.incrementViewCount(postId);
+        if (updated != 1) {
+            throw new PostNotFoundException();
+        }
+        // 원자 UPDATE 뒤 다시 읽어 응답에도 실제 DB 조회수가 반영되게 한다.
+        post = postRepository.findByIdAndStatus(postId, PostStatus.ACTIVE)
+                .orElseThrow(PostNotFoundException::new);
+        PostVisibilityPolicy.assertReadable(post, userId, viewerRole);
 
         String nickname = userProfileRepository.findByUserId(post.getUser().getId())
                 .map(UserProfile::getNickname)

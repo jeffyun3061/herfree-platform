@@ -7,26 +7,43 @@ export type SessionCookieConfig = {
   csrfCookie: string;
 };
 
+const DEFAULT_SESSION_MAX_AGE_SECONDS = 60 * 60;
+const MAX_SESSION_MAX_AGE_SECONDS = 7 * 24 * 60 * 60;
+
+function normalizeSessionMaxAge(expiresIn: unknown): number {
+  if (typeof expiresIn !== 'number' || !Number.isFinite(expiresIn) || expiresIn <= 0) {
+    return DEFAULT_SESSION_MAX_AGE_SECONDS;
+  }
+  return Math.min(Math.max(Math.floor(expiresIn), 1), MAX_SESSION_MAX_AGE_SECONDS);
+}
+
 export function setSessionCookies(
   response: NextResponse,
   accessToken: string,
+  maxAge: number,
   config: SessionCookieConfig,
 ) {
   const common = {
     secure: config.production,
     sameSite: 'strict' as const,
     path: '/',
-    maxAge: 60 * 60,
+    maxAge,
   };
   response.cookies.set(config.accessCookie, accessToken, { ...common, httpOnly: true });
   response.cookies.set(config.csrfCookie, crypto.randomUUID(), { ...common, httpOnly: false });
 }
 
-export function clearSessionCookies(response: NextResponse, config: SessionCookieConfig) {
+export function clearSessionCookies(
+  response: NextResponse,
+  config: SessionCookieConfig,
+  clearBrowserStorage = true,
+) {
   const options = { secure: config.production, sameSite: 'strict' as const, path: '/', maxAge: 0 };
   response.cookies.set(config.accessCookie, '', { ...options, httpOnly: true });
   response.cookies.set(config.csrfCookie, '', { ...options, httpOnly: false });
-  response.headers.set('Clear-Site-Data', '"cache", "storage"');
+  if (clearBrowserStorage) {
+    response.headers.set('Clear-Site-Data', '"cache", "storage"');
+  }
 }
 
 export async function createSessionResponse(
@@ -50,6 +67,7 @@ export async function createSessionResponse(
   const accessToken = typeof payload.data?.accessToken === 'string'
     ? payload.data.accessToken
     : null;
+  const maxAge = normalizeSessionMaxAge(payload.data?.expiresIn);
 
   if (payload.data) {
     delete payload.data.accessToken;
@@ -60,6 +78,6 @@ export async function createSessionResponse(
   const response = NextResponse.json(payload, { status: backendResponse.status });
   response.headers.set('Cache-Control', 'private, no-store');
   response.headers.set('Pragma', 'no-cache');
-  if (accessToken) setSessionCookies(response, accessToken, config);
+  if (accessToken) setSessionCookies(response, accessToken, maxAge, config);
   return response;
 }

@@ -8,60 +8,52 @@ import com.herfree.domain.reaction.entity.Reaction;
 import com.herfree.domain.reaction.entity.ReactionTargetType;
 import com.herfree.domain.reaction.entity.ReactionType;
 import com.herfree.domain.reaction.repository.ReactionRepository;
-import java.util.Arrays;
-import java.util.List;
 import com.herfree.domain.user.entity.User;
+import com.herfree.domain.user.entity.UserRole;
+import com.herfree.domain.user.entity.UserStatus;
 import com.herfree.domain.user.exception.UserNotFoundException;
 import com.herfree.domain.user.repository.UserRepository;
+import java.util.Arrays;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * 게시글·댓글 공감(반응) toggle.
- * <p>
- * 동일 사용자·대상·타입 조합은 하나만 유지. 재클릭 시 취소되어 별도 DELETE API가 필요 없다.
- */
+/** 게시글·댓글 반응의 등록, 취소, 집계를 담당한다. */
 @Service
 @RequiredArgsConstructor
 public class ReactionService {
 
     private final ReactionRepository reactionRepository;
     private final UserRepository userRepository;
+    private final ReactionTargetAccessService targetAccessService;
 
-    // toggle 방식: 이미 반응이 있으면 취소하고, 없으면 등록한다.
-    // 별도의 "반응 취소" API를 만들지 않아도 되어 클라이언트-서버 상호작용이 단순해진다.
     @Transactional
     public ReactionResponse toggleReaction(Long userId, ReactionRequest request) {
+        // 사용자 행을 잠가 같은 계정의 중복 토글 요청이 unique 제약에서 충돌하지 않게 한다.
+        User user = userRepository.findByIdAndStatusForUpdate(userId, UserStatus.ACTIVE)
+                .orElseThrow(UserNotFoundException::new);
+        targetAccessService.assertReadable(
+                request.targetType(), request.targetId(), userId, user.getRole());
+
         boolean alreadyReacted = reactionRepository.existsByUserIdAndTargetTypeAndTargetIdAndReactionType(
                 userId, request.targetType(), request.targetId(), request.reactionType());
-
         boolean reacted;
 
         if (alreadyReacted) {
-            // 기존 반응 취소 — deleteBy... 메서드는 내부적으로 먼저 SELECT 후 DELETE를 실행한다.
-            // 삭제 경로에서는 User 엔티티를 조회할 필요가 없으므로, 존재 확인 후 바로 삭제한다.
             reactionRepository.deleteByUserIdAndTargetTypeAndTargetIdAndReactionType(
                     userId, request.targetType(), request.targetId(), request.reactionType());
             reacted = false;
         } else {
-            // 신규 등록 경로에서만 User 엔티티를 조회한다.
-            // 삭제 시에도 User를 미리 로드하면 불필요한 DB 왕복이 발생하기 때문에 여기로 이동했다.
-            User user = userRepository.findById(userId)
-                    .orElseThrow(UserNotFoundException::new);
-            Reaction reaction = Reaction.builder()
+            reactionRepository.save(Reaction.builder()
                     .user(user)
                     .targetType(request.targetType())
                     .targetId(request.targetId())
                     .reactionType(request.reactionType())
-                    .build();
-            reactionRepository.save(reaction);
+                    .build());
             reacted = true;
         }
 
-        // 토글 후 해당 타입의 집계 수를 바로 반환해 클라이언트가 재조회 없이 UI를 갱신할 수 있도록 한다.
-        // reactionType을 반드시 포함해 집계해야 한다.
-        // EMPATHY·COMFORT·HELPFUL 등 서로 다른 타입을 합산하면 "공감해요 N개"가 틀린 값이 된다.
         long totalCount = reactionRepository.countByTargetTypeAndTargetIdAndReactionType(
                 request.targetType(), request.targetId(), request.reactionType());
 
@@ -74,13 +66,20 @@ public class ReactionService {
         );
     }
 
-    // 대상별 반응 집계 — 초기 UI 표시용. userId가 null이면 reacted는 항상 false다.
     @Transactional(readOnly = true)
     public ReactionSummaryResponse getSummary(
             ReactionTargetType targetType,
             Long targetId,
             Long userId
     ) {
+        UserRole viewerRole = userId == null
+                ? null
+                : userRepository.findById(userId)
+                        .map(User::getRole)
+                        .orElseThrow(UserNotFoundException::new);
+        // 집계 API도 같은 접근 검사를 거쳐 비공개 대상의 반응 수가 새지 않게 한다.
+        targetAccessService.assertReadable(targetType, targetId, userId, viewerRole);
+
         List<ReactionCountItem> counts = Arrays.stream(ReactionType.values())
                 .map(type -> {
                     long totalCount = reactionRepository.countByTargetTypeAndTargetIdAndReactionType(
