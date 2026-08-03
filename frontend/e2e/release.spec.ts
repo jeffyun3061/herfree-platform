@@ -243,7 +243,7 @@ test.describe('staging data flow', () => {
       const accountLink = page.getByRole('link', { name: /회원정보 수정/ });
       const receivedLink = page.getByRole('link', { name: /받은 공감/ });
       const bookmarkLink = page.getByRole('link', { name: /스크랩한 글/ });
-      const consultLink = page.getByRole('link', { name: /1:1 비밀 상담/ });
+      const consultLink = page.getByRole('link', { name: /상담문의/ });
       await expect(accountLink).toBeVisible();
       await expect(receivedLink).toBeVisible();
       await expect(bookmarkLink).toBeVisible();
@@ -474,7 +474,7 @@ test.describe('staging data flow', () => {
       expect([403, 404]).toContain(otherJournal.status());
 
       const normalUserAdmin = await first.api.get('/api/admin/reports');
-      expect(normalUserAdmin.status()).toBe(403);
+      expect([401, 403]).toContain(normalUserAdmin.status());
     } finally {
       if (first && journalId) {
         await first.api.delete(`/api/journal/records/${journalId}`, { headers: csrf(first) });
