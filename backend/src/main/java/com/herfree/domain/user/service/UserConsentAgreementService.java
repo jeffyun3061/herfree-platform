@@ -7,14 +7,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 /**
- * 이용약관·개인정보·민감정보 동의 이력 — 가입 시 버전과 함께 append-only 저장.
+ * 이용약관·개인정보·연령·마케팅 동의 이력 — 가입 시 버전과 함께 append-only 저장.
  */
 @Service
 @RequiredArgsConstructor
 public class UserConsentAgreementService {
 
-    private static final String TERMS_VERSION = "2026-06-13";
-    private static final String PRIVACY_VERSION = "2026-07-15";
+    private static final String TERMS_VERSION = "2026-08-04";
+    private static final String PRIVACY_VERSION = "2026-08-04";
 
     private final UserConsentAgreementRepository userConsentAgreementRepository;
 

@@ -26,7 +26,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ErrorResponse> handleBusinessException(BusinessException ex) {
         ErrorCode errorCode = ex.getErrorCode();
-        return jsonResponse(errorCode.getHttpStatus(), ErrorResponse.of(ex.getMessage()));
+        return jsonResponse(errorCode.getHttpStatus(), ErrorResponse.of(errorCode));
     }
 
     // MethodArgumentNotValidException이 BindException을 상속하므로

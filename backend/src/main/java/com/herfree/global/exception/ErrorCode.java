@@ -109,6 +109,10 @@ public enum ErrorCode {
 
     // 개인 일지(Journal)
     JOURNAL_RECORD_NOT_FOUND(HttpStatus.NOT_FOUND, "기록을 찾을 수 없습니다."),
+    HEALTH_DATA_CONSENT_REQUIRED(
+            HttpStatus.PRECONDITION_REQUIRED,
+            "개인일지를 이용하려면 건강정보 처리 동의가 필요합니다."
+    ),
 
     // 권한·역할
     ROLE_CHANGE_NOT_ALLOWED(HttpStatus.FORBIDDEN, "권한을 변경할 수 없습니다.");

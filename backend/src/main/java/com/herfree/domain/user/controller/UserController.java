@@ -4,12 +4,15 @@ import com.herfree.domain.post.dto.response.PostResponse;
 import com.herfree.domain.user.dto.request.UpdateProfileRequest;
 import com.herfree.domain.user.dto.request.ChangePasswordRequest;
 import com.herfree.domain.user.dto.request.UpdateHealthStatisticsConsentRequest;
+import com.herfree.domain.user.dto.request.UpdateHealthDataConsentRequest;
+import com.herfree.domain.user.dto.response.HealthDataConsentResponse;
 import com.herfree.domain.user.dto.response.HealthStatisticsConsentResponse;
 import com.herfree.domain.user.dto.response.UserActivityResponse;
 import com.herfree.domain.user.dto.response.UserResponse;
 import com.herfree.domain.user.dto.response.AccountSecurityResponse;
 import com.herfree.domain.user.service.UserService;
 import com.herfree.domain.user.service.HealthStatisticsConsentService;
+import com.herfree.domain.user.service.HealthDataConsentService;
 import com.herfree.global.response.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +37,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserController {
 
     private final UserService userService;
+    private final HealthDataConsentService healthDataConsentService;
     private final HealthStatisticsConsentService healthStatisticsConsentService;
 
     // 내 정보 조회 — JWT에서 추출한 userId를 @AuthenticationPrincipal로 받는다.
@@ -87,6 +91,22 @@ public class UserController {
     ) {
         return ResponseEntity.ok(ApiResponse.success(
                 healthStatisticsConsentService.updateConsent(userId, request.agreed())));
+    }
+
+    @GetMapping("/me/consents/health-data")
+    public ResponseEntity<ApiResponse<HealthDataConsentResponse>> getHealthDataConsent(
+            @AuthenticationPrincipal Long userId
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(healthDataConsentService.getConsent(userId)));
+    }
+
+    @PatchMapping("/me/consents/health-data")
+    public ResponseEntity<ApiResponse<HealthDataConsentResponse>> updateHealthDataConsent(
+            @AuthenticationPrincipal Long userId,
+            @Valid @RequestBody UpdateHealthDataConsentRequest request
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(
+                healthDataConsentService.updateConsent(userId, request.agreed())));
     }
 
     // 회원 탈퇴 — api-spec.md §8.2, 204 No Content 반환

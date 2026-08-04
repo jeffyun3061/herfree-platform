@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 import type { JournalRecordInput } from '@/domain/journal/types';
 import { useApiQuery } from '@/hooks/useApiQuery';
 import { getErrorMessage } from '@/lib/api/client';
+import * as usersApi from '@/lib/api/users';
 import * as journalApi from '@/features/journal/api';
 
 export function useJournalDashboard(enabled = true) {
@@ -28,6 +29,30 @@ export function useJournalInsights(enabled = true) {
 
 export function useJournalPublicHomeStats() {
   return useApiQuery(() => journalApi.fetchJournalPublicHomeStats(), []);
+}
+
+export function useHealthDataConsent(enabled = true) {
+  const query = useApiQuery(() => usersApi.fetchHealthDataConsent(), [], { enabled });
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [updateError, setUpdateError] = useState<string | null>(null);
+
+  const update = async (agreed: boolean) => {
+    setIsUpdating(true);
+    setUpdateError(null);
+    try {
+      const result = await usersApi.updateHealthDataConsent(agreed);
+      await query.refetch();
+      return result;
+    } catch (error) {
+      const message = getErrorMessage(error);
+      setUpdateError(message);
+      throw error;
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  return { ...query, update, isUpdating, updateError };
 }
 
 export function useJournalRecordByDate(date: string, enabled = true) {

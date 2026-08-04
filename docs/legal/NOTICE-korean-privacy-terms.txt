@@ -1,0 +1,5 @@
+Herfree uses the structure and checklist ideas of korean-privacy-terms by kimlawtech (SpeciAI).
+The referenced project is licensed under the Apache License, Version 2.0.
+Copyright 2026 kimlawtech (SpeciAI).
+This repository contains service-specific text rewritten for Herfree; it does not include the referenced project's source templates.
+

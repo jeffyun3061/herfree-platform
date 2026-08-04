@@ -72,6 +72,14 @@ if ($privateBoard -match "PRIVATE_CONSULT" -and
     Fail "private board copy" "private inquiry metadata is missing"
 }
 
+$alignmentArgs = @(
+    "-NoProfile", "-ExecutionPolicy", "Bypass", "-File",
+    (Join-Path $root "scripts/verify-legal-policy-alignment.ps1")
+)
+powershell.exe @alignmentArgs
+if ($LASTEXITCODE -eq 0) { Pass "public operator contact and free beta boundary" }
+else { Fail "public operator/legal wording" "run the legal/data-flow alignment report and fix the reported mismatch" }
+
 $application = Get-Content -LiteralPath "backend/src/main/resources/application.yml" -Raw
 if ($application -match "ANALYTICS_HASH_SALT" -and
     $application -match "HEALTH_DATA_ENCRYPTION_KEY") {

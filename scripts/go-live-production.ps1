@@ -26,6 +26,20 @@ Write-Host "Herfree production go-live" -ForegroundColor Cyan
 Write-Host "DryRun=$DryRun" -ForegroundColor DarkGray
 Write-Host ""
 
+# Legal/privacy facts are a production release gate. The non-strict alignment
+# check runs in the normal harness; go-live additionally requires operator,
+# processor, region and analytics facts to be explicitly supplied.
+Write-Step "Legal and privacy alignment"
+$legalArgs = @(
+    "-NoProfile", "-ExecutionPolicy", "Bypass", "-File",
+    (Join-Path $PSScriptRoot "verify-legal-policy-alignment.ps1"),
+    "-StrictOperationalFacts"
+)
+powershell.exe @legalArgs
+if ($LASTEXITCODE -ne 0) {
+    throw "Legal/privacy operational facts are incomplete or inconsistent; production release is refused."
+}
+
 # 0. AWS login
 Write-Step "0. AWS login"
 if ($DryRun) {

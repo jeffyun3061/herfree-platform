@@ -44,6 +44,7 @@ export type PostCreateInput = {
   title: string;
   content: string;
   isAnonymous: boolean;
+  visibility?: PostVisibility;
   imageUrl?: string | null;
 };
 

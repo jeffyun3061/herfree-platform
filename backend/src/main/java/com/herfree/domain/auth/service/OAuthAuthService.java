@@ -24,6 +24,7 @@ import com.herfree.domain.user.exception.UserNotFoundException;
 import com.herfree.domain.user.repository.UserProfileRepository;
 import com.herfree.domain.user.repository.UserRepository;
 import com.herfree.domain.user.service.UserConsentAgreementService;
+import com.herfree.domain.user.service.HealthDataConsentService;
 import com.herfree.domain.user.service.HealthStatisticsConsentService;
 import com.herfree.global.security.JwtProperties;
 import com.herfree.global.security.JwtTokenProvider;
@@ -58,6 +59,7 @@ public class OAuthAuthService {
     private final JwtProperties jwtProperties;
     private final AnalyticsService analyticsService;
     private final UserConsentAgreementService userConsentAgreementService;
+    private final HealthDataConsentService healthDataConsentService;
     private final HealthStatisticsConsentService healthStatisticsConsentService;
 
     @Transactional
@@ -155,6 +157,7 @@ public class OAuthAuthService {
         profile.updateNickname(nickname);
         userConsentAgreementService.recordSignupConsent(
                 user, request.agreeSensitive(), request.agreeAge(), request.agreeMarketing());
+        healthDataConsentService.recordInitialConsent(user, request.agreeSensitive());
         healthStatisticsConsentService.recordInitialConsent(user, request.agreeHealthStatistics());
         recordAnalyticsEvent(AnalyticsService.SIGNUP_COMPLETED, user.getId());
         return issueLoginResponse(user);

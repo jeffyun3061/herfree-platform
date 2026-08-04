@@ -39,12 +39,13 @@ function buildRequestHeaders(method: string): Record<string, string> {
   return headers;
 }
 
-export type ApiError = Error & { status: number };
+export type ApiError = Error & { status: number; code?: string | null };
 
-function createApiError(status: number, message: string): ApiError {
+function createApiError(status: number, message: string, code?: string | null): ApiError {
   const error = new Error(message) as ApiError;
   error.name = 'ApiError';
   error.status = status;
+  error.code = code;
   return error;
 }
 
@@ -210,7 +211,7 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
           : response.status === 403
             ? '접근 권한이 없습니다.'
             : getErrorMessage(createApiError(response.status, ''))));
-    throw createApiError(response.status || 500, message);
+    throw createApiError(response.status || 500, message, envelope?.code);
   }
 
   return envelope.data;
@@ -264,7 +265,7 @@ export async function requestMultipart<T>(path: string, formData: FormData): Pro
         : response.status === 403
           ? '접근 권한이 없습니다.'
           : getErrorMessage(createApiError(response.status, '')));
-    throw createApiError(response.status || 500, message);
+    throw createApiError(response.status || 500, message, envelope?.code);
   }
 
   return envelope.data;
