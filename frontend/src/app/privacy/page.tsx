@@ -1,6 +1,11 @@
 import Link from 'next/link';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { OPERATOR_CONTACT_EMAIL, operatorContactMailtoHref } from '@/domain/site/contact';
+import {
+  OPERATOR_CONTACT_EMAIL,
+  OPERATOR_DISPLAY_NAME,
+  PRIVACY_CONTACT_DEPARTMENT,
+  operatorContactMailtoHref,
+} from '@/domain/site/contact';
 
 function Section({ title, children, id }: { title: string; children: React.ReactNode; id?: string }) {
   return (
@@ -108,8 +113,10 @@ export default function PrivacyPage() {
           </Section>
 
           <Section title="10. 개인정보 보호책임자와 권익 구제">
-            <p>개인정보 보호 문의: <a href={operatorContactMailtoHref()} className="text-primary underline underline-offset-2">{OPERATOR_CONTACT_EMAIL}</a></p>
-            <p className="text-xs text-muted">개인정보 보호책임자 성명·직책·전화·주소와 운영자 법적 명칭·대표자·사업장 주소·전화는 실제 사업자 등록 및 법률 검토 후 공개 화면에 확정 기재해야 합니다. 이 정보가 비어 있는 상태는 production 공개 완료로 보지 않습니다.</p>
+            <p>운영자: {OPERATOR_DISPLAY_NAME}</p>
+            <p>개인정보 보호 담당: {PRIVACY_CONTACT_DEPARTMENT}</p>
+            <p>서비스·개인정보 문의: <a href={operatorContactMailtoHref()} className="text-primary underline underline-offset-2">{OPERATOR_CONTACT_EMAIL}</a></p>
+            <p className="text-xs text-muted">현재 서비스는 무료·비영리 베타로 운영하며 결제·유료 광고·상품 판매·제휴 수익화를 제공하지 않습니다. 개인의 주민등록번호·자택 주소 등 불필요한 신상정보는 공개하지 않습니다. 수익화·판매·광고를 시작하거나 운영 형태가 변경되면 필요한 등록·신고와 운영자 정보를 다시 검토하여 이 방침을 갱신합니다.</p>
             <p>추가 구제·상담: 개인정보침해신고센터 118(<a href="https://privacy.kisa.or.kr" className="text-primary">privacy.kisa.or.kr</a>), 개인정보분쟁조정위원회 1833-6972(<a href="https://www.kopico.go.kr" className="text-primary">kopico.go.kr</a>)</p>
           </Section>
 
