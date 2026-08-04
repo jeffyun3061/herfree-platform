@@ -3,6 +3,7 @@ package com.herfree.domain.journal.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
 
 import com.herfree.domain.journal.entity.JournalRecord;
 import com.herfree.domain.journal.repository.JournalRecordRepository;
@@ -79,14 +80,12 @@ class JournalInsightServiceTest {
     }
 
     @Test
-    void publicHomeStatsKeepExistingHomeCounters() {
-        given(userRepository.count()).willReturn(100L);
-        given(journalRecordRepository.countDistinctConsentedUsersByRecordDate(any())).willReturn(7L);
-
+    void publicHomeStatsDoNotExposeParticipantCounts() {
         var response = journalInsightService.getPublicHomeStats();
 
-        assertThat(response.usersRecordingToday()).isEqualTo(7);
-        assertThat(response.totalUsers()).isEqualTo(100);
+        assertThat(response).isNotNull();
+        then(userRepository).shouldHaveNoInteractions();
+        then(journalRecordRepository).shouldHaveNoInteractions();
     }
 
     @Test
