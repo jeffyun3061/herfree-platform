@@ -3,6 +3,7 @@ export type ApiEnvelope<T> = {
   success: boolean;
   message: string;
   data: T;
+  code?: string | null;
 };
 
 // Spring Data Page 직렬화 구조 — 백엔드가 Page<T>를 그대로 내려주므로

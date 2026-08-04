@@ -11,6 +11,7 @@ import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { JournalRecordFromQuery } from '@/components/journal/JournalRecordFromQuery';
 
 import { JournalRecordSheet } from '@/components/journal/JournalRecordSheet';
+import { HealthDataConsentGate } from '@/components/journal/HealthDataConsentGate';
 import { JournalInsightsPanel } from '@/components/journal/JournalInsightsCarousel';
 import { JournalInlineRecordForm } from '@/components/journal/JournalInlineRecordForm';
 
@@ -48,6 +49,7 @@ import {
   useJournalRecords,
 
   useJournalReviewSummary,
+  useHealthDataConsent,
 
 } from '@/hooks/useJournal';
 
@@ -86,7 +88,15 @@ function JournalPageContent() {
 
 
   const historyHadSymptoms = historyFilter === 'relapse' ? true : undefined;
-  const journalEnabled = isLoggedIn && isReady;
+  const {
+    data: healthDataConsent,
+    isLoading: healthDataConsentLoading,
+    error: healthDataConsentError,
+    update: updateHealthDataConsent,
+    isUpdating: isHealthDataConsentUpdating,
+    updateError: healthDataConsentUpdateError,
+  } = useHealthDataConsent(isLoggedIn && isReady);
+  const journalEnabled = isLoggedIn && isReady && healthDataConsent?.agreed === true;
   const recordsEnabled = journalEnabled && activeTab === 'records';
   const insightsEnabled = journalEnabled && activeTab === 'insights';
 
@@ -258,6 +268,18 @@ function JournalPageContent() {
             />
 
             <div className="hf-page-x space-y-3">
+            {healthDataConsentLoading ? (
+              <div className="flex min-h-[40vh] items-center justify-center">
+                <LoadingSpinner label="개인일지 권한을 확인하는 중…" />
+              </div>
+            ) : !healthDataConsent?.agreed ? (
+              <HealthDataConsentGate
+                isUpdating={isHealthDataConsentUpdating}
+                error={healthDataConsentUpdateError ?? healthDataConsentError}
+                onAgree={() => updateHealthDataConsent(true).then(() => undefined)}
+              />
+            ) : (
+              <>
             <Suspense fallback={null}>
 
               <JournalTabFromQuery onChange={setActiveTab} />
@@ -358,6 +380,8 @@ function JournalPageContent() {
 
 
             <JournalRecordSheet {...wizardProps} />
+              </>
+            )}
             </div>
 
           </>
@@ -373,8 +397,8 @@ function JournalPageContent() {
 
 
 
-        {(dashboardError || error || deleteError || inlineSaveError || recordLookupError) && (
-          <ErrorMessage message={dashboardError ?? error ?? deleteError ?? inlineSaveError ?? recordLookupError ?? ''} />
+        {(dashboardError || error || deleteError || inlineSaveError || recordLookupError || healthDataConsentError) && (
+          <ErrorMessage message={dashboardError ?? error ?? deleteError ?? inlineSaveError ?? recordLookupError ?? healthDataConsentError ?? ''} />
         )}
 
       </div>
@@ -410,5 +434,4 @@ function JournalPageContent() {
 export function JournalPageContainer() {
   return <JournalPageContent />;
 }
-
 

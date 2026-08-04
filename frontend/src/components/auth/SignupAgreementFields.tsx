@@ -64,8 +64,14 @@ export function SignupAgreementFields({ value, onChange }: SignupAgreementFields
           className="mt-0.5 h-5 w-5 shrink-0 rounded border-[#C9C1B3] text-[#0B3B36] focus:ring-[#0B3B36]"
         />
         <span>
-          <span className="font-medium text-[#0B3B36]">[필수]</span>{' '}
-          증상·투약·건강 메모 등 민감정보 처리에 동의합니다.
+          <span className="font-medium text-[#5C645A]">[선택·개인일지 이용 시 필요]</span>{' '}
+          <Link href="/privacy#health-data" className="underline underline-offset-2">
+            증상·투약·건강 메모 등 민감정보 처리
+          </Link>
+          에 동의합니다.
+          <span className="mt-1 block text-xs leading-5 text-[#7A8178]">
+            동의하지 않아도 커뮤니티에 가입할 수 있습니다. 개인일지를 저장하려면 개인일지 화면에서 별도 동의가 필요합니다.
+          </span>
         </span>
       </label>
       <label className="flex items-start gap-3 text-sm text-[#1E2621]">
@@ -130,5 +136,5 @@ export function SignupAgreementFields({ value, onChange }: SignupAgreementFields
 }
 
 export function isRequiredSignupAgreed(value: SignupAgreementState): boolean {
-  return value.agreeTerms && value.agreePrivacy && value.agreeSensitive && value.agreeAge;
+  return value.agreeTerms && value.agreePrivacy && value.agreeAge;
 }
