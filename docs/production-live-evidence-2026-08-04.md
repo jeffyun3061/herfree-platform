@@ -40,7 +40,6 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\check-producti
 The audit checks RDS retention/encryption/private access, S3 public-access block
 and encryption, CloudWatch retention/KMS/alarms, account MFA, EC2 SSM health and
 DNS. It never reads or prints secret values and never changes AWS resources.
-
 Add `-FrontendUrl https://herpfree.co.kr -RequireFrontend` only after Gabia DNS
 and the custom certificate are active. A temporary Amplify URL returning 200 does
 not prove the custom domain is ready.
