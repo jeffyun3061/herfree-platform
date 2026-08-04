@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { usePostList } from '@/hooks/usePosts';
-import { useJournalPublicHomeStats } from '@/hooks/useJournal';
 import { GuestHomeHero } from '@/components/home/GuestHomeHero';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { QuickAccessSection } from '@/components/home/QuickAccessSection';
@@ -272,9 +271,7 @@ export function GuestHomePage() {
     '',
     'createdAt,desc',
   );
-  const { data: homeStats, isLoading: statsLoading } = useJournalPublicHomeStats();
-
-  const activeUsersLabel = formatMemberStatus(homeStats?.totalUsers, statsLoading);
+  const activeUsersLabel = formatMemberStatus(undefined, false);
   const todayStories = recentLoading ? 0 : recentPosts.totalElements || recentPosts.content.length;
   return (
     <div className="min-h-screen bg-[#F3EDE3] pb-7">
