@@ -61,6 +61,7 @@ frontend/.env.production
 *.log
 logs/
 artifacts/service-harness/
+artifacts/production-live/
 
 # IDE / editor (local only — do not commit)
 .idea/
