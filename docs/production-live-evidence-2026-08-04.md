@@ -34,7 +34,7 @@ When an authorized AWS profile is available, run the read-only infrastructure
 audit as well:
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\check-production-ops.ps1 -AwsProfile herfree-production -Strict
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\check-production-ops.ps1 -AwsProfile herfree-staging -Strict
 ```
 
 The audit checks RDS retention/encryption/private access, S3 public-access block

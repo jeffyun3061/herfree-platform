@@ -1,5 +1,5 @@
 param(
-    [string]$AwsProfile = $(if ($env:AWS_PROFILE) { $env:AWS_PROFILE } else { "default" }),
+    [string]$AwsProfile = $(if ($env:AWS_PROFILE) { $env:AWS_PROFILE } else { "herfree-staging" }),
     [string]$Region = "ap-northeast-2",
     [string]$AccountId = "439777528445",
     [string]$RdsInstanceId = "herfree-production-mysql",
