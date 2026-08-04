@@ -6,6 +6,7 @@ param(
     [switch]$RunLocalSmoke,
     [switch]$RequireAdminSmoke,
     [switch]$RunBrowserSmoke,
+    [switch]$RunProductionOpsAudit,
     [switch]$RequireDockerIntegration,
     [string]$ReportPath = "artifacts/service-harness/latest.md"
 )
@@ -188,6 +189,12 @@ if ($RunBrowserSmoke) {
         Invoke-HarnessStep "Browser release smoke" { npm.cmd run e2e:staging:smoke }
     }
     finally { Pop-Location }
+}
+
+if ($RunProductionOpsAudit) {
+    Invoke-HarnessStep "Production infrastructure audit" {
+        powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $root "scripts/check-production-ops.ps1") -Strict
+    }
 }
 
 if (-not $SkipDocker) {
