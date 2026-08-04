@@ -10,6 +10,7 @@ import com.herfree.domain.journal.service.JournalDashboardService;
 import com.herfree.domain.journal.service.JournalInsightService;
 import com.herfree.domain.journal.service.JournalRecordService;
 import com.herfree.domain.journal.service.JournalReviewService;
+import com.herfree.domain.user.service.HealthDataConsentService;
 import com.herfree.global.response.ApiResponse;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
@@ -40,12 +41,14 @@ public class JournalController {
     private final JournalDashboardService journalDashboardService;
     private final JournalReviewService journalReviewService;
     private final JournalInsightService journalInsightService;
+    private final HealthDataConsentService healthDataConsentService;
 
     @PostMapping("/records")
     public ResponseEntity<ApiResponse<JournalRecordResponse>> upsertRecord(
             @AuthenticationPrincipal Long userId,
             @Valid @RequestBody JournalRecordUpsertRequest request
     ) {
+        healthDataConsentService.assertAgreed(userId);
         return ResponseEntity.ok(ApiResponse.success(journalRecordService.upsertRecord(userId, request)));
     }
 
@@ -55,6 +58,7 @@ public class JournalController {
             @RequestParam(required = false) Boolean hadSymptoms,
             @PageableDefault(size = 20) Pageable pageable
     ) {
+        healthDataConsentService.assertAgreed(userId);
         return ResponseEntity.ok(ApiResponse.success(journalRecordService.getMyRecords(userId, hadSymptoms, pageable)));
     }
 
@@ -65,6 +69,7 @@ public class JournalController {
             @RequestParam int month,
             @RequestParam(required = false) Boolean hadSymptoms
     ) {
+        healthDataConsentService.assertAgreed(userId);
         return ResponseEntity.ok(ApiResponse.success(journalRecordService.getMonthlyRecords(userId, year, month, hadSymptoms)));
     }
 
@@ -73,6 +78,7 @@ public class JournalController {
             @AuthenticationPrincipal Long userId,
             @PathVariable Long recordId
     ) {
+        healthDataConsentService.assertAgreed(userId);
         return ResponseEntity.ok(ApiResponse.success(journalRecordService.getRecord(userId, recordId)));
     }
 
@@ -81,6 +87,7 @@ public class JournalController {
             @AuthenticationPrincipal Long userId,
             @PathVariable Long recordId
     ) {
+        healthDataConsentService.assertAgreed(userId);
         journalRecordService.deleteRecord(userId, recordId);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
@@ -90,6 +97,7 @@ public class JournalController {
             @AuthenticationPrincipal Long userId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
     ) {
+        healthDataConsentService.assertAgreed(userId);
         JournalRecordResponse response = journalRecordService.getRecordByDate(userId, date).orElse(null);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
@@ -98,6 +106,7 @@ public class JournalController {
     public ResponseEntity<ApiResponse<JournalDashboardResponse>> getDashboard(
             @AuthenticationPrincipal Long userId
     ) {
+        healthDataConsentService.assertAgreed(userId);
         return ResponseEntity.ok(ApiResponse.success(journalDashboardService.getDashboard(userId)));
     }
 
@@ -105,6 +114,7 @@ public class JournalController {
     public ResponseEntity<ApiResponse<JournalReviewSummaryResponse>> getReviewSummary(
             @AuthenticationPrincipal Long userId
     ) {
+        healthDataConsentService.assertAgreed(userId);
         return ResponseEntity.ok(ApiResponse.success(journalReviewService.getReviewSummary(userId)));
     }
 

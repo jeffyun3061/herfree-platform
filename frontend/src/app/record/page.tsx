@@ -3,11 +3,12 @@
 import { Suspense, useEffect, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { JournalRecordSheet } from '@/components/journal/JournalRecordSheet';
+import { HealthDataConsentGate } from '@/components/journal/HealthDataConsentGate';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toDateInputValue, type JournalRecordInput } from '@/domain/journal/types';
 import { useAuth } from '@/hooks/useAuth';
-import { useJournalMutation, useJournalRecordByDate } from '@/hooks/useJournal';
+import { useHealthDataConsent, useJournalMutation, useJournalRecordByDate } from '@/hooks/useJournal';
 
 function normalizeDateParam(value: string | null): string {
   if (value && /^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
@@ -21,10 +22,18 @@ function RecordPageContent() {
   const targetDate = useMemo(() => normalizeDateParam(searchParams.get('date')), [searchParams]);
   const entryMode = searchParams.get('type') === 'relapse' ? 'relapse' : 'daily';
   const {
+    data: healthDataConsent,
+    isLoading: healthDataConsentLoading,
+    error: healthDataConsentError,
+    update: updateHealthDataConsent,
+    isUpdating: isHealthDataConsentUpdating,
+    updateError: healthDataConsentUpdateError,
+  } = useHealthDataConsent(isReady && isLoggedIn);
+  const {
     data: initialRecord,
     isLoading: recordLoading,
     error: loadError,
-  } = useJournalRecordByDate(targetDate, isReady && isLoggedIn);
+  } = useJournalRecordByDate(targetDate, isReady && isLoggedIn && healthDataConsent?.agreed === true);
   const { save, isSubmitting, error: saveError } = useJournalMutation();
 
   useEffect(() => {
@@ -47,6 +56,26 @@ function RecordPageContent() {
     return (
       <div className="flex min-h-[50vh] items-center justify-center bg-[#F3F6F4]">
         <LoadingSpinner label="불러오는 중..." />
+      </div>
+    );
+  }
+
+  if (healthDataConsentLoading) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center bg-[#F3F6F4]">
+        <LoadingSpinner label="개인일지 권한을 확인하는 중..." />
+      </div>
+    );
+  }
+
+  if (!healthDataConsent?.agreed) {
+    return (
+      <div className="min-h-[50vh] bg-[#F3F6F4] px-4 py-10">
+        <HealthDataConsentGate
+          isUpdating={isHealthDataConsentUpdating}
+          error={healthDataConsentUpdateError ?? healthDataConsentError}
+          onAgree={() => updateHealthDataConsent(true).then(() => undefined)}
+        />
       </div>
     );
   }

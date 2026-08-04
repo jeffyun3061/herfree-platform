@@ -89,7 +89,7 @@ Herfree는 건강·질병, 증상, 투약, 수면, 스트레스, 상담 내용�
 | 비공개 게시판 | `CODE` | 소유자·운영자 query 범위와 테스트 존재 |
 | 개인일지 객체 권한 | `CODE` | record 조회·삭제 시 소유자 불일치에 404 처리 |
 | 파일 업로드·조회 제한 | `CODE` | 타입·크기·S3 prefix·제한 읽기 검증 존재 |
-| 민감정보 별도 동의 | `CODE` | 가입 요청과 `V32`에 별도 동의 기록 존재 |
+| 민감정보 별도 동의 | `CODE` | 가입 시 선택 기록은 보존하고 개인일지 진입 전에 `health_data_consents` 별도 동의를 요구하며 `V39`로 이력을 보존 |
 | 관리자 감사 | `CODE` | `admin_audit_logs`, 역할 감사, request ID 존재 |
 | 운영 profile·secret 차단 | `CODE` | profile guard, secret scan, release env 검사 존재 |
 | N+1 회귀 방지 | `CODE` | 목록 query count 통합 테스트 존재 |

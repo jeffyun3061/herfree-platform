@@ -28,6 +28,7 @@ import com.herfree.domain.user.repository.UserProfileRepository;
 import com.herfree.domain.user.repository.UserRepository;
 import com.herfree.domain.user.service.UserConsentAgreementService;
 import com.herfree.domain.user.service.HealthStatisticsConsentService;
+import com.herfree.domain.user.service.HealthDataConsentService;
 import com.herfree.global.security.JwtProperties;
 import com.herfree.global.security.JwtTokenProvider;
 import java.util.Optional;
@@ -73,6 +74,9 @@ class OAuthAuthServiceTest {
 
     @Mock
     private HealthStatisticsConsentService healthStatisticsConsentService;
+
+    @Mock
+    private HealthDataConsentService healthDataConsentService;
 
     @Mock
     private OAuthClient oauthClient;
@@ -247,6 +251,7 @@ class OAuthAuthServiceTest {
         assertThat(profile.getNickname()).isEqualTo("새닉네임");
         verify(userConsentAgreementService).recordSignupConsent(user, true, true, false);
         verify(healthStatisticsConsentService).recordInitialConsent(user, true);
+        verify(healthDataConsentService).recordInitialConsent(user, true);
     }
 
     @Test

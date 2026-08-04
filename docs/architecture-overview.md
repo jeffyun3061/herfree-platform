@@ -98,7 +98,8 @@ com.herfree
 | `PasswordResetMailService` | auth | SMTP 발송, 운영 fallback 없음 |
 | `UserService` | user | 프로필·마이페이지·탈퇴·닉네임 쿨다운 |
 | `AdminUserService` | user | 관리자 회원 검색·역할·상태 |
-| `UserConsentAgreementService` | user | 약관·민감정보 동의 이력 |
+| `UserConsentAgreementService` | user | 약관·개인정보·연령·마케팅 동의 이력 |
+| `HealthDataConsentService` | user | 개인일지 건강정보 동의 append-only 이력·철회·API 게이트 |
 | `HealthStatisticsConsentService` | user | 건강통계 활용 선택 동의 |
 | `RoleAuditService` | user | 역할 변경 감사 |
 | `BoardService` | board | 활성 게시판 메타 |
@@ -129,7 +130,7 @@ com.herfree
 
 ```text
 POST /api/auth/signup
-  → AuthService (User + UserProfile + 약관·건강통계 동의)
+  → AuthService (User + UserProfile + 약관·건강통계·개인일지 건강정보 동의 이력)
   → JWT access token
 
 POST /api/journal/records
@@ -192,6 +193,7 @@ GET /api/journal/insights (비로그인 가능)
 | 버전 | 주제 |
 | --- | --- |
 | V32 | 민감정보 별도 동의 |
+| V39 | 개인일지 건강정보 동의 append-only 테이블 및 기존 이력 마이그레이션 |
 | V33 | 관리자 감사 로그 |
 | V34 | 건강통계 활용 동의 |
 | V35 | 신고 처리 근거 |

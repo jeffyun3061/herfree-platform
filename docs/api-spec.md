@@ -106,12 +106,13 @@ DB·API는 UTC, 화면 표시는 브라우저 로컬(KST). 상세: [decision-log
   "nickname": "닉네임",
   "agreeTerms": true,
   "agreePrivacy": true,
+  "agreeSensitive": false,
   "agreeAge": true,
   "agreeMarketing": false
 }
 ```
 
-필수 동의(`agreeTerms`, `agreePrivacy`, `agreeAge`)가 `true`가 아니면 가입이 거절된다. 가입 성공 시 약관/개인정보처리방침 버전과 동의 값은 `user_consent_agreements`에 저장된다.
+필수 동의(`agreeTerms`, `agreePrivacy`, `agreeAge`)가 `true`가 아니면 가입이 거절된다. `agreeSensitive`는 가입 시 미리 동의할 수 있는 선택값이며, 개인일지 첫 저장 전에는 별도 건강정보 동의가 반드시 필요하다. 가입 성공 시 약관/개인정보처리방침 버전과 동의 값은 `user_consent_agreements`에, 건강정보 동의 이력은 `health_data_consents`에 저장된다.
 
 **닉네임 중복 확인** (`GET /api/auth/nickname/check`)
 
@@ -590,6 +591,15 @@ Refresh Token·재발급·토큰 블랙리스트는 운영 고도화 항목으�
 
 `DELETE`는 본인 소유 검증 후 물리 삭제한다. 민감 건강 기록이므로 클라이언트는 삭제 전 확인 모달을 표시한다.
 
+개인일지 전용 동의 게이트:
+
+| Method | URL | 설명 | 권한 |
+|--------|-----|------|------|
+| GET | `/api/users/me/consents/health-data` | 현재 개인일지 건강정보 동의 조회 | USER 이상 |
+| PATCH | `/api/users/me/consents/health-data` | 건강정보 동의 또는 철회 이력 추가 | USER 이상 |
+
+동의가 없는 상태에서 개인일지 전용 API를 호출하면 `428 HEALTH_DATA_CONSENT_REQUIRED`를 반환한다. 철회 요청은 개인일지 원문을 같은 트랜잭션에서 삭제한 뒤 최신 동의를 `false`로 기록한다.
+
 ---
 
 ## Error Code (구현 시 확정)
@@ -608,6 +618,7 @@ Refresh Token·재발급·토큰 블랙리스트는 운영 고도화 항목으�
 | `DUPLICATE_NICKNAME` | 409 | 닉네임 중복 |
 | `DUPLICATE_EMAIL` | 409 | 이메일 중복 |
 | `DUPLICATE_REPORT` | 409 | 동일 대상 중복 신고 |
+| `HEALTH_DATA_CONSENT_REQUIRED` | 428 | 개인일지 이용 전 건강정보 동의 필요 |
 | `ALREADY_REACTED` | 409 | 동일 대상·동일 반응 중복 |
 
 ---

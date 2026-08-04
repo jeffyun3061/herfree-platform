@@ -41,6 +41,22 @@ export function updateHealthStatisticsConsent(agreed: boolean): Promise<HealthSt
   });
 }
 
+export type HealthDataConsent = {
+  agreed: boolean;
+  policyVersion: string | null;
+};
+
+export function fetchHealthDataConsent(): Promise<HealthDataConsent> {
+  return request<HealthDataConsent>('/api/users/me/consents/health-data');
+}
+
+export function updateHealthDataConsent(agreed: boolean): Promise<HealthDataConsent> {
+  return request<HealthDataConsent>('/api/users/me/consents/health-data', {
+    method: 'PATCH',
+    body: { agreed },
+  });
+}
+
 // api-spec.md 기준 회원 탈퇴 엔드포인트 — 백엔드 구현이 추가되면 그대로 동작한다
 export function withdraw(): Promise<void> {
   return request<void>('/api/users/me', { method: 'DELETE' });

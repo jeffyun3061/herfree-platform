@@ -25,12 +25,12 @@ export default function PrivacyPage() {
       <PageHeader title="개인정보처리방침" showBack mobileOnly />
       <main className="page-container max-w-2xl py-8 lg:py-12">
         <h1 className="hidden text-2xl font-semibold text-ink lg:block">Herpfree 개인정보처리방침</h1>
-        <p className="mt-2 text-[12px] hf-text-muted">시행일: 2026년 7월 15일 · 최종 개정일: 2026년 7월 15일</p>
+        <p className="mt-2 text-[12px] hf-text-muted">시행일: 2026년 8월 4일 · 최종 개정일: 2026년 8월 4일</p>
 
         <div className="prose-policy mt-8 space-y-7 text-sm leading-relaxed text-cream-foreground">
-          <Section title="민감정보 처리 안내">
-            <p>회원이 입력하는 병력·증상·투약·수면·스트레스 등 건강 관련 정보는 건강정보에 해당할 수 있는 민감정보로 분류하여 처리합니다. 일반 개인정보와 구분해 별도 동의를 받고 동의 이력과 정책 버전을 기록합니다.</p>
-            <p>개인일지 원문은 로그인한 본인 계정에서만 조회되며, 공개 커뮤니티·광고·외부 연구·AI 학습의 원자료로 사용하지 않습니다. AES-GCM 필드 암호화, 저장·전송 구간 보호, 접근권한과 감사기록을 적용합니다.</p>
+          <Section title="민감정보 처리 안내" id="health-data">
+            <p>회원이 입력하는 병력·증상·투약·수면·스트레스 등 건강 관련 정보는 건강정보에 해당할 수 있는 민감정보로 분류하여 처리합니다. 일반 개인정보와 구분해 별도 동의를 받고 동의 이력과 정책 버전을 기록합니다. 가입 시 동의하지 않아도 커뮤니티 가입은 가능하지만 개인일지 첫 저장 전에 별도 동의가 필요합니다.</p>
+            <p>개인일지 원문은 로그인한 본인 계정에서만 조회됩니다. 자유입력 메모는 AES-GCM으로 암호화하고, 구조화된 값은 DB 저장 암호화·전송 구간 보호·접근권한·감사기록으로 보호합니다. 공개 커뮤니티·광고·외부 연구·AI 학습의 원자료로 사용하지 않습니다.</p>
           </Section>
 
           <Section title="1. 처리하는 개인정보와 목적">
@@ -43,15 +43,15 @@ export default function PrivacyPage() {
                   <tr className="border-b border-border/50"><td className="p-2">연령 확인</td><td className="p-2">만 14세 이상 확인값</td><td className="p-2">이용 자격 확인</td><td className="p-2">동의</td></tr>
                   <tr className="border-b border-border/50"><td className="p-2">개인일지</td><td className="p-2">증상·전조 증상·유발요인·투약·수면·스트레스·기분·운동·메모</td><td className="p-2">본인 전용 기록 제공</td><td className="p-2">별도 민감정보 동의</td></tr>
                   <tr className="border-b border-border/50"><td className="p-2">커뮤니티</td><td className="p-2">글·댓글·이미지, 공개범위, 익명 여부, 신고 내용</td><td className="p-2">게시·댓글·신고·권리침해 대응</td><td className="p-2">계약 이행·동의</td></tr>
-                  <tr><td className="p-2">운영·분석</td><td className="p-2">요청 ID, 보안 이벤트, 허용 이벤트명, 해시된 세션·IP·User-Agent</td><td className="p-2">장애·보안·운영 통계</td><td className="p-2">정당한 이익·법령·동의</td></tr>
+                  <tr><td className="p-2">운영·분석</td><td className="p-2">요청 ID, 보안 이벤트, 허용 이벤트명, 서버에서 해시한 세션·IP·User-Agent</td><td className="p-2">장애·보안·운영 통계</td><td className="p-2">서비스 운영에 필요한 범위의 법적 근거 확인</td></tr>
                 </tbody>
               </table>
             </div>
-            <p>비밀번호는 원문이 아닌 해시로 저장합니다. 분석 이벤트에는 이메일, 닉네임, 게시글·댓글 본문, 개인일지 메모를 넣지 않습니다. 로그인 쿠키와 분석 세션 식별자가 브라우저에 저장될 수 있지만 건강 기록 원문은 브라우저 로컬 저장소에 보관하지 않습니다.</p>
+            <p>비밀번호는 원문이 아닌 해시로 저장합니다. 내부 분석 DB에는 IP·User-Agent·세션 식별값을 서버에서 salt 해시하여 저장하고, 이벤트에는 이메일·닉네임·게시글·댓글 본문·개인일지 메모를 넣지 않습니다. 외부 분석 기능을 켜는 경우에는 무작위 세션 ID와 허용된 이벤트명·경로만 전송합니다. 로그인 쿠키와 분석 세션 식별자가 브라우저에 저장될 수 있지만 건강 기록 원문은 브라우저 로컬 저장소에 보관하지 않습니다.</p>
           </Section>
 
           <Section title="2. 건강정보 통계 활용 선택 동의" id="health-statistics">
-            <p>별도로 선택 동의한 경우에만 증상 여부, 전조 증상, 유발요인, 투약 여부, 수면·스트레스 등 구조화된 값을 최소 표본 집계와 서비스 개선에 사용합니다.</p>
+            <p>정책 버전 2026-07-16. 별도로 선택 동의한 경우에만 증상 여부, 전조 증상, 유발요인, 투약 여부, 수면·스트레스 등 구조화된 값을 최소 표본 집계와 서비스 개선에 사용합니다.</p>
             <BulletList items={[
               '자유 입력 메모, 글·댓글·상담문의 본문, 이메일, 닉네임, 정확한 날짜와 직접 식별자는 집계 원자료에서 제외합니다.',
               '동의한 회원의 기록만 집계하고 철회 이후 생성되는 집계에서 제외합니다.',
@@ -63,7 +63,7 @@ export default function PrivacyPage() {
           </Section>
 
           <Section title="3. 공개·비공개 게시물과 제3자 제공">
-            <p>공개 게시판의 글·댓글·이미지는 선택한 공개범위에 따라 다른 회원 또는 비회원에게 표시될 수 있습니다. 작성 화면에서 공개 가능성과 비공개 선택 방법을 안내하며, 개인일지·운영 문의·상담문의의 원문은 다른 회원에게 공개하지 않습니다.</p>
+            <p>공개 게시판의 글·댓글·이미지는 공개범위에 따라 표시됩니다. 공개를 선택하면 비회원에게도 표시될 수 있고, 회원 전용을 선택하면 로그인한 회원에게 표시될 수 있습니다. 작성 화면에서 공개 가능성과 비공개 선택 방법을 안내하며, 개인일지·운영 문의·상담문의의 원문은 다른 회원에게 공개하지 않습니다.</p>
             <p>회사는 개인정보를 판매하거나 광고 목적으로 제공하지 않습니다. 다만 회원이 직접 공개한 게시물, 적법한 관계기관 요청, 생명·신체·재산 보호 등 법률상 근거가 있는 경우 필요한 최소 범위에서 제공할 수 있습니다.</p>
           </Section>
 
@@ -74,7 +74,7 @@ export default function PrivacyPage() {
                 <tbody>
                   <tr className="border-b border-border/50"><td className="p-2">Amazon Web Services(AWS)</td><td className="p-2">API·DB·파일·로그·비밀관리 등 클라우드 운영</td><td className="p-2">계정·게시물·개인일지·운영 로그</td><td className="p-2">서울 리전 중심. 글로벌 지원·재위탁은 계약 확인 필요</td></tr>
                   <tr className="border-b border-border/50"><td className="p-2">운영 메일 제공자(예: AWS SES)</td><td className="p-2">비밀번호 재설정·공지 메일</td><td className="p-2">이메일·발송 상태</td><td className="p-2">실제 사용 사업자·국가를 배포 전 확정</td></tr>
-                  <tr><td className="p-2">PostHog 등 외부 분석 도구</td><td className="p-2">환경변수 키가 설정된 경우 이벤트 분석</td><td className="p-2">허용 이벤트명·경로·해시 세션 ID</td><td className="p-2">활성화 전에 국가·보유기간 확인</td></tr>
+                  <tr><td className="p-2">PostHog 등 외부 분석 도구</td><td className="p-2">환경변수 키가 설정된 경우 이벤트 분석</td><td className="p-2">허용 이벤트명·경로·무작위 세션 ID</td><td className="p-2">활성화 전에 국가·보유기간·국외이전 확인</td></tr>
                 </tbody>
               </table>
             </div>
@@ -100,16 +100,16 @@ export default function PrivacyPage() {
           </Section>
 
           <Section title="8. 정보주체의 권리와 행사 방법">
-            <p>회원은 열람, 정정, 삭제, 처리정지, 동의 철회 등을 요청할 수 있습니다. 닉네임 변경·개인일지 삭제·회원 탈퇴·건강정보 통계 동의 철회는 서비스 기능을 사용하고, 그 밖의 요청은 <a href={operatorContactMailtoHref()} className="text-primary underline underline-offset-2">{OPERATOR_CONTACT_EMAIL}</a>으로 접수합니다. 회사는 본인 확인 후 법령이 정한 기간과 범위에서 처리합니다.</p>
+            <p>회원은 열람, 정정, 삭제, 처리정지, 동의 철회 등을 요청할 수 있습니다. 닉네임 변경·개인일지 삭제·개인일지 건강정보 동의 철회·회원 탈퇴·건강정보 통계 동의 철회는 서비스 기능을 사용하고, 그 밖의 요청은 <a href={operatorContactMailtoHref()} className="text-primary underline underline-offset-2">{OPERATOR_CONTACT_EMAIL}</a>으로 접수합니다. 개인일지 건강정보 동의를 철회하면 기존 개인일지 원문을 삭제한 뒤 개인일지 처리를 중단합니다. 회사는 본인 확인 후 법령이 정한 기간과 범위에서 처리합니다.</p>
           </Section>
 
           <Section title="9. 쿠키와 행태정보">
-            <p>로그인 상태 유지를 위한 필수 쿠키와 CSRF 쿠키를 사용합니다. 분석 세션 ID는 브라우저 저장소에 생성될 수 있습니다. `NEXT_PUBLIC_POSTHOG_KEY`가 비어 있으면 외부 PostHog 전송은 발생하지 않으며, 맞춤형 건강 광고는 제공하지 않습니다.</p>
+            <p>로그인 상태 유지를 위한 필수 쿠키와 CSRF 쿠키를 사용합니다. 분석 세션 ID는 브라우저 저장소에 생성될 수 있습니다. 기본 배포값에서 `NEXT_PUBLIC_POSTHOG_KEY`가 비어 있으면 외부 PostHog 전송은 발생하지 않습니다. 키를 설정해 외부 분석을 활성화하려면 수탁자·국외이전·보유기간·법적 근거를 먼저 확정하고 이 방침과 동의·고지 화면을 갱신해야 합니다. 맞춤형 건강 광고는 제공하지 않습니다.</p>
           </Section>
 
           <Section title="10. 개인정보 보호책임자와 권익 구제">
             <p>개인정보 보호 문의: <a href={operatorContactMailtoHref()} className="text-primary underline underline-offset-2">{OPERATOR_CONTACT_EMAIL}</a></p>
-            <p className="text-xs text-muted">개인정보 보호책임자 성명·직책·전화·주소는 사업자 등록 및 법률 검토 후 공개 화면에 확정 기재해야 합니다.</p>
+            <p className="text-xs text-muted">개인정보 보호책임자 성명·직책·전화·주소와 운영자 법적 명칭·대표자·사업장 주소·전화는 실제 사업자 등록 및 법률 검토 후 공개 화면에 확정 기재해야 합니다. 이 정보가 비어 있는 상태는 production 공개 완료로 보지 않습니다.</p>
             <p>추가 구제·상담: 개인정보침해신고센터 118(<a href="https://privacy.kisa.or.kr" className="text-primary">privacy.kisa.or.kr</a>), 개인정보분쟁조정위원회 1833-6972(<a href="https://www.kopico.go.kr" className="text-primary">kopico.go.kr</a>)</p>
           </Section>
 

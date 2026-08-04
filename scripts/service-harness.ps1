@@ -8,6 +8,7 @@ param(
     [switch]$RunBrowserSmoke,
     [switch]$RunProductionOpsAudit,
     [switch]$RequireDockerIntegration,
+    [switch]$RequireLegalFacts,
     [string]$ReportPath = "artifacts/service-harness/latest.md"
 )
 
@@ -189,6 +190,12 @@ if ($RunBrowserSmoke) {
         Invoke-HarnessStep "Browser release smoke" { npm.cmd run e2e:staging:smoke }
     }
     finally { Pop-Location }
+}
+
+Invoke-HarnessStep "Legal and privacy policy alignment" {
+    $alignmentArgs = @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", (Join-Path $root "scripts/verify-legal-policy-alignment.ps1"))
+    if ($RequireLegalFacts) { $alignmentArgs += "-StrictOperationalFacts" }
+    powershell.exe @alignmentArgs
 }
 
 if ($RunProductionOpsAudit) {

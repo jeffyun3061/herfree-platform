@@ -10,7 +10,7 @@
 - [ ] 실제 메일 발송 사업자와 국가·보유기간을 확인했다. `console` 메일 모드는 운영에 사용하지 않는다.
 - [ ] `NEXT_PUBLIC_POSTHOG_KEY`가 설정되어 있는지 확인하고, 설정되어 있으면 PostHog 국가·보유기간·옵트아웃을 방침에 반영했다.
 - [ ] 게시물 공개범위 안내와 `PUBLIC`/`MEMBERS_ONLY` 선택 UI가 실제 배포 빌드에 포함되어 있다.
-- [ ] 민감정보 가입 동의 문구, 개인일지 접근통제, 건강통계 선택 동의가 실제 API·DB 이력과 일치한다.
+- [ ] 커뮤니티 가입과 개인일지 민감정보 동의가 분리되고, `health_data_consents` 최신 동의가 개인일지 API 접근을 제어한다.
 - [ ] 탈퇴 시 계정·개인일지·S3 이미지 삭제 및 게시물 익명화 결과를 스테이징과 운영에서 각각 확인했다.
 - [ ] 약관·처리방침 변경 시 동의 버전과 재동의 전략을 정했다.
 
@@ -21,6 +21,7 @@
 | 약관 버전 | `UserConsentAgreementService.TERMS_VERSION` 및 가입 동의 기록 |
 | 개인정보처리방침 버전 | `UserConsentAgreementService.PRIVACY_VERSION` 및 가입 동의 기록 |
 | 건강통계 정책 버전 | `HealthStatisticsConsentService`의 정책 버전 |
+| 개인일지 건강정보 정책 버전 | `HealthDataConsentService.POLICY_VERSION` 및 `health_data_consents` |
 | 보유기간 | `application.yml`의 `app.retention.*` 및 실제 스케줄 실행 |
 | 수탁자·국외이전 | 배포 환경 변수, AWS·메일·분석 계약과 운영 증적 |
 
