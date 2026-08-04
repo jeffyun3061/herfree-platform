@@ -63,6 +63,7 @@ export function createPost(input: PostCreateInput): Promise<PostDetail> {
     title: input.title,
     content: input.content,
     isAnonymous: input.isAnonymous,
+    ...(input.visibility ? { visibility: input.visibility } : {}),
     ...(imageUrl ? { imageUrl } : {}),
   };
   return request<PostDetail>('/api/posts', { method: 'POST', body });

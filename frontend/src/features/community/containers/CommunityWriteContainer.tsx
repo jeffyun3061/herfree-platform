@@ -29,6 +29,8 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { isStaff } from '@/domain/user/types';
 import { getErrorMessage } from '@/lib/api/client';
 import * as adminApi from '@/lib/api/admin';
+import { CommunityWriteGuidelines } from '@/components/community/CommunityWriteGuidelines';
+import type { PostVisibility } from '@/domain/post/types';
 
 const TITLE_UI_MAX = 30;
 
@@ -55,6 +57,7 @@ function WritePostForm() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(false);
+  const [visibility, setVisibility] = useState<PostVisibility>('PUBLIC');
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [isImageUploading, setIsImageUploading] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -116,6 +119,7 @@ function WritePostForm() {
     setTitle(existingPost.title);
     setContent(existingPost.content);
     setIsAnonymous(existingPost.isAnonymous);
+    setVisibility(existingPost.visibility);
     setImageUrl(existingPost.imageUrl ?? null);
     setInitialized(true);
   }, [isEditMode, existingPost, initialized]);
@@ -180,6 +184,7 @@ function WritePostForm() {
       title,
       content,
       isAnonymous,
+      visibility,
       imageUrl: pickPostImageUrlForCreate(imageUrl),
     });
     if (result) {
@@ -386,6 +391,37 @@ function WritePostForm() {
 
         {!isMaskedWrite && (
           <div className="flex-1 px-5 pt-3.5">
+            {!isEditMode && <CommunityWriteGuidelines />}
+            {!isEditMode && (
+              <fieldset className="mt-3 rounded-[14px] border border-[#ECE5D8] bg-[#FFFCF7] p-3">
+                <legend className="px-1 text-[12px] font-semibold text-[#5C645A]">공개 범위</legend>
+                <div className="mt-1.5 grid gap-2 sm:grid-cols-2">
+                  <label className="flex cursor-pointer items-start gap-2 text-[12px] leading-relaxed text-[#1E2621]">
+                    <input
+                      type="radio"
+                      name="post-visibility"
+                      value="PUBLIC"
+                      checked={visibility === 'PUBLIC'}
+                      onChange={() => setVisibility('PUBLIC')}
+                      className="mt-0.5 h-4 w-4 shrink-0 accent-[#0B3B36]"
+                    />
+                    <span><span className="font-semibold">전체 공개</span><br /><span className="text-[#7A8178]">비회원에게도 보일 수 있어요.</span></span>
+                  </label>
+                  <label className="flex cursor-pointer items-start gap-2 text-[12px] leading-relaxed text-[#1E2621]">
+                    <input
+                      type="radio"
+                      name="post-visibility"
+                      value="MEMBERS_ONLY"
+                      checked={visibility === 'MEMBERS_ONLY'}
+                      onChange={() => setVisibility('MEMBERS_ONLY')}
+                      className="mt-0.5 h-4 w-4 shrink-0 accent-[#0B3B36]"
+                    />
+                    <span><span className="font-semibold">회원 공개</span><br /><span className="text-[#7A8178]">로그인한 회원에게만 보여요.</span></span>
+                  </label>
+                </div>
+                <p className="mt-2 text-[11px] leading-relaxed text-[#7A8178]">건강정보·실명·연락처 등 민감한 내용은 공개 게시판에 쓰지 말고 개인일지를 이용해 주세요.</p>
+              </fieldset>
+            )}
             <label htmlFor="content" className="sr-only">
               본문
             </label>

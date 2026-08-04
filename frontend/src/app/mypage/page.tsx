@@ -20,6 +20,7 @@ import { PUBLIC_IMAGES } from '@/domain/assets/static';
 import { getErrorMessage } from '@/lib/api/client';
 import { InlineTopActions } from '@/components/layout/InlineTopActions';
 import { HealthStatisticsConsentCard } from '@/components/mypage/HealthStatisticsConsentCard';
+import { HealthDataConsentCard } from '@/components/mypage/HealthDataConsentCard';
 
 function MenuRow({
   href,
@@ -229,6 +230,11 @@ export default function MyPage() {
               href="/consult"
             />
           </div>
+        </div>
+
+        <div className="hf-page-mx mt-4">
+          <p className="mb-2 px-0.5 text-[11px] font-semibold text-[#9A9F94]">개인일지 동의</p>
+          <HealthDataConsentCard />
         </div>
 
         <div className="hf-page-mx mt-4">
