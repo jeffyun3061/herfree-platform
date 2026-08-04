@@ -6,7 +6,6 @@ import { AuthEntryLink } from '@/components/auth/AuthEntryLink';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useBoards } from '@/hooks/useBoards';
-import { useJournalPublicHomeStats } from '@/hooks/useJournal';
 import { usePostList } from '@/hooks/usePosts';
 import { BoardTabBar } from '@/components/community/BoardTabBar';
 import { CommunityFab } from '@/components/community/CommunityFab';
@@ -40,15 +39,8 @@ function LockIcon() {
   );
 }
 
-function CommunityLockedPreview({
-  memberCount,
-}: {
-  memberCount: number | null | undefined;
-}) {
-  const memberLine =
-    memberCount && memberCount > 0
-      ? `${memberCount.toLocaleString('ko-KR')}명의 회원과 함께하는`
-      : '회원과 함께하는';
+function CommunityLockedPreview() {
+  const memberLine = '회원과 함께하는';
 
   return (
     <div className="hf-page-x pb-10">
@@ -140,8 +132,6 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
     postListPeriodQuery(sort, period),
     { enabled: isReady && isLoggedIn },
   );
-  const { data: homeStats } = useJournalPublicHomeStats();
-
   const communityBoards = useMemo(() => getCommunityBoards(boards), [boards]);
 
   useEffect(() => {
@@ -253,9 +243,7 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
       )}
 
       {!isReady || !isLoggedIn ? (
-        <CommunityLockedPreview
-          memberCount={homeStats?.totalUsers}
-        />
+        <CommunityLockedPreview />
       ) : (
         <div className="hf-page-x">
           {isSecretStoryBoard && <SecretStoryBoardBanner className="mt-4" />}

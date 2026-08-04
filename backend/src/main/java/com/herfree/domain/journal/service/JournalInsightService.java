@@ -5,7 +5,6 @@ import com.herfree.domain.journal.dto.response.JournalInsightsResponse;
 import com.herfree.domain.journal.dto.response.JournalPublicHomeStatsResponse;
 import com.herfree.domain.journal.entity.JournalRecord;
 import com.herfree.domain.journal.repository.JournalRecordRepository;
-import com.herfree.domain.user.repository.UserRepository;
 import com.herfree.global.common.AppTimeZone;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -35,14 +34,10 @@ public class JournalInsightService {
     private static final int MAX_INSIGHT_RECORDS = 500;
 
     private final JournalRecordRepository journalRecordRepository;
-    private final UserRepository userRepository;
     private final HealthInsightPublicationPolicy publicationPolicy;
 
     public JournalPublicHomeStatsResponse getPublicHomeStats() {
-        long usersRecordingToday = journalRecordRepository.countDistinctConsentedUsersByRecordDate(
-                AppTimeZone.todayKst());
-        long totalUsers = userRepository.count();
-        return new JournalPublicHomeStatsResponse(usersRecordingToday, totalUsers);
+        return new JournalPublicHomeStatsResponse();
     }
 
     public JournalInsightsResponse getCommunityInsights() {
