@@ -39,7 +39,7 @@ jobs:
     outputs:
       image: ${{ steps.image.outputs.uri }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: aws-actions/configure-aws-credentials@v4
@@ -100,7 +100,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: staging
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
@@ -199,7 +199,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: staging
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -225,7 +225,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: staging
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -268,7 +268,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: aws-actions/configure-aws-credentials@v4
@@ -310,7 +310,7 @@ jobs:
           echo "promoted_sha=${promoted_sha}" >> "${GITHUB_OUTPUT}"
           echo "image_digest=${image_digest}" >> "${GITHUB_OUTPUT}"
       - name: Check out the exact staging-tested bundle
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ steps.release.outputs.promoted_sha }}
           fetch-depth: 0
