@@ -65,7 +65,13 @@ export function SignupAgreementFields({ value, onChange }: SignupAgreementFields
         />
         <span>
           <span className="font-medium text-[#0B3B36]">[필수]</span>{' '}
-          증상·투약·건강 메모 등 민감정보 처리에 동의합니다.
+          <Link href="/privacy" className="underline underline-offset-2">
+            증상·투약·건강 메모 등 민감정보 처리
+          </Link>
+          에 동의합니다.
+          <span className="mt-1 block text-xs leading-5 text-[#7A8178]">
+            동의하지 않으면 현재 서비스의 가입·개인일지 이용이 제한될 수 있습니다.
+          </span>
         </span>
       </label>
       <label className="flex items-start gap-3 text-sm text-[#1E2621]">
