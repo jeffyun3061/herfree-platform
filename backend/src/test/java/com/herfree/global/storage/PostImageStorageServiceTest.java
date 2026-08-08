@@ -29,8 +29,9 @@ class PostImageStorageServiceTest {
             new S3Properties("test-bucket", "ap-northeast-2", null, null, "");
     private final S3Client s3Client = org.mockito.Mockito.mock(S3Client.class);
     private final S3Presigner s3Presigner = org.mockito.Mockito.mock(S3Presigner.class);
+    private final PostImageOptimizer postImageOptimizer = new PostImageOptimizer();
     private final PostImageStorageService service =
-            new PostImageStorageService(s3Properties, s3Client, s3Presigner);
+            new PostImageStorageService(s3Properties, s3Client, s3Presigner, postImageOptimizer);
 
     @Test
     @DisplayName("presigned PUT 요청에는 검증된 Content-Length를 포함한다")
@@ -53,7 +54,7 @@ class PostImageStorageServiceTest {
         S3Properties properties =
                 new S3Properties("test-bucket", "ap-northeast-2", null, null, "https://cdn.example.com");
         PostImageStorageService proxyOnlyService =
-                new PostImageStorageService(properties, s3Client, s3Presigner);
+                new PostImageStorageService(properties, s3Client, s3Presigner, postImageOptimizer);
         PresignedPutObjectRequest presigned = org.mockito.Mockito.mock(PresignedPutObjectRequest.class);
         given(presigned.url()).willReturn(new URL("https://example.com/upload"));
         given(s3Presigner.presignPutObject(any(PutObjectPresignRequest.class))).willReturn(presigned);
