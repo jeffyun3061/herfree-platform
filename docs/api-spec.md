@@ -249,6 +249,11 @@ Refresh Token·재발급·토큰 블랙리스트는 운영 고도화 항목으�
 
 **요청:** `multipart/form-data`, 필드 `file` (JPEG/PNG/WEBP, 최대 10MB)
 
+**업로드 최적화(1차 MVP):**
+- 클라이언트: 업로드 전 긴 변 최대 1600px·JPEG(품질 약 0.82)로 줄일 수 있다.
+- 서버(`POST /api/posts/images/upload`): 수신 이미지를 다시 디코딩해 긴 변 1600px·JPEG로 재인코딩한 뒤 S3에 저장한다(최종 방어). ImageIO로 디코딩할 수 없는 WebP 등은 형식·10MB 검증 통과 시 원본을 저장한다.
+- 서버는 형식·10MB를 항상 검증한다.
+
 **응답 data**
 
 ```json

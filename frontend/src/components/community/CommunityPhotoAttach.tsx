@@ -26,7 +26,7 @@ export function CommunityPhotoAttach({
   onChange,
   disabled = false,
   label = '사진 첨부 (선택)',
-  helperText = '사진 1장, 10MB 이하 (JPEG, PNG, WEBP)',
+  helperText = '사진 1장, 자동 최적화 · 원본 10MB 이하 (JPEG, PNG, WEBP)',
   emptyText = '사진 추가',
   variant = 'default',
   onUploadingChange,
