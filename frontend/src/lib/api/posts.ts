@@ -6,8 +6,13 @@ import type {
   PostImageUploadResponse,
   PostUpdateInput,
 } from '@/domain/post/types';
-import { resolvePostImageContentType, pickPostImageUrlForCreate } from '@/domain/post/types';
+import {
+  POST_IMAGE_MAX_BYTES,
+  resolvePostImageContentType,
+  pickPostImageUrlForCreate,
+} from '@/domain/post/types';
 import { request, requestMultipart } from '@/lib/api/client';
+import { preparePostImageForUpload } from '@/lib/postImageCompress';
 
 // 백엔드 @PageableDefault 정렬이 오름차순이므로 항상 최신순 정렬을 명시한다
 export function fetchPosts(
@@ -84,8 +89,13 @@ export async function uploadPostImage(file: File): Promise<string> {
     throw new Error('JPEG, PNG, WEBP 형식의 이미지만 업로드할 수 있습니다.');
   }
 
+  const prepared = await preparePostImageForUpload(file, contentType);
+  if (prepared.size > POST_IMAGE_MAX_BYTES) {
+    throw new Error('이미지는 10MB 이하만 업로드할 수 있습니다.');
+  }
+
   const formData = new FormData();
-  formData.append('file', file, file.name);
+  formData.append('file', prepared, prepared.name);
 
   const { imageUrl } = await requestMultipart<PostImageUploadResponse>(
     '/api/posts/images/upload',
