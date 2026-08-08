@@ -249,6 +249,8 @@ Refresh Token·재발급·토큰 블랙리스트는 운영 고도화 항목으�
 
 **요청:** `multipart/form-data`, 필드 `file` (JPEG/PNG/WEBP, 최대 10MB)
 
+**클라이언트 전처리(1차 MVP):** 업로드 전 브라우저에서 긴 변 최대 1600px로 축소하고 JPEG(품질 약 0.82)로 재인코딩할 수 있다. PNG/WEBP도 피드용 JPEG로 변환될 수 있다. 서버는 여전히 형식·10MB를 검증한다.
+
 **응답 data**
 
 ```json
