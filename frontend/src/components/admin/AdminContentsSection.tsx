@@ -321,7 +321,7 @@ export function AdminContentsSection() {
             onChange={(imageUrl) => setForm((prev) => ({ ...prev, imageUrl }))}
             disabled={isSubmitting}
             label="대표 이미지 (선택)"
-            helperText="칼럼 목록과 상세 상단에 노출됩니다. 10MB 이하 JPEG, PNG, WEBP"
+            helperText="칼럼 목록과 상세 상단에 노출됩니다. 자동 최적화 · 원본 10MB 이하 JPEG, PNG, WEBP"
             emptyText="대표 이미지 추가"
           />
 
