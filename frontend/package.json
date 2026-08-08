@@ -21,7 +21,7 @@
     "e2e:staging:mutation": "playwright test e2e/bff-session.spec.ts e2e/release.spec.ts --project=chromium --grep \"staging data flow\""
   },
   "dependencies": {
-    "next": "^15.5.21",
+    "next": "^16.3.0",
     "react": "^18",
     "react-dom": "^18"
   },
