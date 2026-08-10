@@ -130,7 +130,10 @@ function FlowChart({
   const baseline = 96;
 
   return (
-    <div className="flex min-w-max pl-1">
+    <div
+      className="grid w-full pl-0.5"
+      style={{ gridTemplateColumns: `repeat(${days.length}, minmax(0, 1fr))` }}
+    >
       {days.map((day) => {
         const flags = dayFlags(day);
         const active = flags.map((flag, index) => (flag ? index : -1)).filter((index) => index >= 0);
@@ -157,7 +160,7 @@ function FlowChart({
             disabled={!day.recorded}
             onClick={() => onDaySelect(day.date)}
             className={cn(
-              'flex w-[30px] shrink-0 flex-col items-center',
+              'flex min-w-0 flex-col items-center',
               day.recorded ? 'cursor-pointer' : 'cursor-default',
             )}
             aria-label={`${day.date} ${day.recorded ? '기록 보기' : '기록 없음'}`}
@@ -170,7 +173,7 @@ function FlowChart({
               <span className="mb-0.5 text-[11px] text-[#9A9F94]">{formatDayNumber(day.date)}</span>
             )}
             <span className="mb-1.5 text-[10px] text-[#B0B4A8]">{formatWeekday(day.date)}</span>
-            <span className="relative h-[108px] w-[30px]">
+            <span className="relative h-[108px] w-full min-w-0">
               {stem}
               {active.map((index) => (
                 <span
@@ -317,7 +320,7 @@ export function JournalInsightsPanel({
           ))}
         </div>
         {recentDays.length > 0 ? (
-          <div className="overflow-x-auto">
+          <div className="w-full overflow-hidden">
             <FlowChart days={recentDays} onDaySelect={onDaySelect} />
           </div>
         ) : (
