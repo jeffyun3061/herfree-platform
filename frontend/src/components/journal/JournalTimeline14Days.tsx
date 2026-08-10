@@ -36,13 +36,13 @@ function DayColumn({
       disabled={!day.recorded || !onSelect}
       onClick={() => onSelect?.(day.date)}
       className={cn(
-        'flex min-w-[2.75rem] flex-col items-center gap-2 rounded-lg transition-colors',
+        'flex min-w-0 flex-1 flex-col items-center gap-2 rounded-lg transition-colors',
         !day.recorded && 'opacity-40',
         day.recorded && onSelect && 'hover:bg-canvas-dark/60',
       )}
       aria-label={day.recorded ? `${dayLabel(day.date)} 기록 보기` : `${dayLabel(day.date)} 기록 없음`}
     >
-      <span className="text-[10px] font-medium text-muted">{dayLabel(day.date)}</span>
+      <span className="whitespace-nowrap text-[9px] font-medium text-muted">{dayLabel(day.date)}</span>
       <div className="flex h-16 flex-col items-center justify-end gap-1">
         {LEGEND.map((item) => (
           <span
@@ -82,7 +82,7 @@ export function JournalTimeline14Days({ days, isLoading, onDaySelect }: JournalT
       <h3 className="text-[13px] font-semibold text-ink">최근 14일 흐름</h3>
       <p className="mt-0.5 text-[11px] text-muted">날짜를 눌러 기록을 수정할 수 있어요</p>
 
-      <div className="mt-4 flex items-end gap-0.5 overflow-x-auto pb-1">
+      <div className="mt-4 flex items-end gap-px pb-1">
         {days.map((day) => (
           <DayColumn key={day.date} day={day} onSelect={onDaySelect} />
         ))}
