@@ -212,9 +212,10 @@ export function AdminNoticesSection() {
               );
             })}
             {!isLoading && noticePage.content.length === 0 && (
-              <p className="rounded-xl border border-dashed border-border px-4 py-8 text-center text-[12px] text-muted">
-                조건에 맞는 공지가 없습니다.
-              </p>
+              <div className="rounded-xl border border-dashed border-border px-4 py-8 text-center text-[12px] text-muted">
+                <p>조건에 맞는 공지가 없습니다.</p>
+                <p className="mt-1.5">새 공지는 상단의 등록 탭에서 올려 주세요.</p>
+              </div>
             )}
           </div>
 
