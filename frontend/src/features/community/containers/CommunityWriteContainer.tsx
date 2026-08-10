@@ -321,7 +321,7 @@ function WritePostForm() {
 
         <div className="px-5 pt-[18px]">
           <p className="mb-2.5 text-[12px] font-semibold text-[#9A9F94]">게시판 선택</p>
-          <div className="-mx-5 overflow-x-auto px-5 pb-1 scrollbar-hide">
+          <div className="relative -mx-5 overflow-x-auto px-5 pb-1 scrollbar-hide">
             <div className="flex w-max gap-2">
               {writableBoards.map((board) => {
                 const active = board.id === boardId;
@@ -348,6 +348,12 @@ function WritePostForm() {
                 );
               })}
             </div>
+            <span
+              aria-hidden
+              className="pointer-events-none sticky right-0 top-0 ml-auto flex h-[35px] w-8 -translate-y-[35px] items-center justify-end bg-gradient-to-l from-white via-white/85 to-transparent pr-1 text-[18px] text-[#6E7671]"
+            >
+              ›
+            </span>
           </div>
         </div>
 
@@ -368,8 +374,8 @@ function WritePostForm() {
               onBlur={() => setTitleFocused(false)}
               placeholder={titlePlaceholder}
               className={cn(
-                'w-full border-none bg-transparent px-0.5 py-2 text-[16px] font-semibold text-[#1E2621] outline-none',
-                titleFocused ? 'border-b border-[#0B3B36]' : 'border-b border-[#E6DECF]',
+                'w-full border-0 border-b-2 bg-transparent px-0.5 py-2 text-[16px] font-semibold text-[#1E2621] outline-none transition-colors',
+                titleFocused ? 'border-[#0B3B36]' : 'border-[#D9CDB8]',
               )}
             />
             <button
@@ -500,6 +506,11 @@ function WritePostForm() {
           {adminSubmitError && <ErrorMessage message={adminSubmitError} />}
           {error && <ErrorMessage message={error} />}
         </div>
+
+        <aside className="mx-5 mb-5 mt-4 rounded-xl border border-[#E8DFD0] bg-[#FBF7F0] px-4 py-3 text-[12px] leading-[1.7] text-[#68716A]">
+          <strong className="font-semibold text-[#354139]">글쓰기 안내</strong>
+          <p className="mt-1">개인정보·연락처·실명은 적지 말아 주세요. 민감한 의료 정보는 필요한 범위에서만 공유해 주세요.</p>
+        </aside>
       </form>
 
       <CommunityWriteTipsSheet open={tipsOpen} onClose={() => setTipsOpen(false)} />

@@ -11,36 +11,15 @@
  */
 @font-face {
   font-family: 'Source Han Serif KR';
-  font-weight: 300;
-  font-style: normal;
-  font-display: swap;
-  src: url('/fonts/source-han-serif/SourceHanSerifKR-Light.woff2') format('woff2');
-}
-@font-face {
-  font-family: 'Source Han Serif KR';
   font-weight: 400;
   font-style: normal;
   font-display: swap;
-  src: url('/fonts/source-han-serif/SourceHanSerifKR-Regular.woff2') format('woff2');
-}
-@font-face {
-  font-family: 'Source Han Serif KR';
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-  src: url('/fonts/source-han-serif/SourceHanSerifKR-Medium.woff2') format('woff2');
-}
-@font-face {
-  font-family: 'Source Han Serif KR';
-  font-weight: 600;
-  font-style: normal;
-  font-display: swap;
-  src: url('/fonts/source-han-serif/SourceHanSerifKR-SemiBold.woff2') format('woff2');
+  src: url('/fonts/source-han-serif/SourceHanSerifKR-Regular.otf') format('opentype');
 }
 @font-face {
   font-family: 'Source Han Serif KR';
   font-weight: 700;
   font-style: normal;
   font-display: swap;
-  src: url('/fonts/source-han-serif/SourceHanSerifKR-Bold.woff2') format('woff2');
+  src: url('/fonts/source-han-serif/SourceHanSerifKR-Bold.otf') format('opentype');
 }

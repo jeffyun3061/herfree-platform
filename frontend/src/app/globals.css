@@ -1,4 +1,5 @@
 @import '../styles/fonts/suit-variable.css';
+@import '../styles/fonts/source-han-serif.css';
 
 @tailwind base;
 @tailwind components;
@@ -92,7 +93,7 @@ body {
 
 @layer components {
   .hf-display {
-    font-family: var(--font-display), 'Nanum Myeongjo', 'AppleMyungjo', 'Batang', Georgia, serif;
+    font-family: 'Source Han Serif KR', var(--font-display), 'Nanum Myeongjo', 'AppleMyungjo', 'Batang', Georgia, serif;
   }
 
   .hf-page-x {
