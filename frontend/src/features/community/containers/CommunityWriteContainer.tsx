@@ -312,8 +312,8 @@ function WritePostForm() {
   const boardPickerDisabled = isEditMode || lockedPrivateBoard;
 
   return (
-    <div className="flex min-h-screen flex-col bg-white pb-10 hf-subpage-top">
-      <header className="flex items-center justify-between border-b border-[#EFE9DD] px-[18px] pb-3.5 pt-0.5">
+    <div className="flex min-h-screen flex-col bg-[#F3EDE3] pb-10 hf-subpage-top">
+      <header className="flex items-center justify-between border-b border-[#E4D8C7] bg-[#F3EDE3]/95 px-[18px] pb-3.5 pt-0.5">
         <Link
           href={backHref}
           aria-label="뒤로 가기"
@@ -483,7 +483,7 @@ function WritePostForm() {
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder={contentPlaceholder}
-              className="min-h-[200px] w-full resize-y rounded-[14px] border border-[#ECE5D8] bg-[#F8F4EC] p-[15px] text-[13.5px] leading-[1.7] text-[#1E2621] placeholder:text-[#B4B2A6] outline-none focus:border-[#0B3B36]/35"
+              className="mt-3 min-h-[200px] w-full resize-y rounded-[14px] border border-[#E2D5C2] bg-[#FFFCF7] p-[15px] text-[13.5px] leading-[1.7] text-[#1E2621] shadow-[0_10px_24px_-24px_rgba(7,37,31,.45)] placeholder:text-[#B4B2A6] outline-none focus:border-[#0B3B36]/35"
             />
             <div className="mt-3">
               <CommunityPhotoAttach
@@ -509,7 +509,7 @@ function WritePostForm() {
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder={contentPlaceholder}
-              className="min-h-[200px] w-full resize-y rounded-[14px] border border-[#ECE5D8] bg-[#F8F4EC] p-[15px] text-[13.5px] leading-[1.7] text-[#1E2621] placeholder:text-[#B4B2A6] outline-none focus:border-[#0B3B36]/35"
+              className="min-h-[200px] w-full resize-y rounded-[14px] border border-[#E2D5C2] bg-[#FFFCF7] p-[15px] text-[13.5px] leading-[1.7] text-[#1E2621] shadow-[0_10px_24px_-24px_rgba(7,37,31,.45)] placeholder:text-[#B4B2A6] outline-none focus:border-[#0B3B36]/35"
             />
           </div>
         )}
