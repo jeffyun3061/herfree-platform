@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { RequireAuth } from '@/components/auth/RequireAuth';
 import { useBoards } from '@/hooks/useBoards';
@@ -66,6 +66,23 @@ function WritePostForm() {
   const [titleFocused, setTitleFocused] = useState(false);
   const [adminSubmitError, setAdminSubmitError] = useState<string | null>(null);
   const [isAdminSubmitting, setIsAdminSubmitting] = useState(false);
+  const boardScrollerRef = useRef<HTMLDivElement>(null);
+  const [canScrollBoardsLeft, setCanScrollBoardsLeft] = useState(false);
+  const [canScrollBoardsRight, setCanScrollBoardsRight] = useState(false);
+
+  const updateBoardScrollState = () => {
+    const scroller = boardScrollerRef.current;
+    if (!scroller) return;
+    setCanScrollBoardsLeft(scroller.scrollLeft > 2);
+    setCanScrollBoardsRight(scroller.scrollLeft + scroller.clientWidth < scroller.scrollWidth - 2);
+  };
+
+  const scrollBoards = (direction: 'left' | 'right') => {
+    boardScrollerRef.current?.scrollBy({
+      left: direction === 'left' ? -180 : 180,
+      behavior: 'smooth',
+    });
+  };
 
   const privateWriteRedirect = useMemo(
     () => resolvePrivateBoardWritePath(boards, initialBoardId),
@@ -76,6 +93,15 @@ function WritePostForm() {
     if (!privateWriteRedirect) return;
     router.replace(privateWriteRedirect);
   }, [privateWriteRedirect, router]);
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(updateBoardScrollState);
+    window.addEventListener('resize', updateBoardScrollState);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener('resize', updateBoardScrollState);
+    };
+  }, [writableBoards.length]);
 
   useEffect(() => {
     if (boardsLoading || boards.length === 0) return;
@@ -321,8 +347,22 @@ function WritePostForm() {
 
         <div className="px-5 pt-[18px]">
           <p className="mb-2.5 text-[12px] font-semibold text-[#9A9F94]">게시판 선택</p>
-          <div className="relative -mx-5 overflow-x-auto px-5 pb-1 scrollbar-hide">
-            <div className="flex w-max gap-2">
+          <div className="-mx-2 flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => scrollBoards('left')}
+              disabled={!canScrollBoardsLeft}
+              aria-label="이전 게시판 보기"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#E9DFCE] bg-white text-[20px] text-[#496158] shadow-sm disabled:invisible"
+            >
+              ‹
+            </button>
+            <div
+              ref={boardScrollerRef}
+              onScroll={updateBoardScrollState}
+              className="min-w-0 flex-1 overflow-x-auto py-0.5 scrollbar-hide"
+            >
+              <div className="flex w-max gap-2 px-0.5">
               {writableBoards.map((board) => {
                 const active = board.id === boardId;
                 const label =
@@ -347,13 +387,17 @@ function WritePostForm() {
                   </button>
                 );
               })}
+              </div>
             </div>
-            <span
-              aria-hidden
-              className="pointer-events-none sticky right-0 top-0 ml-auto flex h-[35px] w-8 -translate-y-[35px] items-center justify-end bg-gradient-to-l from-white via-white/85 to-transparent pr-1 text-[18px] text-[#6E7671]"
+            <button
+              type="button"
+              onClick={() => scrollBoards('right')}
+              disabled={!canScrollBoardsRight}
+              aria-label="다음 게시판 보기"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#E9DFCE] bg-white text-[20px] text-[#496158] shadow-sm disabled:invisible"
             >
               ›
-            </span>
+            </button>
           </div>
         </div>
 
@@ -364,7 +408,12 @@ function WritePostForm() {
         )}
 
         <div className="px-5 pt-[18px]">
-          <div className="flex items-center gap-1.5">
+          <div
+            className={cn(
+              'flex items-center gap-1.5 border-b-2 transition-colors',
+              titleFocused ? 'border-[#0B3B36]' : 'border-[#D9CDB8]',
+            )}
+          >
             <input
               id="title"
               value={title}
@@ -373,10 +422,7 @@ function WritePostForm() {
               onFocus={() => setTitleFocused(true)}
               onBlur={() => setTitleFocused(false)}
               placeholder={titlePlaceholder}
-              className={cn(
-                'w-full border-0 border-b-2 bg-transparent px-0.5 py-2 text-[16px] font-semibold text-[#1E2621] outline-none transition-colors',
-                titleFocused ? 'border-[#0B3B36]' : 'border-[#D9CDB8]',
-              )}
+              className="w-full border-0 bg-transparent px-0.5 py-2 text-[16px] font-semibold text-[#1E2621] outline-none"
             />
             <button
               type="button"
@@ -401,7 +447,7 @@ function WritePostForm() {
             {!isEditMode && (
               <fieldset className="mt-3 rounded-[14px] border border-[#ECE5D8] bg-[#FFFCF7] p-3">
                 <legend className="px-1 text-[12px] font-semibold text-[#5C645A]">공개 범위</legend>
-                <div className="mt-1.5 grid gap-2 sm:grid-cols-2">
+                <div className="mt-1.5 grid grid-cols-2 gap-3">
                   <label className="flex cursor-pointer items-start gap-2 text-[12px] leading-relaxed text-[#1E2621]">
                     <input
                       type="radio"
@@ -411,7 +457,7 @@ function WritePostForm() {
                       onChange={() => setVisibility('PUBLIC')}
                       className="mt-0.5 h-4 w-4 shrink-0 accent-[#0B3B36]"
                     />
-                    <span><span className="font-semibold">전체 공개</span><br /><span className="text-[#7A8178]">비회원에게도 보일 수 있어요.</span></span>
+                    <span className="min-w-0 break-keep"><span className="font-semibold">전체 공개</span><br /><span className="text-[#7A8178]">비회원도 볼 수 있어요.</span></span>
                   </label>
                   <label className="flex cursor-pointer items-start gap-2 text-[12px] leading-relaxed text-[#1E2621]">
                     <input
@@ -422,10 +468,10 @@ function WritePostForm() {
                       onChange={() => setVisibility('MEMBERS_ONLY')}
                       className="mt-0.5 h-4 w-4 shrink-0 accent-[#0B3B36]"
                     />
-                    <span><span className="font-semibold">회원 공개</span><br /><span className="text-[#7A8178]">로그인한 회원에게만 보여요.</span></span>
+                    <span className="min-w-0 break-keep"><span className="font-semibold">회원 공개</span><br /><span className="text-[#7A8178]">회원만 볼 수 있어요.</span></span>
                   </label>
                 </div>
-                <p className="mt-2 text-[11px] leading-relaxed text-[#7A8178]">건강정보·실명·연락처 등 민감한 내용은 공개 게시판에 쓰지 말고 개인일지를 이용해 주세요.</p>
+                <p className="mt-3 break-keep border-t border-[#EEE5D7] pt-2.5 text-[11px] leading-[1.7] text-[#7A8178]">건강정보·실명·연락처처럼 민감한 내용은 공개 게시판 대신 개인일지에 기록해 주세요.</p>
               </fieldset>
             )}
             <label htmlFor="content" className="sr-only">
@@ -507,10 +553,6 @@ function WritePostForm() {
           {error && <ErrorMessage message={error} />}
         </div>
 
-        <aside className="mx-5 mb-5 mt-4 rounded-xl border border-[#E8DFD0] bg-[#FBF7F0] px-4 py-3 text-[12px] leading-[1.7] text-[#68716A]">
-          <strong className="font-semibold text-[#354139]">글쓰기 안내</strong>
-          <p className="mt-1">개인정보·연락처·실명은 적지 말아 주세요. 민감한 의료 정보는 필요한 범위에서만 공유해 주세요.</p>
-        </aside>
       </form>
 
       <CommunityWriteTipsSheet open={tipsOpen} onClose={() => setTipsOpen(false)} />
