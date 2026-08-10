@@ -445,7 +445,7 @@ function WritePostForm() {
           <div className="flex-1 px-5 pt-3.5">
             {!isEditMode && <CommunityWriteGuidelines />}
             {!isEditMode && (
-              <fieldset className="mt-3 rounded-[14px] border border-[#ECE5D8] bg-[#FFFCF7] p-3">
+              <fieldset className="mt-3 rounded-[14px] border border-[#ECE5D8] bg-white p-3">
                 <legend className="px-1 text-[12px] font-semibold text-[#5C645A]">공개 범위</legend>
                 <div className="mt-1.5 grid grid-cols-2 gap-3">
                   <label className="flex cursor-pointer items-start gap-2 text-[12px] leading-relaxed text-[#1E2621]">
