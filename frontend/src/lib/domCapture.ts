@@ -1,3 +1,5 @@
+import html2canvas from 'html2canvas';
+
 function inlineComputedStyles(source: HTMLElement, target: HTMLElement) {
   const computed = window.getComputedStyle(source);
   let cssText = '';
@@ -136,7 +138,23 @@ export async function captureElementPngBlob(
       new Promise<void>((resolve) => window.setTimeout(resolve, 1500)),
     ]);
   }
-  return renderElementToBlob(element, pixelRatio);
+  const canvas = await html2canvas(element, {
+    allowTaint: false,
+    backgroundColor: null,
+    imageTimeout: 5000,
+    logging: false,
+    scale: pixelRatio,
+    useCORS: true,
+  });
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        reject(new Error('이미지 생성에 실패했습니다.'));
+        return;
+      }
+      resolve(blob);
+    }, 'image/png');
+  });
 }
 
 export async function downloadElementPng(element: HTMLElement, filename: string): Promise<void> {
