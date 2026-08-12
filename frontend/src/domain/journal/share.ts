@@ -7,10 +7,11 @@ export type JournalShareOptions = {
 };
 
 function resolveSiteUrl(): string {
-  if (typeof window !== 'undefined') {
-    return window.location.origin;
-  }
-  return process.env.NEXT_PUBLIC_SITE_URL ?? 'https://herfree.com';
+  const siteUrl =
+    typeof window !== 'undefined'
+      ? window.location.origin
+      : process.env.NEXT_PUBLIC_SITE_URL ?? 'https://herpfree.co.kr';
+  return siteUrl.replace(/\/+$/, '');
 }
 
 export function buildJournalShareText(
@@ -23,7 +24,7 @@ export function buildJournalShareText(
     includeSiteLink = true,
   } = options;
 
-  const lines: string[] = ['[Herfree] 나의 건강 기록'];
+  const lines: string[] = ['[헤르프리] 오늘의 기록 카드'];
 
   if (includeStreak && dashboard) {
     lines.push(`무재발 연속 ${dashboard.relapseFreeDays}일 관리 중`);
@@ -34,10 +35,10 @@ export function buildJournalShareText(
     );
   }
 
-  lines.push('※ 개인 메모·상세 증상 내용은 공유되지 않습니다.');
+  lines.push('※ 개인 메모·상세 증상은 공유되지 않습니다.');
 
   if (includeSiteLink) {
-    lines.push(`Herfree에서 함께 관리해요 → ${resolveSiteUrl()}`);
+    lines.push(`헤르프리에서 기록을 이어가요 → ${resolveSiteUrl()}/`);
   }
 
   return lines.join('\n');
@@ -49,7 +50,7 @@ export async function shareJournalText(text: string): Promise<'shared' | 'copied
   if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
     try {
       await navigator.share({
-        title: 'Herfree 건강 기록',
+        title: '헤르프리 기록 카드',
         text,
         url,
       });

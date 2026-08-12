@@ -221,10 +221,7 @@ export function JournalDashboardCard({
             ))}
           </div>
 
-          <p
-            data-share-exclude="1"
-            className="mt-[15px] flex items-center justify-center gap-1.5 text-[12px] font-semibold text-[#F0C778]"
-          >
+          <p className="mt-[15px] flex items-center justify-center gap-1.5 text-[12px] font-semibold text-[#F0C778]">
             🔥 {recordStreak}일 연속 기록 중
           </p>
 
@@ -232,7 +229,6 @@ export function JournalDashboardCard({
             <button
               type="button"
               onClick={onRecordDaily}
-              data-share-exclude="1"
               className="mt-2.5 w-full rounded-[13px] border border-[rgba(243,237,227,.3)] bg-[rgba(243,237,227,.12)] px-4 py-3.5 text-center text-[14px] font-bold text-[#F3EDE3] backdrop-blur-sm transition-colors hover:bg-[rgba(243,237,227,.18)]"
             >
               ✏️ 오늘 기록하기
