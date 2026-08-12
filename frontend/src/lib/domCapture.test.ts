@@ -30,7 +30,13 @@ describe('captureElementPngBlob', () => {
     const card = document.createElement('section');
     card.id = 'hf-dashboard-card';
     card.style.height = '380px';
-    card.innerHTML = '<div data-share-only="1" class="hidden">footer</div>';
+    card.innerHTML = `
+      <div class="content" style="height:380px;overflow:hidden">
+        <div data-share-only="1" class="hidden" style="display:none;height:0px">
+          <span>헤르프리 개인일지</span>
+          <a href="https://herpfree.co.kr">herpfree.co.kr</a>
+        </div>
+      </div>`;
     document.body.appendChild(card);
 
     let capturedElement: HTMLElement | null = null;
@@ -41,7 +47,13 @@ describe('captureElementPngBlob', () => {
         if (this === card) return rect(320, 380);
         if (this.id === 'hf-dashboard-card') {
           const footer = this.querySelector('[data-share-only]');
-          return rect(320, footer instanceof HTMLElement && footer.style.display === 'flex' ? 420 : 380);
+          const content = this.querySelector('.content');
+          const footerIsInFlow =
+            footer instanceof HTMLElement &&
+            footer.style.display === 'flex' &&
+            footer.style.height === 'auto';
+          const contentIsNaturalHeight = content instanceof HTMLElement && content.style.height === 'auto';
+          return rect(320, footerIsInFlow && contentIsNaturalHeight ? 420 : 380);
         }
         return originalGetBoundingClientRect.call(this);
       },
@@ -63,7 +75,12 @@ describe('captureElementPngBlob', () => {
       expect(html2canvasMock).toHaveBeenCalledTimes(1);
       expect(capturedElement).not.toBe(card);
       expect(capturedElement?.style.height).toBe('auto');
-      expect(capturedElement?.querySelector('[data-share-only]')?.getAttribute('style')).toContain('display: flex');
+      const capturedFooter = capturedElement?.querySelector('[data-share-only]');
+      expect(capturedFooter?.getAttribute('style')).toContain('display: flex');
+      expect(capturedFooter instanceof HTMLElement && capturedFooter.style.height).toBe('auto');
+      expect(capturedFooter?.textContent).toContain('헤르프리 개인일지');
+      expect(capturedFooter?.textContent).toContain('herpfree.co.kr');
+      expect(capturedElement?.querySelector('.content')?.getAttribute('style')).toContain('height: auto');
       expect(html2canvasMock.mock.calls[0]?.[1]).toMatchObject({
         height: 420,
         width: 320,
