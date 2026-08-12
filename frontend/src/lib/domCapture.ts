@@ -42,8 +42,13 @@ async function waitForImages(element: HTMLElement) {
     images.map(async (image) => {
       if (image.complete) return;
       await new Promise<void>((resolve) => {
-        image.addEventListener('load', () => resolve(), { once: true });
-        image.addEventListener('error', () => resolve(), { once: true });
+        const timeout = window.setTimeout(resolve, 5000);
+        const finish = () => {
+          window.clearTimeout(timeout);
+          resolve();
+        };
+        image.addEventListener('load', finish, { once: true });
+        image.addEventListener('error', finish, { once: true });
       });
     }),
   );
@@ -98,7 +103,10 @@ export async function captureElementPngBlob(
 ): Promise<Blob> {
   await waitForImages(element);
   if (document.fonts?.ready) {
-    await document.fonts.ready;
+    await Promise.race([
+      document.fonts.ready,
+      new Promise<void>((resolve) => window.setTimeout(resolve, 1500)),
+    ]);
   }
   return renderElementToBlob(element, pixelRatio);
 }
@@ -116,8 +124,15 @@ export async function downloadElementPng(element: HTMLElement, filename: string)
 function loadImage(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const image = new Image();
-    image.onload = () => resolve(image);
-    image.onerror = () => reject(new Error('이미지 로드에 실패했습니다.'));
+    const timeout = window.setTimeout(() => reject(new Error('이미지 로드 시간이 초과되었습니다.')), 5000);
+    image.onload = () => {
+      window.clearTimeout(timeout);
+      resolve(image);
+    };
+    image.onerror = () => {
+      window.clearTimeout(timeout);
+      reject(new Error('이미지 로드에 실패했습니다.'));
+    };
     image.src = url;
   });
 }
