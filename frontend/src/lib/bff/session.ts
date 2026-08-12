@@ -7,7 +7,7 @@ export type SessionCookieConfig = {
   csrfCookie: string;
 };
 
-const DEFAULT_SESSION_MAX_AGE_SECONDS = 60 * 60;
+const DEFAULT_SESSION_MAX_AGE_SECONDS = 7 * 24 * 60 * 60;
 const MAX_SESSION_MAX_AGE_SECONDS = 7 * 24 * 60 * 60;
 
 function normalizeSessionMaxAge(expiresIn: unknown): number {

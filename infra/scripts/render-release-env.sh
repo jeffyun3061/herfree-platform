@@ -15,9 +15,11 @@ SECRET_PREFIX="herfree/${DEPLOY_ENV}"
 if [[ "${DEPLOY_ENV}" == "production" ]]; then
   PROFILE="prod"
   ENV_FILE="${CONFIG_DIR}/.env.prod"
+  JWT_ACCESS_EXPIRATION=604800
 else
   PROFILE="staging"
   ENV_FILE="${CONFIG_DIR}/.env.staging"
+  JWT_ACCESS_EXPIRATION=3600
 fi
 
 # 원문 secret은 stdout이나 SSM 결과에 남기지 않고 메모리에서만 조합한다.
@@ -62,7 +64,7 @@ SPRING_DATASOURCE_HIKARI_CONNECTION_TIMEOUT=10000
 JWT_SECRET=$(json_value "${APP_JSON}" '.jwtSecret')
 ANALYTICS_HASH_SALT=$(json_value "${APP_JSON}" '.analyticsHashSalt')
 HEALTH_DATA_ENCRYPTION_KEY=$(json_value "${APP_JSON}" '.healthDataEncryptionKey')
-JWT_ACCESS_EXPIRATION=3600
+JWT_ACCESS_EXPIRATION=${JWT_ACCESS_EXPIRATION}
 JAVA_TOOL_OPTIONS=-XX:MaxRAMPercentage=65.0 -XX:+ExitOnOutOfMemoryError
 
 AWS_REGION=${AWS_REGION}

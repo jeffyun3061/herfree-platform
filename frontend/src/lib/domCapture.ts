@@ -131,6 +131,13 @@ export async function captureElementPngBlob(
   element: HTMLElement,
   pixelRatio = 2,
 ): Promise<Blob> {
+  const rect = element.getBoundingClientRect();
+  const width = Math.round(rect.width);
+  const height = Math.round(rect.height);
+  if (width <= 0 || height <= 0) {
+    throw new Error('캡처할 영역이 비어 있습니다.');
+  }
+
   await waitForImages(element);
   if (document.fonts?.ready) {
     await Promise.race([
@@ -138,23 +145,34 @@ export async function captureElementPngBlob(
       new Promise<void>((resolve) => window.setTimeout(resolve, 1500)),
     ]);
   }
-  const canvas = await html2canvas(element, {
-    allowTaint: false,
-    backgroundColor: null,
-    imageTimeout: 5000,
-    logging: false,
-    scale: pixelRatio,
-    useCORS: true,
-  });
-  return new Promise((resolve, reject) => {
-    canvas.toBlob((blob) => {
-      if (!blob) {
-        reject(new Error('이미지 생성에 실패했습니다.'));
-        return;
-      }
-      resolve(blob);
-    }, 'image/png');
-  });
+  try {
+    const canvas = await html2canvas(element, {
+      allowTaint: false,
+      backgroundColor: null,
+      height,
+      imageTimeout: 5000,
+      logging: false,
+      scale: pixelRatio,
+      width,
+      useCORS: true,
+      windowHeight: Math.max(window.innerHeight, height),
+      windowWidth: Math.max(window.innerWidth, width),
+      x: 0,
+      y: 0,
+    });
+    return await new Promise((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          reject(new Error('이미지 생성에 실패했습니다.'));
+          return;
+        }
+        resolve(blob);
+      }, 'image/png');
+    });
+  } catch {
+    // Keep the exact DOM layout when html2canvas cannot render a browser-specific CSS rule.
+    return renderElementToBlob(element, pixelRatio);
+  }
 }
 
 export async function downloadElementPng(element: HTMLElement, filename: string): Promise<void> {
