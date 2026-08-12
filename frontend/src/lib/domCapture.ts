@@ -66,6 +66,16 @@ async function cloneElementForCapture(element: HTMLElement): Promise<HTMLElement
   return clone;
 }
 
+function showShareOnlyNodes(root: ParentNode) {
+  root.querySelectorAll('[data-share-only]').forEach((node) => {
+    if (!(node instanceof HTMLElement)) return;
+    node.classList.remove('hidden');
+    node.classList.add('flex');
+    node.style.removeProperty('display');
+    node.style.display = 'flex';
+  });
+}
+
 async function waitForImages(element: HTMLElement) {
   const images = Array.from(element.querySelectorAll('img'));
   await Promise.all(
@@ -93,8 +103,16 @@ async function renderElementToBlob(element: HTMLElement, pixelRatio = 2): Promis
   }
 
   const clone = await cloneElementForCapture(element);
+  showShareOnlyNodes(clone);
+  const measureRoot = document.createElement('div');
+  measureRoot.style.cssText = `position:fixed;left:-100000px;top:0;width:${width}px;visibility:hidden;pointer-events:none;`;
+  measureRoot.appendChild(clone);
+  document.body.appendChild(measureRoot);
+  const cloneRect = clone.getBoundingClientRect();
+  const captureHeight = Math.max(height, Math.ceil(cloneRect.height));
+  measureRoot.remove();
   const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
+    <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${captureHeight}">
       <foreignObject width="100%" height="100%">
         ${new XMLSerializer().serializeToString(clone)}
       </foreignObject>
@@ -107,13 +125,13 @@ async function renderElementToBlob(element: HTMLElement, pixelRatio = 2): Promis
     const image = await loadImage(url);
     const canvas = document.createElement('canvas');
     canvas.width = width * pixelRatio;
-    canvas.height = height * pixelRatio;
+    canvas.height = captureHeight * pixelRatio;
     const ctx = canvas.getContext('2d');
     if (!ctx) {
       throw new Error('Canvas를 사용할 수 없습니다.');
     }
     ctx.scale(pixelRatio, pixelRatio);
-    ctx.drawImage(image, 0, 0, width, height);
+    ctx.drawImage(image, 0, 0, width, captureHeight);
 
     const blob = await new Promise<Blob | null>((resolve) =>
       canvas.toBlob((result) => resolve(result), 'image/png'),
@@ -149,16 +167,20 @@ export async function captureElementPngBlob(
     const canvas = await html2canvas(element, {
       allowTaint: false,
       backgroundColor: null,
-      height,
       imageTimeout: 5000,
       logging: false,
       scale: pixelRatio,
+      scrollX: 0,
+      scrollY: 0,
       width,
       useCORS: true,
       windowHeight: Math.max(window.innerHeight, height),
       windowWidth: Math.max(window.innerWidth, width),
       x: 0,
       y: 0,
+      onclone: (_clonedDocument, clonedElement) => {
+        showShareOnlyNodes(clonedElement);
+      },
     });
     return await new Promise((resolve, reject) => {
       canvas.toBlob((blob) => {
