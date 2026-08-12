@@ -163,7 +163,7 @@ export function JournalDashboardCard({
     <div className="space-y-2">
       <section
         id="hf-dashboard-card"
-        className="overflow-hidden rounded-[24px] shadow-[0_26px_52px_-30px_rgba(7,37,31,.65)]"
+        className="w-full min-w-0 overflow-hidden rounded-[24px] shadow-[0_26px_52px_-30px_rgba(7,37,31,.65)]"
       >
         <div className="relative h-[196px] overflow-hidden bg-[#07251F] text-white">
           <img
@@ -199,7 +199,7 @@ export function JournalDashboardCard({
               <h2 className="hf-display text-[30px] font-bold text-white [text-shadow:0_2px_12px_rgba(0,0,0,.4)]">
                 {statusTone.title}
               </h2>
-              <p className="mt-1.5 line-clamp-2 text-[12.5px] text-white/90 [text-shadow:0_1px_6px_rgba(0,0,0,.35)]">
+              <p className="mt-1.5 min-w-0 overflow-hidden break-words line-clamp-2 text-[12.5px] text-white/90 [text-shadow:0_1px_6px_rgba(0,0,0,.35)]">
                 {buildPreviewSubStatus(status, focusRecord, relapseFreeDays)}
               </p>
             </div>
@@ -207,9 +207,12 @@ export function JournalDashboardCard({
         </div>
 
         <div className="bg-[#07251F] px-[18px] pb-[18px] pt-4 text-white">
-          <div className="mb-3.5 flex items-center justify-between gap-3">
-            <span className="text-[11.5px] text-white/60">개인일지 요약 · 최근 {HOME_SUMMARY_DAYS}일</span>
-            <Link href="/journal?tab=insights" className="text-[12px] font-medium text-[#F0C778]">
+          <div className="mb-3.5 flex min-w-0 items-center justify-between gap-2">
+            <span className="min-w-0 truncate text-[11.5px] text-white/60">개인일지 요약 · 최근 {HOME_SUMMARY_DAYS}일</span>
+            <Link
+              href="/journal?tab=insights"
+              className="shrink-0 whitespace-nowrap pr-1 text-[12px] font-medium text-[#F0C778]"
+            >
               자세히 ›
             </Link>
           </div>
