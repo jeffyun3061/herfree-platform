@@ -178,7 +178,12 @@ export function JournalDashboardCard({
               <span className="text-[12.5px] font-medium text-white [text-shadow:0_1px_6px_rgba(0,0,0,.3)]">
                 {formatDashboardDateBadge(new Date())}
               </span>
-              <JournalShareButton dashboard={dashboard} variant="icon" />
+              <JournalShareButton
+                dashboard={dashboard}
+                lastRecord={lastRecord}
+                showRecordButton={Boolean(onRecordDaily)}
+                variant="icon"
+              />
             </div>
 
             <div>
