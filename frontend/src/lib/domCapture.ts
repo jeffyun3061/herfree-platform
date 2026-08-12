@@ -1,35 +1,21 @@
-const CAPTURE_PROPS = [
-  'color',
-  'background-color',
-  'font-size',
-  'font-family',
-  'font-weight',
-  'padding',
-  'margin',
-  'border',
-  'border-radius',
-  'width',
-  'height',
-  'display',
-  'flex-direction',
-  'align-items',
-  'justify-content',
-  'gap',
-  'text-align',
-  'line-height',
-  'box-shadow',
-] as const;
-
 function inlineComputedStyles(source: HTMLElement, target: HTMLElement) {
   const computed = window.getComputedStyle(source);
   let cssText = '';
-  for (const prop of CAPTURE_PROPS) {
+  for (let index = 0; index < computed.length; index += 1) {
+    const prop = computed.item(index);
     const value = computed.getPropertyValue(prop);
     if (value) {
       cssText += `${prop}:${value};`;
     }
   }
   target.setAttribute('style', cssText);
+
+  if (source instanceof HTMLImageElement && target instanceof HTMLImageElement) {
+    const sourceUrl = source.currentSrc || source.src;
+    if (sourceUrl) {
+      target.src = new URL(sourceUrl, document.baseURI).href;
+    }
+  }
 
   const sourceChildren = Array.from(source.children) as HTMLElement[];
   const targetChildren = Array.from(target.children) as HTMLElement[];
@@ -46,11 +32,21 @@ function cloneElementForCapture(element: HTMLElement): HTMLElement {
   const clone = element.cloneNode(true) as HTMLElement;
   inlineComputedStyles(element, clone);
 
-  const excludeNodes = clone.querySelectorAll('[data-share-exclude]');
-  excludeNodes.forEach((node) => node.remove());
-
   clone.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
   return clone;
+}
+
+async function waitForImages(element: HTMLElement) {
+  const images = Array.from(element.querySelectorAll('img'));
+  await Promise.all(
+    images.map(async (image) => {
+      if (image.complete) return;
+      await new Promise<void>((resolve) => {
+        image.addEventListener('load', () => resolve(), { once: true });
+        image.addEventListener('error', () => resolve(), { once: true });
+      });
+    }),
+  );
 }
 
 async function renderElementToBlob(element: HTMLElement, pixelRatio = 2): Promise<Blob> {
@@ -100,6 +96,10 @@ export async function captureElementPngBlob(
   element: HTMLElement,
   pixelRatio = 2,
 ): Promise<Blob> {
+  await waitForImages(element);
+  if (document.fonts?.ready) {
+    await document.fonts.ready;
+  }
   return renderElementToBlob(element, pixelRatio);
 }
 

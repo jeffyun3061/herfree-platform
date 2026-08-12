@@ -5,10 +5,11 @@ import {
 } from '@/domain/journal/types';
 
 function resolveSiteUrl(): string {
-  if (typeof window !== 'undefined') {
-    return window.location.origin;
-  }
-  return process.env.NEXT_PUBLIC_SITE_URL ?? 'https://herfree.com';
+  const siteUrl =
+    typeof window !== 'undefined'
+      ? window.location.origin
+      : process.env.NEXT_PUBLIC_SITE_URL ?? 'https://herpfree.co.kr';
+  return siteUrl.replace(/\/+$/, '');
 }
 
 export function buildAnonymousReviewShareText(summary: JournalReviewSummary): string {

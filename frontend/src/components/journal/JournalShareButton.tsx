@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { JournalDashboard } from '@/domain/journal/types';
-import { PUBLIC_IMAGES } from '@/domain/assets/static';
 import { buildJournalShareText, shareJournalText } from '@/domain/journal/share';
 import { captureElementPngBlob } from '@/lib/domCapture';
 import { cn } from '@/lib/cn';
@@ -32,6 +31,8 @@ const SHARE_ICON_PROPS = {
   strokeLinecap: 'round' as const,
   strokeLinejoin: 'round' as const,
 };
+
+const DASHBOARD_IMAGE_FILE_PREFIX = 'herpfree';
 
 function ShareLinkIcon() {
   return (
@@ -71,22 +72,6 @@ function ShareNativeIcon() {
   );
 }
 
-function ShareTextIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" {...SHARE_ICON_PROPS} aria-hidden>
-      <path d="M4 6h16M4 12h10M4 18h14" />
-    </svg>
-  );
-}
-
-function ShareKakaoIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" {...SHARE_ICON_PROPS} aria-hidden>
-      <path d="M4 9.5C4 6.46 7.58 4 12 4s8 2.46 8 5.5c0 2.57-1.82 4.73-4.35 5.5L12 21l-3.65-1.5C5.82 18.23 4 16.07 4 13.5 4 9.5 4 9.5 4 9.5z" />
-    </svg>
-  );
-}
-
 function formatShareDate(date = new Date()) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -94,126 +79,34 @@ function formatShareDate(date = new Date()) {
   return `${year}.${month}.${day}`;
 }
 
-function getStatusLabel(dashboard: JournalDashboard | null) {
-  const today = dashboard?.todayRecord;
-  if (!today) return '기록 시작';
-  if (today.hadSymptoms) return '증상 발현';
-  if ((today.prodromalSymptoms ?? []).length > 0) return '전조 증상';
-  return '증상 없음';
+function getDashboardImageFileName() {
+  return `${DASHBOARD_IMAGE_FILE_PREFIX}-${formatShareDate().replaceAll('.', '-')}.png`;
 }
 
-function getSleepLabel(dashboard: JournalDashboard | null) {
-  const value = dashboard?.todayRecord?.sleepHours;
-  return value == null ? '-' : `${value}h`;
-}
-
-function loadCanvasImage(src: string) {
-  return new Promise<HTMLImageElement>((resolve, reject) => {
-    const image = new Image();
-    image.crossOrigin = 'anonymous';
-    image.onload = () => resolve(image);
-    image.onerror = reject;
-    image.src = src;
-  });
-}
-
-function canvasToBlob(canvas: HTMLCanvasElement) {
-  return new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob((blob) => {
-      if (!blob) {
-        reject(new Error('dashboard image blob failed'));
-        return;
-      }
-      resolve(blob);
-    }, 'image/png');
-  });
-}
-
-async function resolveDashboardImageBlob(dashboard: JournalDashboard | null) {
-  const card = document.getElementById('hf-dashboard-card');
-  if (card instanceof HTMLElement) {
-    try {
-      return await captureElementPngBlob(card);
-    } catch {
-      // Fall back to generated card when DOM capture is unavailable.
-    }
+async function writeTextToClipboard(text: string) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+    return;
   }
-  return buildDashboardImageBlob(dashboard);
+
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.setAttribute('readonly', '');
+  textarea.style.position = 'fixed';
+  textarea.style.opacity = '0';
+  document.body.appendChild(textarea);
+  textarea.select();
+  const copied = document.execCommand('copy');
+  textarea.remove();
+  if (!copied) throw new Error('clipboard unavailable');
 }
 
-async function buildDashboardImageBlob(dashboard: JournalDashboard | null) {
-  const canvas = document.createElement('canvas');
-  canvas.width = 900;
-  canvas.height = 900;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error('canvas context failed');
-
-  const background = await loadCanvasImage(PUBLIC_IMAGES.journalDashboardCard);
-
-  ctx.fillStyle = '#082F2A';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.drawImage(background, 0, 0, canvas.width, 580);
-
-  const heroGradient = ctx.createLinearGradient(0, 0, 0, 600);
-  heroGradient.addColorStop(0, 'rgba(0,0,0,0.02)');
-  heroGradient.addColorStop(0.58, 'rgba(0,0,0,0.08)');
-  heroGradient.addColorStop(1, 'rgba(4,35,31,0.92)');
-  ctx.fillStyle = heroGradient;
-  ctx.fillRect(0, 0, canvas.width, 600);
-
-  ctx.fillStyle = '#082F2A';
-  ctx.fillRect(0, 580, canvas.width, 320);
-
-  ctx.fillStyle = '#F7F1E8';
-  ctx.font = '600 34px sans-serif';
-  ctx.fillText(formatShareDate(), 64, 88);
-
-  ctx.fillStyle = '#8AD4B8';
-  ctx.beginPath();
-  ctx.arc(74, 332, 11, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = '#FFFFFF';
-  ctx.font = '800 40px sans-serif';
-  ctx.fillText(getStatusLabel(dashboard), 105, 346);
-
-  ctx.font = '900 78px sans-serif';
-  ctx.fillText(`${dashboard?.relapseFreeDays ?? 0}일째 평온`, 64, 448);
-
-  ctx.fillStyle = 'rgba(255,255,255,0.72)';
-  ctx.font = '400 28px sans-serif';
-  ctx.fillText('메모와 상세 증상은 포함되지 않습니다.', 64, 510);
-
-  ctx.fillStyle = '#F0C778';
-  ctx.font = '700 26px sans-serif';
-  ctx.fillText('재발 기록', 660, 640);
-
-  const metrics = [
-    [`${dashboard?.relapseFreeDays ?? 0}일`, '평온 유지'],
-    [`${dashboard?.routineCompletedToday ?? 0}/${dashboard?.routineTotalToday ?? 3}`, '오늘 루틴'],
-    [getSleepLabel(dashboard), '수면'],
-    [`${dashboard?.yearRelapses ?? 0}회`, '올해 재발'],
-  ];
-
-  metrics.forEach(([value, label], index) => {
-    const x = 82 + index * 200;
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = '900 46px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(value, x, 704);
-    ctx.fillStyle = 'rgba(255,255,255,0.6)';
-    ctx.font = '500 22px sans-serif';
-    ctx.fillText(label, x, 742);
-  });
-
-  ctx.textAlign = 'left';
-  ctx.fillStyle = 'rgba(255,255,255,0.64)';
-  ctx.font = '500 24px sans-serif';
-  ctx.fillText('HERFREE', 64, 828);
-  ctx.font = '400 21px sans-serif';
-  ctx.fillText('개인일지 대시보드 공유 이미지', 64, 862);
-
-  return canvasToBlob(canvas);
+async function resolveDashboardImageBlob() {
+  const card = document.getElementById('hf-dashboard-card');
+  if (!(card instanceof HTMLElement)) {
+    throw new Error('dashboard card not found');
+  }
+  return captureElementPngBlob(card);
 }
 
 async function copyBlobToClipboard(blob: Blob) {
@@ -289,7 +182,6 @@ export function JournalShareButton({ dashboard, className, variant = 'button' }:
   const [mounted, setMounted] = useState(false);
   const [status, setStatus] = useState<ShareActionStatus>('idle');
   const shareText = buildJournalShareText(dashboard);
-  const kakaoText = `${shareText}\n\n카카오톡에 붙여 넣어 공유해 보세요.`;
 
   useEffect(() => {
     setMounted(true);
@@ -309,14 +201,15 @@ export function JournalShareButton({ dashboard, className, variant = 'button' }:
 
   const handleNativeShare = async () => {
     try {
-      const blob = await resolveDashboardImageBlob(dashboard);
-      const file = new File([blob], `herfree-dashboard-${formatShareDate().replaceAll('.', '-')}.png`, {
+      const blob = await resolveDashboardImageBlob();
+      const file = new File([blob], getDashboardImageFileName(), {
         type: 'image/png',
       });
       if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
         await navigator.share({
-          title: '헤르프리 개인일지',
-          text: '메모와 상세 증상은 포함되지 않은 대시보드 이미지입니다.',
+          title: '헤르프리 기록 카드',
+          text: '헤르프리에서 만든 오늘의 개인 기록 카드예요. 메모와 상세 증상은 포함되지 않습니다.',
+          url: `${window.location.origin}/`,
           files: [file],
         });
       } else {
@@ -330,7 +223,7 @@ export function JournalShareButton({ dashboard, className, variant = 'button' }:
 
   const handleCopyText = async (text: string, status: ShareActionStatus = 'text-copied') => {
     try {
-      await navigator.clipboard.writeText(text);
+      await writeTextToClipboard(text);
       setDone(status);
     } catch {
       setDone('error');
@@ -344,7 +237,7 @@ export function JournalShareButton({ dashboard, className, variant = 'button' }:
 
   const handleCopyImage = async () => {
     try {
-      const blob = await resolveDashboardImageBlob(dashboard);
+      const blob = await resolveDashboardImageBlob();
       await copyBlobToClipboard(blob);
       setDone('image-copied');
     } catch (error) {
@@ -354,8 +247,8 @@ export function JournalShareButton({ dashboard, className, variant = 'button' }:
 
   const handleDownloadImage = async () => {
     try {
-      const blob = await resolveDashboardImageBlob(dashboard);
-      downloadBlob(blob, `herfree-dashboard-${formatShareDate().replaceAll('.', '-')}.png`);
+      const blob = await resolveDashboardImageBlob();
+      downloadBlob(blob, getDashboardImageFileName());
       setDone('image-saved');
     } catch {
       setDone('error');
@@ -414,6 +307,7 @@ export function JournalShareButton({ dashboard, className, variant = 'button' }:
             icon={<ShareNativeIcon />}
             onClick={() => void handleNativeShare()}
           />
+          {/* 문구 복사 메뉴는 요청에 따라 잠시 비활성화합니다.
           <ShareSheetRow
             label="문구 복사(카페·블로그)"
             sub="텍스트로 붙여 넣을 수 있어요"
@@ -426,6 +320,7 @@ export function JournalShareButton({ dashboard, className, variant = 'button' }:
             icon={<ShareKakaoIcon />}
             onClick={() => void handleCopyText(kakaoText)}
           />
+          */}
         </div>
         <p className="mt-4 text-center text-[11px] text-[#9A9F94]">
           메모와 상세 증상은 포함되지 않습니다.
@@ -444,7 +339,7 @@ export function JournalShareButton({ dashboard, className, variant = 'button' }:
     ) : null;
 
   return (
-    <div className={cn('relative inline-flex', className)} data-share-exclude={variant === 'icon' ? '1' : undefined}>
+    <div className={cn('relative inline-flex', className)}>
       <button
         type="button"
         onClick={() => setOpen(true)}
