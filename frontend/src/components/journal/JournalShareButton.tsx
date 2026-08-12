@@ -401,11 +401,9 @@ async function resolveDashboardImageBlob(
 ) {
   const card = document.getElementById('hf-dashboard-card');
   if (card instanceof HTMLElement) {
-    try {
-      return await captureElementPngBlob(card);
-    } catch (error) {
-      console.warn('Dashboard DOM capture failed; using canvas fallback.', error);
-    }
+    // The share image must be the same card the user is looking at. Do not
+    // replace it with the legacy fixed-size canvas when DOM capture fails.
+    return captureElementPngBlob(card);
   }
   return buildDashboardImageBlob(dashboard, lastRecord, showRecordButton);
 }
