@@ -86,6 +86,23 @@ function resetShareOnlyLayout(root: HTMLElement) {
   });
 }
 
+function resetShareTextLayout(root: HTMLElement) {
+  root.querySelectorAll('[data-share-text]').forEach((node) => {
+    if (!(node instanceof HTMLElement)) return;
+
+    // getComputedStyle() freezes the live line box when styles are copied to
+    // the clone. That turns a wrapped sentence into a one-line, clipped box.
+    node.style.height = 'auto';
+    node.style.minHeight = '0';
+    node.style.maxHeight = 'none';
+    node.style.overflow = 'visible';
+    node.style.whiteSpace = 'normal';
+    node.style.removeProperty('line-clamp');
+    node.style.removeProperty('-webkit-line-clamp');
+    node.style.removeProperty('-webkit-box-orient');
+  });
+}
+
 async function waitForImages(element: HTMLElement) {
   const images = Array.from(element.querySelectorAll('img'));
   await Promise.all(
@@ -121,6 +138,7 @@ async function prepareCapture(element: HTMLElement): Promise<PreparedCapture> {
   const clone = await cloneElementForCapture(element);
   showShareOnlyNodes(clone);
   resetShareOnlyLayout(clone);
+  resetShareTextLayout(clone);
 
   // The live card has a natural height. Reset the copied used height before
   // measuring share-only content, otherwise the clone keeps the old cropped box.

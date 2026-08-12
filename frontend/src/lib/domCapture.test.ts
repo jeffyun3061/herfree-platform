@@ -31,6 +31,12 @@ describe('captureElementPngBlob', () => {
     card.id = 'hf-dashboard-card';
     card.style.height = '380px';
     card.innerHTML = `
+      <p data-share-text="1" style="height:18px;white-space:nowrap;overflow:hidden;-webkit-line-clamp:1">
+        마지막 증상 이후 1일째 · 수면 -h · 스트레스 보통
+      </p>
+      <div data-share-text="1" style="height:16px;white-space:nowrap;overflow:hidden">
+        개인일지 요약 · 최근 90일
+      </div>
       <div class="content" style="height:380px;overflow:hidden">
         <div data-share-only="1" class="hidden" style="display:none;height:0px">
           <span>헤르프리 개인일지</span>
@@ -81,6 +87,14 @@ describe('captureElementPngBlob', () => {
       expect(capturedFooter?.textContent).toContain('헤르프리 개인일지');
       expect(capturedFooter?.textContent).toContain('herpfree.co.kr');
       expect(capturedElement?.querySelector('.content')?.getAttribute('style')).toContain('height: auto');
+      const capturedShareText = capturedElement?.querySelectorAll('[data-share-text]');
+      expect(capturedShareText).toHaveLength(2);
+      capturedShareText?.forEach((node) => {
+        expect(node.getAttribute('style')).toContain('height: auto');
+        expect(node.getAttribute('style')).toContain('white-space: normal');
+        expect(node.getAttribute('style')).toContain('overflow: visible');
+        expect(node.getAttribute('style')).not.toContain('-webkit-line-clamp');
+      });
       expect(html2canvasMock.mock.calls[0]?.[1]).toMatchObject({
         height: 420,
         width: 320,
