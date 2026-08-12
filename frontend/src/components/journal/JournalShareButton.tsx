@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { JournalDashboard } from '@/domain/journal/types';
+import { PUBLIC_IMAGES } from '@/domain/assets/static';
 import { buildJournalShareText, shareJournalText } from '@/domain/journal/share';
 import { captureElementPngBlob } from '@/lib/domCapture';
 import { cn } from '@/lib/cn';
@@ -83,6 +84,127 @@ function getDashboardImageFileName() {
   return `${DASHBOARD_IMAGE_FILE_PREFIX}-${formatShareDate().replaceAll('.', '-')}.png`;
 }
 
+function getStatusLabel(dashboard: JournalDashboard | null) {
+  const today = dashboard?.todayRecord;
+  if (!today) return '기록 시작';
+  if (today.hadSymptoms) return '증상 발현';
+  if ((today.prodromalSymptoms ?? []).length > 0) return '전조 증상';
+  return '증상 없음';
+}
+
+function loadCanvasImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    const timeout = window.setTimeout(() => reject(new Error('dashboard background timeout')), 5000);
+    image.crossOrigin = 'anonymous';
+    image.onload = () => {
+      window.clearTimeout(timeout);
+      resolve(image);
+    };
+    image.onerror = () => {
+      window.clearTimeout(timeout);
+      reject(new Error('dashboard background load failed'));
+    };
+    image.src = src;
+  });
+}
+
+function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        reject(new Error('dashboard image blob failed'));
+        return;
+      }
+      resolve(blob);
+    }, 'image/png');
+  });
+}
+
+function drawCanvasText(
+  context: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  font: string,
+  fillStyle: string,
+) {
+  context.font = font;
+  context.fillStyle = fillStyle;
+  context.fillText(text, x, y);
+}
+
+async function buildDashboardImageBlob(dashboard: JournalDashboard | null): Promise<Blob> {
+  const canvas = document.createElement('canvas');
+  canvas.width = 900;
+  canvas.height = 900;
+  const context = canvas.getContext('2d');
+  if (!context) throw new Error('canvas context failed');
+
+  context.fillStyle = '#082F2A';
+  context.fillRect(0, 0, canvas.width, canvas.height);
+
+  try {
+    const background = await loadCanvasImage(PUBLIC_IMAGES.journalDashboardCard);
+    context.drawImage(background, 0, 0, canvas.width, 580);
+  } catch {
+    // The card remains saveable with the brand background if the image asset is unavailable.
+  }
+
+  const heroGradient = context.createLinearGradient(0, 0, 0, 600);
+  heroGradient.addColorStop(0, 'rgba(0,0,0,0.02)');
+  heroGradient.addColorStop(0.58, 'rgba(0,0,0,0.08)');
+  heroGradient.addColorStop(1, 'rgba(4,35,31,0.92)');
+  context.fillStyle = heroGradient;
+  context.fillRect(0, 0, canvas.width, 600);
+
+  context.fillStyle = '#082F2A';
+  context.fillRect(0, 580, canvas.width, 320);
+
+  drawCanvasText(context, formatShareDate(), 64, 88, '600 34px sans-serif', '#F7F1E8');
+  context.fillStyle = '#8AD4B8';
+  context.beginPath();
+  context.arc(74, 332, 11, 0, Math.PI * 2);
+  context.fill();
+  drawCanvasText(context, getStatusLabel(dashboard), 105, 346, '800 40px sans-serif', '#FFFFFF');
+  drawCanvasText(
+    context,
+    `${dashboard?.relapseFreeDays ?? 0}일째 평온`,
+    64,
+    448,
+    '900 78px sans-serif',
+    '#FFFFFF',
+  );
+  drawCanvasText(
+    context,
+    '메모와 상세 증상은 포함되지 않습니다.',
+    64,
+    510,
+    '400 28px sans-serif',
+    'rgba(255,255,255,0.72)',
+  );
+
+  drawCanvasText(context, '재발 기록', 660, 640, '700 26px sans-serif', '#F0C778');
+  const metrics = [
+    [`${dashboard?.relapseFreeDays ?? 0}일`, '평온 유지'],
+    [`${dashboard?.routineCompletedToday ?? 0}/${dashboard?.routineTotalToday ?? 3}`, '오늘 루틴'],
+    [dashboard?.todayRecord?.sleepHours == null ? '-' : `${dashboard.todayRecord.sleepHours}h`, '수면'],
+    [`${dashboard?.yearRelapses ?? 0}회`, '올해 재발'],
+  ];
+
+  metrics.forEach(([value, label], index) => {
+    const x = 82 + index * 200;
+    context.textAlign = 'center';
+    drawCanvasText(context, value, x, 704, '900 46px sans-serif', '#FFFFFF');
+    drawCanvasText(context, label, x, 742, '500 22px sans-serif', 'rgba(255,255,255,0.6)');
+  });
+  context.textAlign = 'left';
+  drawCanvasText(context, 'HERFREE', 64, 828, '500 24px sans-serif', 'rgba(255,255,255,0.64)');
+  drawCanvasText(context, '개인일지 대시보드 공유 이미지', 64, 862, '400 21px sans-serif', 'rgba(255,255,255,0.64)');
+
+  return canvasToBlob(canvas);
+}
+
 async function writeTextToClipboard(text: string) {
   if (navigator.clipboard?.writeText) {
     await navigator.clipboard.writeText(text);
@@ -101,12 +223,16 @@ async function writeTextToClipboard(text: string) {
   if (!copied) throw new Error('clipboard unavailable');
 }
 
-async function resolveDashboardImageBlob() {
+async function resolveDashboardImageBlob(dashboard: JournalDashboard | null) {
   const card = document.getElementById('hf-dashboard-card');
-  if (!(card instanceof HTMLElement)) {
-    throw new Error('dashboard card not found');
+  if (card instanceof HTMLElement) {
+    try {
+      return await captureElementPngBlob(card);
+    } catch (error) {
+      console.warn('Dashboard DOM capture failed; using canvas fallback.', error);
+    }
   }
-  return captureElementPngBlob(card);
+  return buildDashboardImageBlob(dashboard);
 }
 
 async function copyBlobToClipboard(blob: Blob) {
@@ -125,7 +251,7 @@ function downloadBlob(blob: Blob, filename: string) {
   document.body.appendChild(link);
   link.click();
   link.remove();
-  URL.revokeObjectURL(url);
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 function getToastMessage(status: ShareActionStatus) {
@@ -201,7 +327,7 @@ export function JournalShareButton({ dashboard, className, variant = 'button' }:
 
   const handleNativeShare = async () => {
     try {
-      const blob = await resolveDashboardImageBlob();
+      const blob = await resolveDashboardImageBlob(dashboard);
       const file = new File([blob], getDashboardImageFileName(), {
         type: 'image/png',
       });
@@ -237,7 +363,7 @@ export function JournalShareButton({ dashboard, className, variant = 'button' }:
 
   const handleCopyImage = async () => {
     try {
-      const blob = await resolveDashboardImageBlob();
+      const blob = await resolveDashboardImageBlob(dashboard);
       await copyBlobToClipboard(blob);
       setDone('image-copied');
     } catch (error) {
@@ -247,7 +373,7 @@ export function JournalShareButton({ dashboard, className, variant = 'button' }:
 
   const handleDownloadImage = async () => {
     try {
-      const blob = await resolveDashboardImageBlob();
+      const blob = await resolveDashboardImageBlob(dashboard);
       downloadBlob(blob, getDashboardImageFileName());
       setDone('image-saved');
     } catch {
