@@ -28,11 +28,39 @@ function inlineComputedStyles(source: HTMLElement, target: HTMLElement) {
 }
 
 
-function cloneElementForCapture(element: HTMLElement): HTMLElement {
+function readBlobAsDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error ?? new Error('이미지 변환에 실패했습니다.'));
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function inlineImageSources(clone: HTMLElement) {
+  const images = Array.from(clone.querySelectorAll('img'));
+  await Promise.all(
+    images.map(async (image) => {
+      const source = image.getAttribute('src');
+      if (!source || source.startsWith('data:')) return;
+
+      try {
+        const response = await fetch(source, { credentials: 'same-origin' });
+        if (!response.ok) return;
+        image.setAttribute('src', await readBlobAsDataUrl(await response.blob()));
+      } catch {
+        // Keep the original source when the browser cannot fetch an asset.
+      }
+    }),
+  );
+}
+
+async function cloneElementForCapture(element: HTMLElement): Promise<HTMLElement> {
   const clone = element.cloneNode(true) as HTMLElement;
   inlineComputedStyles(element, clone);
 
   clone.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+  await inlineImageSources(clone);
   return clone;
 }
 
@@ -62,7 +90,7 @@ async function renderElementToBlob(element: HTMLElement, pixelRatio = 2): Promis
     throw new Error('캡처할 영역이 비어 있습니다.');
   }
 
-  const clone = cloneElementForCapture(element);
+  const clone = await cloneElementForCapture(element);
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
       <foreignObject width="100%" height="100%">

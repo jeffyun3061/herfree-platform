@@ -6,12 +6,10 @@ export type JournalShareOptions = {
   includeSiteLink?: boolean;
 };
 
+export const HERFREE_SITE_URL = 'https://herpfree.co.kr';
+
 function resolveSiteUrl(): string {
-  const siteUrl =
-    typeof window !== 'undefined'
-      ? window.location.origin
-      : process.env.NEXT_PUBLIC_SITE_URL ?? 'https://herpfree.co.kr';
-  return siteUrl.replace(/\/+$/, '');
+  return HERFREE_SITE_URL;
 }
 
 export function buildJournalShareText(

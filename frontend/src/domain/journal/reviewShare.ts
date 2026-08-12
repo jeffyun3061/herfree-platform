@@ -3,13 +3,10 @@ import {
   formatLabelList,
   formatReviewDateRange,
 } from '@/domain/journal/types';
+import { HERFREE_SITE_URL } from '@/domain/journal/share';
 
 function resolveSiteUrl(): string {
-  const siteUrl =
-    typeof window !== 'undefined'
-      ? window.location.origin
-      : process.env.NEXT_PUBLIC_SITE_URL ?? 'https://herpfree.co.kr';
-  return siteUrl.replace(/\/+$/, '');
+  return HERFREE_SITE_URL;
 }
 
 export function buildAnonymousReviewShareText(summary: JournalReviewSummary): string {
