@@ -67,6 +67,25 @@ function showShareOnlyNodes(root: ParentNode) {
   });
 }
 
+function resetShareOnlyLayout(root: HTMLElement) {
+  root.querySelectorAll('[data-share-only]').forEach((node) => {
+    if (!(node instanceof HTMLElement)) return;
+
+    // Computed styles are copied before the node is revealed. Hidden nodes
+    // therefore carry height: 0px, and their content wrapper can carry the
+    // old used height. Reset the whole path so the footer participates in
+    // normal flow before we measure the clone.
+    let current: HTMLElement | null = node;
+    while (current) {
+      current.style.height = 'auto';
+      current.style.minHeight = '0';
+      current.style.maxHeight = 'none';
+      if (current === root) break;
+      current = current.parentElement;
+    }
+  });
+}
+
 async function waitForImages(element: HTMLElement) {
   const images = Array.from(element.querySelectorAll('img'));
   await Promise.all(
@@ -101,9 +120,10 @@ async function prepareCapture(element: HTMLElement): Promise<PreparedCapture> {
 
   const clone = await cloneElementForCapture(element);
   showShareOnlyNodes(clone);
+  resetShareOnlyLayout(clone);
 
   // The live card has a natural height. Reset the copied used height before
-  // adding share-only content, otherwise the clone keeps the old cropped box.
+  // measuring share-only content, otherwise the clone keeps the old cropped box.
   clone.style.display = 'block';
   clone.style.width = `${width}px`;
   clone.style.height = 'auto';
