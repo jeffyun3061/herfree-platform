@@ -10,14 +10,6 @@ on:
         options:
           - staging
           - production
-      image_tag:
-        description: Production only - staging-passed-<commit SHA>
-        required: false
-        type: string
-      image_digest:
-        description: Production only - immutable ECR digest from staging promotion
-        required: false
-        type: string
 
 permissions:
   contents: read
@@ -114,10 +106,19 @@ jobs:
           registry="${IMAGE%%/*}"
           tar -czf /tmp/herfree-release-bundle.tgz \
             docker-compose.release.yml \
+            docker-compose.release-local-db.yml \
             infra/nginx/herfree-staging.conf \
             infra/nginx/herfree-staging-bootstrap.conf \
+            infra/certs/rds-global-bundle.pem \
+            infra/scripts/backup-db.sh \
             infra/scripts/deploy-release.sh \
+            infra/scripts/install-local-db-ops.sh \
+            infra/scripts/migrate-rds-to-local.sh \
+            infra/scripts/monitor-local-db.sh \
+            infra/scripts/prepare-local-db-env.sh \
+            infra/scripts/preflight-rds-local-restore.sh \
             infra/scripts/setup-staging-tls.sh \
+            infra/scripts/restore-local-db-drill.sh \
             infra/scripts/render-release-env.sh \
             infra/scripts/validate-release-env.sh
           bundle="$(base64 -w 0 /tmp/herfree-release-bundle.tgz)"
@@ -263,79 +264,115 @@ jobs:
           test -n "${manifest}" && test "${manifest}" != "None"
           aws ecr put-image --repository-name "${ECR_REPOSITORY}" --image-tag "staging-passed-${GITHUB_SHA}" --image-manifest "${manifest}"
 
+  build-production:
+    if: inputs.target == 'production'
+    runs-on: ubuntu-latest
+    environment: production
+    outputs:
+      commit_sha: ${{ steps.release.outputs.commit_sha }}
+      image_digest: ${{ steps.release.outputs.image_digest }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Require the current main commit
+        run: |
+          set -euo pipefail
+          test "${GITHUB_REF}" = "refs/heads/main"
+          git fetch --no-tags origin main
+          test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+      - id: image
+        name: Build immutable production candidate
+        env:
+          ECR_REGISTRY: ${{ steps.ecr.outputs.registry }}
+        run: |
+          set -euo pipefail
+          tag="production-${GITHUB_SHA}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          image="${ECR_REGISTRY}/${ECR_REPOSITORY}:${tag}"
+          docker build --file infra/docker/Dockerfile.backend --tag "${image}" .
+          echo "uri=${image}" >> "${GITHUB_OUTPUT}"
+          echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
+      - name: Reject high and critical image vulnerabilities
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        env:
+          TRIVY_DB_REPOSITORY: ghcr.io/aquasecurity/trivy-db:2
+          TRIVY_JAVA_DB_REPOSITORY: ghcr.io/aquasecurity/trivy-java-db:1
+        with:
+          version: v0.72.0
+          image-ref: ${{ steps.image.outputs.uri }}
+          format: table
+          exit-code: '1'
+          ignore-unfixed: true
+          severity: HIGH,CRITICAL
+      - name: Push scanned image
+        run: docker push "${{ steps.image.outputs.uri }}"
+      - id: release
+        name: Resolve immutable image digest
+        env:
+          IMAGE_TAG: ${{ steps.image.outputs.tag }}
+        run: |
+          set -euo pipefail
+          digest="$(aws ecr describe-images \
+            --repository-name "${ECR_REPOSITORY}" \
+            --image-ids imageTag="${IMAGE_TAG}" \
+            --query 'imageDetails[0].imageDigest' \
+            --output text)"
+          [[ "${digest}" =~ ^sha256:[0-9a-f]{64}$ ]]
+          echo "commit_sha=${GITHUB_SHA}" >> "${GITHUB_OUTPUT}"
+          echo "image_digest=${digest}" >> "${GITHUB_OUTPUT}"
+
   deploy-production:
     if: inputs.target == 'production'
+    needs: build-production
     runs-on: ubuntu-latest
     environment: production
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ needs.build-production.outputs.commit_sha }}
           fetch-depth: 0
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
-      - id: release
-        name: Resolve promoted commit and immutable image digest
-        env:
-          IMAGE_TAG: ${{ inputs.image_tag }}
-        run: |
-          set -euo pipefail
-          test "${GITHUB_REF}" = "refs/heads/main"
-          if [[ ! "${IMAGE_TAG}" =~ ^staging-passed-[0-9a-f]{40}$ ]]; then
-            echo "Production requires staging-passed-<40 character commit SHA>."
-            exit 2
-          fi
-          promoted_sha="${IMAGE_TAG#staging-passed-}"
-          git fetch --no-tags origin main
-          git merge-base --is-ancestor "${promoted_sha}" origin/main
-          tag_mutability="$(aws ecr describe-repositories \
-            --repository-names "${ECR_REPOSITORY}" \
-            --query 'repositories[0].imageTagMutability' \
-            --output text)"
-          test "${tag_mutability}" = "IMMUTABLE"
-          source_digest="$(aws ecr describe-images \
-            --repository-name "${ECR_REPOSITORY}" \
-            --image-ids imageTag="${promoted_sha}" \
-            --query 'imageDetails[0].imageDigest' \
-            --output text)"
-          image_digest="$(aws ecr describe-images \
-            --repository-name "${ECR_REPOSITORY}" \
-            --image-ids imageTag="${IMAGE_TAG}" \
-            --query 'imageDetails[0].imageDigest' \
-            --output text)"
-          [[ "${source_digest}" =~ ^sha256:[0-9a-f]{64}$ ]]
-          [[ "${image_digest}" =~ ^sha256:[0-9a-f]{64}$ ]]
-          test "${source_digest}" = "${image_digest}"
-          echo "promoted_sha=${promoted_sha}" >> "${GITHUB_OUTPUT}"
-          echo "image_digest=${image_digest}" >> "${GITHUB_OUTPUT}"
-      - name: Check out the exact staging-tested bundle
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ steps.release.outputs.promoted_sha }}
-          fetch-depth: 0
       - id: ecr
         uses: aws-actions/amazon-ecr-login@v2
-      - name: Validate promoted image and deploy with rollback
+      - name: Validate scanned image and deploy with rollback
         env:
           ECR_REGISTRY: ${{ steps.ecr.outputs.registry }}
           INSTANCE_ID: ${{ vars.PRODUCTION_INSTANCE_ID }}
-          IMAGE_DIGEST: ${{ steps.release.outputs.image_digest }}
-          PROMOTED_SHA: ${{ steps.release.outputs.promoted_sha }}
-          RDS_INSTANCE_ID: ${{ vars.PRODUCTION_RDS_INSTANCE_ID }}
-          RELEASE_ID: ${{ github.run_id }}-${{ github.run_attempt }}
+          IMAGE_DIGEST: ${{ needs.build-production.outputs.image_digest }}
+          RELEASE_SHA: ${{ needs.build-production.outputs.commit_sha }}
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = "${PROMOTED_SHA}"
+          test "${GITHUB_REF}" = "refs/heads/main"
+          test "$(git rev-parse HEAD)" = "${RELEASE_SHA}"
           [[ "${IMAGE_DIGEST}" =~ ^sha256:[0-9a-f]{64}$ ]]
+          test "$(aws ecr describe-repositories \
+            --repository-names "${ECR_REPOSITORY}" \
+            --query 'repositories[0].imageTagMutability' --output text)" = "IMMUTABLE"
           aws ecr describe-images --repository-name "${ECR_REPOSITORY}" --image-ids imageDigest="${IMAGE_DIGEST}" >/dev/null
-          bash ./infra/scripts/create-rds-predeploy-snapshot.sh
           image="${ECR_REGISTRY}/${ECR_REPOSITORY}@${IMAGE_DIGEST}"
           tar -czf /tmp/herfree-release-bundle.tgz \
             docker-compose.release.yml \
+            docker-compose.release-local-db.yml \
             infra/nginx/herfree-production.conf \
             infra/nginx/herfree-production-bootstrap.conf \
+            infra/certs/rds-global-bundle.pem \
+            infra/scripts/backup-db.sh \
             infra/scripts/deploy-release.sh \
+            infra/scripts/install-local-db-ops.sh \
+            infra/scripts/migrate-rds-to-local.sh \
+            infra/scripts/monitor-local-db.sh \
+            infra/scripts/prepare-local-db-env.sh \
+            infra/scripts/preflight-rds-local-restore.sh \
+            infra/scripts/restore-local-db-drill.sh \
             infra/scripts/setup-production-tls.sh \
             infra/scripts/render-release-env.sh \
             infra/scripts/validate-release-env.sh

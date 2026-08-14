@@ -40,6 +40,7 @@ else
   ENV_FILE="${CONFIG_DIR}/.env.staging"
 fi
 COMPOSE_FILE="${APP_DIR}/docker-compose.release.yml"
+LOCAL_DB_COMPOSE_FILE="${APP_DIR}/docker-compose.release-local-db.yml"
 STATE_DIR="${APP_DIR}/.deploy"
 PROJECT="herfree-${DEPLOY_ENV}"
 
@@ -52,7 +53,36 @@ if [[ ! -f "${ENV_FILE}" || ! -f "${COMPOSE_FILE}" ]]; then
   exit 1
 fi
 
-"${APP_DIR}/infra/scripts/validate-release-env.sh" "${DEPLOY_ENV}" "${ENV_FILE}"
+db_runtime="$(sed -n 's/^DB_RUNTIME=//p' "${ENV_FILE}" | tail -n 1 | tr -d '\r')"
+MYSQL_ENV_FILE="${CONFIG_DIR}/.env.mysql.${DEPLOY_ENV}"
+MYSQL_DATA_DIR="${HERFREE_MYSQL_DATA_DIR:-/var/lib/herfree/mysql-${DEPLOY_ENV}}"
+compose_files=(-f "${COMPOSE_FILE}")
+if [[ "${db_runtime}" == "local" ]]; then
+  if [[ ! -f "${LOCAL_DB_COMPOSE_FILE}" ]]; then
+    echo "local DB compose overlay is missing"
+    exit 1
+  fi
+  compose_files+=(-f "${LOCAL_DB_COMPOSE_FILE}")
+fi
+
+if [[ "${DEPLOY_ENV}" == "production" ]]; then
+  API_MEMORY_LIMIT="${API_MEMORY_LIMIT:-768m}"
+  MYSQL_MEMORY_LIMIT="${MYSQL_MEMORY_LIMIT:-512m}"
+else
+  API_MEMORY_LIMIT="${API_MEMORY_LIMIT:-512m}"
+  MYSQL_MEMORY_LIMIT="${MYSQL_MEMORY_LIMIT:-384m}"
+fi
+
+HERFREE_MYSQL_ENV_FILE="${MYSQL_ENV_FILE}" \
+  "${APP_DIR}/infra/scripts/validate-release-env.sh" "${DEPLOY_ENV}" "${ENV_FILE}"
+
+if [[ "${DEPLOY_ENV}" == "production" && "${db_runtime}" == "local" ]]; then
+  if [[ ! -f "/var/lib/herfree/.production-db-ready" \
+     || ! -f "${MYSQL_DATA_DIR}/auto.cnf" ]]; then
+    echo "production local DB has not completed a verified migration or restore"
+    exit 1
+  fi
+fi
 
 mkdir -p "${STATE_DIR}"
 chmod 700 "${STATE_DIR}"
@@ -105,21 +135,27 @@ remove_state_if_matches() {
 deploy_image() {
   local image="$1"
   API_IMAGE="${image}" APP_ENV_FILE="${ENV_FILE}" API_BIND_PORT="${PORT}" API_BIND_HOST="${BIND_HOST}" DEPLOY_ENV="${DEPLOY_ENV}" \
-    docker compose --env-file "${ENV_FILE}" -p "${PROJECT}" -f "${COMPOSE_FILE}" \
+    MYSQL_ENV_FILE="${MYSQL_ENV_FILE}" MYSQL_DATA_DIR="${MYSQL_DATA_DIR}" \
+    API_MEMORY_LIMIT="${API_MEMORY_LIMIT}" MYSQL_MEMORY_LIMIT="${MYSQL_MEMORY_LIMIT}" \
+    docker compose --env-file "${ENV_FILE}" -p "${PROJECT}" "${compose_files[@]}" \
       up -d --pull always --no-build --remove-orphans
 }
 
 show_logs() {
   local image="$1"
   API_IMAGE="${image}" APP_ENV_FILE="${ENV_FILE}" API_BIND_PORT="${PORT}" API_BIND_HOST="${BIND_HOST}" DEPLOY_ENV="${DEPLOY_ENV}" \
-    docker compose --env-file "${ENV_FILE}" -p "${PROJECT}" -f "${COMPOSE_FILE}" \
+    MYSQL_ENV_FILE="${MYSQL_ENV_FILE}" MYSQL_DATA_DIR="${MYSQL_DATA_DIR}" \
+    API_MEMORY_LIMIT="${API_MEMORY_LIMIT}" MYSQL_MEMORY_LIMIT="${MYSQL_MEMORY_LIMIT}" \
+    docker compose --env-file "${ENV_FILE}" -p "${PROJECT}" "${compose_files[@]}" \
       logs --tail=120 api || true
 }
 
 stop_service() {
   local image="$1"
   API_IMAGE="${image}" APP_ENV_FILE="${ENV_FILE}" API_BIND_PORT="${PORT}" API_BIND_HOST="${BIND_HOST}" DEPLOY_ENV="${DEPLOY_ENV}" \
-    docker compose --env-file "${ENV_FILE}" -p "${PROJECT}" -f "${COMPOSE_FILE}" \
+    MYSQL_ENV_FILE="${MYSQL_ENV_FILE}" MYSQL_DATA_DIR="${MYSQL_DATA_DIR}" \
+    API_MEMORY_LIMIT="${API_MEMORY_LIMIT}" MYSQL_MEMORY_LIMIT="${MYSQL_MEMORY_LIMIT}" \
+    docker compose --env-file "${ENV_FILE}" -p "${PROJECT}" "${compose_files[@]}" \
       stop api || true
 }
 
@@ -244,6 +280,13 @@ if [[ "${DEPLOY_ENV}" == "production"
   echo "production deployment requires an existing healthy fallback image"
   echo "use a separately approved bootstrap procedure for the first production deployment"
   exit 1
+fi
+
+if [[ "${DEPLOY_ENV}" == "production" && "${db_runtime}" == "local" \
+      && "${DEPLOY_MODE}" == "deploy" ]]; then
+  echo "creating verified local DB backup before deployment"
+  DEPLOY_ENV="${DEPLOY_ENV}" HERFREE_APP_DIR="${APP_DIR}" \
+    "${APP_DIR}/infra/scripts/backup-db.sh" predeploy
 fi
 
 OPERATION_STARTED="false"

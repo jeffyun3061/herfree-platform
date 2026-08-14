@@ -78,6 +78,30 @@ class RuntimeProfilePolicyTest {
     }
 
     @Test
+    void acceptsPrivateDockerMysqlWithRequiredTlsForExplicitLocalRuntime() {
+        MockEnvironment production = validPublicEnvironment("prod")
+                .withProperty("DB_RUNTIME", "local")
+                .withProperty(
+                        "spring.datasource.url",
+                        "jdbc:mysql://mysql:3306/herfree_db?serverTimezone=UTC&sslMode=REQUIRED");
+
+        RuntimeProfilePolicy.requirePublicDeploymentSettings(production);
+    }
+
+    @Test
+    void rejectsExternalMysqlHostForPublicLocalRuntime() {
+        MockEnvironment production = validPublicEnvironment("prod")
+                .withProperty("DB_RUNTIME", "local")
+                .withProperty(
+                        "spring.datasource.url",
+                        "jdbc:mysql://database.example:3306/herfree_db?sslMode=REQUIRED");
+
+        assertThatThrownBy(() -> RuntimeProfilePolicy.requirePublicDeploymentSettings(production))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("private mysql service");
+    }
+
+    @Test
     void rejectsRekeyRunnerInProduction() {
         MockEnvironment production = new MockEnvironment();
         production.setActiveProfiles("prod");
@@ -152,5 +176,19 @@ class RuntimeProfilePolicyTest {
         assertThatThrownBy(() -> RuntimeProfilePolicy.requirePublicDeploymentSettings(staging))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("ADMIN_ACCESS_ALLOWED_CIDRS");
+    }
+
+    private static MockEnvironment validPublicEnvironment(String profile) {
+        MockEnvironment environment = new MockEnvironment();
+        environment.setActiveProfiles(profile);
+        return environment
+                .withProperty("jwt.secret", "a_secure_jwt_secret_that_is_longer_than_32_chars")
+                .withProperty("app.analytics.hash-salt", "a_distinct_analytics_salt_longer_than_32_chars")
+                .withProperty("app.mail.mode", "smtp")
+                .withProperty("app.bootstrap.enabled", "false")
+                .withProperty("app.cors.allowed-origins", "https://herpfree.co.kr")
+                .withProperty("app.s3.bucket", "production-bucket")
+                .withProperty("app.admin.access-allowed-cidrs", "10.20.0.0/16")
+                .withProperty("app.health-data.encryption-key", "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=");
     }
 }

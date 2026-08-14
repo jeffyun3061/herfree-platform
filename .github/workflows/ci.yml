@@ -24,6 +24,15 @@ jobs:
         run: |
           set -euo pipefail
           bash -n infra/scripts/*.sh
+          grep -q 'DB_RUNTIME=' infra/scripts/render-release-env.sh
+          grep -q 'sslMode=REQUIRED' infra/scripts/render-release-env.sh
+          grep -q 'internal: true' docker-compose.release-local-db.yml
+          ! grep -A8 '^  mysql:' docker-compose.release-local-db.yml | grep -q 'ports:'
+          grep -q 'CONFIRM_RDS_TO_LOCAL_MIGRATION.*YES' infra/scripts/migrate-rds-to-local.sh
+          grep -q 'row-count verification failed' infra/scripts/migrate-rds-to-local.sh
+          grep -q -- '--sse AES256' infra/scripts/backup-db.sh
+          grep -q 'sha256sum -c' infra/scripts/restore-local-db-drill.sh
+          grep -q 'DatabaseBackupAgeHours' infra/scripts/monitor-local-db.sh
           grep -q 'sslMode=VERIFY_IDENTITY' .env.staging.example
           grep -q 'sslMode=VERIFY_IDENTITY' .env.prod.example
           grep -q 'ADMIN_BOOTSTRAP_ENABLED=false' .env.staging.example
@@ -33,7 +42,8 @@ jobs:
           ! grep -q 'herfree/staging/app-config' scripts/setup-production-aws.ps1
           ! grep -q 'herfree/staging/db-app' scripts/setup-production-aws.ps1
           ! grep -q 'herfree/staging/smtp' scripts/setup-production-aws.ps1
-          grep -q 'check-staging-status.ps1.*-Strict' scripts/go-live-production.ps1
+          grep -q 'build-production:' .github/workflows/release-backend.yml
+          grep -q 'backup-db.sh' .github/workflows/release-backend.yml
           grep -q 'deploy-release.sh.*rollback' infra/scripts/rollback-release.sh
           grep -q 'put-bucket-encryption' scripts/setup-production-aws.ps1
           grep -q 'put-public-access-block' scripts/setup-production-aws.ps1
