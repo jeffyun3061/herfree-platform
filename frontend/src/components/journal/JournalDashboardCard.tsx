@@ -5,6 +5,7 @@ import Link from 'next/link';
 import type { JournalDashboard, JournalRecord, StressLevel } from '@/domain/journal/types';
 import { PUBLIC_IMAGES } from '@/domain/assets/static';
 import { JournalShareButton } from '@/components/journal/JournalShareButton';
+import { HERFREE_SITE_URL } from '@/domain/journal/share';
 import {
   avgSleepToHours,
   countRecordStreak,
@@ -163,7 +164,7 @@ export function JournalDashboardCard({
     <div className="space-y-2">
       <section
         id="hf-dashboard-card"
-        className="overflow-hidden rounded-[24px] shadow-[0_26px_52px_-30px_rgba(7,37,31,.65)]"
+        className="w-full min-w-0 overflow-hidden rounded-[24px] shadow-[0_26px_52px_-30px_rgba(7,37,31,.65)]"
       >
         <div className="relative h-[196px] overflow-hidden bg-[#07251F] text-white">
           <img
@@ -178,7 +179,12 @@ export function JournalDashboardCard({
               <span className="text-[12.5px] font-medium text-white [text-shadow:0_1px_6px_rgba(0,0,0,.3)]">
                 {formatDashboardDateBadge(new Date())}
               </span>
-              <JournalShareButton dashboard={dashboard} variant="icon" />
+              <JournalShareButton
+                dashboard={dashboard}
+                lastRecord={lastRecord}
+                showRecordButton={Boolean(onRecordDaily)}
+                variant="icon"
+              />
             </div>
 
             <div>
@@ -194,7 +200,10 @@ export function JournalDashboardCard({
               <h2 className="hf-display text-[30px] font-bold text-white [text-shadow:0_2px_12px_rgba(0,0,0,.4)]">
                 {statusTone.title}
               </h2>
-              <p className="mt-1.5 line-clamp-2 text-[12.5px] text-white/90 [text-shadow:0_1px_6px_rgba(0,0,0,.35)]">
+              <p
+                data-share-text="1"
+                className="mt-1.5 min-w-0 break-keep whitespace-normal text-[12.5px] leading-[1.35] text-white/90 [text-shadow:0_1px_6px_rgba(0,0,0,.35)]"
+              >
                 {buildPreviewSubStatus(status, focusRecord, relapseFreeDays)}
               </p>
             </div>
@@ -202,9 +211,17 @@ export function JournalDashboardCard({
         </div>
 
         <div className="bg-[#07251F] px-[18px] pb-[18px] pt-4 text-white">
-          <div className="mb-3.5 flex items-center justify-between gap-3">
-            <span className="text-[11.5px] text-white/60">개인일지 요약 · 최근 {HOME_SUMMARY_DAYS}일</span>
-            <Link href="/journal?tab=insights" className="text-[12px] font-medium text-[#F0C778]">
+          <div className="mb-3.5 flex min-w-0 items-start justify-between gap-2">
+            <span
+              data-share-text="1"
+              className="min-w-0 flex-1 whitespace-normal break-keep text-[11.5px] leading-4 text-white/60"
+            >
+              개인일지 요약 · 최근 {HOME_SUMMARY_DAYS}일
+            </span>
+            <Link
+              href="/journal?tab=insights"
+              className="shrink-0 whitespace-nowrap pt-px pr-1 text-[12px] font-medium text-[#F0C778]"
+            >
               자세히 ›
             </Link>
           </div>
@@ -221,10 +238,7 @@ export function JournalDashboardCard({
             ))}
           </div>
 
-          <p
-            data-share-exclude="1"
-            className="mt-[15px] flex items-center justify-center gap-1.5 text-[12px] font-semibold text-[#F0C778]"
-          >
+          <p className="mt-[15px] flex items-center justify-center gap-1.5 text-[12px] font-semibold text-[#F0C778]">
             🔥 {recordStreak}일 연속 기록 중
           </p>
 
@@ -232,12 +246,22 @@ export function JournalDashboardCard({
             <button
               type="button"
               onClick={onRecordDaily}
-              data-share-exclude="1"
               className="mt-2.5 w-full rounded-[13px] border border-[rgba(243,237,227,.3)] bg-[rgba(243,237,227,.12)] px-4 py-3.5 text-center text-[14px] font-bold text-[#F3EDE3] backdrop-blur-sm transition-colors hover:bg-[rgba(243,237,227,.18)]"
             >
               ✏️ 오늘 기록하기
             </button>
           )}
+
+          <div
+            data-share-only="1"
+            aria-hidden="true"
+            className="hidden items-center justify-between border-t border-white/10 pt-3 text-[10px] text-white/45"
+          >
+            <span className="font-semibold text-white/60">헤르프리 개인일지</span>
+            <a href={HERFREE_SITE_URL} className="text-white/55">
+              {HERFREE_SITE_URL.replace(/^https?:\/\//, '')}
+            </a>
+          </div>
         </div>
       </section>
     </div>

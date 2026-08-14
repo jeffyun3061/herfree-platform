@@ -37,6 +37,15 @@ public class AdminAccessGateFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain
     ) throws ServletException, IOException {
+        // The frontend production BFF forwards the authenticated access token, but its
+        // server-side request IP is not the end user's IP. Let that request continue to
+        // Spring Security, which still enforces the ADMIN/SUPER_ADMIN role below. Requests
+        // without a bearer token remain subject to the configured admin/VPN CIDR gate.
+        if (hasBearerToken(request)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         String allowedCidrs = properties.accessAllowedCidrs();
         String clientIp = clientIpExtractor.extract(request);
         if (!StringUtils.hasText(allowedCidrs)
@@ -45,5 +54,12 @@ public class AdminAccessGateFilter extends OncePerRequestFilter {
             return;
         }
         filterChain.doFilter(request, response);
+    }
+
+    private boolean hasBearerToken(HttpServletRequest request) {
+        String authorization = request.getHeader("Authorization");
+        return StringUtils.hasText(authorization)
+                && authorization.regionMatches(true, 0, "Bearer ", 0, 7)
+                && StringUtils.hasText(authorization.substring(7));
     }
 }
