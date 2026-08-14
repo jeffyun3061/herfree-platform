@@ -99,7 +99,7 @@
 
 ### AWS와 네트워크
 
-- [x] staging RDS `herfree-staging-mysql` 생성: MySQL 8.0.46, `db.t4g.micro`, 단일 AZ, 20GB gp3, 저장 암호화, 삭제 보호 (2026-07-17)
+- [x] staging RDS `herfree-staging-mysql` 생성 후 MySQL 8.4.10으로 업그레이드: `db.t4g.micro`, 단일 AZ, 20GB gp3, 저장 암호화, 삭제 보호 (2026-08-14 검증)
 - [x] staging RDS Public access 비활성화, 전용 보안 그룹 인바운드 0개, `require_secure_transport=ON` 적용
 - [x] staging RDS 관리형 master secret 사용, error 로그 그룹 30일 보존, 시점 복구 가능 상태 확인
 - [x] staging RDS 자동 백업 1일 적용. 현재 AWS Free plan 제한값이며 staging 검증용으로만 사용한다.

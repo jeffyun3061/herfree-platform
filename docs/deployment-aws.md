@@ -213,12 +213,12 @@ docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
 
 ## 5. RDS 전환 (B안, 선택)
 
-### 현재 staging 구성 (2026-07-17)
+### 현재 staging 구성 (2026-08-14)
 
 | 항목 | 값 |
 | --- | --- |
 | DB identifier | `herfree-staging-mysql` |
-| 엔진/크기 | MySQL 8.0.46 / `db.t4g.micro` / Single-AZ |
+| 엔진/크기 | MySQL 8.4.10 / `db.t4g.micro` / Single-AZ |
 | 저장소 | 암호화된 gp3 20GB, 최대 자동 확장 50GB |
 | 네트워크 | Public access 비활성화, RDS SG 인바운드 0개 |
 | 전송 보안 | `require_secure_transport=ON` |
@@ -243,7 +243,7 @@ aws rds create-db-snapshot `
 
 수동 스냅샷은 자동 삭제되지 않으므로 검증이 끝난 오래된 staging 스냅샷은 월 1회 정리한다. production 스냅샷 삭제 주기는 개인정보 보존·파기 정책과 함께 확정한다.
 
-1. RDS MySQL 8.0 생성 (`utf8mb4_unicode_ci`)
+1. RDS MySQL 8.4 생성 (`utf8mb4_unicode_ci`)
 2. 보안 그룹: **EC2 SG → RDS 3306** 만 허용
 3. `.env.prod`에 JDBC URL 추가:
 
