@@ -1,170 +1,177 @@
 # Herfree Platform
 
-헤르페스·감염 불안 사용자를 위한 **익명 커뮤니티 + 비공개 증상 일지 + 운영자 큐레이션** 웹 서비스.
+헤르페스·감염 불안 사용자를 위한 익명 커뮤니티와 비공개 증상 일지를 한곳에서 제공하는 모바일 중심 웹 서비스입니다.
 
-네이버 카페·단톡·유튜브 댓글에 흩어진 대화를 한곳으로 모으되, **게시판은 커뮤니티용**, **정보·영상은 운영자가 직접 올리는 CMS**, **일지는 본인만 보는 기록**으로 역할을 나눴습니다. 1차 MVP는 결제·네이티브 앱·영상 직접 업로드 없이, 실제 런칭 가능한 범위만 구현했습니다.
+게시판은 서로의 경험을 나누는 공간으로, 개인 일지는 본인만 확인하는 기록으로 분리했습니다. 운영자는 정보글과 영상을 CMS에서 관리하고, 신고·숨김 처리로 커뮤니티를 운영할 수 있도록 구성했습니다.
 
----
+## 프로젝트 개요
 
-## 이 프로젝트에서 다룬 문제
+| 항목 | 내용 |
+| --- | --- |
+| 프로젝트 | Herfree Platform |
+| 형태 | 풀스택 개인 프로젝트 |
+| 대상 | 헤르페스·감염 불안을 겪는 사용자 |
+| 핵심 기능 | 익명 커뮤니티, 비공개 증상 일지, 운영자 콘텐츠 관리 |
+| 저장소 | [jeffyun3061/herfree-platform](https://github.com/jeffyun3061/herfree-platform) |
 
-| 상황 | 접근 |
-|------|------|
-| 루틴 체크 버튼이 `/journal`로 이동하면서 API·상태가 꼬여 홈에서 오류 | 별도 “일일 체크” 화면을 없애고, **하루 1건 기록(upsert)** 으로 루틴·증상을 함께 저장. 홈에서는 **시트를 그대로 열어** 저장 후 대시보드만 갱신 |
-| 위저드형 기록 UI가 길고 끊김 | **단일 스크롤 폼**(`JournalRecordSheet`)으로 통합 — 수면·영양제·스트레스·전조·증상·메모를 한 번에 |
-| 비회원·회원 홈 요구가 달랐음 | 비회원은 **랜딩(히어로·퀵액세스)**, 로그인 사용자는 **개인 일지 대시보드**로 분리 |
-| 정보글을 커뮤니티 글쓰기처럼 다루기 어려움 | `/admin`에 **정보 올리기** 탭 — 카테고리·본문·미리보기. 커뮤니티 `write` 흐름과 분리 |
-| 영상 6개 시드만 있고 이후 관리 불편 | 유튜브 URL 등록 CMS + 공개 목록 **최신 노출 6건** + 관리자 **전체 목록·숨김 복구** API |
-| `public/` 경로가 컴포넌트에 흩어짐 | `domain/assets/static.ts` 단일 관리 + `PublicStaticImage` 래퍼 |
-| 게시글 이미지 S3 직접 업로드 시 CORS·키 노출 | 브라우저 → Spring → S3 프록시 업로드 ([deployment.md](docs/deployment.md)) |
+## 해결하려는 문제
 
----
+- 정보가 카페, 단톡방, 영상 댓글에 흩어져 필요한 내용을 찾기 어려웠습니다.
+- 공개 게시글과 개인적인 건강 기록을 같은 방식으로 다루면 사생활 보호가 어렵습니다.
+- 운영자가 정보글과 영상을 관리할 별도 공간이 필요했습니다.
 
-## 구현 범위 (1차 MVP)
+이를 해결하기 위해 커뮤니티, 개인 일지, 운영자 CMS를 각각의 도메인으로 나누고 접근 권한도 분리했습니다.
+
+## 주요 기능
 
 ### 커뮤니티
-- 게시판·게시글·댓글·공감·신고
-- 익명 게시, 게시글 이미지(S3)
-- 운영자: 게시글·댓글 숨김, 신고 처리, 회원 상태·역할
 
-### 개인 일지 (비공개)
-- 날짜별 기록 upsert — 루틴(수면·영양제·컨디션)과 증상·전조·트리거를 **같은 레코드**에 저장
-- 대시보드: 재발 없음 일수, 14일 타임라인, 루틴 완료율, 오늘 기록 요약
-- 인사이트 탭: 최근 30일 리뷰·패턴 요약
-- 커뮤니티용 **익명 집계** API (`/api/journal/insights`) — 개인 식별 데이터 미포함
+- 게시판별 게시글·댓글 조회 및 작성
+- 익명 게시와 익명 댓글
+- 공감 반응, 스크랩, 신고
+- 작성자와 운영자 권한에 따른 수정·삭제·숨김 처리
+- 게시글 이미지 업로드 및 S3 저장
 
-### 큐레이션 (운영자 CMS)
-- **정보글**: `/contents` — 카테고리 필터, 상세 읽기
-- **영상**: YouTube URL만 등록, 사이트 내 iframe 재생, 추천·순서 기반 **최대 6개**
-- **제품**: API·관리자 CMS는 준비됨 — **런칭 시 UI 비노출** (커뮤니티 신뢰 형성 후 `FEATURE_PRODUCTS_ENABLED`로 공개)
+### 개인 일지
 
-### 인증·권한
-- JWT (Stateless), 역할: `USER` · `MODERATOR` · `ADMIN` · `SUPER_ADMIN`
-- `/api/admin/**` 역할별 분리 (신고는 모더레이터부터, 콘텐츠·영상은 관리자)
+- 날짜별 수면, 영양제, 컨디션, 전조, 증상, 메모 기록
+- 같은 날짜의 기록은 upsert하여 하루 한 건으로 관리
+- 개인 대시보드와 최근 기록 리뷰
+- 건강정보 동의가 유효한 사용자만 기록 API 사용
+- 공개 인사이트는 개인 식별이 불가능한 집계만 제공
 
----
+### 운영자 CMS
+
+- 공지사항과 정보글 등록·수정·숨김
+- YouTube URL 기반 영상 등록·정렬·노출 관리
+- 신고 처리와 회원 상태 관리
 
 ## 기술 스택
 
-| 영역 | 선택 |
-|------|------|
-| Backend | Java 17, Spring Boot 3.5.16, Spring Security, JPA, Flyway, MySQL 8 |
+| 영역 | 기술 |
+| --- | --- |
 | Frontend | Next.js App Router, TypeScript, Tailwind CSS |
-| 인증 | JWT Bearer |
-| 스토리지 | 게시글 이미지 AWS S3 (API 경유 업로드) |
-| CI | GitHub Actions — `./gradlew test`, `npm run lint && build` |
-| 배포(기준안) | Frontend Amplify/Next.js · API EC2 · private RDS MySQL · [production-architecture.md](docs/production-architecture.md) |
+| Backend | Java 17, Spring Boot, Spring Security, Spring Data JPA |
+| Database | MySQL 8, Flyway |
+| Authentication | JWT, OAuth(Kakao·Google·Naver) |
+| Storage | AWS S3, Spring API 프록시 업로드 |
+| Deploy | AWS Amplify/Next.js, EC2, Nginx, private RDS |
+| CI | GitHub Actions |
 
-백엔드는 **도메인 단위 패키지**(`auth`, `user`, `post`, `journal`, `content`, `video` …) + `global`(보안·예외·공통). 프론트는 `domain/`(순수 타입·정책), `hooks/`, `components/` 분리.
+## 시스템 아키텍처
 
----
+브라우저는 Next.js 화면과 `/api` 프록시를 사용하고, Spring Boot가 인증·권한·도메인 로직을 처리합니다. 데이터는 MySQL에 저장하며 게시글 이미지는 Spring API를 거쳐 S3에 보관합니다.
 
-## 저장소 구조
+[draw.io 아키텍처 파일](./herfree_architecture.drawio)
 
+```text
+Browser
+  -> Next.js App Router / BFF
+  -> Spring Boot REST API
+       -> MySQL 8
+       -> AWS S3
+       -> OAuth Provider / SMTP
 ```
+
+## 사용자 주요 흐름
+
+### 회원가입과 개인 일지
+
+1. 이메일 또는 OAuth로 가입합니다.
+2. 서버가 사용자, 프로필, 약관 동의 이력을 저장하고 JWT를 발급합니다.
+3. 개인 일지를 처음 저장할 때 건강정보 동의 여부를 확인합니다.
+4. `recordDate` 기준으로 기록을 생성하거나 기존 기록을 갱신합니다.
+5. 대시보드는 개인 기록만 조회하고, 공개 인사이트는 동의 회원의 비식별 집계만 사용합니다.
+
+### 게시글 이미지
+
+1. 클라이언트가 Spring API에 이미지를 전송합니다.
+2. API가 파일 형식과 크기를 검증합니다.
+3. 서버가 S3에 저장하고 게시글 이미지 메타데이터를 `post_images`에 기록합니다.
+4. 이미지 조회 시 게시글 공개 범위와 권한을 다시 확인합니다.
+
+[draw.io 사용자 흐름 파일](./herfree_flow.drawio)
+
+## ERD
+
+ERD는 포트폴리오 설명에 필요한 핵심 테이블만 표현했습니다. 관리자 감사 로그, 비밀번호 재설정 토큰, 운영 이벤트 로그처럼 운영에 필요한 보조 테이블은 도식에서 제외했습니다.
+
+[draw.io ERD 파일](./herfree_erd.drawio)
+
+핵심 관계는 다음과 같습니다.
+
+- `users` 1 : 1 `user_profiles`
+- `users` 1 : N `posts`, `comments`, `journal_records`
+- `boards` 1 : N `posts`
+- `posts` 1 : N `comments`, `post_images`
+- `users` N : N `posts` through `post_bookmarks`
+- `contents`와 `videos`는 운영자가 등록하고 공개 여부를 별도로 관리합니다.
+
+## API 명세
+
+Base path는 `/api`이며 공개 API를 제외한 요청은 `Authorization: Bearer {accessToken}`을 사용합니다.
+
+| 영역 | Method | Endpoint | 설명 |
+| --- | --- | --- | --- |
+| Auth | POST | `/auth/signup` | 이메일 회원가입 |
+| Auth | POST | `/auth/login` | 로그인 및 JWT 발급 |
+| User | GET | `/users/me` | 내 정보 조회 |
+| Board | GET | `/boards` | 게시판 목록 조회 |
+| Post | GET/POST | `/posts` | 게시글 조회·작성 |
+| Comment | GET/POST | `/posts/{postId}/comments` | 댓글 조회·작성 |
+| Reaction | POST/DELETE | `/reactions` | 공감 등록·취소 |
+| Report | POST | `/reports` | 게시글·댓글 신고 |
+| Journal | POST | `/journal/records` | 날짜별 일지 upsert |
+| Journal | GET | `/journal/dashboard` | 개인 대시보드 조회 |
+| Content | GET | `/contents` | 정보글 목록 조회 |
+| Video | GET | `/videos` | 공개 영상 목록 조회 |
+| Admin | PATCH | `/admin/posts/{postId}/hide` | 게시글 숨김 |
+| Admin | POST | `/admin/contents` | 정보글 등록 |
+| Admin | POST | `/admin/videos` | 영상 등록 |
+
+전체 명세는 저장소의 [`docs/api-spec.md`](https://github.com/jeffyun3061/herfree-platform/blob/main/docs/api-spec.md)에서 확인할 수 있습니다.
+
+## 보안과 데이터 처리
+
+- `users`와 `user_profiles`를 분리해 인증 정보와 노출 정보를 나눴습니다.
+- 게시글·댓글·회원은 상태값으로 숨김과 탈퇴를 관리합니다.
+- 익명 게시글도 내부적으로 작성자 ID를 유지해 신고와 권한 검증을 수행합니다.
+- 개인 일지는 본인 user ID를 기준으로 조회하며, 탈퇴 시 건강 기록을 삭제합니다.
+- 브라우저가 S3에 직접 접근하지 않고 Spring API가 업로드를 중계합니다.
+
+## 프로젝트 구조
+
+```text
 herfree-platform/
-├── backend/                 # REST API (com.herfree)
-│   └── src/main/resources/db/migration/   # Flyway V1~
-├── frontend/                # Next.js
-├── docs/                    # 요구사항, API, ERD, ADR, 배포
-├── infra/scripts/           # AWS release 배포·검증·legacy 백업 스크립트
-├── scripts/                 # 로컬 실행·데모용 PowerShell
-└── docker-compose.local.yml # 로컬 MySQL 8
+├── backend/       # Spring Boot REST API
+├── frontend/      # Next.js App Router
+├── docs/          # 요구사항·API·ERD·배포 문서
+├── infra/         # AWS·Nginx·배포 스크립트
+└── scripts/       # 로컬 실행·검증 스크립트
 ```
 
----
-
-## 로컬 실행
-
-**사전 요구:** JDK 17+, Node 20+, Docker(또는 MySQL 8), Git
+## 실행 방법
 
 ```bash
-# 1) DB
+# MySQL
 docker compose -f docker-compose.local.yml up -d
 
-# 2) Backend — backend/application-local.yml 필요 (example 복사)
-cd backend && ./gradlew bootRun
+# Backend
+cd backend
+./gradlew bootRun
 
-# 3) Frontend
-cd frontend && npm ci && npm run dev
+# Frontend
+cd frontend
+npm ci
+npm run dev
 ```
 
-| | URL |
-|---|-----|
-| API | http://localhost:8080 |
-| Web | http://localhost:3000 |
-| 운영 화면 | http://localhost:3000/admin |
-| 포트폴리오·화면 캡처 | [docs/portfolio.md](docs/portfolio.md) |
+| 서비스 | 주소 |
+| --- | --- |
+| Frontend | `http://localhost:3000` |
+| Backend | `http://localhost:8080` |
+| Admin | `http://localhost:3000/admin` |
 
-Windows에서 한 번에 안내만 보려면: `.\scripts\start-local.ps1`
+## 정리
 
-### 로컬 설정
-
-```bash
-cp backend/src/main/resources/application-local.yml.example \
-   backend/src/main/resources/application-local.yml
-```
-
-시크릿·DB 비밀번호는 git에 넣지 않습니다. ([convention.md](docs/convention.md))
-
-### 개발용 관리자 계정
-
-`application-local.yml` bootstrap으로 기동 시 `SUPER_ADMIN`이 보장됩니다.
-
-| | |
-|---|---|
-| 이메일 | `ADMIN_EMAIL`에 직접 지정한 로컬 관리자 계정 |
-| 비밀번호 | `ADMIN_PASSWORD`에 직접 지정한 로컬 전용 값 |
-
-로그인 후 **정보 올리기** / **영상 등록** 탭에서 콘텐츠를 바로 등록할 수 있습니다.
-
-### Windows 개발 경로
-
-Git·빌드·커밋은 **`C:\dev\herfree-platform`** 기준으로 합니다. OneDrive 등 복사본과 혼용하지 않습니다.
-
----
-
-## API·스키마 문서
-
-| 문서 | 내용 |
-|------|------|
-| [requirements.md](docs/requirements.md) | MVP 포함/제외, 로드맵 |
-| [api-spec.md](docs/api-spec.md) | REST 엔드포인트 (커뮤니티·일지·admin) |
-| [erd.md](docs/erd.md) | 테이블·enum |
-| [convention.md](docs/convention.md) | 코딩·커밋 규칙 |
-| [deployment-aws.md](docs/deployment-aws.md) | AWS staging/production 배포 (RDS release 경로) |
-| [oauth-setup.md](docs/oauth-setup.md) | 카카오·구글·네이버 Dev/Prod OAuth 설정 |
-| [decision-log.md](docs/decision-log.md) | ADR (JWT, MySQL, S3 프록시 등) |
-| [CONTRIBUTING.md](docs/CONTRIBUTING.md) | 브랜치·PR |
-| [architecture-overview.md](docs/architecture-overview.md) | 도메인·레이어·핵심 Service 맵 (코드 읽기 시작점) |
-| [git-workflow.md](docs/git-workflow.md) | `develop`/`main` 브랜치·PR·GitHub 보호·배포 흐름 |
-| [health-data-security-standard.md](docs/health-data-security-standard.md) | 건강정보 보안·개인정보·DB·사고 대응 상위 기준 |
-| [go-live-checklist.md](docs/go-live-checklist.md) | 실서비스 production 배포 승인 체크리스트 |
-| [production-service-operations.md](docs/production-service-operations.md) | 실서비스 하네스·배포·로그·장애 대응 가이드 |
-| [beta-release-control-plane.md](docs/beta-release-control-plane.md) | 소규모 베타의 구조·데이터 통제·배포 승인·운영 지점 |
-| [production-security-controls.md](docs/production-security-controls.md) | production 보안 불변조건과 코드 검증 위치 |
-| [rds-restore-drill.md](docs/rds-restore-drill.md) | 승인형 private RDS 복구훈련과 RPO/RTO 증적 절차 |
-
-### 실서비스 검증 하네스
-
-```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\service-harness.ps1
-```
-
-하네스 결과는 `artifacts/service-harness/latest.md`에 기록되며, 실제 AWS 자격증명·staging 브라우저 검수·백업 복원·법률/운영 승인은 별도 release gate입니다.
-
-로컬 MySQL/API가 실행 중이면 `service-harness.ps1 -RunLocalSmoke`로 가입·일지 CRUD·삭제·집계 개인정보 smoke를 추가 실행할 수 있습니다.
-
-로컬에서 Swagger: `http://localhost:8080/swagger-ui.html` (기동 시)
-
----
-
-## 의도적으로 넣지 않은 것 (1차)
-
-결제, PWA/네이티브 앱, 영상 파일 직접 업로드, AI 의료 상담 — [requirements.md §5](docs/requirements.md) 참고.
-
----
-
-## 라이선스
-
-비공개 프로젝트. 배포 전 라이선스 정책 확정 예정.
+이 프로젝트에서 가장 중요하게 본 부분은 기능을 많이 넣는 것보다 데이터의 공개 범위를 나누는 일이었습니다. 커뮤니티 데이터는 운영 정책에 따라 숨김 처리하고, 개인 일지는 사용자 본인만 접근하게 하여 서비스 성격에 맞는 권한 경계를 구현했습니다.

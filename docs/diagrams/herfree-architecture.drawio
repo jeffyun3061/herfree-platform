@@ -1,0 +1,70 @@
+<mxfile host="app.diagrams.net" modified="2026-08-23T00:00:00.000Z" agent="Mozilla/5.0" version="24.7.17" type="device">
+  <diagram id="herfree-architecture" name="시스템 아키텍처">
+    <mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="Herfree Platform 시스템 아키텍처" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=24;fontStyle=1;fontColor=#17324D" vertex="1" parent="1">
+          <mxGeometry x="520" y="30" width="560" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="browserGroup" value="사용자 영역" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF3FF;strokeColor=#6A9BD8;fontStyle=1;fontSize=16;verticalAlign=top;spacingTop=12" vertex="1" parent="1">
+          <mxGeometry x="40" y="130" width="260" height="410" as="geometry" />
+        </mxCell>
+        <mxCell id="browser" value="브라우저&#xa;모바일 웹 / Desktop" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F75B5;fontSize=15" vertex="1" parent="1">
+          <mxGeometry x="80" y="230" width="180" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="next" value="Next.js App Router&#xa;화면 · Hooks · BFF Proxy" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F75B5;fontSize=14" vertex="1" parent="1">
+          <mxGeometry x="80" y="370" width="180" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="backendGroup" value="애플리케이션 영역" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EEF8EE;strokeColor=#70AD47;fontStyle=1;fontSize=16;verticalAlign=top;spacingTop=12" vertex="1" parent="1">
+          <mxGeometry x="390" y="130" width="520" height="410" as="geometry" />
+        </mxCell>
+        <mxCell id="security" value="Spring Security&#xa;JWT · OAuth · 권한" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#70AD47;fontSize=14" vertex="1" parent="1">
+          <mxGeometry x="430" y="220" width="200" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="domains" value="Spring Boot REST API&#xa;auth / user / post / comment&#xa;journal / content / video / admin" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#70AD47;fontSize=14" vertex="1" parent="1">
+          <mxGeometry x="670" y="205" width="200" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="services" value="도메인 Service&#xa;Controller → Service → Repository" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#70AD47;fontSize=14" vertex="1" parent="1">
+          <mxGeometry x="550" y="390" width="200" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="dataGroup" value="데이터 영역" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF6E6;strokeColor=#D6A84F;fontStyle=1;fontSize=16;verticalAlign=top;spacingTop=12" vertex="1" parent="1">
+          <mxGeometry x="1000" y="130" width="520" height="410" as="geometry" />
+        </mxCell>
+        <mxCell id="mysql" value="MySQL 8&#xa;회원 · 커뮤니티 · 일지&#xa;CMS · 동의 이력" style="shape=cylinder;whiteSpace=wrap;html=1;boundedLbl=1;fillColor=#FFFFFF;strokeColor=#D6A84F;fontSize=14" vertex="1" parent="1">
+          <mxGeometry x="1060" y="220" width="180" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="s3" value="AWS S3&#xa;게시글 이미지" style="shape=cylinder;whiteSpace=wrap;html=1;boundedLbl=1;fillColor=#FFFFFF;strokeColor=#D6A84F;fontSize=14" vertex="1" parent="1">
+          <mxGeometry x="1280" y="220" width="180" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="external" value="외부 서비스&#xa;OAuth Provider · SMTP" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#D6A84F;fontSize=14" vertex="1" parent="1">
+          <mxGeometry x="1170" y="400" width="180" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="deploy" value="배포 기준안&#xa;Amplify / Next.js → EC2 Nginx → Spring Boot → private RDS" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3F3F3;strokeColor=#777777;fontSize=13" vertex="1" parent="1">
+          <mxGeometry x="390" y="620" width="1120" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" value="REST / BFF" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#2F75B5;fontSize=12" edge="1" parent="1" source="browser" target="next">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" value="HTTPS + JWT" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#2F75B5;fontSize=12" edge="1" parent="1" source="next" target="security">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" value="도메인 호출" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#70AD47;fontSize=12" edge="1" parent="1" source="security" target="domains">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" value="비즈니스 로직" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#70AD47;fontSize=12" edge="1" parent="1" source="domains" target="services">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" value="JPA / Flyway" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#D6A84F;fontSize=12" edge="1" parent="1" source="services" target="mysql">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" value="API 경유 업로드" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#D6A84F;fontSize=12" edge="1" parent="1" source="services" target="s3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e7" value="OAuth / SMTP" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#D6A84F;fontSize=12" edge="1" parent="1" source="services" target="external">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
