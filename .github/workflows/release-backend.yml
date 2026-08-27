@@ -109,7 +109,6 @@ jobs:
             docker-compose.release-local-db.yml \
             infra/nginx/herfree-staging.conf \
             infra/nginx/herfree-staging-bootstrap.conf \
-            infra/certs/rds-global-bundle.pem \
             infra/scripts/backup-db.sh \
             infra/scripts/deploy-release.sh \
             infra/scripts/install-local-db-ops.sh \
@@ -122,6 +121,10 @@ jobs:
             infra/scripts/render-release-env.sh \
             infra/scripts/validate-release-env.sh
           bundle="$(base64 -w 0 /tmp/herfree-release-bundle.tgz)"
+          if (( ${#bundle} >= 80000 )); then
+            echo "release bundle is too large for the AWS SSM parameter limit" >&2
+            exit 1
+          fi
           jq -n --arg bundle "${bundle}" --arg image "${IMAGE}" --arg registry "${registry}" \
             --arg region "${AWS_REGION}" '{commands:[
               "install -d -m 0755 /opt/herfree/infra/scripts",
@@ -364,7 +367,6 @@ jobs:
             docker-compose.release-local-db.yml \
             infra/nginx/herfree-production.conf \
             infra/nginx/herfree-production-bootstrap.conf \
-            infra/certs/rds-global-bundle.pem \
             infra/scripts/backup-db.sh \
             infra/scripts/deploy-release.sh \
             infra/scripts/install-local-db-ops.sh \
@@ -377,6 +379,10 @@ jobs:
             infra/scripts/render-release-env.sh \
             infra/scripts/validate-release-env.sh
           bundle="$(base64 -w 0 /tmp/herfree-release-bundle.tgz)"
+          if (( ${#bundle} >= 80000 )); then
+            echo "release bundle is too large for the AWS SSM parameter limit" >&2
+            exit 1
+          fi
           jq -n --arg bundle "${bundle}" --arg image "${image}" --arg registry "${ECR_REGISTRY}" \
             --arg region "${AWS_REGION}" '{commands:[
               "install -d -m 0755 /opt/herfree/infra/scripts",
