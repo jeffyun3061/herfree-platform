@@ -256,7 +256,7 @@ cp .env.prod.example .env.prod   # 값 채우기
                                          [S3 + CloudFront?]
 ```
 
-- Engine: MySQL 8.0+, `utf8mb4_unicode_ci`
+- Engine: MySQL 8.4+, `utf8mb4_unicode_ci`
 - RDS: 자동 스냅샷, EC2 SG만 3306 inbound
 - Flyway·백업 정책 **1단계와 동일**
 

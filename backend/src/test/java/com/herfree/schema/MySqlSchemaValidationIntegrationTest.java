@@ -23,7 +23,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 class MySqlSchemaValidationIntegrationTest {
 
     @Container
-    static final MySQLContainer<?> MYSQL = new MySQLContainer<>("mysql:8.0.46")
+    static final MySQLContainer<?> MYSQL = new MySQLContainer<>("mysql:8.4.10")
             .withDatabaseName("herfree_schema_test")
             .withUsername("herfree_test")
             .withPassword("test-only-password");

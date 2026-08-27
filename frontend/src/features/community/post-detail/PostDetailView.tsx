@@ -2,6 +2,7 @@
 
 import { AuthImage } from '@/components/common/AuthImage';
 import { ReactionBar } from '@/components/community/ReactionBar';
+import { ReadableContent } from '@/components/content/ReadableContent';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { cn } from '@/lib/cn';
 import { formatRelativeTime } from '@/domain/common/format';
@@ -108,14 +109,11 @@ export function PostDetailView({
           isContentMasked && 'rounded-[18px] bg-[#F8F4EC] px-4 py-4 text-center',
         )}
       >
-        <p
-          className={cn(
-            'whitespace-pre-wrap break-words text-[13.5px] leading-[1.85]',
-            isContentMasked ? 'text-[#7A847C]' : 'text-[#2C342E]',
-          )}
-        >
-          {post.content}
-        </p>
+        <ReadableContent
+          text={post.content}
+          variant="community"
+          className={isContentMasked ? 'text-[#7A847C]' : 'text-[#2C342E]'}
+        />
       </div>
 
       {!isMaskedPost && !isContentMasked && (

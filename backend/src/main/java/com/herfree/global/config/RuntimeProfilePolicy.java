@@ -57,12 +57,7 @@ public final class RuntimeProfilePolicy {
             throw new IllegalStateException("Public profile requires an HTTPS CORS origin");
         }
 
-        String datasourceUrl = environment.getProperty("spring.datasource.url", "");
-        if (!datasourceUrl.contains("sslMode=VERIFY_IDENTITY")
-                || !datasourceUrl.contains("trustCertificateKeyStoreUrl=file:/app/certs/rds-truststore.p12")
-                || !datasourceUrl.contains("fallbackToSystemTrustStore=false")) {
-            throw new IllegalStateException("Public profile requires certificate-verified RDS TLS");
-        }
+        requirePublicDatasourceTls(environment);
         if (!StringUtils.hasText(environment.getProperty("app.s3.bucket", ""))) {
             throw new IllegalStateException("Public profile requires an S3 bucket");
         }
@@ -84,5 +79,40 @@ public final class RuntimeProfilePolicy {
                 && environment.getProperty("app.health-data.rekey-on-startup", Boolean.class, false)) {
             throw new IllegalStateException("HEALTH_DATA_REKEY_ON_STARTUP is allowed only in staging");
         }
+    }
+
+    private static void requirePublicDatasourceTls(Environment environment) {
+        String databaseRuntime = environment.getProperty("DB_RUNTIME", "rds").trim().toLowerCase();
+        String datasourceUrl = environment.getProperty("spring.datasource.url", "");
+        if ("rds".equals(databaseRuntime)) {
+            if (!hasQueryParameter(datasourceUrl, "sslMode", "VERIFY_IDENTITY")
+                    || !hasQueryParameter(
+                            datasourceUrl,
+                            "trustCertificateKeyStoreUrl",
+                            "file:/app/certs/rds-truststore.p12")
+                    || !hasQueryParameter(datasourceUrl, "fallbackToSystemTrustStore", "false")) {
+                throw new IllegalStateException("Public RDS runtime requires certificate-verified TLS");
+            }
+            return;
+        }
+        if ("local".equals(databaseRuntime)) {
+            if (!datasourceUrl.startsWith("jdbc:mysql://mysql:3306/")
+                    || !hasQueryParameter(datasourceUrl, "sslMode", "REQUIRED")) {
+                throw new IllegalStateException(
+                        "Public local DB runtime requires the private mysql service with required TLS");
+            }
+            return;
+        }
+        throw new IllegalStateException("Public profile requires DB_RUNTIME=rds or DB_RUNTIME=local");
+    }
+
+    private static boolean hasQueryParameter(String url, String key, String value) {
+        int queryStart = url.indexOf('?');
+        if (queryStart < 0 || queryStart == url.length() - 1) {
+            return false;
+        }
+        String expected = key + "=" + value;
+        return Arrays.stream(url.substring(queryStart + 1).split("&"))
+                .anyMatch(expected::equals);
     }
 }

@@ -64,9 +64,10 @@ Invoke-HarnessStep "Production secret isolation" {
     if ($forbidden.Count -gt 0) {
         throw "production setup must not copy staging Secrets Manager values"
     }
-    $goLiveScript = Get-Content -LiteralPath "scripts/go-live-production.ps1" -Raw
-    if ($goLiveScript -notmatch "check-staging-status\.ps1.*-Strict") {
-        throw "production go-live must stop when staging has blocking checks"
+    $releaseWorkflow = Get-Content -LiteralPath ".github/workflows/release-backend.yml" -Raw
+    if ($releaseWorkflow -notmatch "build-production:" -or
+        $releaseWorkflow -notmatch "backup-db\.sh") {
+        throw "production releases must build a scanned image and create a local DB backup"
     }
     $rollbackScript = Get-Content -LiteralPath "infra/scripts/rollback-release.sh" -Raw
     if ($rollbackScript -notmatch "deploy-release\.sh.*rollback") {
@@ -85,6 +86,14 @@ Invoke-HarnessStep "Production secret isolation" {
         $restoreDrillScript -notmatch "--no-publicly-accessible" -or
         $restoreDrillScript -notmatch "delete-db-instance") {
         throw "RDS restore drill must require approval, private networking, and cleanup"
+    }
+    $localMigrationScript = Get-Content -LiteralPath "infra/scripts/migrate-rds-to-local.sh" -Raw
+    $localRestoreScript = Get-Content -LiteralPath "infra/scripts/restore-local-db-drill.sh" -Raw
+    if ($localMigrationScript -notmatch "CONFIRM_RDS_TO_LOCAL_MIGRATION.*YES" -or
+        $localMigrationScript -notmatch "row-count verification failed" -or
+        $localRestoreScript -notmatch "CONFIRM_RESTORE_DRILL.*YES" -or
+        $localRestoreScript -notmatch "sha256sum -c") {
+        throw "local DB migration and restore must fail closed and verify data integrity"
     }
     $releaseEnvValidator = Get-Content -LiteralPath "infra/scripts/validate-release-env.sh" -Raw
     if ($releaseEnvValidator -notmatch "static S3 credentials" -or

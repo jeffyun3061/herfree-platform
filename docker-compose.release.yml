@@ -7,7 +7,7 @@ services:
     ports:
       - "${API_BIND_HOST:-127.0.0.1}:${API_BIND_PORT:-8080}:8080"
     read_only: true
-    mem_limit: 768m
+    mem_limit: ${API_MEMORY_LIMIT:-768m}
     pids_limit: 256
     tmpfs:
       - /tmp:size=64m,mode=1777

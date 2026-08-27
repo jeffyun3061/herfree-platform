@@ -163,7 +163,7 @@ catch {
             "--db-instance-identifier", $ProductionRdsId,
             "--db-instance-class", "db.t4g.micro",
             "--engine", "mysql",
-            "--engine-version", "8.0.46",
+            "--engine-version", "8.4.10",
             "--master-username", "admin",
             "--manage-master-user-password",
             "--allocated-storage", "20",

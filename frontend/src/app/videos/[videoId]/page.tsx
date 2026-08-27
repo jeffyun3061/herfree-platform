@@ -14,6 +14,7 @@ import { getVideoThumbnail } from '@/domain/video/types';
 import { formatDate } from '@/domain/common/format';
 import { getErrorMessage } from '@/lib/api/client';
 import { navigateBack } from '@/lib/navigateBack';
+import { ReadableContent } from '@/components/content/ReadableContent';
 
 export default function VideoDetailPage() {
   const params = useParams();
@@ -48,7 +49,7 @@ export default function VideoDetailPage() {
   return (
     <article className="mx-auto max-w-app pb-[60px] lg:pb-10">
       <section className="overflow-hidden bg-[#07251F]">
-        <div className="relative h-[230px]">
+        <div className="relative min-h-[230px]">
           <img src={thumbnail} alt="" className="absolute inset-0 h-full w-full object-cover" />
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,37,31,.08)_0%,rgba(7,37,31,.35)_42%,rgba(7,37,31,.88)_100%)]" />
           <button
@@ -60,7 +61,7 @@ export default function VideoDetailPage() {
           >
             ‹
           </button>
-          <div className="absolute inset-x-0 bottom-[18px] px-[22px] text-white">
+          <div className="relative z-10 flex min-h-[230px] flex-col justify-end px-[22px] pb-[18px] pt-[72px] text-white">
             <span className="inline-block rounded-[7px] bg-white/[0.92] px-2.5 py-1 text-[12px] font-bold text-[#04342C]">
               YouTube
             </span>
@@ -69,7 +70,7 @@ export default function VideoDetailPage() {
                 추천 영상
               </span>
             )}
-            <h1 className="hf-display mt-3 text-[22px] font-extrabold leading-[1.45] tracking-[-0.01em] drop-shadow-[0_2px_14px_rgba(7,37,31,.4)]">
+            <h1 className="hf-display break-words text-[22px] font-extrabold leading-[1.35] tracking-[-0.01em] drop-shadow-[0_2px_14px_rgba(7,37,31,.4)]">
               {video.title}
             </h1>
           </div>
@@ -88,7 +89,7 @@ export default function VideoDetailPage() {
 
       <div className="px-6 pt-[18px]">
         {video.description ? (
-          <div className="whitespace-pre-wrap text-[14px] leading-[1.95] text-[#2C342E]">{video.description}</div>
+          <ReadableContent text={video.description} variant="video" />
         ) : (
           <p className="text-[14px] leading-[1.85] text-[#6E766F]">영상 설명이 준비 중입니다.</p>
         )}
@@ -131,7 +132,7 @@ export default function VideoDetailPage() {
                   className="block border-t border-[#F2ECE1] px-4 py-3.5 first:border-t-0"
                 >
                   <p className="text-[12px] font-extrabold text-[#15695E]">YouTube</p>
-                  <h3 className="mt-1 line-clamp-2 text-[13.5px] font-bold leading-[1.45] text-[#15201D]">
+                  <h3 className="mt-1 break-words text-[13.5px] font-bold leading-[1.45] text-[#15201D]">
                     {item.title}
                   </h3>
                 </Link>

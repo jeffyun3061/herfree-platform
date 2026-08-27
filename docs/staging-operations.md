@@ -1,6 +1,6 @@
 # Herfree staging 운영 가이드
 
-기준일: 2026-07-21
+기준일: 2026-08-14
 대상: AWS Seoul (`ap-northeast-2`), 계정 `439777528445`
 
 이 문서는 staging을 배포·중지·복구할 때 사용하는 운영 기준이다. 리소스 ID와 ARN은 식별자이며 비밀번호가 아니지만, 외부 문서에는 불필요하게 공개하지 않는다.
@@ -12,7 +12,7 @@
 | EC2 | `herfree-staging-api` / `i-02cf5b8f3a7aa32da` | `t3.micro`, 16GB 암호화 gp3, 1GB swap |
 | 고정 IP | `3.37.78.234` | `api-staging.herpfree.co.kr` A 레코드 대상 |
 | API SG | `sg-0375887f3e16abf82` | 80/443만 공개, SSH 22 미개방 |
-| RDS | `herfree-staging-mysql` | MySQL 8.0.46, `db.t4g.micro`, 20GB gp3 |
+| RDS | `herfree-staging-mysql` | MySQL 8.4.10, `db.t4g.micro`, 20GB gp3, 평소 중지 |
 | RDS SG | `sg-0b9fb633cccc74303` | API SG에서 오는 3306만 허용 |
 | S3 | `herfree-staging-uploads-439777528445-ap-northeast-2-an` | Public access block, API instance role만 객체 접근 |
 | ECR | `herfree-api` | push scan, 미태그 이미지 7일 후 삭제, 최신 50개 보관 |

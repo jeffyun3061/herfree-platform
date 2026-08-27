@@ -47,8 +47,10 @@ export default function VideosPage() {
     <>
       <div className="media-screen mx-auto max-w-app hf-scroll-pad-nav lg:max-w-none">
         <ScreenHeader
-          title="헤르프리 영상"
-          subtitle="유튜브 채널에서 다뤄온 이야기들"
+          eyebrow="헤르프리 미디어"
+          title="영상"
+          subtitle="회복과 건강에 관한 이야기를 영상으로 만나보세요"
+          tone="media"
           titleClassName="font-semibold text-[#15201D]"
         />
 
