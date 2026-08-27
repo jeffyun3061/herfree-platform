@@ -11,6 +11,7 @@ import { estimateReadMinutes, getContentPreview } from '@/domain/content/types';
 import { PUBLIC_IMAGES } from '@/domain/assets/static';
 import { getErrorMessage } from '@/lib/api/client';
 import { navigateBack } from '@/lib/navigateBack';
+import { ReadableContent } from '@/components/content/ReadableContent';
 
 export default function ContentDetailPage() {
   const params = useParams();
@@ -43,7 +44,7 @@ export default function ContentDetailPage() {
     <>
       <article className="mx-auto max-w-app pb-[60px] lg:pb-10">
         <section className="overflow-hidden bg-[#07251F]">
-          <div className="relative h-[230px]">
+          <div className="relative min-h-[230px]">
             <img
               src={content.imageUrl || PUBLIC_IMAGES.homeHero}
               alt=""
@@ -59,11 +60,11 @@ export default function ContentDetailPage() {
             >
               ‹
             </button>
-            <div className="absolute inset-x-0 bottom-[18px] px-[22px] text-white">
+            <div className="relative z-10 flex min-h-[230px] flex-col justify-end px-[22px] pb-[18px] pt-[72px] text-white">
               <span className="inline-block rounded-[7px] bg-white/[0.92] px-2.5 py-1 text-[12px] font-bold text-[#04342C]">
                 {content.category}
               </span>
-              <h1 className="hf-display mt-3 text-[22px] font-extrabold leading-[1.45] tracking-[-0.01em] drop-shadow-[0_2px_14px_rgba(7,37,31,.4)]">
+              <h1 className="hf-display break-words text-[22px] font-extrabold leading-[1.35] tracking-[-0.01em] drop-shadow-[0_2px_14px_rgba(7,37,31,.4)]">
                 {content.title}
               </h1>
             </div>
@@ -77,9 +78,7 @@ export default function ContentDetailPage() {
         </div>
 
         <div className="px-6 pt-[18px]">
-          <div className="whitespace-pre-wrap text-[14px] leading-[1.95] text-[#2C342E]">
-            {content.content}
-          </div>
+          <ReadableContent text={content.content} variant="article" />
         </div>
 
         <div className="px-5 pt-4">
@@ -127,7 +126,7 @@ export default function ContentDetailPage() {
                   className="block border-t border-[#F2ECE1] px-4 py-3.5 first:border-t-0"
                 >
                   <p className="text-[12px] font-extrabold text-[#15695E]">{item.category}</p>
-                  <h3 className="mt-1 line-clamp-2 text-[13.5px] font-bold leading-[1.45] text-[#15201D]">
+                  <h3 className="mt-1 break-words text-[13.5px] font-bold leading-[1.45] text-[#15201D]">
                     {item.title}
                   </h3>
                   <p className="mt-1 line-clamp-1 text-[12px] text-[#7A847C]">

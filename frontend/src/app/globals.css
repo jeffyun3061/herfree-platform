@@ -168,7 +168,62 @@ body {
   }
 
   .hf-screen-subtitle {
-    @apply mt-[5px] truncate whitespace-nowrap text-[12.5px] tracking-[-0.02em] text-[#9A9F94];
+    @apply mt-[7px] break-words whitespace-normal text-[12.5px] leading-[1.55] tracking-[-0.02em] text-[#7C8279];
+  }
+
+  .hf-screen-eyebrow {
+    @apply mb-1 text-[10.5px] font-extrabold uppercase tracking-[0.16em] text-[#9B8B70];
+  }
+
+  .hf-screen-header--media .hf-screen-eyebrow {
+    color: #15695e;
+  }
+
+  .hf-screen-header--community .hf-screen-eyebrow {
+    color: #8a7964;
+  }
+
+  .hf-screen-header--editorial .hf-screen-eyebrow {
+    color: #9b7430;
+  }
+
+  .hf-readable-content {
+    max-width: 46rem;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .hf-readable-content > p {
+    margin: 0;
+  }
+
+  .hf-readable-content > p + p {
+    margin-top: 1rem;
+  }
+
+  .hf-readable-content--article,
+  .hf-readable-content--video {
+    color: #2c342e;
+    font-size: 14px;
+    line-height: 1.82;
+  }
+
+  .hf-readable-content--article > p:first-child,
+  .hf-readable-content--video > p:first-child {
+    color: #1e2621;
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 1.78;
+  }
+
+  .hf-readable-content--community {
+    color: #2c342e;
+    font-size: 13.5px;
+    line-height: 1.78;
+  }
+
+  .hf-readable-content--community > p + p {
+    margin-top: 0.9rem;
   }
 
   @media (min-width: 1024px) {
@@ -534,7 +589,7 @@ body {
   }
 
   .community-feed-row__title {
-    @apply line-clamp-2 min-w-0 flex-1 break-words text-[14px] font-semibold leading-snug tracking-normal text-[#1E2621];
+    @apply min-w-0 flex-1 break-words whitespace-normal text-[14px] font-semibold leading-[1.45] tracking-normal text-[#1E2621];
   }
 
   .community-feed-row__meta {
@@ -571,7 +626,7 @@ body {
   }
 
   .video-feed-card__title {
-    @apply mb-1 line-clamp-2 min-h-[38px] text-[13.5px] font-bold leading-snug text-[#15201D];
+    @apply mb-1 break-words text-[13.5px] font-bold leading-[1.5] text-[#15201D];
   }
 
   .video-feed-card--featured .video-feed-card__title {
@@ -612,7 +667,7 @@ body {
   }
 
   .column-feed-card__title {
-    @apply mb-2 line-clamp-2 text-[14.5px] font-semibold leading-[1.45] tracking-normal text-[#15201D];
+    @apply mb-2 break-words text-[14.5px] font-semibold leading-[1.5] tracking-normal text-[#15201D];
   }
 
   .column-feed-card--featured .column-feed-card__title {

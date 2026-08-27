@@ -30,7 +30,7 @@ export function PostListRow({ post, rowNumber }: PostListRowProps) {
           )}
         </span>
         <div className="min-w-0">
-          <p className="truncate text-sm font-medium text-cream-foreground">{post.title}</p>
+          <p className="break-words text-sm font-semibold leading-[1.45] text-cream-foreground">{post.title}</p>
           {post.contentPreview && (
             <p className="mt-0.5 line-clamp-1 text-[11px] text-muted">{post.contentPreview}</p>
           )}

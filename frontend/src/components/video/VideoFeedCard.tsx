@@ -82,7 +82,7 @@ export function VideoFeedCard({ video, categoryLabel, featured }: VideoFeedCardP
           )}
           <h2
             className={cn(
-              'line-clamp-2 font-semibold leading-[1.45] tracking-[-0.01em] text-[#15201D]',
+              'break-words font-semibold leading-[1.5] tracking-[-0.01em] text-[#15201D]',
               featured ? 'text-[17px] font-extrabold' : 'text-[14.5px]',
             )}
           >

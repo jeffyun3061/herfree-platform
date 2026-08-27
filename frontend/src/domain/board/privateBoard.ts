@@ -46,20 +46,15 @@ export function isOffCommunityTabBoardType(boardType: string): boolean {
   return isInquiryBoardType(boardType) || boardType === 'EXPERT';
 }
 
-/** 커뮤니티 상단 탭 — DB sort_order(V17)와 동기화, UI 표시명은 디자이너 시안 */
+/** 커뮤니티 상단 탭 — 서비스에서 운영하는 공개 게시판만 노출한다. */
 export const COMMUNITY_ALL_TAB_LABEL = '전체';
 
 export const COMMUNITY_TAB_BOARD_TYPES = [
   { boardType: 'NOTICE', label: '공지' },
-  { boardType: 'FREE', label: '자유/수다' },
-  { boardType: 'QUESTION', label: '질문' },
-  { boardType: 'PHOBIA', label: '검사대기' },
-  { boardType: 'SYMPTOM', label: '확진초기' },
-  { boardType: 'RELATIONSHIP', label: '연애고지' },
+  { boardType: 'FREE', label: '자유게시판' },
   { boardType: 'EXPERIENCE', label: '정보공유' },
-  { boardType: 'SUPPORT', label: '위로/응원' },
-  { boardType: 'PRODUCT_REVIEW', label: '제품후기' },
-  { boardType: 'SECRET_STORY', label: '비밀사연' },
+  { boardType: 'RELATIONSHIP', label: '연애고지' },
+  { boardType: 'PHOBIA', label: '검사대기' },
 ] as const;
 
 const COMMUNITY_TAB_TYPE_ORDER = COMMUNITY_TAB_BOARD_TYPES.map((tab) => tab.boardType);
