@@ -56,7 +56,7 @@ export function PrivateCommunitySection({ posts, isLoading }: PrivateCommunitySe
                 <Link href={`/community/posts/${post.id}`} className="community-post-row group">
                   <PostAvatar nickname={post.authorNickname} index={index} />
                   <div className="min-w-0 flex-1">
-                    <p className="line-clamp-1 text-[13px] font-medium text-white group-hover:text-white/90 lg:text-base">
+                    <p className="truncate text-[13px] font-medium text-white group-hover:text-white/90 lg:text-base" title={post.title}>
                       {post.title}
                     </p>
                     <div className="mt-1 flex items-center gap-1.5 text-[10px] text-slate-400">

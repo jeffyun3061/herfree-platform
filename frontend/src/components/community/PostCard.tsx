@@ -35,7 +35,7 @@ export function PostCard({ post, boardName }: PostCardProps) {
       <article className="community-feed-row opacity-70">
         <div className="community-feed-row__title-line">
           <span className={cn('community-feed-tag', tagClass)}>{displayBoard}</span>
-          <span className="community-feed-row__title text-muted">{post.title}</span>
+          <span className="community-feed-row__title text-muted" title={post.title}>{post.title}</span>
         </div>
         <p className="mt-1.5 text-[12.5px] leading-relaxed text-[#7D8580]">다른 회원의 비공개 글입니다.</p>
       </article>
@@ -57,7 +57,7 @@ export function PostCard({ post, boardName }: PostCardProps) {
               {post.staffReplied ? '답변 완료' : '답변 대기'}
             </span>
           )}
-          <span className="community-feed-row__title">{post.title}</span>
+          <span className="community-feed-row__title" title={post.title}>{post.title}</span>
         </div>
         {post.contentPreview && (
           <p className="mb-2.5 line-clamp-2 break-words text-[12.5px] leading-[1.55] text-[#6E7671]">

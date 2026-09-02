@@ -82,9 +82,10 @@ export function VideoFeedCard({ video, categoryLabel, featured }: VideoFeedCardP
           )}
           <h2
             className={cn(
-              'break-words font-semibold leading-[1.5] tracking-[-0.01em] text-[#15201D]',
+              'truncate font-semibold leading-[1.5] tracking-[-0.01em] text-[#15201D]',
               featured ? 'text-[17px] font-extrabold' : 'text-[14.5px]',
             )}
+            title={video.title}
           >
             {video.title}
           </h2>
