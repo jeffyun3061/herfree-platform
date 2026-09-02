@@ -580,8 +580,12 @@ body {
     @apply border-b border-[#EAE3D6];
   }
 
+  .community-feed-row__header {
+    @apply flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2;
+  }
+
   .community-feed-row__title-line {
-    @apply mb-[7px] flex min-w-0 items-start gap-2;
+    @apply order-1 flex min-w-0 flex-1 basis-full items-center gap-2;
   }
 
   .community-feed-tag {
@@ -593,8 +597,19 @@ body {
   }
 
   .community-feed-row__meta {
-    @apply flex min-w-0 flex-wrap items-center gap-x-[10px] gap-y-1 text-[12px] font-medium;
+    @apply order-2 flex min-w-0 basis-full flex-wrap items-center gap-x-[10px] gap-y-1 text-[12px] font-medium;
     color: var(--hf-text-muted);
+  }
+
+  @media (min-width: 640px) {
+    .community-feed-row__title-line,
+    .community-feed-row__meta {
+      @apply basis-auto;
+    }
+
+    .community-feed-row__meta {
+      @apply flex-nowrap;
+    }
   }
 
   .video-feed-card {
