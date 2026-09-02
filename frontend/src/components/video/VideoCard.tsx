@@ -56,9 +56,9 @@ export function VideoCard({ video, variant = 'grid', className }: VideoCardProps
               </span>
             )}
           </div>
-          <div className="flex flex-1 flex-col justify-center p-5 lg:p-7">
+          <div className="flex min-w-0 flex-1 flex-col justify-center p-5 lg:p-7">
             <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-primary/70">Featured</p>
-            <h2 className="mt-2 line-clamp-2 hf-display text-lg font-bold leading-snug text-ink lg:text-xl">
+            <h2 className="mt-2 truncate hf-display text-lg font-bold leading-snug text-ink lg:text-xl" title={video.title}>
               {video.title}
             </h2>
             {video.description ? (
@@ -95,7 +95,9 @@ export function VideoCard({ video, variant = 'grid', className }: VideoCardProps
         )}
       </div>
       <div className="p-3 lg:p-3.5">
-        <p className="line-clamp-2 text-sm font-semibold leading-snug text-ink">{video.title}</p>
+        <p className="truncate text-sm font-semibold leading-snug text-ink" title={video.title}>
+          {video.title}
+        </p>
       </div>
     </Link>
   );

@@ -589,7 +589,7 @@ body {
   }
 
   .community-feed-row__title {
-    @apply min-w-0 flex-1 break-words whitespace-normal text-[14px] font-semibold leading-[1.45] tracking-normal text-[#1E2621];
+    @apply min-w-0 flex-1 truncate whitespace-nowrap text-[14px] font-semibold leading-[1.45] tracking-normal text-[#1E2621];
   }
 
   .community-feed-row__meta {
@@ -667,7 +667,7 @@ body {
   }
 
   .column-feed-card__title {
-    @apply mb-2 break-words text-[14.5px] font-semibold leading-[1.5] tracking-normal text-[#15201D];
+    @apply mb-2 truncate text-[14.5px] font-semibold leading-[1.5] tracking-normal text-[#15201D];
   }
 
   .column-feed-card--featured .column-feed-card__title {
