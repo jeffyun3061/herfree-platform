@@ -127,20 +127,52 @@ jobs:
           # implicit audit call make CI depend on a transient registry response.
           npm ci --no-audit
           npm_audit_with_retry() {
+            local audit_level="$1"
+            shift
             local output
             local attempt
             local status
+            local report_file
+            local error_file
             for attempt in 1 2 3; do
-              if output=$(timeout 90s npm audit "$@" 2>&1); then
-                printf '%s\n' "$output"
+              report_file="$(mktemp)"
+              error_file="$(mktemp)"
+              if timeout 90s npm audit "$@" --audit-level="$audit_level" --json >"$report_file" 2>"$error_file"; then
+                node -e '
+                  const fs = require("fs");
+                  const report = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+                  const counts = report.metadata?.vulnerabilities || {};
+                  console.log(`npm audit passed (${process.argv[2]} threshold): ${JSON.stringify(counts)}`);
+                ' "$report_file" "$audit_level"
+                rm -f "$report_file" "$error_file"
                 return 0
               else
                 status=$?
               fi
+              output="$(cat "$report_file" "$error_file")"
               printf '%s\n' "$output"
-              if [ "$status" -ne 124 ] && ! grep -Eq '503 Service Unavailable|audit endpoint returned an error|ECONNRESET|ETIMEDOUT|EAI_AGAIN' <<<"$output"; then
+              if [ "$status" -eq 1 ] && node -e '
+                const fs = require("fs");
+                const threshold = process.argv[1];
+                const rank = { info: 0, low: 1, moderate: 2, high: 3, critical: 4 };
+                const report = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
+                const counts = report.metadata?.vulnerabilities || {};
+                const blocking = ["high", "critical"].some(level => level === threshold
+                  ? (counts[level] || 0) > 0
+                  : rank[level] >= rank[threshold] && (counts[level] || 0) > 0);
+                if (!blocking) {
+                  console.log(`npm audit findings are below the ${threshold} threshold`);
+                }
+                process.exit(blocking ? 1 : 0);
+              ' "$audit_level" "$report_file" 2>/dev/null; then
+                rm -f "$report_file" "$error_file"
+                return 0
+              fi
+              if [ "$status" -ne 124 ] && ! grep -Eq '503 Service Unavailable|audit endpoint returned an error|ECONNRESET|ETIMEDOUT|EAI_AGAIN' "$error_file"; then
+                rm -f "$report_file" "$error_file"
                 return 1
               fi
+              rm -f "$report_file" "$error_file"
               if [ "$attempt" -lt 3 ]; then
                 sleep $((attempt * 10))
               fi
@@ -149,8 +181,8 @@ jobs:
           }
           # Shipped dependencies block on high/critical findings. Development
           # tooling also blocks on critical findings; see ADR-025.
-          npm_audit_with_retry --omit=dev --audit-level=high
-          npm_audit_with_retry --audit-level=critical
+          npm_audit_with_retry high --omit=dev
+          npm_audit_with_retry critical
           npm run check:security-headers
           npm run lint
           npm run test
