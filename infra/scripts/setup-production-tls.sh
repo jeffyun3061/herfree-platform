@@ -47,7 +47,21 @@ install_nginx_config "${CONF_SRC}"
 nginx -t
 systemctl reload nginx
 
-certbot renew --quiet
+# The host's certbot timer may already be renewing the certificate while a
+# release is being deployed.  Lock contention is safe to ignore because the
+# existing certificate remains valid; genuine renewal failures must still
+# fail the deployment so they are not hidden.
+renew_output="$(mktemp)"
+if certbot renew --quiet >"${renew_output}" 2>&1; then
+  :
+elif grep -qi "Another instance of Certbot is already running" "${renew_output}"; then
+  echo "certbot renewal already running; keeping the existing certificate"
+else
+  cat "${renew_output}" >&2
+  rm -f "${renew_output}"
+  exit 1
+fi
+rm -f "${renew_output}"
 
 nginx -t
 systemctl reload nginx

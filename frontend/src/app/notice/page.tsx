@@ -71,7 +71,7 @@ export default function NoticePage() {
                       {formatRelativeTime(post.createdAt)}
                     </span>
                   </div>
-                  <h2 className="mt-1 break-words text-[14.5px] font-extrabold leading-[1.45] text-[#1E2621] group-hover:text-[#0B3B36]">
+                  <h2 className="mt-1 truncate text-[14.5px] font-extrabold leading-[1.45] text-[#1E2621] group-hover:text-[#0B3B36]" title={post.title}>
                     {post.title}
                   </h2>
                   {post.contentPreview && (

@@ -34,12 +34,12 @@ app:
     kakao:
       client-id: ${OAUTH_KAKAO_CLIENT_ID:}
       client-secret: ${OAUTH_KAKAO_CLIENT_SECRET:}
-      redirect-uri: ${OAUTH_KAKAO_REDIRECT_URI:https://herpfree.co.kr/auth/callback/kakao}
+      redirect-uri: ${OAUTH_KAKAO_REDIRECT_URI:https://www.herpfree.co.kr/auth/callback/kakao}
     google:
       client-id: ${OAUTH_GOOGLE_CLIENT_ID:}
       client-secret: ${OAUTH_GOOGLE_CLIENT_SECRET:}
-      redirect-uri: ${OAUTH_GOOGLE_REDIRECT_URI:https://herpfree.co.kr/auth/callback/google}
+      redirect-uri: ${OAUTH_GOOGLE_REDIRECT_URI:https://www.herpfree.co.kr/auth/callback/google}
     naver:
       client-id: ${OAUTH_NAVER_CLIENT_ID:}
       client-secret: ${OAUTH_NAVER_CLIENT_SECRET:}
-      redirect-uri: ${OAUTH_NAVER_REDIRECT_URI:https://herpfree.co.kr/auth/callback/naver}
+      redirect-uri: ${OAUTH_NAVER_REDIRECT_URI:https://www.herpfree.co.kr/auth/callback/naver}

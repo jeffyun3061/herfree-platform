@@ -126,7 +126,7 @@ export default function ContentDetailPage() {
                   className="block border-t border-[#F2ECE1] px-4 py-3.5 first:border-t-0"
                 >
                   <p className="text-[12px] font-extrabold text-[#15695E]">{item.category}</p>
-                  <h3 className="mt-1 break-words text-[13.5px] font-bold leading-[1.45] text-[#15201D]">
+                  <h3 className="mt-1 truncate text-[13.5px] font-bold leading-[1.45] text-[#15201D]" title={item.title}>
                     {item.title}
                   </h3>
                   <p className="mt-1 line-clamp-1 text-[12px] text-[#7A847C]">

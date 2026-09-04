@@ -50,7 +50,7 @@ export function ExpertContentSection({
                         <Badge variant="gold">{getContentTypeLabel(item.contentType)}</Badge>
                         <span className="text-xs text-muted">{item.category}</span>
                       </div>
-                      <p className="mt-1.5 font-medium text-ink group-hover:text-primary">
+                      <p className="mt-1.5 truncate font-medium text-ink group-hover:text-primary" title={item.title}>
                         {item.title}
                       </p>
                       <p className="mt-1 line-clamp-2 text-xs text-muted">
@@ -82,7 +82,7 @@ export function ExpertContentSection({
                       href={`/community/posts/${post.id}`}
                       className="block rounded-lg border border-border/60 px-3 py-2.5 transition-colors hover:border-primary/25 hover:bg-cream/40"
                     >
-                      <p className="line-clamp-1 text-sm font-medium text-ink">{post.title}</p>
+                      <p className="truncate text-sm font-medium text-ink" title={post.title}>{post.title}</p>
                       {post.contentPreview && (
                         <p className="mt-1 line-clamp-1 text-xs text-muted">{post.contentPreview}</p>
                       )}
