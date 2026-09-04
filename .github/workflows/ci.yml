@@ -126,10 +126,28 @@ jobs:
           # Keep the explicit audit gates below authoritative; do not let npm's
           # implicit audit call make CI depend on a transient registry response.
           npm ci --no-audit
+          npm_audit_with_retry() {
+            local output
+            local attempt
+            for attempt in 1 2 3; do
+              if output=$(npm audit "$@" 2>&1); then
+                printf '%s\n' "$output"
+                return 0
+              fi
+              printf '%s\n' "$output"
+              if ! grep -Eq '503 Service Unavailable|audit endpoint returned an error|ECONNRESET|ETIMEDOUT|EAI_AGAIN' <<<"$output"; then
+                return 1
+              fi
+              if [ "$attempt" -lt 3 ]; then
+                sleep $((attempt * 10))
+              fi
+            done
+            return 1
+          }
           # Shipped dependencies block on high/critical findings. Development
           # tooling also blocks on critical findings; see ADR-025.
-          npm audit --omit=dev --audit-level=high
-          npm audit --audit-level=critical
+          npm_audit_with_retry --omit=dev --audit-level=high
+          npm_audit_with_retry --audit-level=critical
           npm run check:security-headers
           npm run lint
           npm run test
