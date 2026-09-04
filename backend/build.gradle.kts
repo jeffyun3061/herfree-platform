@@ -16,6 +16,10 @@ java {
 // Trivy release gate: Netty CVE-2026-59901/55831/55833/56745 (4.1.136.Final+)
 extra["netty.version"] = "4.1.136.Final"
 
+// Trivy release gate: Apache Tomcat CVE-2026-65182/65905/68525 (10.1.58+).
+// 10.1.59 is the current published 10.1.x patch release.
+extra["tomcat.version"] = "10.1.59"
+
 repositories {
     mavenCentral()
 }
