@@ -129,13 +129,16 @@ jobs:
           npm_audit_with_retry() {
             local output
             local attempt
+            local status
             for attempt in 1 2 3; do
-              if output=$(npm audit "$@" 2>&1); then
+              if output=$(timeout 90s npm audit "$@" 2>&1); then
                 printf '%s\n' "$output"
                 return 0
+              else
+                status=$?
               fi
               printf '%s\n' "$output"
-              if ! grep -Eq '503 Service Unavailable|audit endpoint returned an error|ECONNRESET|ETIMEDOUT|EAI_AGAIN' <<<"$output"; then
+              if [ "$status" -ne 124 ] && ! grep -Eq '503 Service Unavailable|audit endpoint returned an error|ECONNRESET|ETIMEDOUT|EAI_AGAIN' <<<"$output"; then
                 return 1
               fi
               if [ "$attempt" -lt 3 ]; then
