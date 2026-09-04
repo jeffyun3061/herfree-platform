@@ -123,7 +123,9 @@ jobs:
           NEXT_PUBLIC_OAUTH_GOOGLE_CLIENT_ID: ci-google-client-id.apps.googleusercontent.com
           NEXT_PUBLIC_OAUTH_NAVER_CLIENT_ID: ci-naver-client-id
         run: |
-          npm ci
+          # Keep the explicit audit gates below authoritative; do not let npm's
+          # implicit audit call make CI depend on a transient registry response.
+          npm ci --no-audit
           # Shipped dependencies block on high/critical findings. Development
           # tooling also blocks on critical findings; see ADR-025.
           npm audit --omit=dev --audit-level=high
