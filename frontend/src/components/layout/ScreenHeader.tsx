@@ -7,6 +7,7 @@ type ScreenHeaderProps = {
   title: React.ReactNode;
   subtitle?: string;
   eyebrow?: string;
+  reserveEyebrow?: boolean;
   titleAs?: 'h1' | 'h2' | 'div';
   titleClassName?: string;
   tone?: 'default' | 'editorial' | 'media' | 'community';
@@ -21,6 +22,7 @@ export function ScreenHeader({
   title,
   subtitle,
   eyebrow,
+  reserveEyebrow = false,
   titleAs = 'h1',
   titleClassName,
   tone = 'default',
@@ -44,7 +46,13 @@ export function ScreenHeader({
     >
       <div className={cn('hf-screen-header-row', align === 'center' && 'items-center')}>
         <div className="min-w-0 flex-1">
-          {eyebrow && <p className="hf-screen-eyebrow">{eyebrow}</p>}
+          {eyebrow ? (
+            <p className="hf-screen-eyebrow">{eyebrow}</p>
+          ) : reserveEyebrow ? (
+            <p className="hf-screen-eyebrow invisible" aria-hidden="true">
+              &nbsp;
+            </p>
+          ) : null}
           <TitleTag
             className={cn(
               'hf-display hf-screen-title break-words text-[24px] font-extrabold leading-[1.2] tracking-[-0.02em] text-[#1E2621]',
