@@ -1,6 +1,6 @@
 param(
     [string]$ApiBaseUrl = $(if ($env:PRODUCTION_API_URL) { $env:PRODUCTION_API_URL } else { "https://api.herpfree.co.kr" }),
-    [string]$FrontendUrl = $env:PRODUCTION_FRONTEND_URL,
+    [string]$FrontendUrl = $(if ($env:PRODUCTION_FRONTEND_URL) { $env:PRODUCTION_FRONTEND_URL } else { "https://www.herpfree.co.kr" }),
     [switch]$RequireFrontend,
     [string]$ReportPath = "artifacts/production-live/latest.md"
 )
@@ -33,6 +33,14 @@ function Invoke-ReadOnlyGet([string]$Url) {
             Body = $body
         }
     }
+    catch {
+        return [pscustomobject]@{
+            StatusCode = 0
+            Headers = @{}
+            Body = ""
+            Error = $_.Exception.Message
+        }
+    }
     finally {
         $request.Dispose()
     }
@@ -45,6 +53,10 @@ function Add-Check([string]$Name, [bool]$Passed, [string]$Detail) {
 }
 
 function Read-Json([object]$Response, [string]$Name) {
+    if ($Response.StatusCode -eq 0) {
+        Add-Check "$Name request" $false "HTTPS request failed: $($Response.Error)"
+        return $null
+    }
     try { return ($Response.Body | ConvertFrom-Json) }
     catch {
         Add-Check "$Name JSON" $false "response was not valid JSON"

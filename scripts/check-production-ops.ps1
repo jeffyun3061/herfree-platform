@@ -7,7 +7,7 @@ param(
     [string]$LogGroup = "/herfree/production/api",
     [string]$ProductionInstanceId = $env:PRODUCTION_INSTANCE_ID,
     [string]$ApiHost = "api.herpfree.co.kr",
-    [string]$FrontendHost = "herpfree.co.kr",
+    [string]$FrontendHost = "www.herpfree.co.kr",
     [switch]$RequireFrontendDns,
     [switch]$Strict,
     [string]$ReportPath = "artifacts/production-ops/latest.md"

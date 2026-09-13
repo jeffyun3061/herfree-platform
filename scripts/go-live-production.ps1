@@ -4,7 +4,7 @@ param(
     [string]$Region = "ap-northeast-2",
     [string]$Repo = "jeffyun3061/herfree-platform",
     [string]$ProductionApiUrl = "https://api.herpfree.co.kr",
-    [string]$ProductionFrontendUrl = "https://herpfree.co.kr",
+    [string]$ProductionFrontendUrl = "https://www.herpfree.co.kr",
     [string]$ProductionDeployRoleArn = "arn:aws:iam::439777528445:role/herfree-github-production-deploy",
     [switch]$SkipStagingFix,
     [switch]$SkipProductionAws,
@@ -144,7 +144,8 @@ if (-not $SkipRelease) {
     Write-Host "Amplify production (console): connect main branch, no Basic Auth"
     Write-Host "  API_REWRITE_TARGET=$ProductionApiUrl"
     Write-Host "  NEXT_PUBLIC_OAUTH_REDIRECT_ORIGIN=$ProductionFrontendUrl"
-    Write-Host "Gabia: herpfree.co.kr -> Amplify, api -> production EIP"
+    Write-Host "Gabia/Cloudflare: www.herpfree.co.kr -> Amplify, api -> production EIP"
+    Write-Host "Apex herpfree.co.kr -> www.herpfree.co.kr redirect must be verified separately"
 }
 
 Write-Host ""
