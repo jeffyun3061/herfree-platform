@@ -13,6 +13,7 @@ export default function QnaPage() {
       <ScreenHeader
         title="자주 묻는 질문"
         subtitle="많이 물어보신 것들을 먼저 모아봤어요"
+        reserveEyebrow
       />
 
       <section className="mt-[18px] flex flex-col gap-[22px] hf-page-x">

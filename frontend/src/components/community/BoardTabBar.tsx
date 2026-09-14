@@ -37,9 +37,9 @@ function ChevronIcon({ direction }: { direction: 'left' | 'right' }) {
 }
 
 function normalizeBoardLabel(board: Board) {
-  return (getCommunityBoardTabLabel(board.boardType) ?? board.name)
-    .replace(/게시판|방/g, '')
-    .trim();
+  const configuredLabel = getCommunityBoardTabLabel(board.boardType);
+  if (configuredLabel) return configuredLabel;
+  return board.name.replace(/게시판|방/g, '').trim();
 }
 
 function chunkTabs(items: TabItem[], size: number): TabItem[][] {

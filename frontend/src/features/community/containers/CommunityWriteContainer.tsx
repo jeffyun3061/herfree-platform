@@ -365,10 +365,8 @@ function WritePostForm() {
               <div className="flex w-max gap-2 px-0.5">
               {writableBoards.map((board) => {
                 const active = board.id === boardId;
-                const label =
-                  (getCommunityBoardTabLabel(board.boardType) ?? board.name)
-                    .replace(/게시판|방/g, '')
-                    .trim() || board.name;
+                const configuredLabel = getCommunityBoardTabLabel(board.boardType);
+                const label = configuredLabel || board.name.replace(/게시판|방/g, '').trim() || board.name;
 
                 return (
                   <button

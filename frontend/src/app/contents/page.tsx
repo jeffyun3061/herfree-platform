@@ -48,8 +48,10 @@ function ContentsPageContent() {
     <>
       <div className="content-screen mx-auto max-w-app hf-scroll-pad-nav lg:max-w-none">
         <ScreenHeader
+          eyebrow="헤르프리 아카이브"
           title="칼럼"
-          subtitle="경험에서 나온 이야기"
+          subtitle="경험에서 나온 이야기를 천천히 읽어보세요"
+          tone="editorial"
           titleClassName="font-semibold text-[#15201D]"
         />
 

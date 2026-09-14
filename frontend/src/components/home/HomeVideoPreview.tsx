@@ -63,7 +63,7 @@ export function HomeVideoPreview({ maxItems = 2, className }: HomeVideoPreviewPr
                   </span>
                 </div>
                 <div className="min-w-0 flex-1 py-0.5">
-                  <p className="line-clamp-2 text-[13.5px] font-semibold leading-snug text-[#1E2621] group-hover:text-[#0B3B36]">
+                  <p className="truncate text-[13.5px] font-semibold leading-snug text-[#1E2621] group-hover:text-[#0B3B36]" title={video.title}>
                     {video.title}
                   </p>
                   <p className="mt-1.5 text-[12px] hf-text-muted">

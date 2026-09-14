@@ -265,6 +265,7 @@ function JournalPageContent() {
             <ScreenHeader
               title="개인일지"
               subtitle="매일의 컨디션을 기록하고 흐름을 살펴봐요"
+              reserveEyebrow
             />
 
             <div className="hf-page-x space-y-3">
@@ -392,6 +393,7 @@ function JournalPageContent() {
             subtitle="날짜별로 기록을 모아봐요"
             body="가입하면 매일의 컨디션을 기록하고 흐름을 볼 수 있어요"
             signupFrom="/journal"
+            reserveEyebrow
           />
         )}
 
@@ -434,4 +436,3 @@ function JournalPageContent() {
 export function JournalPageContainer() {
   return <JournalPageContent />;
 }
-

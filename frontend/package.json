@@ -21,7 +21,8 @@
     "e2e:staging:mutation": "playwright test e2e/bff-session.spec.ts e2e/release.spec.ts --project=chromium --grep \"staging data flow\""
   },
   "dependencies": {
-    "next": "^16.3.5",
+    "html2canvas": "^1.4.1",
+    "next": "^15.5.24",
     "react": "^18",
     "react-dom": "^18"
   },
@@ -36,7 +37,7 @@
     "eslint": "^8",
     "eslint-config-next": "^15.5.21",
     "jsdom": "^26.1.0",
-    "postcss": "^8.5.28",
+    "postcss": "^8.5.23",
     "tailwindcss": "^3.4.0",
     "typescript": "^5",
     "vitest": "^3.2.6"
@@ -49,7 +50,7 @@
     },
     "form-data": ">=4.0.6",
     "nanoid": "^3.3.17",
-    "postcss": "^8.5.28",
+    "postcss": "^8.5.23",
     "sharp": "0.35.4"
   }
 }

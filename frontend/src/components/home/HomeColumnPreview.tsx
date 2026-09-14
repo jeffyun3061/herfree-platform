@@ -63,7 +63,7 @@ export function HomeColumnPreview({ maxItems = 3, className }: HomeColumnPreview
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-[12px] font-bold text-[#15695E]">{item.category}</p>
-                <p className="mt-1 line-clamp-2 text-[13.5px] font-semibold leading-snug text-[#1E2621] group-hover:text-[#0B3B36]">
+                <p className="mt-1 truncate text-[13.5px] font-semibold leading-snug text-[#1E2621] group-hover:text-[#0B3B36]" title={item.title}>
                   {item.title}
                 </p>
               </div>

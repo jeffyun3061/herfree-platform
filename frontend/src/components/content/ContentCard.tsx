@@ -43,7 +43,9 @@ export function ContentCard({ content, featured }: ContentCardProps) {
           </span>
         </div>
         <div className="column-feed-card__body">
-          <h2 className="column-feed-card__title">{content.title}</h2>
+          <h2 className="column-feed-card__title" title={content.title}>
+            {content.title}
+          </h2>
           <div className="column-feed-card__meta">
             <span>{formatDate(content.createdAt)}</span>
             <MetaDot />

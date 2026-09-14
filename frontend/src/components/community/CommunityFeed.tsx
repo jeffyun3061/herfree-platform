@@ -226,9 +226,11 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
   return (
     <div className="community-screen mx-auto max-w-app hf-scroll-pad-nav lg:max-w-none">
       <ScreenHeader
+        eyebrow="함께 나누는 공간"
         titleAs="h2"
         title="커뮤니티"
         subtitle="같은 경험을 가진 사람들의 이야기가 모이는 곳"
+        tone="community"
       />
 
       {isLoggedIn && !boardsLoading && communityBoards.length > 0 && (
