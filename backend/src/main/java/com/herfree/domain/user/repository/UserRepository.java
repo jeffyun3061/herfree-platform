@@ -45,4 +45,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
             Pageable pageable);
 
     long countByCreatedAtAfter(Instant since);
+
+    long countByStatus(UserStatus status);
 }
