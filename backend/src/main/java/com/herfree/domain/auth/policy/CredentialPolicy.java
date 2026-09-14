@@ -7,7 +7,6 @@ package com.herfree.domain.auth.policy;
 public final class CredentialPolicy {
 
     public static final int EMAIL_MAX_LENGTH = 254;
-    private static final String EMAIL_FORMAT_PATTERN = "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$";
     public static final int PASSWORD_MIN_LENGTH = 10;
     /** 신규·변경·로그인·현재 비밀번호 입력 모두 동일 상한 */
     public static final int PASSWORD_MAX_LENGTH = 24;
@@ -24,6 +23,20 @@ public final class CredentialPolicy {
     }
 
     public static boolean isValidEmailFormat(String email) {
-        return email != null && email.matches(EMAIL_FORMAT_PATTERN);
+        if (email == null || email.isBlank() || email.length() > EMAIL_MAX_LENGTH) {
+            return false;
+        }
+        int atIndex = email.indexOf('@');
+        int lastAtIndex = email.lastIndexOf('@');
+        int dotIndex = email.lastIndexOf('.');
+        if (atIndex <= 0 || atIndex != lastAtIndex || dotIndex <= atIndex + 1 || dotIndex == email.length() - 1) {
+            return false;
+        }
+        for (int i = 0; i < email.length(); i++) {
+            if (Character.isWhitespace(email.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
     }
 }
