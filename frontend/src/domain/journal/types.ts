@@ -133,8 +133,10 @@ export type JournalInsights = {
   insightLines: string[];
 };
 
-/** Public home stats intentionally contain no participant counts. */
-export type JournalPublicHomeStats = Record<string, never>;
+export type JournalPublicHomeStats = {
+  activeMemberCount: number;
+  postsToday: number;
+};
 
 export type AdminJournalStats = {
   totalRecords: number;

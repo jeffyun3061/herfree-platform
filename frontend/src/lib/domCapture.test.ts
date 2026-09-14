@@ -80,14 +80,15 @@ describe('captureElementPngBlob', () => {
       expect(result.type).toBe('image/png');
       expect(html2canvasMock).toHaveBeenCalledTimes(1);
       expect(capturedElement).not.toBe(card);
-      expect(capturedElement?.style.height).toBe('auto');
-      const capturedFooter = capturedElement?.querySelector('[data-share-only]');
+      const renderedElement = capturedElement as unknown as HTMLElement;
+      expect(renderedElement.style.height).toBe('auto');
+      const capturedFooter = renderedElement.querySelector('[data-share-only]');
       expect(capturedFooter?.getAttribute('style')).toContain('display: flex');
       expect(capturedFooter instanceof HTMLElement && capturedFooter.style.height).toBe('auto');
       expect(capturedFooter?.textContent).toContain('헤르프리 개인일지');
       expect(capturedFooter?.textContent).toContain('herpfree.co.kr');
-      expect(capturedElement?.querySelector('.content')?.getAttribute('style')).toContain('height: auto');
-      const capturedShareText = capturedElement?.querySelectorAll('[data-share-text]');
+      expect(renderedElement.querySelector('.content')?.getAttribute('style')).toContain('height: auto');
+      const capturedShareText = renderedElement.querySelectorAll('[data-share-text]');
       expect(capturedShareText).toHaveLength(2);
       capturedShareText?.forEach((node) => {
         expect(node.getAttribute('style')).toContain('height: auto');
