@@ -1,12 +1,15 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
 import { usePostList } from '@/hooks/usePosts';
 import { GuestHomeHero } from '@/components/home/GuestHomeHero';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { QuickAccessSection } from '@/components/home/QuickAccessSection';
 import type { Post } from '@/domain/post/types';
 import { formatRelativeTime } from '@/domain/common/format';
+import { PUBLIC_IMAGES } from '@/domain/assets/static';
+import { useJournalPublicHomeStats } from '@/hooks/useJournal';
 
 const MEMBER_AVATARS = [
   { emoji: '🌙', bg: '#2E5A4E' },
@@ -42,23 +45,21 @@ const FALLBACK_PREVIEW_POSTS = [
   },
 ] as const;
 
-function formatMemberStatus(value: number | null | undefined, loading: boolean): string {
-  if (loading) return '회원 수 확인 중';
-  if (!value) return '첫 회원을 기다리고 있어요';
-  return `${value.toLocaleString('ko-KR')}명이 함께하고 있어요`;
-}
-
 function getPostPreview(post: Post): string {
   const preview = post.contentPreview?.trim();
   return preview || post.title;
 }
 
 function MemberStatusStrip({
-  activeUsersLabel,
+  activeMemberCount,
+  statsError,
+  statsLoading,
   todayStories,
   storiesLoading,
 }: {
-  activeUsersLabel: string;
+  activeMemberCount: number;
+  statsError: string | null;
+  statsLoading: boolean;
   todayStories: number;
   storiesLoading: boolean;
 }) {
@@ -82,13 +83,69 @@ function MemberStatusStrip({
         <div className="min-w-0 flex-1">
           <p className="flex items-center gap-1.5 truncate text-[13px] font-semibold text-white">
             <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#6FE0B0] shadow-[0_0_8px_rgba(111,224,176,.8)]" />
-            {activeUsersLabel}
+            {statsLoading
+              ? '함께하는 회원 수를 확인하고 있어요'
+              : statsError
+                ? '함께하는 공간이에요'
+                : `${activeMemberCount.toLocaleString('ko-KR')}명이 함께하고 있어요`}
           </p>
           <p className="mt-[3px] text-[12px] text-white/55">
-            {storiesLoading ? '오늘 올라온 글 확인 중' : `오늘 올라온 글 ${todayStories.toLocaleString('ko-KR')}개`}
+            {storiesLoading ? '최근 올라온 이야기 확인 중' : `최근 올라온 이야기 ${todayStories.toLocaleString('ko-KR')}개`}
           </p>
         </div>
       </div>
+    </section>
+  );
+}
+
+function InfoIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 shrink-0 text-[#A08E6A]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 11v5M12 8h.01" />
+    </svg>
+  );
+}
+
+function GuestJournalTryCard() {
+  const [sleep, setSleep] = useState(7);
+  const [supplement, setSupplement] = useState<string | null>(null);
+  const [stress, setStress] = useState<string | null>(null);
+  const sleepPercent = ((sleep - 3) / 9) * 100;
+
+  return (
+    <section className="px-5 pt-7">
+      <div className="mb-3 flex items-baseline justify-between">
+        <h2 className="hf-display text-[19px] font-extrabold tracking-[-0.01em] text-[#1E2621]">지금 눌러보세요</h2>
+        <span className="text-[11.5px] text-[#7C8279]">실제 기록 화면</span>
+      </div>
+      <div className="rounded-[20px] border border-[#EADFCB] bg-[#FBF6EA] p-5 shadow-[0_14px_32px_-26px_rgba(7,37,31,.4)]">
+        <p className="text-[14px] font-bold text-[#1E2621]">오늘 기본 컨디션</p>
+        <p className="mt-1 text-[11.5px] text-[#7C8279]">수면 · 영양제 · 스트레스</p>
+
+        <div className="mt-[18px]">
+          <p className="mb-2.5 text-[13px] text-[#5C645A]">😴 수면 시간 — <b className="text-[#1E2621]">{sleep}시간</b></p>
+          <input aria-label="수면 시간" type="range" min="3" max="12" value={sleep} onChange={(event) => setSleep(Number(event.target.value))} className="h-1.5 w-full accent-[#15695E]" style={{ background: `linear-gradient(to right, #15695E ${sleepPercent}%, #EDE7DA ${sleepPercent}%)` }} />
+        </div>
+
+        <div className="mt-[18px]">
+          <p className="mb-2.5 text-[13px] text-[#5C645A]">💊 영양제 복용</p>
+          <div className="flex gap-2">
+            {['복용', '빠뜨림'].map((item) => <button type="button" key={item} onClick={() => setSupplement(item)} className={`flex-1 rounded-[11px] border px-2 py-2.5 text-[12.5px] ${supplement === item ? 'border-[#1D9E75] bg-[#E3F1EA] font-bold text-[#04342C]' : 'border-[#E5D9C2] bg-[#F3ECDD] text-[#5C645A]'}`}>{item}</button>)}
+          </div>
+        </div>
+
+        <div className="mt-[18px]">
+          <p className="mb-2.5 text-[13px] text-[#5C645A]">🧠 스트레스</p>
+          <div className="flex gap-2">
+            {['낮음', '보통', '높음'].map((item) => <button type="button" key={item} onClick={() => setStress(item)} className={`flex-1 rounded-[11px] border px-2 py-2.5 text-[12.5px] ${stress === item ? 'border-[#1D9E75] bg-[#E3F1EA] font-bold text-[#04342C]' : 'border-[#E5D9C2] bg-[#F3ECDD] text-[#5C645A]'}`}>{item}</button>)}
+          </div>
+        </div>
+
+        <div className="mt-[18px] flex items-start gap-2 border-t border-[#EFE6D5] pt-[18px] text-[12px] leading-[1.65] text-[#7C8279]"><InfoIcon /> <span>전조증상·증상 기록은 가입 후에 할 수 있어요.</span></div>
+        {supplement && stress && <div className="mt-[18px] rounded-xl bg-[#E3F1EA] px-3.5 py-3 text-[12.5px] leading-[1.6] text-[#04342C]">🌿 이렇게 하루 10초예요. 가입하면 지금 기록이 저장되고, 14일 뒤엔 나만의 흐름이 보여요.</div>}
+      </div>
+      <Link href="/signup" className="mt-3 flex items-center justify-center rounded-[13px] bg-[#0B3B36] px-4 py-[15px] text-[14.5px] font-bold text-white">무료로 기록 시작하기</Link>
     </section>
   );
 }
@@ -265,18 +322,38 @@ function ReplyIcon() {
 }
 
 export function GuestHomePage() {
+  const { data: homeStats, isLoading: statsLoading, error: statsError } = useJournalPublicHomeStats();
   const { postPage: recentPosts, isLoading: recentLoading } = usePostList(
     undefined,
     5,
     '',
     'createdAt,desc',
   );
-  const activeUsersLabel = formatMemberStatus(undefined, false);
-  const todayStories = recentLoading ? 0 : recentPosts.totalElements || recentPosts.content.length;
+  const todayStories = homeStats?.postsToday ?? (recentLoading ? 0 : recentPosts.content.length);
   return (
     <div className="min-h-screen bg-[#F3EDE3] pb-7">
       <GuestHomeHero />
-      <MemberStatusStrip activeUsersLabel={activeUsersLabel} todayStories={todayStories} storiesLoading={recentLoading} />
+      <MemberStatusStrip
+        activeMemberCount={homeStats?.activeMemberCount ?? 0}
+        statsError={statsError}
+        statsLoading={statsLoading}
+        todayStories={todayStories}
+        storiesLoading={recentLoading || statsLoading}
+      />
+      <section className="px-5 pt-7">
+        <div className="mb-3 flex items-baseline justify-between">
+          <h2 className="hf-display text-[19px] font-extrabold tracking-[-0.01em] text-[#1E2621]">무료 개인 건강일지</h2>
+          <span className="text-[11.5px] text-[#7C8279]">예시 화면</span>
+        </div>
+        <p className="mb-3.5 text-[12.5px] leading-[1.65] text-[#5C645A]">매일의 컨디션을 기록하면 나만의 흐름이 보여요.</p>
+        <div className="overflow-hidden rounded-[20px] shadow-[0_22px_46px_-30px_rgba(7,37,31,.6)]">
+          <div className="relative h-[158px] bg-cover bg-center" style={{ backgroundImage: `linear-gradient(180deg, rgba(20,40,44,.1), rgba(9,32,30,.7)), url(${PUBLIC_IMAGES.journalDashboardCard})` }}>
+            <div className="absolute inset-x-[18px] bottom-[15px] text-white"><p className="text-[12px]">● 오늘 상태</p><p className="hf-display mt-1 text-[25px] font-bold">증상 없음</p><p className="mt-1 text-[12px]">마지막 증상 이후 6일째 · 수면 7h</p></div>
+          </div>
+          <div className="grid grid-cols-4 gap-2 bg-[#07251F] px-[18px] py-3.5 text-center text-white"><div><b className="text-[18px]">28<span className="text-[11px] font-normal">일</span></b><p className="text-[10.5px] text-white/60">재발 간격</p></div><div><b className="text-[18px]">82<span className="text-[11px] font-normal">%</span></b><p className="text-[10.5px] text-white/60">영양제</p></div><div><b className="text-[18px]">6.8<span className="text-[11px] font-normal">h</span></b><p className="text-[10.5px] text-white/60">평균 수면</p></div><div><b className="text-[18px]">3<span className="text-[11px] font-normal">회</span></b><p className="text-[10.5px] text-white/60">올해 재발</p></div></div>
+        </div>
+      </section>
+      <GuestJournalTryCard />
       <GuestCommunityPreview
         posts={recentPosts.content}
         isLoading={recentLoading}
