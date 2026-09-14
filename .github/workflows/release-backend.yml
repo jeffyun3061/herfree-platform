@@ -52,14 +52,43 @@ jobs:
             echo "main and ${AMPLIFY_BRANCH} do not contain the same frontend release."
             exit 1
           fi
+          branches="$(aws amplify list-branches --app-id "${AMPLIFY_APP_ID}" --output json)"
+          if ! jq -e --arg branch "${AMPLIFY_BRANCH}" '.branches[] | select(.branchName == $branch)' <<<"${branches}" >/dev/null; then
+            echo "Creating the missing develop branch in the existing staging Amplify app."
+            aws amplify create-branch \
+              --app-id "${AMPLIFY_APP_ID}" \
+              --branch-name "${AMPLIFY_BRANCH}" \
+              --stage DEVELOPMENT \
+              --enable-auto-build >/dev/null
+          fi
           latest_job="$(aws amplify list-jobs \
             --app-id "${AMPLIFY_APP_ID}" \
             --branch-name "${AMPLIFY_BRANCH}" \
             --max-results 1 \
             --output json)"
-          jq -e --arg commit "${frontend_sha}" \
-            '.jobSummaries[0] | .status == "SUCCEED" and .commitId == $commit' \
-            <<<"${latest_job}" >/dev/null
+          if ! jq -e --arg commit "${frontend_sha}" \
+              '.jobSummaries[0] | .status == "SUCCEED" and .commitId == $commit' \
+              <<<"${latest_job}" >/dev/null; then
+            job_id="$(aws amplify start-job \
+              --app-id "${AMPLIFY_APP_ID}" \
+              --branch-name "${AMPLIFY_BRANCH}" \
+              --job-type RELEASE \
+              --commit-id "${frontend_sha}" \
+              --query 'jobSummary.jobId' --output text)"
+            for _ in {1..60}; do
+              job_status="$(aws amplify get-job \
+                --app-id "${AMPLIFY_APP_ID}" \
+                --branch-name "${AMPLIFY_BRANCH}" \
+                --job-id "${job_id}" \
+                --query 'job.summary.status' --output text)"
+              case "${job_status}" in
+                SUCCEED) break ;;
+                FAILED|CANCELLED|CANCELLING) echo "Amplify staging job failed: ${job_status}"; exit 1 ;;
+              esac
+              sleep 5
+            done
+            test "${job_status}" = "SUCCEED"
+          fi
       - id: ecr
         uses: aws-actions/amazon-ecr-login@v2
       - id: image
