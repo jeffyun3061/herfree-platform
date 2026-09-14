@@ -33,7 +33,9 @@ function getSessionId(): string {
   const generated =
     typeof crypto !== 'undefined' && 'randomUUID' in crypto
       ? crypto.randomUUID()
-      : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      : `${Date.now()}-${Array.from(crypto.getRandomValues(new Uint32Array(4)))
+          .map((value) => value.toString(36))
+          .join('')}`;
   window.localStorage.setItem(SESSION_KEY, generated);
   return generated;
 }
