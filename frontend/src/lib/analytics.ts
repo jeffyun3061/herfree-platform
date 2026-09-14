@@ -30,10 +30,11 @@ function getSessionId(): string {
   const existing = window.localStorage.getItem(SESSION_KEY);
   if (existing) return existing;
 
+  const webCrypto = window.crypto;
   const generated =
-    typeof crypto !== 'undefined' && 'randomUUID' in crypto
-      ? crypto.randomUUID()
-      : `${Date.now()}-${Array.from(crypto.getRandomValues(new Uint32Array(4)))
+    typeof webCrypto.randomUUID === 'function'
+      ? webCrypto.randomUUID()
+      : `${Date.now()}-${Array.from(webCrypto.getRandomValues(new Uint32Array(4)))
           .map((value) => value.toString(36))
           .join('')}`;
   window.localStorage.setItem(SESSION_KEY, generated);
