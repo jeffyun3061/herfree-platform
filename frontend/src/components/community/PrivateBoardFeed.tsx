@@ -59,6 +59,7 @@ export function PrivateBoardFeed({ boardType }: PrivateBoardFeedProps) {
       <ScreenHeader
         title={meta.title}
         subtitle="서비스 이용과 운영에 관한 문의를 남겨 주세요"
+        reserveEyebrow
       />
 
       <div className="hf-page-x pt-4">

@@ -33,9 +33,11 @@ export function PostCard({ post, boardName }: PostCardProps) {
   if (!canOpen) {
     return (
       <article className="community-feed-row opacity-70">
-        <div className="community-feed-row__title-line">
-          <span className={cn('community-feed-tag', tagClass)}>{displayBoard}</span>
-          <span className="community-feed-row__title text-muted">{post.title}</span>
+        <div className="community-feed-row__header">
+          <div className="community-feed-row__title-line">
+            <span className={cn('community-feed-tag', tagClass)}>{displayBoard}</span>
+            <span className="community-feed-row__title text-muted" title={post.title}>{post.title}</span>
+          </div>
         </div>
         <p className="mt-1.5 text-[12.5px] leading-relaxed text-[#7D8580]">다른 회원의 비공개 글입니다.</p>
       </article>
@@ -45,39 +47,36 @@ export function PostCard({ post, boardName }: PostCardProps) {
   return (
     <Link href={`/community/posts/${post.id}`} className="block">
       <article className="community-feed-row transition-colors hover:bg-[#F7EFE5]">
-        <div className="community-feed-row__title-line">
-          <span className={cn('community-feed-tag', tagClass)}>{displayBoard}</span>
-          {showReplyStatus && (
-            <span
-              className={cn(
-                'shrink-0 rounded-md px-2 py-0.5 text-[10px] font-semibold',
-                post.staffReplied ? 'bg-primary/15 text-primary' : 'bg-[#F4F6F5] text-[#8B9590]',
-              )}
-            >
-              {post.staffReplied ? '답변 완료' : '답변 대기'}
+        <div className="community-feed-row__header">
+          <div className="community-feed-row__title-line">
+            <span className={cn('community-feed-tag', tagClass)}>{displayBoard}</span>
+            {showReplyStatus && (
+              <span
+                className={cn(
+                  'shrink-0 rounded-md px-2 py-0.5 text-[10px] font-semibold',
+                  post.staffReplied ? 'bg-primary/15 text-primary' : 'bg-[#F4F6F5] text-[#8B9590]',
+                )}
+              >
+                {post.staffReplied ? '답변 완료' : '답변 대기'}
+              </span>
+            )}
+            <span className="community-feed-row__title" title={post.title}>{post.title}</span>
+          </div>
+          <div className="community-feed-row__meta">
+            <span className="max-w-[46%] truncate" title={post.authorNickname}>{post.authorNickname}</span>
+            {authorIpLabel ? (
+              <>
+                <MetaDot />
+                <span>{authorIpLabel}</span>
+              </>
+            ) : null}
+            <MetaDot />
+            <time dateTime={post.createdAt}>{formatRelativeTime(post.createdAt)}</time>
+            <span className="ml-auto flex shrink-0 items-center gap-3">
+              <span aria-label={`좋아요 ${post.reactionCount ?? 0}개`}>♡ {post.reactionCount ?? 0}</span>
+              <span aria-label={`댓글 ${post.commentCount ?? 0}개`}>💬 {post.commentCount ?? 0}</span>
             </span>
-          )}
-          <span className="community-feed-row__title">{post.title}</span>
-        </div>
-        {post.contentPreview && (
-          <p className="mb-2.5 line-clamp-2 break-words text-[12.5px] leading-[1.55] text-[#6E7671]">
-            {post.contentPreview}
-          </p>
-        )}
-        <div className="community-feed-row__meta">
-          <span className="max-w-[46%] truncate">{post.authorNickname}</span>
-          {authorIpLabel ? (
-            <>
-              <MetaDot />
-              <span>{authorIpLabel}</span>
-            </>
-          ) : null}
-          <MetaDot />
-          <span>{formatRelativeTime(post.createdAt)}</span>
-          <span className="ml-auto flex shrink-0 items-center gap-3">
-            <span>♡ {post.reactionCount ?? 0}</span>
-            <span>💬 {post.commentCount ?? 0}</span>
-          </span>
+          </div>
         </div>
       </article>
     </Link>
@@ -87,11 +86,16 @@ export function PostCard({ post, boardName }: PostCardProps) {
 export function PostCardSkeleton() {
   return (
     <div className="community-feed-row animate-pulse">
-      <div className="mb-2 flex gap-2">
-        <div className="h-5 w-14 rounded-md bg-[#E3E6E4]" />
-        <div className="h-5 flex-1 rounded bg-[#E3E6E4]" />
+      <div className="community-feed-row__header">
+        <div className="community-feed-row__title-line">
+          <div className="h-5 w-14 shrink-0 rounded-md bg-[#E3E6E4]" />
+          <div className="h-5 min-w-0 flex-1 rounded bg-[#E3E6E4]" />
+        </div>
+        <div className="community-feed-row__meta">
+          <div className="h-3 w-20 rounded bg-[#E3E6E4]" />
+          <div className="ml-auto h-3 w-24 rounded bg-[#E3E6E4]" />
+        </div>
       </div>
-      <div className="h-3 w-40 rounded bg-[#E3E6E4]" />
     </div>
   );
 }

@@ -19,6 +19,7 @@ type LoggedOutFeaturePromptProps = {
   signupFrom: string;
   headerActions?: React.ReactNode;
   showHeaderActions?: boolean;
+  reserveEyebrow?: boolean;
 };
 
 export function LoggedOutFeaturePrompt({
@@ -28,6 +29,7 @@ export function LoggedOutFeaturePrompt({
   signupFrom,
   headerActions,
   showHeaderActions = false,
+  reserveEyebrow = false,
 }: LoggedOutFeaturePromptProps) {
   return (
     <div className="flex min-h-[calc(100dvh-5rem)] flex-col pb-10">
@@ -35,6 +37,7 @@ export function LoggedOutFeaturePrompt({
         title={title}
         subtitle={subtitle}
         titleAs="h2"
+        reserveEyebrow={reserveEyebrow}
         actions={showHeaderActions ? (headerActions ?? undefined) : false}
       />
 

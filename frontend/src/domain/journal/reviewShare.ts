@@ -3,12 +3,10 @@ import {
   formatLabelList,
   formatReviewDateRange,
 } from '@/domain/journal/types';
+import { HERFREE_SITE_URL } from '@/domain/journal/share';
 
 function resolveSiteUrl(): string {
-  if (typeof window !== 'undefined') {
-    return window.location.origin;
-  }
-  return process.env.NEXT_PUBLIC_SITE_URL ?? 'https://herfree.com';
+  return HERFREE_SITE_URL;
 }
 
 export function buildAnonymousReviewShareText(summary: JournalReviewSummary): string {
