@@ -23,31 +23,17 @@ public final class CredentialPolicy {
     }
 
     public static boolean isValidEmailFormat(String email) {
-        if (email == null || email.length() > EMAIL_MAX_LENGTH) {
+        if (email == null || email.isBlank() || email.length() > EMAIL_MAX_LENGTH) {
             return false;
         }
-
         int atIndex = email.indexOf('@');
-        if (atIndex <= 0 || atIndex != email.lastIndexOf('@')) {
+        int lastAtIndex = email.lastIndexOf('@');
+        int dotIndex = email.lastIndexOf('.');
+        if (atIndex <= 0 || atIndex != lastAtIndex || dotIndex <= atIndex + 1 || dotIndex == email.length() - 1) {
             return false;
         }
-
-        String localPart = email.substring(0, atIndex);
-        String domainPart = email.substring(atIndex + 1);
-        return hasOnlyNonWhitespaceNonAtCharacters(localPart)
-                && hasOnlyNonWhitespaceNonAtCharacters(domainPart)
-                && domainPart.indexOf('.') > 0
-                && !domainPart.endsWith(".");
-    }
-
-    private static boolean hasOnlyNonWhitespaceNonAtCharacters(String value) {
-        if (value.isEmpty()) {
-            return false;
-        }
-
-        for (int index = 0; index < value.length(); index++) {
-            char character = value.charAt(index);
-            if (character == '@' || Character.isWhitespace(character)) {
+        for (int i = 0; i < email.length(); i++) {
+            if (Character.isWhitespace(email.charAt(i))) {
                 return false;
             }
         }
