@@ -5,8 +5,12 @@ import com.herfree.domain.journal.dto.response.JournalInsightsResponse;
 import com.herfree.domain.journal.dto.response.JournalPublicHomeStatsResponse;
 import com.herfree.domain.journal.entity.JournalRecord;
 import com.herfree.domain.journal.repository.JournalRecordRepository;
+import com.herfree.domain.post.entity.PostStatus;
+import com.herfree.domain.post.repository.PostRepository;
+import com.herfree.domain.user.entity.UserStatus;
 import com.herfree.domain.user.repository.UserRepository;
 import com.herfree.global.common.AppTimeZone;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -37,10 +41,14 @@ public class JournalInsightService {
     private final JournalRecordRepository journalRecordRepository;
     private final UserRepository userRepository;
     private final HealthInsightPublicationPolicy publicationPolicy;
+    private final PostRepository postRepository;
 
     public JournalPublicHomeStatsResponse getPublicHomeStats() {
-        long totalUsers = userRepository.count();
-        return new JournalPublicHomeStatsResponse(totalUsers);
+        Instant todayStart = AppTimeZone.startOfTodayKst();
+        return new JournalPublicHomeStatsResponse(
+                userRepository.countByStatus(UserStatus.ACTIVE),
+                postRepository.countByStatusAndCreatedAtAfter(PostStatus.ACTIVE, todayStart)
+        );
     }
 
     public JournalInsightsResponse getCommunityInsights() {

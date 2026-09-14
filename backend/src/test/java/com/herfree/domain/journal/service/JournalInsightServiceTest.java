@@ -3,10 +3,14 @@ package com.herfree.domain.journal.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
 
 import com.herfree.domain.journal.entity.JournalRecord;
 import com.herfree.domain.journal.repository.JournalRecordRepository;
+import com.herfree.domain.post.entity.PostStatus;
+import com.herfree.domain.post.repository.PostRepository;
 import com.herfree.domain.user.entity.User;
+import com.herfree.domain.user.entity.UserStatus;
 import com.herfree.domain.user.repository.UserRepository;
 import com.herfree.global.common.AppTimeZone;
 import java.time.LocalDate;
@@ -29,6 +33,9 @@ class JournalInsightServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private PostRepository postRepository;
 
     @Spy
     private HealthInsightPublicationPolicy publicationPolicy = new HealthInsightPublicationPolicy();
@@ -79,12 +86,18 @@ class JournalInsightServiceTest {
     }
 
     @Test
-    void publicHomeStatsDoesNotExposeWhetherAnyoneRecordedHealthDataToday() {
-        given(userRepository.count()).willReturn(100L);
+    void publicHomeStatsExposeLiveAggregateCounts() {
+        given(userRepository.countByStatus(UserStatus.ACTIVE)).willReturn(7L);
+        given(postRepository.countByStatusAndCreatedAtAfter(any(), any())).willReturn(3L);
 
         var response = journalInsightService.getPublicHomeStats();
 
-        assertThat(response.totalUsers()).isEqualTo(100);
+        assertThat(response.activeMemberCount()).isEqualTo(7L);
+        assertThat(response.postsToday()).isEqualTo(3L);
+        then(userRepository).should().countByStatus(UserStatus.ACTIVE);
+        then(postRepository).should().countByStatusAndCreatedAtAfter(
+                org.mockito.ArgumentMatchers.eq(PostStatus.ACTIVE), any());
+        then(journalRecordRepository).shouldHaveNoInteractions();
     }
 
     @Test
