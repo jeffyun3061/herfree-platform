@@ -482,7 +482,14 @@ jobs:
             --output /tmp/journal-home-stats.json \
             "${API_URL}/api/journal/public/home-stats"
           grep -qi '^cache-control:.*no-store' /tmp/journal-headers
-          jq -e '.success == true and (.data | type == "object") and (.data == {})' /tmp/journal-home-stats.json
+          jq -e '
+            .success == true
+            and (.data | type == "object")
+            and (.data.activeMemberCount | type == "number")
+            and (.data.activeMemberCount >= 0)
+            and (.data.postsToday | type == "number")
+            and (.data.postsToday >= 0)
+          ' /tmp/journal-home-stats.json
           test "$(curl --silent --output /dev/null --write-out '%{http_code}' "${API_URL}/swagger-ui.html")" = "404"
           code="$(curl --silent --output /dev/null --write-out '%{http_code}' "${API_URL}/api/admin/reports")"
           test "${code}" = "401" || test "${code}" = "403"
