@@ -142,10 +142,10 @@ function GuestJournalTryCard() {
           </div>
         </div>
 
-        <div className="mt-[18px] flex items-start gap-2 border-t border-[#EFE6D5] pt-[18px] text-[12px] leading-[1.65] text-[#7C8279]"><InfoIcon /> <span>전조증상·증상 기록은 가입 후에 할 수 있어요.</span></div>
-        {supplement && stress && <div className="mt-[18px] rounded-xl bg-[#E3F1EA] px-3.5 py-3 text-[12.5px] leading-[1.6] text-[#04342C]">🌿 이렇게 하루 10초예요. 가입하면 지금 기록이 저장되고, 14일 뒤엔 나만의 흐름이 보여요.</div>}
+        <div className="mt-[18px] flex items-start gap-2 border-t border-[#EFE6D5] pt-[18px] text-[12px] leading-[1.65] text-[#7C8279]"><InfoIcon /> <span>전조증상·증상 기록은 로그인 후에 할 수 있어요.</span></div>
+        {supplement && stress && <div className="mt-[18px] rounded-xl bg-[#E3F1EA] px-3.5 py-3 text-[12.5px] leading-[1.6] text-[#04342C]">🌿 이렇게 하루 10초예요. 로그인하면 지금 기록이 저장되고, 14일 뒤엔 나만의 흐름이 보여요.</div>}
       </div>
-      <Link href="/signup" className="mt-3 flex items-center justify-center rounded-[13px] bg-[#0B3B36] px-4 py-[15px] text-[14.5px] font-bold text-white">무료로 기록 시작하기</Link>
+      <Link href="/login?from=/journal" className="mt-3 flex items-center justify-center rounded-[13px] bg-[#0B3B36] px-4 py-[15px] text-[14.5px] font-bold text-white">로그인하고 기록 시작하기</Link>
     </section>
   );
 }
