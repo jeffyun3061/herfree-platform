@@ -260,13 +260,13 @@ function GuestJournalStartCard() {
       <p className="mt-2 text-[13px] leading-[1.75] text-[#54614F]">
         관리의 시작은 기록부터.
         <br />
-        오늘부터 개인 일지를 작성해보세요.
+        로그인하면 오늘의 기록을 바로 시작할 수 있어요.
       </p>
       <Link
         href="/login?from=/journal"
         className="mt-[18px] flex min-h-12 items-center justify-center rounded-[12px] bg-[#0B3B36] text-[14px] font-bold text-white"
       >
-        오늘부터 시작하기
+        로그인하고 기록 시작하기
       </Link>
       <Link
         href="/community"
