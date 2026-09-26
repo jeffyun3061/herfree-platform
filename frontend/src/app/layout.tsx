@@ -30,6 +30,11 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
+  verification: {
+    other: {
+      'naver-site-verification': '2db0c61b88891e920236627065e55dbd5533af49',
+    },
+  },
 };
 
 // Allow env(safe-area-inset-*) to report the real notch and home-indicator
