@@ -74,13 +74,13 @@ export function GuestPeaceCta() {
             href="/login?from=/journal"
             className="mt-5 flex min-h-[46px] items-center justify-center rounded-[14px] bg-[#0B3B36] text-[14px] font-extrabold text-white shadow-[0_16px_30px_-24px_rgba(11,59,54,.75)]"
           >
-            로그인하기
+            로그인하고 기록 시작하기
           </Link>
           <Link
             href="/login?from=%2Fjournal"
             className="mt-3 block text-center text-[12.5px] font-semibold text-[#65706B]"
           >
-            이미 계정이 있다면 로그인
+            계정이 없으면 로그인 화면에서 회원가입할 수 있어요
           </Link>
         </div>
       </div>
