@@ -10,7 +10,7 @@ param(
     [string]$DbRuntime = "local",
     [string]$DatabaseVolumeId = $env:DB_VOLUME_ID,
     [string]$ApiHost = "api.herpfree.co.kr",
-    [string]$FrontendHost = "herpfree.co.kr",
+    [string]$FrontendHost = "www.herpfree.co.kr",
     [switch]$RequireFrontendDns,
     [switch]$Strict,
     [string]$ReportPath = "artifacts/production-ops/latest.md"
@@ -60,7 +60,7 @@ try {
     Add-Check "AWS account" ($identity.Account -eq $AccountId) "account $($identity.Account)"
 }
 catch {
-    Add-Check "AWS credentials" $false "run aws sso login --profile $AwsProfile"
+    Add-Check "AWS credentials" $false "renew the configured AWS login session for profile $AwsProfile"
     $blocking = @($checks | Where-Object { -not $_.Passed -and $_.Blocking })
     if ($Strict -and $blocking.Count -gt 0) { exit 1 }
     exit 0

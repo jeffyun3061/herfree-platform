@@ -27,6 +27,21 @@ MySQL Testcontainers 검사는 로컬 Docker 엔진에 연결되지 않아 생�
 Amplify 새 배포 역할이 없으면 기존 자동 빌드를 유지하고, 수동 검증은 구성 누락을 실패로
 처리한다. 새 경로의 성공을 검증하기 전 자동 빌드를 끄지 않는다.
 
+## 현재 운영 서비스 읽기 전용 검사
+
+`https://www.herpfree.co.kr`과 `https://api.herpfree.co.kr`에서 기존 배포를 검사했다.
+HTTP/API 보안 경계 9개와 실제 PC·모바일 브라우저 검사 34개가 모두 통과했다.
+주요 화면, FAQ, 8초 탐색 예산, frontend same-origin API 연결, 공개 목록, 비로그인
+관리 API 차단을 확인했다. 회원가입·로그인·일지·게시글 변경 요청은 운영에 보내지 않았다.
+이 결과는 새 후보 버전의 AWS 배포·MFA 검증을 대신하지 않는다.
+
+공개 통계는 현재 backend 계약대로 비음수 정수 `activeMemberCount`, `postsToday`만
+허용하고 추가 개인정보·건강정보 필드를 거부하도록 오래된 검사 코드를 수정했다.
+운영 검사 및 설정 예시의 도메인을 기존 canonical `www.herpfree.co.kr`에 맞췄다.
+실제 AWS secret/OAuth 제공자 설정은 별도 확인하며 이 수정으로 변경하지 않았다.
+운영 변경 테스트는 계속 local/승인된 staging에서만 허용한다. 보안·비밀·정책 정합성
+검사 5개와 frontend lint도 통과했다.
+
 ## 배포 전 필수 증적
 
 - [ ] AWS 기존 운영 계정 세션 갱신 및 최신 비용·리소스 감사
