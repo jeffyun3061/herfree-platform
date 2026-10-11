@@ -19,12 +19,30 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     environment: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+    env:
+      AMPLIFY_RELEASE_ROLE_ARN: ${{ secrets.AWS_AMPLIFY_RELEASE_ROLE_ARN }}
     steps:
+      - name: Check path release configuration
+        id: configuration
+        run: |
+          set -euo pipefail
+          if [[ -z "${AMPLIFY_RELEASE_ROLE_ARN}" ]]; then
+            if [[ "${GITHUB_EVENT_NAME}" == workflow_dispatch ]]; then
+              echo 'Configure AWS_AMPLIFY_RELEASE_ROLE_ARN before validating path-based releases.' >&2
+              exit 1
+            fi
+            echo 'Path-based releases are not configured yet; existing Amplify automatic builds remain active.'
+            echo 'ready=false' >> "${GITHUB_OUTPUT}"
+          else
+            echo 'ready=true' >> "${GITHUB_OUTPUT}"
+          fi
       - uses: aws-actions/configure-aws-credentials@v4
+        if: steps.configuration.outputs.ready == 'true'
         with:
-          role-to-assume: ${{ secrets.AWS_AMPLIFY_RELEASE_ROLE_ARN }}
+          role-to-assume: ${{ env.AMPLIFY_RELEASE_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
       - name: Build exact frontend commit with Amplify
+        if: steps.configuration.outputs.ready == 'true'
         env:
           APP_ID: ${{ github.ref_name == 'main' && vars.PRODUCTION_AMPLIFY_APP_ID || vars.STAGING_AMPLIFY_APP_ID }}
           BRANCH: ${{ github.ref_name }}

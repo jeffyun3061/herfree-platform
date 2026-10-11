@@ -95,6 +95,10 @@ MFA가 필요한 역할은 MODERATOR/ADMIN/SUPER_ADMIN/DOCTOR/CREATOR다. 실제
 
 ## 3. 스테이징 검증과 배포
 
+운영 MySQL 설정은 모든 준비·검증·배포·백업 스크립트에서 `config/.env.mysql.prod`를
+사용한다. staging은 `config/.env.mysql.staging`을 사용한다. `render-release-env.sh`가
+해당 파일을 준비한 뒤 배포 검증을 실행하며, 설정이 누락되면 DB 변경 전에 중단한다.
+
 1. 기존 staging을 가동하고 frontend/backend를 같은 변경으로 배포한다. MFA 승인 코드를
    준비해 관리자 등록, 인증, 기기 분실 복구, 15분 만료, 번호 재사용, 반복 실패를 확인한다.
 2. 일반 회원·의사 계정의 역할별 401/403, 권한 변경 후 기존 로그인 폐기, CSRF, MFA 쿠키
@@ -173,6 +177,8 @@ python3 infra/scripts/aws-cost-controls.py ecr-cleanup --repository "$ECR_REPOSI
 
 GitHub staging/production 환경에 `AWS_AMPLIFY_RELEASE_ROLE_ARN`과 기존 Amplify app ID를
 설정한다. OIDC role은 해당 app/branch의 GetBranch/StartJob/GetJob/StopJob만 허용한다.
+역할 설정이 없는 동안 push workflow는 기존 자동 빌드를 그대로 유지하며 건너뛴다.
+수동 검증은 역할 누락 시 실패하므로 구성되지 않은 경로를 검증 완료로 기록할 수 없다.
 자동 빌드를 켠 상태에서 각 branch의 `Release changed frontend`를 수동 검증한다.
 정확한 commit의 성공 job을 확인한 후 `enable-amplify-path-releases.sh`에
 `AMPLIFY_APP_ID`, `AMPLIFY_BRANCH`, `VERIFIED_JOB_ID`, `VERIFIED_COMMIT_SHA`,
