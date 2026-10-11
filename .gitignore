@@ -6,6 +6,9 @@ backend/out/
 
 # Node / Next.js
 frontend/node_modules/
+frontend/.npm-cache/
+**/__pycache__/
+artifacts/aws-operations/
 frontend/.next/
 frontend/.next-preflight/
 frontend/out/

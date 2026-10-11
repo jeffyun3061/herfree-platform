@@ -92,7 +92,8 @@ Invoke-HarnessStep "Production secret isolation" {
     if ($localMigrationScript -notmatch "CONFIRM_RDS_TO_LOCAL_MIGRATION.*YES" -or
         $localMigrationScript -notmatch "row-count verification failed" -or
         $localRestoreScript -notmatch "CONFIRM_RESTORE_DRILL.*YES" -or
-        $localRestoreScript -notmatch "sha256sum -c") {
+        $localRestoreScript -notmatch "Backup checksum mismatch" -or
+        $localRestoreScript -notmatch "sha256sum.*expected_hash") {
         throw "local DB migration and restore must fail closed and verify data integrity"
     }
     $releaseEnvValidator = Get-Content -LiteralPath "infra/scripts/validate-release-env.sh" -Raw
@@ -100,9 +101,10 @@ Invoke-HarnessStep "Production secret isolation" {
         $releaseEnvValidator -notmatch "HEALTH_DATA_REKEY_ON_STARTUP") {
         throw "release env validator must reject static S3 keys and production re-key startup"
     }
-    if ($releaseEnvValidator -notmatch "ADMIN_ACCESS_ALLOWED_CIDRS" -or
+    if ($releaseEnvValidator -notmatch "ADMIN_MFA_ENCRYPTION_KEY" -or
+        $releaseEnvValidator -notmatch "ADMIN_MFA_REQUIRED" -or
         (Get-Content -LiteralPath "backend/src/main/java/com/herfree/global/security/SecurityConfig.java" -Raw) -notmatch "AdminAccessGateFilter") {
-        throw "public admin endpoints must have a configured CIDR gate"
+        throw "public admin endpoints must require MFA and an independent encryption key"
     }
     $global:LASTEXITCODE = 0
 }
@@ -246,7 +248,7 @@ foreach ($result in $results) { $lines.Add("| $($result.Name) | $($result.Status
 $lines.Add("")
 $lines.Add("## Release interpretation")
 $lines.Add("")
-$lines.Add("자동 검증 PASS는 staging 배포 허가가 아니라 코드 게이트 통과를 뜻한다. 실제 secret, private RDS/S3, TLS, 백업 복원, 관리자 강한 인증, 개인정보·건강정보 운영 승인은 별도 증적이 필요하다.")
+$lines.Add("자동 검증 PASS는 코드 검사 결과다. 실제 EC2·내부 MySQL·S3 접근 제한, SSM, TLS, 관리자 MFA, 백업 복원 및 데이터 복호화는 staging과 운영 증적으로 확인한다.")
 Set-Content -LiteralPath $reportFile -Value ($lines -join [Environment]::NewLine) -Encoding UTF8
 
 Write-Host ""

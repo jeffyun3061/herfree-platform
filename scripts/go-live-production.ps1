@@ -4,7 +4,7 @@ param(
     [string]$Region = "ap-northeast-2",
     [string]$Repo = "jeffyun3061/herfree-platform",
     [string]$ProductionApiUrl = "https://api.herpfree.co.kr",
-    [string]$ProductionFrontendUrl = "https://herpfree.co.kr",
+    [string]$ProductionFrontendUrl = "https://www.herpfree.co.kr",
     [string]$ProductionDeployRoleArn = "arn:aws:iam::439777528445:role/herfree-github-production-deploy",
     [switch]$SkipStagingFix,
     [switch]$SkipProductionAws,

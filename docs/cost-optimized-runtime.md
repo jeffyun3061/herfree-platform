@@ -1,6 +1,6 @@
 # Cost-optimized runtime operations
 
-Last verified: 2026-08-14 (Asia/Seoul)
+Code/runbook updated: 2026-10-11 (Asia/Seoul). Live AWS and billing verification remains required.
 
 ## What runs continuously
 
@@ -16,8 +16,9 @@ Staging EC2 remains stopped except during an intentional test session. The forme
 - Encrypted daily logical backup to private S3; retained for 32 days.
 - Pre-deploy backup before every production deployment; retained for 15 days.
 - Encrypted EBS snapshot every day through DLM; seven snapshots retained.
-- Isolated restore drill every month. The drill container has no network and checks tables plus Flyway history.
-- Health, disk use, and backup age are published to the `Herfree/Operations` CloudWatch namespace every 5 minutes.
+- Monthly GitHub workflow restores on the existing stopped staging EC2, using a new encrypted temporary EBS and internal Docker network. It checks Flyway, tables, plaintext absence, health/MFA secret decryption and encrypted write/read. It deletes its temporary volume, restores the original staging IAM profile and stops staging.
+- DB health, DB disk, completed-backup age, host memory, root disk, public HTTPS, successful-drill age and last-drill health are published to `Herfree/Operations` every 5 minutes. Memory/disk alarms use 80% for 15 minutes; missing metrics breach alarms.
+- Backup metadata is published last as the completed-backup marker and records the matching recovery secret version. The dump never contains the keys themselves.
 - Production deployment is rejected unless a verified migration marker and MySQL data directory exist.
 
 The systemd timers are:
@@ -25,7 +26,6 @@ The systemd timers are:
 ```text
 herfree-db-backup-frequent.timer
 herfree-db-backup-daily.timer
-herfree-db-restore-drill.timer
 herfree-db-monitor.timer
 ```
 
@@ -35,12 +35,17 @@ Useful checks:
 systemctl list-timers --all 'herfree-db-*'
 DEPLOY_ENV=production /opt/herfree/infra/scripts/monitor-local-db.sh
 DEPLOY_ENV=production /opt/herfree/infra/scripts/backup-db.sh manual
-CONFIRM_RESTORE_DRILL=YES DEPLOY_ENV=production /opt/herfree/infra/scripts/restore-local-db-drill.sh
 ```
 
 ## Deployment policy
 
-Production builds its own immutable image from the selected `main` commit, rejects HIGH or CRITICAL Trivy findings, pushes the scanned image, and deploys by digest. Staging is optional and is not a mandatory always-on gate.
+Production builds its own immutable image from the selected `main` commit, rejects HIGH or CRITICAL Trivy findings, pushes the scanned image, and deploys by digest. This MFA/security release requires staging verification before production. Staging need not remain continuously running.
+
+Do not run the old RDS provisioning script for these improvements. The historical production-host restore timer is disabled by `install-local-db-ops.sh`; configure and manually verify `restore-drill.yml` before relying on the monthly schedule. See [implementation and rollout](operations-improvements.md).
+
+RPO target: up to six hours, provided backups succeed. RTO target: four hours, measured from drill orchestration start (including EC2 startup) to restored application verification. A failed/delayed backup can increase data loss. Restore DB smoke does not replace production signup/login/journal/post/admin browser checks.
+
+Keep Basic support, stopped reusable staging/IP, backup and log retention. Use the notification-only USD 50 budget; evaluate EC2 resizing only after 30 days of memory/load data. ECR cleanup requires current + three distinct known-good rollback digests and all staging digests. It defaults to dry run and retains unknown tags/recent pulls. Amplify path-based releases become active only after successful manual verification of the new workflow.
 
 For a staging session:
 

@@ -84,14 +84,16 @@ SPRING_DATASOURCE_HIKARI_CONNECTION_TIMEOUT=10000
 JWT_SECRET=$(json_value "${APP_JSON}" '.jwtSecret')
 ANALYTICS_HASH_SALT=$(json_value "${APP_JSON}" '.analyticsHashSalt')
 HEALTH_DATA_ENCRYPTION_KEY=$(json_value "${APP_JSON}" '.healthDataEncryptionKey')
+ADMIN_MFA_ENCRYPTION_KEY=$(json_value "${APP_JSON}" '.adminMfaEncryptionKey')
+ADMIN_MFA_REQUIRED=true
 JWT_ACCESS_EXPIRATION=${JWT_ACCESS_EXPIRATION}
 JAVA_TOOL_OPTIONS=-XX:MaxRAMPercentage=65.0 -XX:+ExitOnOutOfMemoryError
 
 AWS_REGION=${AWS_REGION}
 CLOUDWATCH_LOG_GROUP=$(json_value "${APP_JSON}" '.cloudWatchLogGroup')
+OPERATIONS_PUBLIC_URL=$(json_value "${APP_JSON}" '.frontendOrigin')
 CORS_ALLOWED_ORIGINS=$(json_value "${APP_JSON}" '.frontendOrigin')
 TRUSTED_PROXY_CIDRS=127.0.0.1/32
-ADMIN_ACCESS_ALLOWED_CIDRS=$(json_value "${APP_JSON}" '.adminAccessAllowedCidrs')
 
 S3_BUCKET=$(json_value "${APP_JSON}" '.s3Bucket')
 S3_REGION=${AWS_REGION}

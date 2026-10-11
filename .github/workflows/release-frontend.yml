@@ -1,0 +1,71 @@
+name: Release changed frontend
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'frontend/**'
+      - 'amplify.yml'
+      - '.github/workflows/release-frontend.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: frontend-${{ github.ref_name }}
+  cancel-in-progress: false
+jobs:
+  release:
+    if: github.ref_name == 'main' || github.ref_name == 'develop'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+    env:
+      AMPLIFY_RELEASE_ROLE_ARN: ${{ secrets.AWS_AMPLIFY_RELEASE_ROLE_ARN }}
+    steps:
+      - name: Check path release configuration
+        id: configuration
+        run: |
+          set -euo pipefail
+          if [[ -z "${AMPLIFY_RELEASE_ROLE_ARN}" ]]; then
+            if [[ "${GITHUB_EVENT_NAME}" == workflow_dispatch ]]; then
+              echo 'Configure AWS_AMPLIFY_RELEASE_ROLE_ARN before validating path-based releases.' >&2
+              exit 1
+            fi
+            echo 'Path-based releases are not configured yet; existing Amplify automatic builds remain active.'
+            echo 'ready=false' >> "${GITHUB_OUTPUT}"
+          else
+            echo 'ready=true' >> "${GITHUB_OUTPUT}"
+          fi
+      - uses: aws-actions/configure-aws-credentials@v4
+        if: steps.configuration.outputs.ready == 'true'
+        with:
+          role-to-assume: ${{ env.AMPLIFY_RELEASE_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - name: Build exact frontend commit with Amplify
+        if: steps.configuration.outputs.ready == 'true'
+        env:
+          APP_ID: ${{ github.ref_name == 'main' && vars.PRODUCTION_AMPLIFY_APP_ID || vars.STAGING_AMPLIFY_APP_ID }}
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          : "${APP_ID:?Amplify app ID required}"
+          # Enable this path only after the manual rollout check. Keep automatic builds until then.
+          auto="$(aws amplify get-branch --app-id "${APP_ID}" --branch-name "${BRANCH}" --query branch.enableAutoBuild --output text)"
+          if [[ "${auto}" == True && "${GITHUB_EVENT_NAME}" == push ]]; then
+            echo 'Existing automatic builds remain active; rollout has not switched to path-based releases yet.'
+            exit 0
+          fi
+          job="$(aws amplify start-job --app-id "${APP_ID}" --branch-name "${BRANCH}" --job-type RELEASE \
+            --commit-id "${GITHUB_SHA}" --query jobSummary.jobId --output text)"
+          for _ in {1..240}; do
+            result="$(aws amplify get-job --app-id "${APP_ID}" --branch-name "${BRANCH}" --job-id "${job}" --output json)"
+            status="$(jq -r '.job.summary.status' <<<"${result}")"
+            if [[ "${status}" == SUCCEED ]]; then
+              jq -e --arg sha "${GITHUB_SHA}" '.job.summary.commitId==$sha' <<<"${result}" >/dev/null
+              exit 0
+            fi
+            case "${status}" in FAILED|CANCELLED) exit 1;; esac
+            sleep 10
+          done
+          aws amplify stop-job --app-id "${APP_ID}" --branch-name "${BRANCH}" --job-id "${job}" >/dev/null
+          exit 1

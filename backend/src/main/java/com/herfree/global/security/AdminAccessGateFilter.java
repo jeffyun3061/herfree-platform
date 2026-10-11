@@ -1,8 +1,10 @@
 package com.herfree.global.security;
 
-import com.herfree.global.config.AdminAccessProperties;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.herfree.domain.auth.mfa.AdminMfaService;
 import com.herfree.global.config.RuntimeProfilePolicy;
-import com.herfree.global.util.ClientIpExtractor;
+import com.herfree.global.exception.ErrorCode;
+import com.herfree.global.response.ErrorResponse;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -10,25 +12,24 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.env.Environment;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-/** Blocks public admin APIs unless the request originated from the configured admin/VPN CIDR. */
-@Component
+/** Runs after JWT authentication; a bearer token alone never supplies the second factor. */
 @RequiredArgsConstructor
 public class AdminAccessGateFilter extends OncePerRequestFilter {
 
     private final Environment environment;
-    private final AdminAccessProperties properties;
-    private final ClientIpExtractor clientIpExtractor;
+    private final AdminMfaService mfa;
+    private final ObjectMapper mapper;
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         return !request.getRequestURI().startsWith("/api/admin/")
                 || "OPTIONS".equalsIgnoreCase(request.getMethod())
-                || !RuntimeProfilePolicy.isPublicEnvironment(environment);
+                || (!RuntimeProfilePolicy.isPublicEnvironment(environment)
+                    && !environment.getProperty("app.admin.mfa.required", Boolean.class, true));
     }
 
     @Override
@@ -37,29 +38,24 @@ public class AdminAccessGateFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain
     ) throws ServletException, IOException {
-        // The frontend production BFF forwards the authenticated access token, but its
-        // server-side request IP is not the end user's IP. Let that request continue to
-        // Spring Security, which still enforces the ADMIN/SUPER_ADMIN role below. Requests
-        // without a bearer token remain subject to the configured admin/VPN CIDR gate.
-        if (hasBearerToken(request)) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
-        String allowedCidrs = properties.accessAllowedCidrs();
-        String clientIp = clientIpExtractor.extract(request);
-        if (!StringUtils.hasText(allowedCidrs)
-                || !clientIpExtractor.matchesAnyCidr(clientIp, allowedCidrs)) {
-            response.sendError(HttpStatus.FORBIDDEN.value(), "Administrator access is restricted");
-            return;
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean staff = auth != null && auth.getAuthorities().stream().anyMatch(a ->
+                java.util.Set.of("ROLE_MODERATOR", "ROLE_ADMIN", "ROLE_SUPER_ADMIN", "ROLE_DOCTOR", "ROLE_CREATOR", "ROLE_DEVELOPER")
+                        .contains(a.getAuthority()));
+        if (staff) {
+            String authorization = request.getHeader("Authorization");
+            String access = authorization != null && authorization.startsWith("Bearer ")
+                    ? authorization.substring(7) : null;
+            if (!(auth.getPrincipal() instanceof Number id)
+                    || !mfa.verified(id.longValue(), access, request.getHeader("X-Herfree-Admin-MFA"))) {
+                response.setStatus(403);
+                response.setContentType("application/json;charset=UTF-8");
+                response.setHeader("Cache-Control", "private, no-store");
+                mapper.writeValue(response.getOutputStream(), ErrorResponse.of(ErrorCode.ADMIN_MFA_REQUIRED));
+                return;
+            }
         }
         filterChain.doFilter(request, response);
     }
 
-    private boolean hasBearerToken(HttpServletRequest request) {
-        String authorization = request.getHeader("Authorization");
-        return StringUtils.hasText(authorization)
-                && authorization.regionMatches(true, 0, "Bearer ", 0, 7)
-                && StringUtils.hasText(authorization.substring(7));
-    }
 }
