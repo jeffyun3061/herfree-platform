@@ -73,7 +73,9 @@ app:
     nickname: ${ADMIN_NICKNAME:HerfreeOps}
     sync-existing: ${ADMIN_BOOTSTRAP_SYNC_EXISTING:false}
   admin:
-    access-allowed-cidrs: ${ADMIN_ACCESS_ALLOWED_CIDRS:}
+    mfa:
+      required: ${ADMIN_MFA_REQUIRED:true}
+      encryption-key: ${ADMIN_MFA_ENCRYPTION_KEY:}
   retention:
     event-days: ${APP_RETENTION_EVENT_DAYS:90}
     reset-token-grace-days: ${APP_RETENTION_RESET_TOKEN_GRACE_DAYS:7}

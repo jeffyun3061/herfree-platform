@@ -31,7 +31,26 @@ public class SecurityConfig {
     private final org.springframework.web.cors.CorsConfigurationSource corsConfigurationSource;
     private final Environment environment;
     private final AdminAuditService adminAuditService;
-    private final AdminAccessGateFilter adminAccessGateFilter;
+    private final com.herfree.domain.auth.mfa.AdminMfaService adminMfaService;
+
+    @Bean
+    public AdminAccessGateFilter adminAccessGateFilter() {
+        return new AdminAccessGateFilter(environment, adminMfaService, objectMapper);
+    }
+
+    @Bean
+    public org.springframework.boot.web.servlet.FilterRegistrationBean<AdminAccessGateFilter> adminGateRegistration(AdminAccessGateFilter filter) {
+        var registration = new org.springframework.boot.web.servlet.FilterRegistrationBean<>(filter);
+        registration.setEnabled(false); // The gate must run only inside the security chain, after JWT.
+        return registration;
+    }
+
+    @Bean
+    public org.springframework.boot.web.servlet.FilterRegistrationBean<AdminAuditFilter> adminAuditRegistration(AdminAuditFilter filter) {
+        var registration = new org.springframework.boot.web.servlet.FilterRegistrationBean<>(filter);
+        registration.setEnabled(false);
+        return registration;
+    }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -131,10 +150,10 @@ public class SecurityConfig {
         });
 
         http
-                .addFilterBefore(adminAccessGateFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(authRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
-                .addFilterAfter(adminAuditFilter, JwtAuthenticationFilter.class);
+                .addFilterAfter(adminAuditFilter, JwtAuthenticationFilter.class)
+                .addFilterAfter(adminAccessGateFilter(), AdminAuditFilter.class);
 
         return http.build();
     }

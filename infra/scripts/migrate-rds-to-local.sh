@@ -18,7 +18,7 @@ APP_DIR="${HERFREE_APP_DIR:-/opt/herfree}"
 CONFIG_DIR="${HERFREE_CONFIG_DIR:-${APP_DIR}/config}"
 if [[ "${DEPLOY_ENV}" == "production" ]]; then
   APP_ENV_FILE="${CONFIG_DIR}/.env.prod"
-  MYSQL_ENV_FILE="${CONFIG_DIR}/.env.mysql.production"
+  MYSQL_ENV_FILE="${CONFIG_DIR}/.env.mysql.prod"
   MYSQL_DATA_DIR="${HERFREE_MYSQL_DATA_DIR:-/var/lib/herfree/mysql-production}"
   READY_MARKER="/var/lib/herfree/.production-db-ready"
 else

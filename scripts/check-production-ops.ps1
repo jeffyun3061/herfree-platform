@@ -6,6 +6,9 @@ param(
     [string]$S3Bucket = "herfree-prod-uploads-439777528445-ap-northeast-2",
     [string]$LogGroup = "/herfree/production/api",
     [string]$ProductionInstanceId = $env:PRODUCTION_INSTANCE_ID,
+    [ValidateSet("local", "rds")]
+    [string]$DbRuntime = "local",
+    [string]$DatabaseVolumeId = $env:DB_VOLUME_ID,
     [string]$ApiHost = "api.herpfree.co.kr",
     [string]$FrontendHost = "herpfree.co.kr",
     [switch]$RequireFrontendDns,
@@ -63,6 +66,7 @@ catch {
     exit 0
 }
 
+if ($DbRuntime -eq "rds") {
 try {
     $rds = (Invoke-AwsJson @("rds", "describe-db-instances", "--db-instance-identifier", $RdsInstanceId)).DBInstances[0]
     Add-Check "RDS available" ($rds.DBInstanceStatus -eq "available") "$($rds.DBInstanceStatus)"
@@ -75,6 +79,26 @@ try {
 }
 catch {
     Add-Check "RDS inventory" $false $_.Exception.Message
+}
+} else {
+    try {
+        if ([string]::IsNullOrWhiteSpace($DatabaseVolumeId) -or [string]::IsNullOrWhiteSpace($ProductionInstanceId)) {
+            throw "provide the verified -DatabaseVolumeId and -ProductionInstanceId for the local MySQL data volume"
+        }
+        $volume = (Invoke-AwsJson @("ec2", "describe-volumes", "--volume-ids", $DatabaseVolumeId)).Volumes[0]
+        $attachments = @($volume.Attachments | Where-Object { $_.InstanceId -eq $ProductionInstanceId })
+        Add-Check "Local MySQL encrypted EBS" ($volume.Encrypted -eq $true -and $attachments.Count -eq 1) "volume=$DatabaseVolumeId encrypted=$($volume.Encrypted) attached to production=$($attachments.Count -eq 1)"
+        $nowUtc = (Get-Date).ToUniversalTime()
+        $metrics = Invoke-AwsJson @("cloudwatch", "get-metric-statistics", "--namespace", "Herfree/Operations",
+            "--metric-name", "LocalDatabaseHealthy", "--dimensions", "Name=Environment,Value=production",
+            "--start-time", $nowUtc.AddMinutes(-15).ToString("o"), "--end-time", $nowUtc.ToString("o"),
+            "--period", "300", "--statistics", "Minimum")
+        $latest = @($metrics.Datapoints | Sort-Object Timestamp -Descending | Select-Object -First 1)
+        $healthy = $latest.Count -eq 1 -and $latest[0].Minimum -eq 1 -and ([datetime]$latest[0].Timestamp).ToUniversalTime() -ge $nowUtc.AddMinutes(-10)
+        Add-Check "Local MySQL recent health metric" $healthy "recent healthy metric required within ten minutes"
+    } catch {
+        Add-Check "Local MySQL inventory/health" $false $_.Exception.Message
+    }
 }
 
 try {
@@ -120,10 +144,10 @@ try {
     Add-Check "CloudWatch alarms exist" ($alarmNames.Count -gt 0) "count=$($alarmNames.Count)"
     Add-Check "Health alarm" (@($alarmNames | Where-Object { $_ -match '(?i)health' }).Count -gt 0) "name contains health"
     Add-Check "5xx/error alarm" (@($alarmNames | Where-Object { $_ -match '(?i)5xx|error|http' }).Count -gt 0) "name contains 5xx/error/http"
-    Add-Check "RDS alarm" (@($alarmNames | Where-Object { $_ -match '(?i)rds|database|db' }).Count -gt 0) "name contains rds/database/db"
+    Add-Check "Database alarm" (@($alarmNames | Where-Object { $_ -match '(?i)rds|database|db' }).Count -gt 0) "name contains database/db"
     Add-Check "Host resource alarm" (@($alarmNames | Where-Object { $_ -match '(?i)cpu|memory|disk|storage' }).Count -gt 0) "name contains cpu/memory/disk/storage"
-    $badStates = @($alarms | Where-Object { $_.StateValue -eq "INSUFFICIENT_DATA" })
-    Add-Check "CloudWatch alarm state" ($badStates.Count -eq 0) "insufficient-data=$($badStates.Count)"
+    $badStates = @($alarms | Where-Object { $_.StateValue -in @("ALARM", "INSUFFICIENT_DATA") })
+    Add-Check "CloudWatch alarm state" ($badStates.Count -eq 0) "alarm/insufficient-data=$($badStates.Count)"
 }
 catch {
     Add-Check "CloudWatch alarms inventory" $false $_.Exception.Message

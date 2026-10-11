@@ -59,6 +59,25 @@ class JwtAuthenticationFilterTest {
     }
 
     @Test
+    void roleChangeAndRestorationDoNotReviveAnOldLogin() throws Exception {
+        JwtTokenProvider provider = new JwtTokenProvider(new JwtProperties(SECRET, 3600L));
+        UserRepository repository = mock(UserRepository.class);
+        var user = com.herfree.domain.user.entity.User.builder().email("admin@example.com").password("encoded")
+                .role(com.herfree.domain.user.entity.UserRole.ADMIN).build();
+        org.springframework.test.util.ReflectionTestUtils.setField(user, "id", 1L);
+        String token = provider.createAccessToken("1", "ADMIN", user.getCredentialVersion());
+        user.changeRole(com.herfree.domain.user.entity.UserRole.MODERATOR);
+        user.changeRole(com.herfree.domain.user.entity.UserRole.ADMIN);
+        org.mockito.BDDMockito.given(repository.findById(1L)).willReturn(java.util.Optional.of(user));
+        var request = new MockHttpServletRequest("GET", "/api/admin/users");
+        request.addHeader("Authorization", "Bearer " + token);
+        var response = new MockHttpServletResponse();
+        new JwtAuthenticationFilter(provider, repository, new ObjectMapper()).doFilter(request, response, new MockFilterChain());
+        assertThat(response.getStatus()).isEqualTo(401);
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
+    }
+
+    @Test
     void accessTokenIssuedBeforePasswordChangeIsRejected() throws Exception {
         JwtTokenProvider provider = new JwtTokenProvider(new JwtProperties(SECRET, 3600L));
         UserRepository userRepository = mock(UserRepository.class);

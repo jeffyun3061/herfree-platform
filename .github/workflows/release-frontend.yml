@@ -1,0 +1,53 @@
+name: Release changed frontend
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'frontend/**'
+      - 'amplify.yml'
+      - '.github/workflows/release-frontend.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: frontend-${{ github.ref_name }}
+  cancel-in-progress: false
+jobs:
+  release:
+    if: github.ref_name == 'main' || github.ref_name == 'develop'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_AMPLIFY_RELEASE_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - name: Build exact frontend commit with Amplify
+        env:
+          APP_ID: ${{ github.ref_name == 'main' && vars.PRODUCTION_AMPLIFY_APP_ID || vars.STAGING_AMPLIFY_APP_ID }}
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          : "${APP_ID:?Amplify app ID required}"
+          # Enable this path only after the manual rollout check. Keep automatic builds until then.
+          auto="$(aws amplify get-branch --app-id "${APP_ID}" --branch-name "${BRANCH}" --query branch.enableAutoBuild --output text)"
+          if [[ "${auto}" == True && "${GITHUB_EVENT_NAME}" == push ]]; then
+            echo 'Existing automatic builds remain active; rollout has not switched to path-based releases yet.'
+            exit 0
+          fi
+          job="$(aws amplify start-job --app-id "${APP_ID}" --branch-name "${BRANCH}" --job-type RELEASE \
+            --commit-id "${GITHUB_SHA}" --query jobSummary.jobId --output text)"
+          for _ in {1..240}; do
+            result="$(aws amplify get-job --app-id "${APP_ID}" --branch-name "${BRANCH}" --job-id "${job}" --output json)"
+            status="$(jq -r '.job.summary.status' <<<"${result}")"
+            if [[ "${status}" == SUCCEED ]]; then
+              jq -e --arg sha "${GITHUB_SHA}" '.job.summary.commitId==$sha' <<<"${result}" >/dev/null
+              exit 0
+            fi
+            case "${status}" in FAILED|CANCELLED) exit 1;; esac
+            sleep 10
+          done
+          aws amplify stop-job --app-id "${APP_ID}" --branch-name "${BRANCH}" --job-id "${job}" >/dev/null
+          exit 1
