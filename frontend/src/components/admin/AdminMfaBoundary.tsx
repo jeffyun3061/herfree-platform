@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { isStaff, canWriteContent } from '@/domain/user/types';
+import { isStaff, canWriteContent, canViewDeveloperTools } from '@/domain/user/types';
 import { request, getErrorMessage } from '@/lib/api/client';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
@@ -12,7 +12,7 @@ type Verified = { expiresIn: number; recoveryCodes: string[] };
 
 export function AdminMfaBoundary({ children }: { children: ReactNode }) {
   const { isReady, isLoggedIn, user } = useAuth();
-  const eligible = isLoggedIn && (isStaff(user?.role) || canWriteContent(user?.role));
+  const eligible = isLoggedIn && (isStaff(user?.role) || canWriteContent(user?.role) || canViewDeveloperTools(user?.role));
   const [status, setStatus] = useState<Status | null>(null);
   const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
   const [codes, setCodes] = useState<string[]>([]);
@@ -30,7 +30,7 @@ export function AdminMfaBoundary({ children }: { children: ReactNode }) {
   useEffect(() => {
     setStatus(null); setEnrollment(null); setCodes([]); setCode(''); setApproval('');
     if (eligible) void refresh();
-  }, [eligible, user?.userId, refresh]);
+  }, [eligible, user?.userId, user?.role, refresh]);
 
   useEffect(() => {
     const requireMfa = () => { setStatus((s) => s ? { ...s, verified: false } : s); setCode(''); };

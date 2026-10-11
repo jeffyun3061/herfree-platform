@@ -57,6 +57,7 @@ if [[ "${public_url}" == https://* && "$(curl --silent --output /dev/null --writ
 fi
 drill_age_days=999
 drill_healthy=0
+drill_known=false
 drill_state="$(mktemp /tmp/herfree-drill-state.XXXXXX)"
 trap 'rm -f "${drill_state}"' EXIT
 if aws s3api get-object --region "${AWS_REGION}" --bucket "${BACKUP_BUCKET}" \
@@ -69,8 +70,29 @@ if aws s3api get-object --region "${AWS_REGION}" --bucket "${BACKUP_BUCKET}" \
 fi
 if aws s3api get-object --region "${AWS_REGION}" --bucket "${BACKUP_BUCKET}" \
     --key "operations/${DEPLOY_ENV}/restore-drill/last-attempt.json" "${drill_state}" >/dev/null 2>&1; then
+  drill_known=true
   [[ "$(jq -r '.success' "${drill_state}" 2>/dev/null || true)" == true ]] && drill_healthy=1
 fi
+# Publish only non-sensitive metadata, atomically, before CloudWatch delivery.
+# The API mounts this directory read-only; the application role gains no AWS permissions.
+snapshot_dir="${APP_DIR}/operations/${DEPLOY_ENV}"
+install -d -m 0755 "${snapshot_dir}"
+snapshot_tmp="$(mktemp "${snapshot_dir}/.status.XXXXXX")"
+trap 'rm -f "${drill_state}" "${snapshot_tmp}"' EXIT
+jq -nc --arg env "${DEPLOY_ENV}" --arg at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+  --argjson mem "${host_memory_percent}" --argjson root "${root_disk_percent}" \
+  --argjson disk "${disk_used_percent}" --argjson db "${database_healthy}" \
+  --argjson https "${public_healthy}" --arg url "${public_url}" \
+  --argjson backup "${backup_age_hours}" --argjson age "${drill_age_days}" \
+  --argjson restore "${drill_healthy}" --argjson known "${drill_known}" '
+  {environment:$env,collectedAt:$at,memoryPercent:$mem,rootDiskPercent:$root,
+   databaseDiskPercent:$disk,databaseHealthy:($db==1),
+   httpsHealthy:(if ($url|startswith("https://")) then ($https==1) else null end),
+   backupAgeHours:(if $backup<999 then $backup else null end),
+   restoreAgeDays:(if $age<999 then $age else null end),
+   restoreHealthy:(if $known then ($restore==1) else null end)}' >"${snapshot_tmp}"
+chmod 0644 "${snapshot_tmp}"
+mv -f "${snapshot_tmp}" "${snapshot_dir}/status.json"
 extra_metrics="$(jq -nc --arg env "${DEPLOY_ENV}" --argjson mem "${host_memory_percent}" \
   --argjson disk "${root_disk_percent}" --argjson https "${public_healthy}" \
   --argjson age "${drill_age_days}" --argjson restore "${drill_healthy}" '

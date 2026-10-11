@@ -40,7 +40,7 @@ public class AdminAccessGateFilter extends OncePerRequestFilter {
     ) throws ServletException, IOException {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         boolean staff = auth != null && auth.getAuthorities().stream().anyMatch(a ->
-                java.util.Set.of("ROLE_MODERATOR", "ROLE_ADMIN", "ROLE_SUPER_ADMIN", "ROLE_DOCTOR", "ROLE_CREATOR")
+                java.util.Set.of("ROLE_MODERATOR", "ROLE_ADMIN", "ROLE_SUPER_ADMIN", "ROLE_DOCTOR", "ROLE_CREATOR", "ROLE_DEVELOPER")
                         .contains(a.getAuthority()));
         if (staff) {
             String authorization = request.getHeader("Authorization");

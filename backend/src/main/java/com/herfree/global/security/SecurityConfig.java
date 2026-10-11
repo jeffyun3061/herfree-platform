@@ -135,6 +135,8 @@ public class SecurityConfig {
                             "/api/journal/insights",
                             "/api/journal/public/home-stats"
                     ).permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/admin/developer/**").hasAnyRole("DEVELOPER", "SUPER_ADMIN")
+                    .requestMatchers("/api/admin/developer/**").denyAll()
                     .requestMatchers(HttpMethod.PATCH, "/api/admin/users/*/role").hasRole("SUPER_ADMIN")
                     .requestMatchers(HttpMethod.PATCH, "/api/admin/users/*/status")
                     .hasAnyRole("ADMIN", "SUPER_ADMIN")

@@ -16,6 +16,44 @@ import org.springframework.data.repository.query.Param;
 
 public interface PostRepository extends JpaRepository<Post, Long> {
 
+    interface WaitingSummary {
+        String getBoardType();
+        long getPending();
+        long getOverdue();
+        Instant getOldest();
+    }
+    interface WaitingTask {
+        Long getId();
+        String getBoardType();
+        Instant getCreatedAt();
+    }
+
+    @Query("""
+            SELECT p.board.boardType AS boardType, COUNT(p) AS pending,
+                   SUM(CASE WHEN p.createdAt < :cutoff THEN 1 ELSE 0 END) AS overdue,
+                   MIN(p.createdAt) AS oldest
+            FROM Post p
+            WHERE p.status = com.herfree.domain.post.entity.PostStatus.ACTIVE
+              AND p.board.boardType IN ('INQUIRY', 'PRIVATE_CONSULT')
+              AND NOT EXISTS (SELECT c.id FROM Comment c WHERE c.post = p
+                  AND c.status = com.herfree.domain.comment.entity.CommentStatus.ACTIVE
+                  AND c.user.id <> p.user.id AND c.user.role IN ('MODERATOR', 'ADMIN', 'SUPER_ADMIN'))
+            GROUP BY p.board.boardType
+            """)
+    List<WaitingSummary> summarizeWaitingReplies(@Param("cutoff") Instant cutoff);
+
+    @Query("""
+            SELECT p.id AS id, p.board.boardType AS boardType, p.createdAt AS createdAt
+            FROM Post p
+            WHERE p.status = com.herfree.domain.post.entity.PostStatus.ACTIVE
+              AND p.board.boardType IN ('INQUIRY', 'PRIVATE_CONSULT')
+              AND NOT EXISTS (SELECT c.id FROM Comment c WHERE c.post = p
+                  AND c.status = com.herfree.domain.comment.entity.CommentStatus.ACTIVE
+                  AND c.user.id <> p.user.id AND c.user.role IN ('MODERATOR', 'ADMIN', 'SUPER_ADMIN'))
+            ORDER BY p.createdAt ASC, p.id ASC
+            """)
+    List<WaitingTask> findWaitingReplies(Pageable pageable);
+
     // 특정 게시판의 활성 게시글을 최신순으로 페이징 조회한다
     // 복합 인덱스 (board_id, status, created_at)를 활용한다
     @EntityGraph(attributePaths = {"board", "user"})

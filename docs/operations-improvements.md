@@ -88,7 +88,7 @@ sudo env DEPLOY_ENV=staging CONFIRM_MFA_IDENTITY_VERIFIED=YES \
 복구 코드 8개는 한 번만 표시되고 DB에는 해시만 남는다. 분실 시 복구 코드로 인증하거나
 같은 본인 확인·승인 절차로 재등록한다. 운영에서는 `DEPLOY_ENV=production`을 사용한다.
 
-MFA가 필요한 역할은 MODERATOR/ADMIN/SUPER_ADMIN/DOCTOR/CREATOR다. 실제 endpoint의
+MFA가 필요한 역할은 MODERATOR/ADMIN/SUPER_ADMIN/DEVELOPER/DOCTOR/CREATOR다. 실제 endpoint의
 기존 권한은 유지한다. 15분 뒤 재인증하며 동일 TOTP/복구 코드 재사용을 막고 5회 실패 시
 15분 잠근다. 로그인 변경·비밀번호 변경·역할 변경·정지·로그아웃은 기존 MFA 증명을
 무효화한다. 미등록자는 등록/인증·복구 경로만 사용하고 관리 API는 차단된다.
@@ -107,7 +107,8 @@ MFA가 필요한 역할은 MODERATOR/ADMIN/SUPER_ADMIN/DOCTOR/CREATOR다. 실제
 4. production 배포 전 `backup-db.sh predeploy`가 완료된 S3 dump/checksum/metadata와
    직전 정상 immutable image를 기록한다. 배포 후 같은 핵심 흐름을 다시 확인한다.
 5. 실패 시 기존 `deploy-release.sh ... rollback` 절차로 직전 정상 이미지를 복구한다.
-   V43은 추가 테이블만 만든다. 이전 서버로 돌아가면 이전 MFA 보호 수준으로 돌아가므로
+   V43은 MFA 테이블, V44는 감사 조회 인덱스, V45는 nullable 서식 본문 열을 추가한다.
+   마이그레이션은 기존 데이터 삭제 없이 적용한다. 이전 서버로 돌아가면 이전 MFA 보호 수준으로 돌아가므로
    관리 기능 노출을 제한하고 수정 배포할 때까지 운영 책임자에게 그 상태를 기록한다.
 
 ## 4. 모니터링과 월간 격리 복원

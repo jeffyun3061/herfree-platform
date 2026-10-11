@@ -57,6 +57,8 @@ function WritePostForm() {
   const [boardId, setBoardId] = useState(0);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [richContent, setRichContent] = useState<string | null>(null);
+  const changeRichContent = (plain: string, document: string) => { setContent(plain); setRichContent(document); };
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [visibility, setVisibility] = useState<PostVisibility>('PUBLIC');
   const [imageUrl, setImageUrl] = useState<string | null>(null);
@@ -145,6 +147,7 @@ function WritePostForm() {
     setBoardId(existingPost.boardId);
     setTitle(existingPost.title);
     setContent(existingPost.content);
+    setRichContent(existingPost.richContent ?? null);
     setIsAnonymous(existingPost.isAnonymous);
     setVisibility(existingPost.visibility);
     setImageUrl(existingPost.imageUrl ?? null);
@@ -154,7 +157,7 @@ function WritePostForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting || isImageUploading) return;
-    const validation = validatePostInput({ title, content });
+    const validation = validatePostInput({ title, content, richContent });
     if (validation) {
       setValidationError(validation);
       return;
@@ -185,7 +188,8 @@ function WritePostForm() {
         try {
           await adminApi.updateAdminPost(editPostId, {
             title: title.trim(),
-            content: content.trim(),
+            content: richContent ? content : content.trim(),
+            richContent,
           });
           router.replace(`/community/posts/${editPostId}`);
         } catch (err) {
@@ -199,6 +203,7 @@ function WritePostForm() {
       const result = await updatePost(editPostId, {
         title,
         content,
+        richContent,
         isAnonymous,
         imageUrl: imageUrl ?? '',
       });
@@ -210,6 +215,7 @@ function WritePostForm() {
       boardId,
       title,
       content,
+      richContent,
       isAnonymous,
       visibility,
       imageUrl: pickPostImageUrlForCreate(imageUrl),
@@ -474,7 +480,7 @@ function WritePostForm() {
               </fieldset>
             )}
             <div className="mt-3">
-              <CommunityContentEditor value={content} onChange={setContent} placeholder={contentPlaceholder} />
+              <CommunityContentEditor value={content} onChange={setContent} richContent={richContent} onRichChange={changeRichContent} placeholder={contentPlaceholder} />
             </div>
             <div className="mt-3">
               <CommunityPhotoAttach
@@ -491,7 +497,7 @@ function WritePostForm() {
 
         {isMaskedWrite && (
           <div className="flex-1 px-5 pt-3.5">
-            <CommunityContentEditor value={content} onChange={setContent} placeholder={contentPlaceholder} />
+            <CommunityContentEditor value={content} onChange={setContent} richContent={richContent} onRichChange={changeRichContent} placeholder={contentPlaceholder} />
           </div>
         )}
 

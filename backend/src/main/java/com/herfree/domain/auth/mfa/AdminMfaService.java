@@ -35,7 +35,7 @@ public class AdminMfaService {
 
     public static boolean canUseAdminApi(UserRole role) {
         return role != null && java.util.Set.of(UserRole.ADMIN, UserRole.SUPER_ADMIN,
-                UserRole.MODERATOR, UserRole.DOCTOR, UserRole.CREATOR).contains(role);
+                UserRole.MODERATOR, UserRole.DOCTOR, UserRole.CREATOR, UserRole.DEVELOPER).contains(role);
     }
 
     private User user(long id, boolean lock) {

@@ -198,4 +198,4 @@ jobs:
           npm run test
           npm run build
           npx playwright install --with-deps chromium
-          npx playwright test --project=chromium --project=mobile-chromium --grep "signup validation|community writing"
+          npx playwright test --project=chromium --project=mobile-chromium --grep "signup validation|community writing|operations dashboards"

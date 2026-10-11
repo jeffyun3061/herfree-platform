@@ -90,6 +90,8 @@ fi
 
 mkdir -p "${STATE_DIR}"
 chmod 700 "${STATE_DIR}"
+install -d -m 0755 "${APP_DIR}/operations/${DEPLOY_ENV}"
+export OPERATIONS_SNAPSHOT_DIR="${APP_DIR}/operations"
 CURRENT_IMAGE_FILE="${STATE_DIR}/${DEPLOY_ENV}.current-image"
 PREVIOUS_IMAGE_FILE="${STATE_DIR}/${DEPLOY_ENV}.previous-image"
 REJECTED_IMAGE_FILE="${STATE_DIR}/${DEPLOY_ENV}.rejected-image"

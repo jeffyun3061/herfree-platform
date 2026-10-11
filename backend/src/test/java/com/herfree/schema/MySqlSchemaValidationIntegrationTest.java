@@ -38,9 +38,21 @@ class MySqlSchemaValidationIntegrationTest {
 
     @Autowired
     private DataSource dataSource;
+    @Autowired private com.herfree.domain.operations.DeveloperOperationsService operations;
+    @Autowired private com.herfree.domain.post.repository.PostRepository posts;
 
     @Test
     void flywaySchemaMatchesHibernateMappings() {
         assertThat(dataSource).isNotNull();
+        var diagnostic = operations.overview();
+        assertThat(diagnostic.database().state()).isEqualTo("UP");
+        assertThat(diagnostic.database().version()).startsWith("8.4.10");
+        assertThat(diagnostic.database().migrationVersion()).isEqualTo("45");
+        assertThat(diagnostic.database().migrationsSuccessful()).isTrue();
+        assertThat(diagnostic.database().tables()).extracting(com.herfree.domain.operations.DeveloperOperationsService.TableSize::name)
+                .contains("users", "posts", "admin_mfa_factors");
+        // Execute the production MySQL queue queries as well as the H2 behavior fixtures.
+        assertThat(posts.summarizeWaitingReplies(java.time.Instant.now())).isNotNull();
+        assertThat(posts.findWaitingReplies(org.springframework.data.domain.PageRequest.of(0, 5))).isNotNull();
     }
 }
