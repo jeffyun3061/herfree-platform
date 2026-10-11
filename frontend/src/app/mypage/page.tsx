@@ -14,7 +14,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { LoggedOutMyPagePromptCard } from '@/components/mypage/LoggedOutMyPagePrompt';
-import { isAdmin, isStaff } from '@/domain/user/types';
+import { isAdmin, isStaff, canViewDeveloperTools } from '@/domain/user/types';
 import { formatMemberDays } from '@/domain/common/format';
 import { PUBLIC_IMAGES } from '@/domain/assets/static';
 import { getErrorMessage } from '@/lib/api/client';
@@ -242,6 +242,7 @@ export default function MyPage() {
           <HealthStatisticsConsentCard />
         </div>
 
+        {canViewDeveloperTools(user?.role) && <div className="hf-page-mx mt-4"><p className="mb-2 px-0.5 text-[11px] font-semibold text-[#9A9F94]">개발</p><div className="mypage-menu-card"><MenuRow icon="🔧" label="개발자 진단" sub="서버·DB·요청 로그" href="/admin?tab=developer" /></div></div>}
         {isStaff(user?.role) && (
           <div className="hf-page-mx mt-4">
             <p className="mb-2 px-0.5 text-[11px] font-semibold text-[#9A9F94]">운영</p>

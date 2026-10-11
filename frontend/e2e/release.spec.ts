@@ -17,6 +17,10 @@ const stagingApiURL = process.env.STAGING_API_URL?.trim().replace(/\/$/, '');
 const origin = new URL(baseURL).origin;
 const mutationEnabled = mutationEnvironmentEnabled(baseURL);
 const expectedBackendEnvironment = expectedMutationBackendEnvironment(baseURL);
+const expectedReadOnlyBackendEnvironment = new Set([
+  'https://www.herpfree.co.kr',
+  'https://herpfree.co.kr',
+]).has(origin) ? 'prod' : expectedBackendEnvironment;
 const basicAuthUsername = process.env.E2E_HTTP_USERNAME?.trim();
 const basicAuthPassword = process.env.E2E_HTTP_PASSWORD?.trim();
 const httpCredentials = basicAuthUsername && basicAuthPassword
@@ -196,10 +200,14 @@ test.describe('release smoke', () => {
     expect(health.headers()['x-request-id']).toBeTruthy();
     const healthData = await data<{ status: string; environment: string }>(health);
     expect(healthData.status).toBe('UP');
-    expect(healthData.environment).toBe(expectedBackendEnvironment);
+    expect(healthData.environment).toBe(expectedReadOnlyBackendEnvironment);
     const homeStats = await request.get('/api/journal/public/home-stats');
     const homeStatsData = await data<Record<string, unknown>>(homeStats);
-    expect(homeStatsData).toEqual({});
+    expect(Object.keys(homeStatsData).sort()).toEqual(['activeMemberCount', 'postsToday']);
+    for (const counter of Object.values(homeStatsData)) {
+      expect(Number.isSafeInteger(counter)).toBe(true);
+      expect(counter).toBeGreaterThanOrEqual(0);
+    }
     expect(homeStats.headers()['cache-control']).toContain('no-store');
     await data(await request.get('/api/boards'));
     await data(await request.get('/api/posts?page=0&size=5'));
