@@ -216,17 +216,35 @@ body {
     line-height: 1.78;
   }
 
-  .hf-readable-content--community {
+  .hf-community-body {
     color: #2c342e;
-    font-size: 13.5px;
-    line-height: 1.78;
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 1.9;
+    letter-spacing: normal;
+    text-align: left;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    word-break: keep-all;
+    tab-size: 4;
   }
 
-  .hf-readable-content--community > p + p {
-    margin-top: 0.9rem;
+  .hf-community-editor {
+    display: block;
+    width: 100%;
+    min-height: 200px;
+    margin: 0;
+    border: 0;
+    padding: 0;
+    resize: none;
+    overflow: hidden;
+    background: transparent;
+    outline: none;
   }
 
   @media (min-width: 1024px) {
+    .hf-community-body { font-size: 17px; }
     .hf-screen-header-block,
     .hf-screen-header,
     .hf-page-top {

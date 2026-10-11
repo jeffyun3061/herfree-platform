@@ -30,6 +30,7 @@ import { isStaff } from '@/domain/user/types';
 import { getErrorMessage } from '@/lib/api/client';
 import * as adminApi from '@/lib/api/admin';
 import { CommunityWriteGuidelines } from '@/components/community/CommunityWriteGuidelines';
+import { CommunityContentEditor } from '@/components/community/CommunityContentEditor';
 import type { PostVisibility } from '@/domain/post/types';
 
 const TITLE_UI_MAX = 30;
@@ -312,7 +313,7 @@ function WritePostForm() {
   const boardPickerDisabled = isEditMode || lockedPrivateBoard;
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#F3EDE3] pb-10 hf-subpage-top">
+    <div className="mx-auto flex min-h-screen w-full max-w-app flex-col bg-[#F3EDE3] pb-10 hf-subpage-top">
       <header className="flex items-center justify-between border-b border-[#E4D8C7] bg-[#F3EDE3]/95 px-[18px] pb-3.5 pt-0.5">
         <Link
           href={backHref}
@@ -472,17 +473,9 @@ function WritePostForm() {
                 <p className="mt-3 break-keep border-t border-[#EEE5D7] pt-2.5 text-[11px] leading-[1.7] text-[#7A8178]">건강정보·실명·연락처처럼 민감한 내용은 공개 게시판 대신 개인일지에 기록해 주세요.</p>
               </fieldset>
             )}
-            <label htmlFor="content" className="sr-only">
-              본문
-            </label>
-            <textarea
-              id="content"
-              required
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder={contentPlaceholder}
-              className="mt-3 min-h-[200px] w-full resize-y rounded-[14px] border border-[#E2D5C2] bg-[#FFFCF7] p-[15px] text-[13.5px] leading-[1.7] text-[#1E2621] shadow-[0_10px_24px_-24px_rgba(7,37,31,.45)] placeholder:text-[#B4B2A6] outline-none focus:border-[#0B3B36]/35"
-            />
+            <div className="mt-3">
+              <CommunityContentEditor value={content} onChange={setContent} placeholder={contentPlaceholder} />
+            </div>
             <div className="mt-3">
               <CommunityPhotoAttach
                 imageUrl={imageUrl}
@@ -498,17 +491,7 @@ function WritePostForm() {
 
         {isMaskedWrite && (
           <div className="flex-1 px-5 pt-3.5">
-            <label htmlFor="content" className="sr-only">
-              본문
-            </label>
-            <textarea
-              id="content"
-              required
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder={contentPlaceholder}
-              className="min-h-[200px] w-full resize-y rounded-[14px] border border-[#E2D5C2] bg-[#FFFCF7] p-[15px] text-[13.5px] leading-[1.7] text-[#1E2621] shadow-[0_10px_24px_-24px_rgba(7,37,31,.45)] placeholder:text-[#B4B2A6] outline-none focus:border-[#0B3B36]/35"
-            />
+            <CommunityContentEditor value={content} onChange={setContent} placeholder={contentPlaceholder} />
           </div>
         )}
 

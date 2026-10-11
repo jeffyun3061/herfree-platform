@@ -86,6 +86,14 @@ jobs:
         run: |
           chmod +x ./gradlew
           ./gradlew test --no-daemon
+          python3 - <<'PY'
+          import pathlib, xml.etree.ElementTree as ET
+          report = pathlib.Path('build/test-results/test/TEST-com.herfree.schema.MySqlSchemaValidationIntegrationTest.xml')
+          suite = ET.parse(report).getroot()
+          assert int(suite.get('tests', '0')) == 1, 'MySQL schema validation did not run'
+          assert all(int(suite.get(key, '0')) == 0 for key in ['failures', 'errors', 'skipped']), 'Real MySQL schema validation must pass without skipping'
+          print('MySQL 8.4.10 Flyway/ORM integration: 1 passed, 0 skipped')
+          PY
         env:
           JWT_SECRET: ci-test-jwt-secret-minimum-32-characters-long
       - name: Backend build
@@ -190,4 +198,4 @@ jobs:
           npm run test
           npm run build
           npx playwright install --with-deps chromium
-          npx playwright test --project=chromium --grep "signup validation"
+          npx playwright test --project=chromium --project=mobile-chromium --grep "signup validation|community writing"

@@ -6,7 +6,7 @@ import { useBoards } from '@/hooks/useBoards';
 import { usePostDetail, usePostMutation } from '@/hooks/usePosts';
 import { useAuth } from '@/hooks/useAuth';
 import { TopBar } from '@/components/layout/TopBar';
-import { Textarea } from '@/components/ui/Textarea';
+import { CommunityContentEditor } from '@/components/community/CommunityContentEditor';
 import { Button } from '@/components/ui/Button';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { findBoardByType } from '@/domain/board/types';
@@ -147,7 +147,7 @@ export function PrivateBoardWriteForm({ boardType }: PrivateBoardWriteFormProps)
         showBack
         backHref={meta.path}
       />
-      <form onSubmit={(e) => void handleSubmit(e)} className="space-y-6 px-4 py-5 lg:px-4">
+      <form onSubmit={(e) => void handleSubmit(e)} className="space-y-6 px-5 py-5">
         <p className="rounded-xl border border-wrtn-border bg-white px-4 py-3 text-sm leading-relaxed text-muted">
           {meta.description}
         </p>
@@ -169,11 +169,10 @@ export function PrivateBoardWriteForm({ boardType }: PrivateBoardWriteFormProps)
           </p>
         </div>
 
-        <Textarea
+        <CommunityContentEditor
           label="내용"
-          required
           value={content}
-          onChange={(e) => setContent(e.target.value)}
+          onChange={setContent}
           placeholder={contentPlaceholder}
         />
 
