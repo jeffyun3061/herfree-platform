@@ -2,6 +2,8 @@
 /** @type {import('next').NextConfig} */
 // 브라우저는 same-origin /api 사용. rewrite 대상만 서버 env로 지정 (Vercel 배포 시 필수).
 const nextConfig = {
+  // Keep Next's standard HTML-only crawlers and include Kakao link previews.
+  htmlLimitedBots: /[\w-]+-Google|Google-[\w-]+|Chrome-Lighthouse|Slurp|DuckDuckBot|baiduspider|yandex|sogou|bitlybot|tumblr|vkShare|quora link preview|redditbot|ia_archiver|Bingbot|BingPreview|applebot|facebookexternalhit|facebookcatalog|Twitterbot|LinkedInBot|Slackbot|Discordbot|WhatsApp|SkypeUriPreview|Yeti|googleweblight|kakaotalk|kakao-scrap/i,
   // 개발 서버와 배포 전 검증 빌드가 동시에 실행돼도 산출물이 충돌하지 않게 한다.
   distDir: process.env.NEXT_DIST_DIR || '.next',
   async headers() {

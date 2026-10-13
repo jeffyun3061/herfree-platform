@@ -55,6 +55,8 @@ jobs:
           grep -q 'HEALTH_DATA_REKEY_ON_STARTUP' infra/scripts/validate-release-env.sh
           grep -q 'ADMIN_ACCESS_ALLOWED_CIDRS' infra/scripts/validate-release-env.sh
           grep -q 'AdminAccessGateFilter' backend/src/main/java/com/herfree/global/security/SecurityConfig.java
+      - name: Verify immutable staging promotion
+        run: python3 -m unittest discover -s infra/scripts/tests -p 'test_staging_promotion.py'
 
   secret-scan:
     runs-on: ubuntu-latest
@@ -93,6 +95,14 @@ jobs:
           ./gradlew build -x test --no-daemon
         env:
           JWT_SECRET: ci-test-jwt-secret-minimum-32-characters-long
+      - name: Require real MySQL migration validation
+        run: |
+          python3 - <<'PY'
+          import xml.etree.ElementTree as ET
+          report = ET.parse('backend/build/test-results/test/TEST-com.herfree.schema.MySqlSchemaValidationIntegrationTest.xml').getroot()
+          assert int(report.attrib['tests']) > 0, 'MySQL schema test did not run'
+          assert all(int(report.attrib.get(key, '0')) == 0 for key in ['skipped', 'failures', 'errors']), 'MySQL schema test must pass without skipping'
+          PY
       - name: Security hygiene check
         shell: bash
         run: |
@@ -122,6 +132,7 @@ jobs:
           NEXT_PUBLIC_OAUTH_KAKAO_CLIENT_ID: ci-kakao-client-id
           NEXT_PUBLIC_OAUTH_GOOGLE_CLIENT_ID: ci-google-client-id.apps.googleusercontent.com
           NEXT_PUBLIC_OAUTH_NAVER_CLIENT_ID: ci-naver-client-id
+          API_REWRITE_TARGET: http://127.0.0.1:3199
         run: |
           # Keep the explicit audit gates below authoritative; do not let npm's
           # implicit audit call make CI depend on a transient registry response.
@@ -188,4 +199,7 @@ jobs:
           npm run test
           npm run build
           npx playwright install --with-deps chromium
-          npx playwright test --project=chromium --grep "signup validation"
+          node e2e/support/preview-backend.mjs &
+          preview_pid=$!
+          trap 'kill "$preview_pid"' EXIT
+          npx playwright test e2e/signup-validation.spec.ts e2e/anonymous-concerns.spec.ts e2e/post-share-metadata.spec.ts --project=chromium --project=mobile-chromium

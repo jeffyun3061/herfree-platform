@@ -24,6 +24,20 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     // 게시글 상세 조회 — 삭제/숨김 상태 게시글은 404로 처리하기 위해 status도 함께 조회한다
     Optional<Post> findByIdAndStatus(Long id, PostStatus status);
 
+    @Query("""
+            SELECT p FROM Post p WHERE p.board.boardType = 'ANONYMOUS_QUESTION'
+            AND p.status = 'ACTIVE' AND p.visibility = 'PUBLIC'
+            AND (:answered IS NULL OR
+              (:answered = true AND EXISTS (SELECT c.id FROM Comment c WHERE c.post = p
+                AND c.status = 'ACTIVE' AND c.user.id <> p.user.id AND c.user.status = 'ACTIVE'
+                AND c.user.role IN ('MODERATOR','ADMIN','SUPER_ADMIN'))) OR
+              (:answered = false AND NOT EXISTS (SELECT c.id FROM Comment c WHERE c.post = p
+                AND c.status = 'ACTIVE' AND c.user.id <> p.user.id AND c.user.status = 'ACTIVE'
+                AND c.user.role IN ('MODERATOR','ADMIN','SUPER_ADMIN'))))
+            ORDER BY p.createdAt ASC, p.id ASC
+            """)
+    Page<Post> findAnonymousConcerns(@Param("answered") Boolean answered, Pageable pageable);
+
     // 카운터는 엔티티 값을 읽고 다시 저장하지 않고 DB에서 바로 증가시켜 동시 요청 손실을 막는다.
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("""

@@ -3,6 +3,7 @@ import { isOffCommunityPrivateBoardType } from '@/domain/board/privateBoard';
 
 export type BoardType =
   | 'NOTICE'
+  | 'ANONYMOUS_QUESTION'
   | 'PHOBIA'
   | 'SYMPTOM'
   | 'EXPERIENCE'

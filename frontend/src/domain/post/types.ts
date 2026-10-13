@@ -46,6 +46,7 @@ export type PostCreateInput = {
   isAnonymous: boolean;
   visibility?: PostVisibility;
   imageUrl?: string | null;
+  publicDisclosureAccepted?: boolean;
 };
 
 export type PostUpdateInput = {

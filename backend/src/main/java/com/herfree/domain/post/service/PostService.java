@@ -38,6 +38,9 @@ import com.herfree.global.util.AuthorIpMaskPolicy;
 import com.herfree.global.util.BoardWritePolicy;
 import com.herfree.global.util.ClientIpExtractor;
 import com.herfree.global.util.PrivateBoardPolicy;
+import com.herfree.global.util.AnonymousConcernPolicy;
+import com.herfree.global.exception.BusinessException;
+import com.herfree.global.exception.ErrorCode;
 import com.herfree.global.util.StaffRolePolicy;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -87,11 +90,16 @@ public class PostService {
 
         BoardWritePolicy.assertCommunityWritable(board, user.getRole());
 
+        boolean concern = AnonymousConcernPolicy.isConcernBoard(board.getBoardType());
+        if (concern && (!request.publicDisclosureAccepted() || request.visibility() == PostVisibility.MEMBERS_ONLY)) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
+        }
+
         postImageStorageService.assertImageUrlAllowed(userId, request.imageUrl());
 
         PostVisibility visibility = PrivateBoardPolicy.isAdminMaskedBoard(board.getBoardType())
                 ? PostVisibility.MEMBERS_ONLY
-                : request.visibility();
+                : concern ? PostVisibility.PUBLIC : request.visibility();
 
         String authorIpMasked = AuthorIpMaskPolicy.mask(clientIpExtractor.extract(httpRequest));
 
@@ -101,8 +109,8 @@ public class PostService {
                 .title(request.title())
                 .content(request.content())
                 .visibility(visibility)
-                .isAnonymous(request.isAnonymous())
-                .authorIpMasked(authorIpMasked)
+                .isAnonymous(concern || request.isAnonymous())
+                .authorIpMasked(concern ? null : authorIpMasked)
                 .build();
 
         postRepository.save(post);
@@ -128,10 +136,9 @@ public class PostService {
         UserRole viewerRole = resolveViewerRole(userId);
         PostListPeriod listPeriod = PostListPeriod.from(period);
         Page<Post> posts = fetchActivePosts(boardId, normalizedKeyword, userId, viewerRole, pageable, listPeriod);
-        boolean trackStaffReplies = boardId != null
-                && boardRepository.findById(boardId)
-                        .map(board -> PrivateBoardPolicy.isAdminMaskedBoard(board.getBoardType()))
-                        .orElse(false);
+        boolean trackStaffReplies = posts.getContent().stream().anyMatch(post ->
+                PrivateBoardPolicy.isAdminMaskedBoard(post.getBoard().getBoardType())
+                || AnonymousConcernPolicy.isConcernBoard(post.getBoard().getBoardType()));
         Map<Long, Boolean> staffRepliedMap = trackStaffReplies
                 ? resolveStaffRepliedMap(posts.getContent())
                 : Map.of();
@@ -166,7 +173,9 @@ public class PostService {
             PostListPeriod period
     ) {
         // 비회원 통합·게시판 검색 차단 — 커뮤니티 목록 잠금과 동일 정책
-        if (userId == null && StringUtils.hasText(keyword)) {
+        boolean publicConcernSearch = boardId != null && boardRepository.findById(boardId)
+                .map(board -> AnonymousConcernPolicy.isConcernBoard(board.getBoardType())).orElse(false);
+        if (userId == null && StringUtils.hasText(keyword) && !publicConcernSearch) {
             return Page.empty(pageable);
         }
 
@@ -276,7 +285,8 @@ public class PostService {
 
         BoardWritePolicy.assertCommunityWritable(post.getBoard());
 
-        post.update(request.title(), request.content(), request.isAnonymous());
+        post.update(request.title(), request.content(),
+                AnonymousConcernPolicy.isConcernBoard(post.getBoard().getBoardType()) || request.isAnonymous());
         postImageStorageService.assertImageUrlAllowed(userId, request.imageUrl());
         updatePostImage(post, request.imageUrl());
 
@@ -371,7 +381,8 @@ public class PostService {
     }
 
     private boolean resolveStaffReplied(Post post) {
-        if (!PrivateBoardPolicy.isAdminMaskedBoard(post.getBoard().getBoardType())) {
+        if (!PrivateBoardPolicy.isAdminMaskedBoard(post.getBoard().getBoardType())
+                && !AnonymousConcernPolicy.isConcernBoard(post.getBoard().getBoardType())) {
             return false;
         }
         return commentRepository.existsStaffReplyOnPost(post.getId(), CommentStatus.ACTIVE);

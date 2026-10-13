@@ -24,6 +24,10 @@ export function isQuestionBoardType(boardType: string): boolean {
   return boardType === 'QUESTION';
 }
 
+export function isAnonymousConcernBoard(boardType: string | undefined): boolean {
+  return boardType === 'ANONYMOUS_QUESTION';
+}
+
 /** 푸터·전용 글쓰기 경로 — 운영 문의·상담문의 (커뮤니티 탭에는 비공개 게시판 미노출) */
 export function isOffCommunityPrivateBoardType(boardType: string): boolean {
   return isInquiryBoardType(boardType) || isSecretConsultBoardType(boardType);
@@ -51,6 +55,7 @@ export const COMMUNITY_ALL_TAB_LABEL = '전체';
 
 export const COMMUNITY_TAB_BOARD_TYPES = [
   { boardType: 'NOTICE', label: '공지' },
+  { boardType: 'ANONYMOUS_QUESTION', label: '익명 고민·질문' },
   { boardType: 'FREE', label: '자유게시판' },
   { boardType: 'EXPERIENCE', label: '정보공유' },
   { boardType: 'RELATIONSHIP', label: '연애고지' },

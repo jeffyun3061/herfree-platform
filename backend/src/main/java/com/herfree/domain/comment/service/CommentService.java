@@ -20,6 +20,7 @@ import com.herfree.domain.user.repository.UserRepository;
 import com.herfree.global.util.PostVisibilityPolicy;
 import com.herfree.global.util.PrivateBoardPolicy;
 import com.herfree.global.util.StaffRolePolicy;
+import com.herfree.global.util.AnonymousConcernPolicy;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -75,7 +76,7 @@ public class CommentService {
                 .user(user)
                 .parent(parent)
                 .content(request.content().trim())
-                .isAnonymous(request.isAnonymous())
+                .isAnonymous(AnonymousConcernPolicy.isConcernBoard(post.getBoard().getBoardType()) || request.isAnonymous())
                 .build();
 
         commentRepository.save(comment);

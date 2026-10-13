@@ -55,6 +55,9 @@ export function CommentItem({
               <span className="text-[12px] font-semibold text-[#2C342E]">
                 {displayAuthorNickname(comment.authorNickname)}
               </span>
+              {comment.operatorReply && (
+                <span className="rounded-full bg-[#E1F5EE] px-2 py-0.5 text-[10px] font-bold text-[#0B3B36]">운영자 답변</span>
+              )}
               <span className="text-[12px] text-[#B4B2A6]">
                 {formatRelativeTime(comment.createdAt)}
               </span>

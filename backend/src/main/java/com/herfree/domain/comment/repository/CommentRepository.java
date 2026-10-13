@@ -65,6 +65,8 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
             WHERE c.post.id IN :postIds
             AND c.status = :status
             AND u.role IN ('MODERATOR', 'ADMIN', 'SUPER_ADMIN')
+            AND (c.post.board.boardType <> 'ANONYMOUS_QUESTION'
+                OR (c.user.id <> c.post.user.id AND u.status = 'ACTIVE'))
             """)
     java.util.Set<Long> findPostIdsWithStaffReplies(
             @Param("postIds") java.util.Collection<Long> postIds,
@@ -76,6 +78,8 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
             WHERE c.post.id = :postId
             AND c.status = :status
             AND u.role IN ('MODERATOR', 'ADMIN', 'SUPER_ADMIN')
+            AND (c.post.board.boardType <> 'ANONYMOUS_QUESTION'
+                OR (c.user.id <> c.post.user.id AND u.status = 'ACTIVE'))
             """)
     boolean existsStaffReplyOnPost(@Param("postId") Long postId, @Param("status") CommentStatus status);
 }

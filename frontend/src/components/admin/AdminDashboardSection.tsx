@@ -5,6 +5,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { useApiQuery } from '@/hooks/useApiQuery';
 import { fetchAdminStatsOverview } from '@/lib/api/admin';
+import { AdminConcernsSection } from '@/components/admin/AdminConcernsSection';
 
 const EVENT_LABELS: Record<string, string> = {
   page_view: '페이지 조회',
@@ -48,6 +49,7 @@ export function AdminDashboardSection() {
   return (
     <section className="grid gap-4">
       <div className="space-y-4">
+        <AdminConcernsSection compact />
         <section className="rounded-[22px] bg-[#082B25] p-4 text-white shadow-[0_18px_38px_-26px_rgba(6,26,22,.55)]">
           <div className="flex items-start justify-between gap-3">
             <div>

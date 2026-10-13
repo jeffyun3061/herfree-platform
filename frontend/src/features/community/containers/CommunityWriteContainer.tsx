@@ -19,6 +19,7 @@ import { getWritableBoards, isStaffOnlyBoardType } from '@/domain/board/types';
 import {
   getPrivateBoardMetaByType,
   isMaskedBoardType,
+  isAnonymousConcernBoard,
   isOffCommunityPrivateBoardType,
   isSecretStoryBoardType,
   resolvePrivateBoardWritePath,
@@ -58,6 +59,7 @@ function WritePostForm() {
   const [content, setContent] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [visibility, setVisibility] = useState<PostVisibility>('PUBLIC');
+  const [publicDisclosureAccepted, setPublicDisclosureAccepted] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [isImageUploading, setIsImageUploading] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -167,6 +169,11 @@ function WritePostForm() {
       return;
     }
     const selected = boards.find((board) => board.id === boardId);
+    const concern = isAnonymousConcernBoard(selected?.boardType);
+    if (concern && !isEditMode && !publicDisclosureAccepted) {
+      setValidationError('본문이 공개되는 것을 확인해 주세요.');
+      return;
+    }
     if (selected && isStaffOnlyBoardType(selected.boardType)) {
       setValidationError('이 게시판에는 운영 관리 화면에서만 글을 등록할 수 있습니다.');
       return;
@@ -198,7 +205,7 @@ function WritePostForm() {
       const result = await updatePost(editPostId, {
         title,
         content,
-        isAnonymous,
+        isAnonymous: concern || isAnonymous,
         imageUrl: imageUrl ?? '',
       });
       if (result) router.replace(`/community/posts/${result.id}`);
@@ -209,8 +216,9 @@ function WritePostForm() {
       boardId,
       title,
       content,
-      isAnonymous,
-      visibility,
+      isAnonymous: concern || isAnonymous,
+      visibility: concern ? 'PUBLIC' : visibility,
+      publicDisclosureAccepted: concern && publicDisclosureAccepted,
       imageUrl: pickPostImageUrlForCreate(imageUrl),
     });
     if (result) {
@@ -255,6 +263,7 @@ function WritePostForm() {
   }
 
   const selectedBoard = writableBoards.find((b) => b.id === boardId);
+  const isConcernWrite = isAnonymousConcernBoard(selectedBoard?.boardType);
   const isSymptomBoard = selectedBoard?.boardType === 'SYMPTOM';
   const privateMeta = selectedBoard ? getPrivateBoardMetaByType(selectedBoard.boardType) : null;
   const isSecretStoryWrite = selectedBoard != null && isSecretStoryBoardType(selectedBoard.boardType);
@@ -442,7 +451,7 @@ function WritePostForm() {
         {!isMaskedWrite && (
           <div className="flex-1 px-5 pt-3.5">
             {!isEditMode && <CommunityWriteGuidelines />}
-            {!isEditMode && (
+            {!isEditMode && !isConcernWrite && (
               <fieldset className="mt-3 rounded-[14px] border border-[#ECE5D8] bg-white p-3">
                 <legend className="px-1 text-[12px] font-semibold text-[#5C645A]">공개 범위</legend>
                 <div className="mt-1.5 grid grid-cols-2 gap-3">
@@ -471,6 +480,13 @@ function WritePostForm() {
                 </div>
                 <p className="mt-3 break-keep border-t border-[#EEE5D7] pt-2.5 text-[11px] leading-[1.7] text-[#7A8178]">건강정보·실명·연락처처럼 민감한 내용은 공개 게시판 대신 개인일지에 기록해 주세요.</p>
               </fieldset>
+            )}
+            {isConcernWrite && (
+              <div className="mt-3 rounded-[14px] bg-[#EDF4F0] p-4 text-[12px] leading-[1.7] text-[#263B32]">
+                <p className="font-bold">닉네임은 항상 비공개예요</p>
+                <p>본문과 댓글은 비회원도 읽으며 검색·링크 공유 미리보기에 표시될 수 있어요. 본문·사진에 실명이나 연락처를 넣지 마세요.</p>
+                {!isEditMode && <label className="mt-3 flex items-start gap-2"><input type="checkbox" checked={publicDisclosureAccepted} onChange={(event) => setPublicDisclosureAccepted(event.target.checked)} className="mt-1 accent-[#0B3B36]" /><span>본문이 공개되는 것을 확인했습니다.</span></label>}
+              </div>
             )}
             <label htmlFor="content" className="sr-only">
               본문
@@ -513,7 +529,8 @@ function WritePostForm() {
         )}
 
         <div className="mt-auto flex items-center gap-2.5 px-5 pt-3">
-          {!isMaskedWrite && (
+          {isConcernWrite && <p className="text-[12px] font-semibold text-[#0B3B36]">닉네임 비공개로 작성됩니다.</p>}
+          {!isMaskedWrite && !isConcernWrite && (
             <label className="flex cursor-pointer items-center gap-1.5 text-[12px] text-[#6E766F]">
               <input
                 type="checkbox"

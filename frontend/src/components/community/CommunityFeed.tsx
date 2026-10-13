@@ -20,7 +20,7 @@ import { Button } from '@/components/ui/Button';
 import { AdminPublishFab, AdminPublishLink } from '@/components/admin/AdminPublishLink';
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { getWritableBoards, isStaffOnlyBoardType } from '@/domain/board/types';
-import { getCommunityBoards, isSecretStoryBoardType } from '@/domain/board/privateBoard';
+import { getCommunityBoards, isSecretStoryBoardType, isAnonymousConcernBoard } from '@/domain/board/privateBoard';
 import { SecretStoryBoardBanner } from '@/components/community/SecretStoryBoardBanner';
 import { validatePostSearchKeyword } from '@/domain/post/search';
 import { isStaff } from '@/domain/user/types';
@@ -120,9 +120,13 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
   const { boards, isLoading: boardsLoading, error: boardsError } = useBoards();
   const [selectedBoardId, setSelectedBoardId] = useState<number | null>(initialBoardId);
   const [keyword, setKeyword] = useState('');
+  const [concernSearch, setConcernSearch] = useState('');
+  const [concernSearchError, setConcernSearchError] = useState<string | null>(null);
   const [sort, setSort] = useState<PostSortOption>('latest');
   const [period, setPeriod] = useState<PostListPeriod>('week');
   const [pageSize, setPageSize] = useState<CommunityPageSize>(20);
+  const isPublicConcernFeed = isAnonymousConcernBoard(boards.find((board) => board.id === selectedBoardId)?.boardType);
+  const canReadFeed = isLoggedIn || isPublicConcernFeed;
 
   const { postPage, page, setPage, isLoading, error } = usePostList(
     selectedBoardId,
@@ -130,7 +134,7 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
     keyword,
     postSortToQuery(sort),
     postListPeriodQuery(sort, period),
-    { enabled: isReady && isLoggedIn },
+    { enabled: isReady && canReadFeed },
   );
   const communityBoards = useMemo(() => getCommunityBoards(boards), [boards]);
 
@@ -220,8 +224,8 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
       : '/community/write';
 
 
-  const isLoadingAll = isLoggedIn && (boardsLoading || isLoading);
-  const listError = isLoggedIn ? (boardsError ?? error) : null;
+  const isLoadingAll = canReadFeed && (boardsLoading || isLoading);
+  const listError = canReadFeed ? (boardsError ?? error) : null;
 
   return (
     <div className="community-screen mx-auto max-w-app hf-scroll-pad-nav lg:max-w-none">
@@ -233,7 +237,7 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
         tone="community"
       />
 
-      {isLoggedIn && !boardsLoading && communityBoards.length > 0 && (
+      {!boardsLoading && communityBoards.length > 0 && (
         <div className="hf-page-x min-w-0 pt-4 pb-1">
           <BoardTabBar
             boards={communityBoards}
@@ -244,10 +248,12 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
         </div>
       )}
 
-      {!isReady || !isLoggedIn ? (
+      {!isReady || !canReadFeed ? (
         <CommunityLockedPreview />
       ) : (
         <div className="hf-page-x">
+          {isPublicConcernFeed && <div className="mt-4 rounded-[16px] bg-[#EDF4F0] p-4 text-[12px] leading-[1.7] text-[#263B32]"><h2 className="text-[15px] font-bold">익명 고민·질문</h2><p className="mt-1">닉네임을 숨기고 고민과 경험을 나누세요. 글과 댓글은 비회원도 읽을 수 있고 운영팀도 함께 답변해요.</p><Link href={isLoggedIn ? `/community/write?boardId=${selectedBoardId}` : `/login?from=${encodeURIComponent(`/community/write?boardId=${selectedBoardId}`)}`} className="mt-3 inline-block font-bold text-[#0B3B36] underline">고민 남기기</Link></div>}
+          {isPublicConcernFeed && <form className="mt-3" onSubmit={event => {event.preventDefault();const q=concernSearch.trim();const hint=q ? validatePostSearchKeyword(q) : null;setConcernSearchError(hint);if(!hint) router.push(`/community/${selectedBoardId}${q ? `?q=${encodeURIComponent(q)}` : ''}`);}}><div className="flex gap-2"><input type="search" aria-label="고민·질문 검색" value={concernSearch} onChange={event => setConcernSearch(event.target.value)} placeholder="비슷한 고민·질문을 찾아보세요" maxLength={100} className="min-w-0 flex-1 rounded-xl border border-border bg-white px-3 py-2.5 text-sm" /><Button type="submit" size="sm">검색</Button></div>{concernSearchError && <p className="mt-2 text-xs text-red-600" role="alert">{concernSearchError}</p>}</form>}
           {isSecretStoryBoard && <SecretStoryBoardBanner className="mt-4" />}
 
           {!isLoadingAll && !listError && (

@@ -16,13 +16,15 @@ import { AdminVideosSection } from '@/components/admin/AdminVideosSection';
 import { AdminProductsSection } from '@/components/admin/AdminProductsSection';
 import { AdminJournalStatsSection } from '@/components/admin/AdminJournalStatsSection';
 import { AdminUsersSection } from '@/components/admin/AdminUsersSection';
+import { AdminConcernsSection } from '@/components/admin/AdminConcernsSection';
 import { FEATURE_PRODUCTS_ENABLED } from '@/domain/featureFlags';
 import { isAdmin, isStaff, isSuperAdmin, canWriteContent, USER_ROLE_LABELS, type UserRole } from '@/domain/user/types';
 
-type AdminTab = 'dashboard' | 'reports' | 'moderation' | 'users' | 'notices' | 'contents' | 'videos' | 'products' | 'journal';
+type AdminTab = 'dashboard' | 'concerns' | 'reports' | 'moderation' | 'users' | 'notices' | 'contents' | 'videos' | 'products' | 'journal';
 
 const ALL_TABS: { id: AdminTab; label: string; minRole: 'moderator' | 'admin' | 'super' }[] = [
   { id: 'dashboard', label: '대시보드', minRole: 'admin' },
+  { id: 'concerns', label: '고민·질문 답변', minRole: 'admin' },
   { id: 'reports', label: '신고', minRole: 'moderator' },
   { id: 'moderation', label: '숨김 관리', minRole: 'moderator' },
   { id: 'journal', label: '일지 통계', minRole: 'admin' },
@@ -35,6 +37,7 @@ const ALL_TABS: { id: AdminTab; label: string; minRole: 'moderator' | 'admin' | 
 
 const TAB_HELP_TEXT: Record<AdminTab, string> = {
   dashboard: '오늘 확인할 지표',
+  concerns: '익명 고민 답변 관리',
   reports: '신고 접수 확인',
   moderation: '숨김 콘텐츠 복구',
   users: '회원 상태 관리',
@@ -219,6 +222,7 @@ function AdminPageContent() {
 
         <section className="mt-4">
           {tab === 'dashboard' && <AdminDashboardSection />}
+          {tab === 'concerns' && <AdminConcernsSection />}
           {tab === 'reports' && <AdminReportsSection />}
           {tab === 'moderation' && <AdminModerationSection />}
           {tab === 'journal' && <AdminJournalStatsSection />}
