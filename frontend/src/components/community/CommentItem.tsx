@@ -62,7 +62,7 @@ export function CommentItem({
                 {formatRelativeTime(comment.createdAt)}
               </span>
             </div>
-            <p className="mt-[3px] whitespace-pre-wrap break-words text-[12.5px] leading-[1.6] text-[#5C645A]">
+            <p className="mt-[3px] whitespace-pre-wrap break-words text-[14.5px] leading-[1.7] text-[#3E4A42]">
               {comment.content}
             </p>
           </div>

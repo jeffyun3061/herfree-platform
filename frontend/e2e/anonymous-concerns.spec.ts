@@ -7,6 +7,7 @@ const paged=(content:unknown[])=>({content,totalElements:content.length,totalPag
 
 async function fixtures(page:Page,role?:'USER'|'ADMIN') {
   let submitted:Record<string,unknown>|null=null;
+  let currentDetail={...detail};
   await page.addInitScript(()=>{
     Object.defineProperty(navigator,'share',{configurable:true,value:undefined});
     Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async(text:string)=>{(window as unknown as {sharedText:string}).sharedText=text;}}});
@@ -17,9 +18,13 @@ async function fixtures(page:Page,role?:'USER'|'ADMIN') {
     let data:unknown={};
     if(path==='/api/users/me')data={id:1,nickname:'실제 닉네임',email:'fixture@example.invalid',role,status:'ACTIVE'};
     else if(path==='/api/boards')data=boards;
-    else if(path==='/api/posts'&&route.request().method()==='POST'){submitted=route.request().postDataJSON();data={...detail,isMyPost:true};}
+    else if(path==='/api/posts'&&route.request().method()==='POST'){
+      submitted=route.request().postDataJSON();
+      currentDetail={...detail,title:String(submitted?.title),content:String(submitted?.content),isMyPost:true};
+      data=currentDetail;
+    }
     else if(path==='/api/posts')data=paged([post]);
-    else if(path==='/api/posts/11')data=detail;
+    else if(path==='/api/posts/11')data=currentDetail;
     else if(path==='/api/posts/11/comments')data=paged([{id:1,postId:11,authorNickname:'익명',content:'저도 비슷한 고민을 했어요.',isAnonymous:true,isMyComment:false,parentId:null,operatorReply:false,createdAt:detail.createdAt},{id:2,postId:11,authorNickname:'운영팀',content:'함께 경험을 나눠 주세요.',isAnonymous:true,isMyComment:false,parentId:null,operatorReply:true,createdAt:detail.createdAt}]);
     else if(path==='/api/admin/concerns')data=paged([post]);
     else if(path==='/api/admin/stats/overview')data={topEvents7d:[],pendingReports:0,journalRecords7d:0};
@@ -43,6 +48,43 @@ test('anonymous concerns are readable without login and show genuine operator ba
   await expect(page.getByText('댓글을 남기려면 로그인이 필요합니다.')).toBeVisible();
   await page.getByRole('button',{name:'게시글 공유'}).click();
   await expect.poll(()=>page.evaluate(()=>(window as unknown as {sharedText:string}).sharedText)).toContain('같은 고민을 나눠요\n혼자 고민했던 이야기를 나눕니다. 경험을 듣고 싶어요.');
+});
+
+test('writing preview keeps exact line breaks and wrapping on the published post',async({page})=>{
+  await fixtures(page,'USER');
+  await page.goto('/community/write?boardId=23');
+  const content='긴 고민을 아이폰에서 읽을 때도 입력한 줄과 문단이 그대로 보이길 바랍니다. '.repeat(3)+'\n\n\n마지막 문단도 그대로 보여야 합니다.';
+  await page.locator('#title').fill('모바일 글 보기');
+  await page.locator('#content').fill(content);
+  const metrics=async(selector:string)=>page.locator(selector).evaluate(element=>{
+    const style=getComputedStyle(element);
+    return {width:element.clientWidth,fontFamily:style.fontFamily,fontSize:style.fontSize,lineHeight:style.lineHeight,letterSpacing:style.letterSpacing};
+  });
+  const editorMetrics=await metrics('#content');
+  expect(editorMetrics.fontSize).toBe('16px');
+  await page.getByRole('button',{name:'미리보기'}).click();
+  const preview=page.locator('[data-testid="community-post-preview"] .hf-readable-content--community');
+  await expect(preview).toHaveText(content);
+  expect(await metrics('[data-testid="community-post-preview"] .hf-readable-content--community')).toEqual(editorMetrics);
+  await page.getByLabel('본문이 공개되는 것을 확인했습니다.').check();
+  await page.locator('button[type=submit]').last().click();
+  await expect(page).toHaveURL(/\/community\/posts\/11$/);
+  const published=page.locator('.hf-readable-content--community');
+  await expect(published).toHaveText(content);
+  expect(await metrics('.hf-readable-content--community')).toEqual(editorMetrics);
+  await expect(page.getByRole('button',{name:'게시글 공유'})).toBeVisible();
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
+});
+
+test('narrow phones can read the thread without horizontal scrolling',async({page})=>{
+  await fixtures(page);
+  await page.setViewportSize({width:320,height:568});
+  await page.goto('/community/23');
+  await expect(page.getByRole('link',{name:'같은 고민을 나눠요'})).toBeVisible();
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
+  await page.getByRole('link',{name:'같은 고민을 나눠요'}).click();
+  await expect(page.getByRole('button',{name:'게시글 공유'})).toBeVisible();
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
 });
 
 test('concern writing acknowledges public content and forces hidden nicknames',async({page})=>{

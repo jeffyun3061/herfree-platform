@@ -13,6 +13,14 @@ type ReadableContentProps = {
  * to create unpredictable vertical gaps or overflow.
  */
 export function ReadableContent({ text, variant = 'article', className }: ReadableContentProps) {
+  if (variant === 'community') {
+    return (
+      <div className={cn('hf-readable-content', 'hf-readable-content--community', className)}>
+        {text.replace(/\r\n?/g, '\n')}
+      </div>
+    );
+  }
+
   const normalized = text.replace(/\r\n?/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
   const paragraphs = normalized ? normalized.split(/\n{2,}/) : [];
 

@@ -223,7 +223,7 @@ export default function PostDetailContainer() {
           <button
             type="button"
             onClick={() => void handleCopyLink()}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-[#65706B] shadow-[0_10px_22px_-18px_rgba(7,37,31,.45)]"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-[#65706B] shadow-[0_10px_22px_-18px_rgba(7,37,31,.45)]"
             aria-label="게시글 공유"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>

@@ -31,6 +31,7 @@ import { isStaff } from '@/domain/user/types';
 import { getErrorMessage } from '@/lib/api/client';
 import * as adminApi from '@/lib/api/admin';
 import { CommunityWriteGuidelines } from '@/components/community/CommunityWriteGuidelines';
+import { ReadableContent } from '@/components/content/ReadableContent';
 import type { PostVisibility } from '@/domain/post/types';
 
 const TITLE_UI_MAX = 30;
@@ -57,6 +58,7 @@ function WritePostForm() {
   const [boardId, setBoardId] = useState(0);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [showContentPreview, setShowContentPreview] = useState(false);
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [visibility, setVisibility] = useState<PostVisibility>('PUBLIC');
   const [publicDisclosureAccepted, setPublicDisclosureAccepted] = useState(false);
@@ -337,7 +339,7 @@ function WritePostForm() {
           type="submit"
           form="community-write-form"
           disabled={isSubmitting || isAdminSubmitting || isImageUploading || boardId <= 0}
-          className="shrink-0 text-[13.5px] font-bold text-[#0B3B36] disabled:opacity-40"
+          className="min-h-11 shrink-0 text-[13.5px] font-bold text-[#0B3B36] disabled:opacity-40"
         >
           {submitLabel}
         </button>
@@ -488,17 +490,35 @@ function WritePostForm() {
                 {!isEditMode && <label className="mt-3 flex items-start gap-2"><input type="checkbox" checked={publicDisclosureAccepted} onChange={(event) => setPublicDisclosureAccepted(event.target.checked)} className="mt-1 accent-[#0B3B36]" /><span>본문이 공개되는 것을 확인했습니다.</span></label>}
               </div>
             )}
-            <label htmlFor="content" className="sr-only">
-              본문
-            </label>
-            <textarea
-              id="content"
-              required
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder={contentPlaceholder}
-              className="mt-3 min-h-[200px] w-full resize-y rounded-[14px] border border-[#E2D5C2] bg-[#FFFCF7] p-[15px] text-[13.5px] leading-[1.7] text-[#1E2621] shadow-[0_10px_24px_-24px_rgba(7,37,31,.45)] placeholder:text-[#B4B2A6] outline-none focus:border-[#0B3B36]/35"
-            />
+            <div className="mt-4 flex items-center justify-between gap-3">
+              <label htmlFor="content" className="text-[13px] font-bold text-[#36453B]">본문</label>
+              <button
+                type="button"
+                aria-pressed={showContentPreview}
+                onClick={() => setShowContentPreview((value) => !value)}
+                className="min-h-11 rounded-lg px-3 text-[13px] font-bold text-[#0B3B36] underline underline-offset-4"
+              >
+                {showContentPreview ? '계속 쓰기' : '미리보기'}
+              </button>
+            </div>
+            {showContentPreview ? (
+              <div data-testid="community-post-preview" className="min-h-[240px] w-full border-b border-[#D9CDB8] py-3">
+                {content ? (
+                  <ReadableContent text={content} variant="community" />
+                ) : (
+                  <p className="hf-community-writing-content text-[#7C8279]">본문을 입력하면 게시될 모습이 여기에 보여요.</p>
+                )}
+              </div>
+            ) : (
+              <textarea
+                id="content"
+                required
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                placeholder={contentPlaceholder}
+                className="hf-community-writing-content min-h-[240px] w-full resize-y border-x-0 border-t-0 border-b border-[#D9CDB8] bg-transparent px-0 py-3 placeholder:text-[#8A9089] outline-none focus:border-[#0B3B36]"
+              />
+            )}
             <div className="mt-3">
               <CommunityPhotoAttach
                 imageUrl={imageUrl}
@@ -523,7 +543,7 @@ function WritePostForm() {
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder={contentPlaceholder}
-              className="min-h-[200px] w-full resize-y rounded-[14px] border border-[#E2D5C2] bg-[#FFFCF7] p-[15px] text-[13.5px] leading-[1.7] text-[#1E2621] shadow-[0_10px_24px_-24px_rgba(7,37,31,.45)] placeholder:text-[#B4B2A6] outline-none focus:border-[#0B3B36]/35"
+              className="min-h-[200px] w-full resize-y rounded-[14px] border border-[#E2D5C2] bg-[#FFFCF7] p-[15px] text-[16px] leading-[1.7] text-[#1E2621] shadow-[0_10px_24px_-24px_rgba(7,37,31,.45)] placeholder:text-[#B4B2A6] outline-none focus:border-[#0B3B36]/35"
             />
           </div>
         )}
