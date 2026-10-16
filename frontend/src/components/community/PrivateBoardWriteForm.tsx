@@ -6,7 +6,7 @@ import { useBoards } from '@/hooks/useBoards';
 import { usePostDetail, usePostMutation } from '@/hooks/usePosts';
 import { useAuth } from '@/hooks/useAuth';
 import { TopBar } from '@/components/layout/TopBar';
-import { CommunityContentEditor } from '@/components/community/CommunityContentEditor';
+import { Textarea } from '@/components/ui/Textarea';
 import { Button } from '@/components/ui/Button';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { findBoardByType } from '@/domain/board/types';
@@ -41,7 +41,6 @@ export function PrivateBoardWriteForm({ boardType }: PrivateBoardWriteFormProps)
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [richContent, setRichContent] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [initialized, setInitialized] = useState(false);
 
@@ -59,7 +58,6 @@ export function PrivateBoardWriteForm({ boardType }: PrivateBoardWriteFormProps)
     }
     setTitle(existingPost.title);
     setContent(existingPost.content);
-    setRichContent(existingPost.richContent ?? null);
     setInitialized(true);
   }, [isEditMode, existingPost, board?.id, initialized, meta.path, router]);
 
@@ -71,7 +69,7 @@ export function PrivateBoardWriteForm({ boardType }: PrivateBoardWriteFormProps)
       return;
     }
 
-    const validation = validatePostInput({ title, content, richContent });
+    const validation = validatePostInput({ title, content });
     if (validation) {
       setValidationError(validation);
       return;
@@ -86,7 +84,6 @@ export function PrivateBoardWriteForm({ boardType }: PrivateBoardWriteFormProps)
       const result = await updatePost(editPostId, {
         title,
         content,
-        richContent,
         isAnonymous: false,
         imageUrl: '',
       });
@@ -98,7 +95,6 @@ export function PrivateBoardWriteForm({ boardType }: PrivateBoardWriteFormProps)
       boardId: board.id,
       title,
       content,
-      richContent,
       isAnonymous: false,
       imageUrl: null,
     });
@@ -151,7 +147,7 @@ export function PrivateBoardWriteForm({ boardType }: PrivateBoardWriteFormProps)
         showBack
         backHref={meta.path}
       />
-      <form onSubmit={(e) => void handleSubmit(e)} className="space-y-6 px-5 py-5">
+      <form onSubmit={(e) => void handleSubmit(e)} className="space-y-6 px-4 py-5 lg:px-4">
         <p className="rounded-xl border border-wrtn-border bg-white px-4 py-3 text-sm leading-relaxed text-muted">
           {meta.description}
         </p>
@@ -173,12 +169,11 @@ export function PrivateBoardWriteForm({ boardType }: PrivateBoardWriteFormProps)
           </p>
         </div>
 
-        <CommunityContentEditor
+        <Textarea
           label="내용"
+          required
           value={content}
-          onChange={setContent}
-          richContent={richContent}
-          onRichChange={(plain, document) => { setContent(plain); setRichContent(document); }}
+          onChange={(e) => setContent(e.target.value)}
           placeholder={contentPlaceholder}
         />
 

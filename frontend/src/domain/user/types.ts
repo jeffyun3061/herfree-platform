@@ -5,7 +5,6 @@ export type UserRole =
   | 'DOCTOR'
   | 'MODERATOR'
   | 'ADMIN'
-  | 'DEVELOPER'
   | 'SUPER_ADMIN';
 
 // GET /api/users/me 응답
@@ -42,7 +41,6 @@ export const USER_ROLE_LABELS: Record<UserRole, string> = {
   DOCTOR: '전문가',
   MODERATOR: '모더레이터',
   ADMIN: '관리자',
-  DEVELOPER: '개발자',
   SUPER_ADMIN: '최고 관리자',
 };
 
@@ -76,8 +74,4 @@ export function canWriteContent(role: UserRole | undefined | null): boolean {
   );
 }
 
-export function canViewDeveloperTools(role: UserRole | undefined | null): boolean {
-  return role === 'DEVELOPER' || role === 'SUPER_ADMIN';
-}
-
-export const ASSIGNABLE_ROLES: UserRole[] = ['USER', 'MODERATOR', 'ADMIN', 'DEVELOPER'];
+export const ASSIGNABLE_ROLES: UserRole[] = ['USER', 'MODERATOR', 'ADMIN'];
