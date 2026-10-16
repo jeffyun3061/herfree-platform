@@ -52,7 +52,7 @@ function chunkTabs(items: TabItem[], size: number): TabItem[][] {
 
 function tabButtonClass(active: boolean) {
   return cn(
-    'min-w-0 truncate rounded-full border-[0.5px] px-2 py-2 text-center text-[11.5px] font-medium leading-tight sm:text-[12px]',
+    'min-h-11 min-w-0 whitespace-normal break-keep rounded-full border-[0.5px] px-2 py-2 text-center text-[11.5px] font-medium leading-tight sm:text-[12px]',
     active
       ? 'border-[#0B3B36] bg-[#0B3B36] text-white'
       : 'border-[#ECE5D8] bg-white text-[#5C645A]',

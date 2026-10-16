@@ -18,7 +18,7 @@ public record AdminCommunityPostResponse(
                 post.getTitle(),
                 post.getBoard().getName(),
                 post.getStatus(),
-                authorNickname,
+                com.herfree.global.util.AnonymousConcernPolicy.isConcernBoard(post.getBoard().getBoardType()) ? "익명" : authorNickname,
                 post.getCreatedAt()
         );
     }

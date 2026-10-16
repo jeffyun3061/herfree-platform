@@ -4,6 +4,7 @@ import com.herfree.domain.post.entity.Post;
 import com.herfree.domain.user.entity.UserRole;
 import com.herfree.global.util.AnonymousNicknamePolicy;
 import com.herfree.global.util.PrivateBoardPolicy;
+import com.herfree.global.util.AnonymousConcernPolicy;
 import java.time.Instant;
 
 // 게시글 목록 응답 DTO — 목록에서는 content를 제외해 페이로드 크기를 줄인다
@@ -52,10 +53,12 @@ public record PostResponse(
 
         String displayNickname = mask
                 ? "비공개"
-                : AnonymousNicknamePolicy.displayNickname(post.isAnonymous(), isMyPost, authorNickname);
+                : AnonymousNicknamePolicy.displayNickname(post.isAnonymous()
+                        || AnonymousConcernPolicy.isConcernBoard(post.getBoard().getBoardType()), isMyPost, authorNickname);
         String title = mask ? PrivateBoardPolicy.MASKED_TITLE : post.getTitle();
         String preview = mask ? "" : toPreview(post.getContent());
-        String authorIpMasked = mask ? null : post.getAuthorIpMasked();
+        String authorIpMasked = mask || AnonymousConcernPolicy.isConcernBoard(post.getBoard().getBoardType())
+                ? null : post.getAuthorIpMasked();
 
         return new PostResponse(
                 post.getId(),

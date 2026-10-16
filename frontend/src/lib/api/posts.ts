@@ -68,6 +68,7 @@ export function createPost(input: PostCreateInput): Promise<PostDetail> {
     title: input.title,
     content: input.content,
     isAnonymous: input.isAnonymous,
+    ...(input.publicDisclosureAccepted ? { publicDisclosureAccepted: true } : {}),
     ...(input.visibility ? { visibility: input.visibility } : {}),
     ...(imageUrl ? { imageUrl } : {}),
   };

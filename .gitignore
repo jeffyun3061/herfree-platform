@@ -3,6 +3,7 @@ backend/build/
 backend/.gradle/
 backend/out/
 *.class
+__pycache__/
 
 # Node / Next.js
 frontend/node_modules/

@@ -10,6 +10,7 @@ import type { Post } from '@/domain/post/types';
 import { formatRelativeTime } from '@/domain/common/format';
 import { PUBLIC_IMAGES } from '@/domain/assets/static';
 import { useJournalPublicHomeStats } from '@/hooks/useJournal';
+import { isAnonymousConcernBoard } from '@/domain/board/privateBoard';
 
 const MEMBER_AVATARS = [
   { emoji: '🌙', bg: '#2E5A4E' },
@@ -18,32 +19,7 @@ const MEMBER_AVATARS = [
   { emoji: '🍃', bg: '#2C5247' },
 ] as const;
 
-const FALLBACK_PREVIEW_POSTS = [
-  {
-    emoji: '🌙',
-    name: '프리한하루',
-    time: '2시간 전',
-    text: '오늘 처음 90일 채웠어요, 다들 응원 감사해요 ㅎㅎ',
-    warm: '12',
-    replies: '4',
-  },
-  {
-    emoji: '🌿',
-    name: '조용한밤',
-    time: '4시간 전',
-    text: '스트레스 받으면 컨디션에 진짜 영향 있더라고요',
-    warm: '8',
-    replies: '2',
-  },
-  {
-    emoji: '✨',
-    name: '별빛아래',
-    time: '6시간 전',
-    text: '영양제 먹는 타이밍 다들 어떻게 하세요?',
-    warm: '5',
-    replies: '7',
-  },
-] as const;
+
 
 function getPostPreview(post: Post): string {
   const preview = post.contentPreview?.trim();
@@ -151,6 +127,10 @@ function GuestJournalTryCard() {
 }
 
 type PreviewPost = {
+  id: number;
+  href: string;
+  concern: boolean;
+  answered: boolean;
   emoji: string;
   name: string;
   time: string;
@@ -162,6 +142,10 @@ type PreviewPost = {
 function mapPostToPreview(post: Post, index: number): PreviewPost {
   const fallbackEmoji = MEMBER_AVATARS[index % MEMBER_AVATARS.length]?.emoji ?? '🌿';
   return {
+    id: post.id,
+    href: isAnonymousConcernBoard(post.boardType) ? `/community/posts/${post.id}` : `/login?from=${encodeURIComponent(`/community/posts/${post.id}`)}`,
+    concern: isAnonymousConcernBoard(post.boardType),
+    answered: post.staffReplied,
     emoji: fallbackEmoji,
     name: post.authorNickname || 'herfree',
     time: formatRelativeTime(post.createdAt),
@@ -181,7 +165,7 @@ function GuestCommunityPreview({
   const previewPosts: PreviewPost[] =
     posts.length > 0
       ? posts.slice(0, 3).map(mapPostToPreview)
-      : [...FALLBACK_PREVIEW_POSTS];
+      : [];
 
   return (
     <section className="px-5 pt-6">
@@ -205,7 +189,7 @@ function GuestCommunityPreview({
               <LoadingSpinner label="이야기를 불러오는 중..." />
             </div>
           ) : (
-            previewPosts.map((post) => <PreviewPostCard key={`${post.name}-${post.time}`} post={post} />)
+            previewPosts.length > 0 ? previewPosts.map((post) => <PreviewPostCard key={post.id} post={post} />) : <p className="text-center text-sm text-muted">아직 등록된 이야기가 없습니다.</p>
           )}
         </div>
 
@@ -228,6 +212,7 @@ function GuestCommunityPreview({
 
 function PreviewPostCard({ post }: { post: PreviewPost }) {
   return (
+    <Link href={post.href} className="block">
     <article className="rounded-[16px] bg-white px-4 py-[15px] shadow-[0_1px_2px_rgba(20,30,25,.04),0_12px_28px_-24px_rgba(20,30,25,.3)]">
       <div className="mb-2.5 flex items-center gap-[9px]">
         <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#EDF2EC] text-[14px]">
@@ -236,6 +221,7 @@ function PreviewPostCard({ post }: { post: PreviewPost }) {
         <span className="truncate text-[13px] font-semibold text-[#2C342E]">{post.name}</span>
         <span className="ml-auto shrink-0 text-[12px] hf-text-muted">{post.time}</span>
       </div>
+      {post.concern && <p className="mb-2 text-[11px] font-bold text-[#0B3B36]">익명 고민·질문 · {post.answered ? '운영자 답변 완료' : '답변 대기'}</p>}
       <p className="text-[13.5px] leading-[1.6] tracking-[-0.01em] text-[#2C342E]">{post.text}</p>
       <div className="mt-[11px] flex items-center gap-3.5 text-[12px] text-[#A6ABA0]">
         <span className="inline-flex items-center gap-1">
@@ -248,6 +234,7 @@ function PreviewPostCard({ post }: { post: PreviewPost }) {
         </span>
       </div>
     </article>
+    </Link>
   );
 }
 

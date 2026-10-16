@@ -294,17 +294,18 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
       - id: ecr
         uses: aws-actions/amazon-ecr-login@v2
-      - id: image
-        name: Build immutable production candidate
+      - id: release
+        name: Resolve the exact staging-tested production image
         env:
           ECR_REGISTRY: ${{ steps.ecr.outputs.registry }}
         run: |
           set -euo pipefail
-          tag="production-${GITHUB_SHA}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          image="${ECR_REGISTRY}/${ECR_REPOSITORY}:${tag}"
-          docker build --file infra/docker/Dockerfile.backend --tag "${image}" .
-          echo "uri=${image}" >> "${GITHUB_OUTPUT}"
-          echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
+          release="$(python3 infra/scripts/resolve-staging-release.py \
+            --sha "${GITHUB_SHA}" --repository "${ECR_REPOSITORY}" \
+            --registry "${ECR_REGISTRY}" --region "${AWS_REGION}")"
+          echo "commit_sha=$(jq -er '.commit' <<<"${release}")" >> "${GITHUB_OUTPUT}"
+          echo "image_digest=$(jq -er '.digest' <<<"${release}")" >> "${GITHUB_OUTPUT}"
+          echo "uri=$(jq -er '.image' <<<"${release}")" >> "${GITHUB_OUTPUT}"
       - name: Reject high and critical image vulnerabilities
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         env:
@@ -312,28 +313,11 @@ jobs:
           TRIVY_JAVA_DB_REPOSITORY: ghcr.io/aquasecurity/trivy-java-db:1
         with:
           version: v0.72.0
-          image-ref: ${{ steps.image.outputs.uri }}
+          image-ref: ${{ steps.release.outputs.uri }}
           format: table
           exit-code: '1'
           ignore-unfixed: true
           severity: HIGH,CRITICAL
-      - name: Push scanned image
-        run: docker push "${{ steps.image.outputs.uri }}"
-      - id: release
-        name: Resolve immutable image digest
-        env:
-          IMAGE_TAG: ${{ steps.image.outputs.tag }}
-        run: |
-          set -euo pipefail
-          digest="$(aws ecr describe-images \
-            --repository-name "${ECR_REPOSITORY}" \
-            --image-ids imageTag="${IMAGE_TAG}" \
-            --query 'imageDetails[0].imageDigest' \
-            --output text)"
-          [[ "${digest}" =~ ^sha256:[0-9a-f]{64}$ ]]
-          echo "commit_sha=${GITHUB_SHA}" >> "${GITHUB_OUTPUT}"
-          echo "image_digest=${digest}" >> "${GITHUB_OUTPUT}"
-
   deploy-production:
     if: inputs.target == 'production'
     needs: build-production

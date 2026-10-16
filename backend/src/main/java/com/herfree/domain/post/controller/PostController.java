@@ -7,6 +7,8 @@ import com.herfree.domain.post.dto.response.PostDetailResponse;
 import com.herfree.domain.post.dto.response.PostImageUploadResponse;
 import com.herfree.domain.post.dto.response.PostImageUploadUrlResponse;
 import com.herfree.domain.post.dto.response.PostResponse;
+import com.herfree.domain.post.dto.response.PostSharePreviewResponse;
+import com.herfree.domain.post.service.PostSharePreviewService;
 import com.herfree.domain.post.dto.response.PostBookmarkStatusResponse;
 import com.herfree.domain.post.service.PostBookmarkService;
 import com.herfree.domain.post.service.PostImageServingService;
@@ -47,6 +49,7 @@ import org.springframework.util.StringUtils;
 public class PostController {
 
     private final PostService postService;
+    private final PostSharePreviewService postSharePreviewService;
     private final PostBookmarkService postBookmarkService;
     private final PostImageStorageService postImageStorageService;
     private final PostImageServingService postImageServingService;
@@ -155,6 +158,12 @@ public class PostController {
             @AuthenticationPrincipal Long userId
     ) {
         return ResponseEntity.ok(ApiResponse.success(postService.getPost(postId, userId)));
+    }
+
+    @GetMapping("/{postId}/share-preview")
+    public ResponseEntity<ApiResponse<PostSharePreviewResponse>> getSharePreview(@PathVariable Long postId) {
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(ApiResponse.success(postSharePreviewService.getPreview(postId)));
     }
 
     @PatchMapping("/{postId}")

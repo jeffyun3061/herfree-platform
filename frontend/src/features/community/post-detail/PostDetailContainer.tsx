@@ -19,11 +19,13 @@ import {
   getCommunityBoardTabLabel,
   getMaskedBoardBackHref,
   isMaskedBoardType,
+  isAnonymousConcernBoard,
 } from '@/domain/board/privateBoard';
 import { validateCommentInput } from '@/domain/comment/types';
 import { isAdmin, isStaff } from '@/domain/user/types';
 import { getErrorMessage } from '@/lib/api/client';
 import { navigateBack } from '@/lib/navigateBack';
+import { communityPostUrl, shareCommunityPost } from '@/domain/post/share';
 import { CommentComposer } from '@/features/community/post-detail/CommentComposer';
 import { CommentThread } from '@/features/community/post-detail/CommentThread';
 import { PostDetailView } from '@/features/community/post-detail/PostDetailView';
@@ -44,7 +46,7 @@ export default function PostDetailContainer() {
   const pathname = usePathname();
   const postId = Number(params.postId);
   const { isLoggedIn, isReady, user } = useAuth();
-  const { boards } = useBoards();
+  const { boards, isLoading: boardsLoading } = useBoards();
   const { post, isLoading, error, refetch: refetchPost } = usePostDetail(postId);
   const postBoard = boards.find((board) => board.id === post?.boardId);
   const bookmarkEnabled =
@@ -111,7 +113,7 @@ export default function PostDetailContainer() {
     setCommentError(null);
     const created = await addComment({
       content: commentText,
-      isAnonymous,
+      isAnonymous: isAnonymousConcernBoard(postBoard?.boardType) || isAnonymous,
       parentId: replyParentId,
     });
     if (created) {
@@ -155,35 +157,23 @@ export default function PostDetailContainer() {
 
   const handleCopyLink = async () => {
     try {
-      await navigator.clipboard.writeText(window.location.href);
-      setCopyMessage('글 링크를 복사했어요.');
+      const result = await shareCommunityPost({
+        title: post?.title ?? '', content: post?.content ?? '',
+        url: communityPostUrl(postId, window.location.origin),
+        publicPreview: post?.visibility === 'PUBLIC' && post.readable !== false && postBoard != null && !isMaskedBoardType(postBoard.boardType),
+      });
+      if (result === 'cancelled') return;
+      setCopyMessage(result === 'shared' ? '공유 창이 열렸어요.' : '공유 내용을 복사했어요.');
     } catch {
-      setCopyMessage('링크 복사를 지원하지 않는 환경이에요.');
+      setCopyMessage('공유를 지원하지 않는 환경이에요.');
     }
     window.setTimeout(() => setCopyMessage(null), 2200);
   };
 
-  if (!isReady) {
+  if (!isReady || isLoading || boardsLoading) {
     return (
       <div className="mx-auto max-w-app px-5 py-12">
         <LoadingSpinner label="글을 준비하는 중..." />
-      </div>
-    );
-  }
-  if (!isLoggedIn) {
-    return (
-      <div className="mx-auto max-w-app hf-scroll-pad-nav-tight">
-        <PostDetailBackHeader backHref="/community" pathname={pathname} />
-        <div className="px-5">
-          <CommunityGuestPostPanel loginFrom={encodeURIComponent(`/community/posts/${postId}`)} />
-        </div>
-      </div>
-    );
-  }
-  if (isLoading) {
-    return (
-      <div className="mx-auto max-w-app px-5 py-12">
-        <LoadingSpinner label="게시글을 불러오는 중..." />
       </div>
     );
   }
@@ -191,6 +181,16 @@ export default function PostDetailContainer() {
     return (
       <div className="mx-auto max-w-app px-5 py-10">
         <ErrorMessage message={error ? getErrorMessage(error) : '글을 찾을 수 없습니다.'} />
+      </div>
+    );
+  }
+  if (!isLoggedIn && !isAnonymousConcernBoard(postBoard?.boardType)) {
+    return (
+      <div className="mx-auto max-w-app hf-scroll-pad-nav-tight">
+        <PostDetailBackHeader backHref="/community" pathname={pathname} />
+        <div className="px-5">
+          <CommunityGuestPostPanel loginFrom={encodeURIComponent(`/community/posts/${postId}`)} />
+        </div>
       </div>
     );
   }
@@ -223,8 +223,8 @@ export default function PostDetailContainer() {
           <button
             type="button"
             onClick={() => void handleCopyLink()}
-            className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-[#65706B] shadow-[0_10px_22px_-18px_rgba(7,37,31,.45)] lg:flex"
-            aria-label="글 링크 복사"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-[#65706B] shadow-[0_10px_22px_-18px_rgba(7,37,31,.45)]"
+            aria-label="게시글 공유"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
               <path d="M10 13a5 5 0 0 0 7.1 0l2.8-2.8a5 5 0 0 0-7.1-7.1l-1.3 1.3" />
@@ -297,7 +297,8 @@ export default function PostDetailContainer() {
                 </Link>
               </div>
             ) : null}
-            {!isMaskedPost && canWriteComments && (
+            {isAnonymousConcernBoard(postBoard?.boardType) && canWriteComments && <p className="mt-3 text-[12px] text-muted">닉네임은 비공개이며 댓글 내용은 공개됩니다. 운영팀 답변에는 운영자 표시가 붙어요.</p>}
+            {!isMaskedPost && !isAnonymousConcernBoard(postBoard?.boardType) && canWriteComments && (
               <label className="mt-3 flex items-center gap-2 text-[12px] text-muted">
                 <input
                   type="checkbox"

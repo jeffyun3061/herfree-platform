@@ -74,7 +74,7 @@ export function CommentComposer({
           maxLength={COMMENT_MAX_LENGTH}
           containerClassName="min-w-0 flex-1"
           className={cn(
-            'mt-0 min-h-[46px] rounded-[12px] bg-[#F8F4EC] px-3.5 py-3 text-[13px] placeholder:text-[#B4B2A6] lg:min-h-[52px] lg:px-4 lg:text-sm',
+            'mt-0 min-h-[46px] rounded-[12px] bg-[#F8F4EC] px-3.5 py-3 text-[16px] placeholder:text-[#B4B2A6] lg:min-h-[52px] lg:px-4',
             replyTarget ? 'border-[#AFC8BB] focus:border-[#709582]' : 'border-[#ECE5D8]',
           )}
         />

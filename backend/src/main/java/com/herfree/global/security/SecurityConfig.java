@@ -104,6 +104,7 @@ public class SecurityConfig {
                             "/api/boards",
                             "/api/posts",
                             "/api/posts/{postId:\\d+}",
+                            "/api/posts/{postId:\\d+}/share-preview",
                             "/api/posts/{postId:\\d+}/comments",
                             "/api/posts/images/object/**",
                             "/api/contents",

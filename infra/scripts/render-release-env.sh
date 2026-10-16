@@ -89,6 +89,7 @@ JAVA_TOOL_OPTIONS=-XX:MaxRAMPercentage=65.0 -XX:+ExitOnOutOfMemoryError
 
 AWS_REGION=${AWS_REGION}
 CLOUDWATCH_LOG_GROUP=$(json_value "${APP_JSON}" '.cloudWatchLogGroup')
+OPERATIONS_PUBLIC_URL=$(json_value "${APP_JSON}" '.frontendOrigin')
 CORS_ALLOWED_ORIGINS=$(json_value "${APP_JSON}" '.frontendOrigin')
 TRUSTED_PROXY_CIDRS=127.0.0.1/32
 ADMIN_ACCESS_ALLOWED_CIDRS=$(json_value "${APP_JSON}" '.adminAccessAllowedCidrs')

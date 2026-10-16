@@ -39,8 +39,12 @@ class MySqlSchemaValidationIntegrationTest {
     @Autowired
     private DataSource dataSource;
 
+    @Autowired
+    private org.springframework.jdbc.core.JdbcTemplate jdbc;
+
     @Test
     void flywaySchemaMatchesHibernateMappings() {
         assertThat(dataSource).isNotNull();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM boards WHERE board_type='ANONYMOUS_QUESTION' AND is_active=1",Integer.class)).isEqualTo(1);
     }
 }

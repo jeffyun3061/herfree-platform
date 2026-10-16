@@ -17,7 +17,7 @@ APP_DIR="${HERFREE_APP_DIR:-/opt/herfree}"
 CONFIG_DIR="${HERFREE_CONFIG_DIR:-${APP_DIR}/config}"
 if [[ "${DEPLOY_ENV}" == "production" ]]; then
   APP_ENV_FILE="${CONFIG_DIR}/.env.prod"
-  MYSQL_ENV_FILE="${CONFIG_DIR}/.env.mysql.production"
+  MYSQL_ENV_FILE="${CONFIG_DIR}/.env.mysql.prod"
 else
   APP_ENV_FILE="${CONFIG_DIR}/.env.staging"
   MYSQL_ENV_FILE="${CONFIG_DIR}/.env.mysql.staging"
@@ -74,6 +74,7 @@ fi
 
 BACKUP_DIR="${HERFREE_BACKUP_DIR:-/var/lib/herfree/backups}"
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
+BACKUP_STARTED_EPOCH="$(date -u +%s)"
 NAME="herfree-${DEPLOY_ENV}-${STAMP}.sql.gz"
 TEMP_FILE="${BACKUP_DIR}/.${NAME}.partial"
 BACKUP_FILE="${BACKUP_DIR}/${NAME}"
@@ -119,6 +120,12 @@ aws s3 cp "${BACKUP_FILE}" "${S3_URI}" \
 aws s3 cp "${CHECKSUM_FILE}" "${S3_URI}.sha256" \
   --region "${AWS_REGION}" --only-show-errors --sse AES256
 
+# Retain the recovery key version, never the encryption key itself, alongside each new dump.
+recovery_version="$(aws secretsmanager get-secret-value --region "${AWS_REGION}" \
+  --secret-id "herfree/${DEPLOY_ENV}/health-data-recovery" --query VersionId --output text)"
+jq -n --arg version "${recovery_version}" --argjson started "${BACKUP_STARTED_EPOCH}" \
+  '{backupStartedEpoch:$started,healthRecoveryVersionId:$version}' > "${BACKUP_FILE}.metadata.json"
+
 remote_size="$(aws s3api head-object \
   --region "${AWS_REGION}" \
   --bucket "${BACKUP_BUCKET}" \
@@ -129,6 +136,9 @@ if [[ ! "${remote_size}" =~ ^[0-9]+$ || "${remote_size}" -le 0 ]]; then
   exit 1
 fi
 
+# Publish the completion marker only after dump upload verification succeeds.
+aws s3 cp "${BACKUP_FILE}.metadata.json" "${S3_URI}.metadata.json" --region "${AWS_REGION}" --only-show-errors --sse AES256
+
 aws cloudwatch put-metric-data \
   --region "${AWS_REGION}" \
   --namespace Herfree/Operations \
@@ -137,7 +147,7 @@ aws cloudwatch put-metric-data \
   --value 1 --unit Count >/dev/null
 
 find "${BACKUP_DIR}" -maxdepth 1 -type f \
-  \( -name 'herfree-*.sql.gz' -o -name 'herfree-*.sql.gz.sha256' \) \
+  \( -name 'herfree-*.sql.gz' -o -name 'herfree-*.sql.gz.sha256' -o -name 'herfree-*.sql.gz.metadata.json' \) \
   -mtime +2 -delete
 
 trap - EXIT
