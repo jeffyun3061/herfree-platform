@@ -19,6 +19,7 @@ import { getWritableBoards, isStaffOnlyBoardType } from '@/domain/board/types';
 import {
   getPrivateBoardMetaByType,
   isMaskedBoardType,
+  isAnonymousConcernBoard,
   isOffCommunityPrivateBoardType,
   isSecretStoryBoardType,
   resolvePrivateBoardWritePath,
@@ -30,7 +31,7 @@ import { isStaff } from '@/domain/user/types';
 import { getErrorMessage } from '@/lib/api/client';
 import * as adminApi from '@/lib/api/admin';
 import { CommunityWriteGuidelines } from '@/components/community/CommunityWriteGuidelines';
-import { CommunityContentEditor } from '@/components/community/CommunityContentEditor';
+import { ReadableContent } from '@/components/content/ReadableContent';
 import type { PostVisibility } from '@/domain/post/types';
 
 const TITLE_UI_MAX = 30;
@@ -57,10 +58,10 @@ function WritePostForm() {
   const [boardId, setBoardId] = useState(0);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [richContent, setRichContent] = useState<string | null>(null);
-  const changeRichContent = (plain: string, document: string) => { setContent(plain); setRichContent(document); };
+  const [showContentPreview, setShowContentPreview] = useState(false);
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [visibility, setVisibility] = useState<PostVisibility>('PUBLIC');
+  const [publicDisclosureAccepted, setPublicDisclosureAccepted] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [isImageUploading, setIsImageUploading] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -147,7 +148,6 @@ function WritePostForm() {
     setBoardId(existingPost.boardId);
     setTitle(existingPost.title);
     setContent(existingPost.content);
-    setRichContent(existingPost.richContent ?? null);
     setIsAnonymous(existingPost.isAnonymous);
     setVisibility(existingPost.visibility);
     setImageUrl(existingPost.imageUrl ?? null);
@@ -157,7 +157,7 @@ function WritePostForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting || isImageUploading) return;
-    const validation = validatePostInput({ title, content, richContent });
+    const validation = validatePostInput({ title, content });
     if (validation) {
       setValidationError(validation);
       return;
@@ -171,6 +171,11 @@ function WritePostForm() {
       return;
     }
     const selected = boards.find((board) => board.id === boardId);
+    const concern = isAnonymousConcernBoard(selected?.boardType);
+    if (concern && !isEditMode && !publicDisclosureAccepted) {
+      setValidationError('본문이 공개되는 것을 확인해 주세요.');
+      return;
+    }
     if (selected && isStaffOnlyBoardType(selected.boardType)) {
       setValidationError('이 게시판에는 운영 관리 화면에서만 글을 등록할 수 있습니다.');
       return;
@@ -188,8 +193,7 @@ function WritePostForm() {
         try {
           await adminApi.updateAdminPost(editPostId, {
             title: title.trim(),
-            content: richContent ? content : content.trim(),
-            richContent,
+            content: content.trim(),
           });
           router.replace(`/community/posts/${editPostId}`);
         } catch (err) {
@@ -203,8 +207,7 @@ function WritePostForm() {
       const result = await updatePost(editPostId, {
         title,
         content,
-        richContent,
-        isAnonymous,
+        isAnonymous: concern || isAnonymous,
         imageUrl: imageUrl ?? '',
       });
       if (result) router.replace(`/community/posts/${result.id}`);
@@ -215,9 +218,9 @@ function WritePostForm() {
       boardId,
       title,
       content,
-      richContent,
-      isAnonymous,
-      visibility,
+      isAnonymous: concern || isAnonymous,
+      visibility: concern ? 'PUBLIC' : visibility,
+      publicDisclosureAccepted: concern && publicDisclosureAccepted,
       imageUrl: pickPostImageUrlForCreate(imageUrl),
     });
     if (result) {
@@ -262,6 +265,7 @@ function WritePostForm() {
   }
 
   const selectedBoard = writableBoards.find((b) => b.id === boardId);
+  const isConcernWrite = isAnonymousConcernBoard(selectedBoard?.boardType);
   const isSymptomBoard = selectedBoard?.boardType === 'SYMPTOM';
   const privateMeta = selectedBoard ? getPrivateBoardMetaByType(selectedBoard.boardType) : null;
   const isSecretStoryWrite = selectedBoard != null && isSecretStoryBoardType(selectedBoard.boardType);
@@ -319,7 +323,7 @@ function WritePostForm() {
   const boardPickerDisabled = isEditMode || lockedPrivateBoard;
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-app flex-col bg-[#F3EDE3] pb-10 hf-subpage-top">
+    <div className="flex min-h-screen flex-col bg-[#F3EDE3] pb-10 hf-subpage-top">
       <header className="flex items-center justify-between border-b border-[#E4D8C7] bg-[#F3EDE3]/95 px-[18px] pb-3.5 pt-0.5">
         <Link
           href={backHref}
@@ -335,7 +339,7 @@ function WritePostForm() {
           type="submit"
           form="community-write-form"
           disabled={isSubmitting || isAdminSubmitting || isImageUploading || boardId <= 0}
-          className="shrink-0 text-[13.5px] font-bold text-[#0B3B36] disabled:opacity-40"
+          className="min-h-11 shrink-0 text-[13.5px] font-bold text-[#0B3B36] disabled:opacity-40"
         >
           {submitLabel}
         </button>
@@ -449,7 +453,7 @@ function WritePostForm() {
         {!isMaskedWrite && (
           <div className="flex-1 px-5 pt-3.5">
             {!isEditMode && <CommunityWriteGuidelines />}
-            {!isEditMode && (
+            {!isEditMode && !isConcernWrite && (
               <fieldset className="mt-3 rounded-[14px] border border-[#ECE5D8] bg-white p-3">
                 <legend className="px-1 text-[12px] font-semibold text-[#5C645A]">공개 범위</legend>
                 <div className="mt-1.5 grid grid-cols-2 gap-3">
@@ -479,9 +483,42 @@ function WritePostForm() {
                 <p className="mt-3 break-keep border-t border-[#EEE5D7] pt-2.5 text-[11px] leading-[1.7] text-[#7A8178]">건강정보·실명·연락처처럼 민감한 내용은 공개 게시판 대신 개인일지에 기록해 주세요.</p>
               </fieldset>
             )}
-            <div className="mt-3">
-              <CommunityContentEditor value={content} onChange={setContent} richContent={richContent} onRichChange={changeRichContent} placeholder={contentPlaceholder} />
+            {isConcernWrite && (
+              <div className="mt-3 rounded-[14px] bg-[#EDF4F0] p-4 text-[12px] leading-[1.7] text-[#263B32]">
+                <p className="font-bold">닉네임은 항상 비공개예요</p>
+                <p>본문과 댓글은 비회원도 읽으며 검색·링크 공유 미리보기에 표시될 수 있어요. 본문·사진에 실명이나 연락처를 넣지 마세요.</p>
+                {!isEditMode && <label className="mt-3 flex items-start gap-2"><input type="checkbox" checked={publicDisclosureAccepted} onChange={(event) => setPublicDisclosureAccepted(event.target.checked)} className="mt-1 accent-[#0B3B36]" /><span>본문이 공개되는 것을 확인했습니다.</span></label>}
+              </div>
+            )}
+            <div className="mt-4 flex items-center justify-between gap-3">
+              <label htmlFor="content" className="text-[13px] font-bold text-[#36453B]">본문</label>
+              <button
+                type="button"
+                aria-pressed={showContentPreview}
+                onClick={() => setShowContentPreview((value) => !value)}
+                className="min-h-11 rounded-lg px-3 text-[13px] font-bold text-[#0B3B36] underline underline-offset-4"
+              >
+                {showContentPreview ? '계속 쓰기' : '미리보기'}
+              </button>
             </div>
+            {showContentPreview ? (
+              <div data-testid="community-post-preview" className="min-h-[240px] w-full border-b border-[#D9CDB8] py-3">
+                {content ? (
+                  <ReadableContent text={content} variant="community" />
+                ) : (
+                  <p className="hf-community-writing-content text-[#7C8279]">본문을 입력하면 게시될 모습이 여기에 보여요.</p>
+                )}
+              </div>
+            ) : (
+              <textarea
+                id="content"
+                required
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                placeholder={contentPlaceholder}
+                className="hf-community-writing-content min-h-[240px] w-full resize-y border-x-0 border-t-0 border-b border-[#D9CDB8] bg-transparent px-0 py-3 placeholder:text-[#8A9089] outline-none focus:border-[#0B3B36]"
+              />
+            )}
             <div className="mt-3">
               <CommunityPhotoAttach
                 imageUrl={imageUrl}
@@ -497,12 +534,23 @@ function WritePostForm() {
 
         {isMaskedWrite && (
           <div className="flex-1 px-5 pt-3.5">
-            <CommunityContentEditor value={content} onChange={setContent} richContent={richContent} onRichChange={changeRichContent} placeholder={contentPlaceholder} />
+            <label htmlFor="content" className="sr-only">
+              본문
+            </label>
+            <textarea
+              id="content"
+              required
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder={contentPlaceholder}
+              className="min-h-[200px] w-full resize-y rounded-[14px] border border-[#E2D5C2] bg-[#FFFCF7] p-[15px] text-[16px] leading-[1.7] text-[#1E2621] shadow-[0_10px_24px_-24px_rgba(7,37,31,.45)] placeholder:text-[#B4B2A6] outline-none focus:border-[#0B3B36]/35"
+            />
           </div>
         )}
 
         <div className="mt-auto flex items-center gap-2.5 px-5 pt-3">
-          {!isMaskedWrite && (
+          {isConcernWrite && <p className="text-[12px] font-semibold text-[#0B3B36]">닉네임 비공개로 작성됩니다.</p>}
+          {!isMaskedWrite && !isConcernWrite && (
             <label className="flex cursor-pointer items-center gap-1.5 text-[12px] text-[#6E766F]">
               <input
                 type="checkbox"

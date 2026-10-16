@@ -67,8 +67,8 @@ export function createPost(input: PostCreateInput): Promise<PostDetail> {
     boardId: input.boardId,
     title: input.title,
     content: input.content,
-    ...(input.richContent ? { richContent: input.richContent } : {}),
     isAnonymous: input.isAnonymous,
+    ...(input.publicDisclosureAccepted ? { publicDisclosureAccepted: true } : {}),
     ...(input.visibility ? { visibility: input.visibility } : {}),
     ...(imageUrl ? { imageUrl } : {}),
   };

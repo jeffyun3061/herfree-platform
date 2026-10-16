@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   accessCookieName,
-  adminMfaCookieName,
   csrfCookieName,
   hasValidCsrfToken,
   hasValidOrigin,
@@ -18,8 +17,6 @@ import { errorResponse } from '@/lib/bff/errors';
 import { buildBackendRequestHeaders, buildBackendResponseHeaders } from '@/lib/bff/headers';
 import {
   clearSessionCookies,
-  clearAdminMfaCookie,
-  createMfaSessionResponse,
   createSessionResponse,
   type SessionCookieConfig,
 } from '@/lib/bff/session';
@@ -84,7 +81,7 @@ export async function proxyToBackend(request: NextRequest, pathSegments: string[
 
   const init: RequestInit = {
     method: request.method,
-    headers: buildBackendRequestHeaders(request, accessToken, request.cookies.get(adminMfaCookieName(production))?.value),
+    headers: buildBackendRequestHeaders(request, accessToken),
     redirect: 'manual',
     cache: 'no-store',
   };
@@ -107,9 +104,6 @@ export async function proxyToBackend(request: NextRequest, pathSegments: string[
     return response;
   }
 
-  const mfaEstablished = await createMfaSessionResponse(backendResponse.clone(), path, sessionConfig);
-  if (mfaEstablished) return mfaEstablished;
-
   const established = await createSessionResponse(
     backendResponse.clone(),
     path,
@@ -122,10 +116,6 @@ export async function proxyToBackend(request: NextRequest, pathSegments: string[
     statusText: backendResponse.statusText,
     headers: buildBackendResponseHeaders(backendResponse),
   });
-  if (path.startsWith('auth/admin-mfa/')) response.headers.set('Cache-Control', 'private, no-store');
-  if (backendResponse.ok && (path === 'auth/admin-mfa/enroll' || path === 'auth/admin-mfa/revoke')) {
-    clearAdminMfaCookie(response, sessionConfig);
-  }
   const shouldClearForUserAction =
     (backendResponse.ok && shouldClearSession(path, request.method)) ||
     shouldAlwaysClearSession(path, request.method);

@@ -202,9 +202,6 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
   }
 
   if (!response.ok || !envelope || envelope.success === false) {
-    if (envelope?.code === 'ADMIN_MFA_REQUIRED' && typeof window !== 'undefined') {
-      window.dispatchEvent(new Event('herfree:admin-mfa-required'));
-    }
     const serverMessage = envelope?.message;
     const message = isPublicAuthPath(path)
       ? authPathErrorMessage(response.status, serverMessage)
@@ -261,9 +258,6 @@ export async function requestMultipart<T>(path: string, formData: FormData): Pro
 
   if (!response.ok || !envelope || envelope.success === false) {
     const serverMessage = envelope?.message;
-    if (envelope?.code === 'ADMIN_MFA_REQUIRED' && typeof window !== 'undefined') {
-      window.dispatchEvent(new Event('herfree:admin-mfa-required'));
-    }
     const message =
       serverMessage ??
       (response.status === 401

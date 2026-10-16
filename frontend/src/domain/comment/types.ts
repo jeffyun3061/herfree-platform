@@ -7,6 +7,7 @@ export type Comment = {
   isAnonymous: boolean;
   parentId: number | null;
   isMyComment: boolean;
+  operatorReply?: boolean;
   createdAt: string;
 };
 

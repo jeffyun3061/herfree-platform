@@ -111,7 +111,6 @@ export function PostDetailView({
       >
         <ReadableContent
           text={post.content}
-          richContent={isContentMasked ? null : post.richContent}
           variant="community"
           className={isContentMasked ? 'text-[#7A847C]' : 'text-[#2C342E]'}
         />

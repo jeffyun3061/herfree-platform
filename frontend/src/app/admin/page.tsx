@@ -16,17 +16,15 @@ import { AdminVideosSection } from '@/components/admin/AdminVideosSection';
 import { AdminProductsSection } from '@/components/admin/AdminProductsSection';
 import { AdminJournalStatsSection } from '@/components/admin/AdminJournalStatsSection';
 import { AdminUsersSection } from '@/components/admin/AdminUsersSection';
-import { DeveloperOperationsSection } from '@/components/admin/DeveloperOperationsSection';
-import { AdminAuditSection } from '@/components/admin/AdminAuditSection';
+import { AdminConcernsSection } from '@/components/admin/AdminConcernsSection';
 import { FEATURE_PRODUCTS_ENABLED } from '@/domain/featureFlags';
-import { isAdmin, isStaff, isSuperAdmin, canWriteContent, canViewDeveloperTools, USER_ROLE_LABELS, type UserRole } from '@/domain/user/types';
+import { isAdmin, isStaff, isSuperAdmin, canWriteContent, USER_ROLE_LABELS, type UserRole } from '@/domain/user/types';
 
-type AdminTab = 'dashboard' | 'reports' | 'moderation' | 'users' | 'notices' | 'contents' | 'videos' | 'products' | 'journal' | 'developer' | 'audit';
+type AdminTab = 'dashboard' | 'concerns' | 'reports' | 'moderation' | 'users' | 'notices' | 'contents' | 'videos' | 'products' | 'journal';
 
 const ALL_TABS: { id: AdminTab; label: string; minRole: 'moderator' | 'admin' | 'super' }[] = [
   { id: 'dashboard', label: '대시보드', minRole: 'admin' },
-  { id: 'developer', label: '개발자 진단', minRole: 'super' },
-  { id: 'audit', label: '운영 이력', minRole: 'admin' },
+  { id: 'concerns', label: '고민·질문 답변', minRole: 'admin' },
   { id: 'reports', label: '신고', minRole: 'moderator' },
   { id: 'moderation', label: '숨김 관리', minRole: 'moderator' },
   { id: 'journal', label: '일지 통계', minRole: 'admin' },
@@ -39,8 +37,7 @@ const ALL_TABS: { id: AdminTab; label: string; minRole: 'moderator' | 'admin' | 
 
 const TAB_HELP_TEXT: Record<AdminTab, string> = {
   dashboard: '오늘 확인할 지표',
-  developer: '서버·DB·요청 로그',
-  audit: '조치와 회원 변경 기록',
+  concerns: '익명 고민 답변 관리',
   reports: '신고 접수 확인',
   moderation: '숨김 콘텐츠 복구',
   users: '회원 상태 관리',
@@ -56,7 +53,6 @@ function canSeeTab(
   role: UserRole | undefined | null,
 ): boolean {
   if (tab.id === 'contents') return canWriteContent(role);
-  if (tab.id === 'developer') return canViewDeveloperTools(role);
   if (!isStaff(role)) return false;
   if (tab.minRole === 'moderator') return isStaff(role);
   if (tab.minRole === 'admin') return isAdmin(role);
@@ -125,7 +121,7 @@ function AdminPageContent() {
 
   const roleLabel = user?.role ? USER_ROLE_LABELS[user.role] : '권한 확인 중';
 
-  if (!isStaff(user?.role) && !canWriteContent(user?.role) && !canViewDeveloperTools(user?.role)) {
+  if (!isStaff(user?.role) && !canWriteContent(user?.role)) {
     return (
       <main className="min-h-screen bg-[#F3EDE3] px-4 py-6">
         <section className="mx-auto max-w-[720px] rounded-[26px] border border-[#E8DDCC] bg-[#FBF7EF] p-5 shadow-[0_18px_45px_-34px_rgba(26,31,27,.45)]">
@@ -145,7 +141,7 @@ function AdminPageContent() {
     );
   }
 
-  const activeTab = tabs.find((item) => item.id === tab);
+  const activeTab = ALL_TABS.find((item) => item.id === tab);
 
   return (
     <main className="min-h-screen bg-[#F3EDE3] pb-10 text-[#121816]">
@@ -187,7 +183,7 @@ function AdminPageContent() {
         </div>
       </section>
 
-      <div className="mx-auto max-w-[980px] px-4 py-4">
+      <div className="mx-auto max-w-app px-4 py-4">
         <header className="mb-3 flex items-center justify-between gap-3">
           <BackButton className="bg-white text-[#123D37] shadow-[0_10px_24px_-20px_rgba(18,61,55,.65)] hover:bg-white" />
           <div className="min-w-0 flex-1">
@@ -225,10 +221,8 @@ function AdminPageContent() {
         </section>
 
         <section className="mt-4">
-          {activeTab && <>
-          {tab === 'developer' && canViewDeveloperTools(user?.role) && <DeveloperOperationsSection />}
-          {tab === 'audit' && isAdmin(user?.role) && <AdminAuditSection />}
           {tab === 'dashboard' && <AdminDashboardSection />}
+          {tab === 'concerns' && <AdminConcernsSection />}
           {tab === 'reports' && <AdminReportsSection />}
           {tab === 'moderation' && <AdminModerationSection />}
           {tab === 'journal' && <AdminJournalStatsSection />}
@@ -237,7 +231,6 @@ function AdminPageContent() {
           {tab === 'videos' && <AdminVideosSection />}
           {FEATURE_PRODUCTS_ENABLED && tab === 'products' && <AdminProductsSection />}
           {tab === 'users' && <AdminUsersSection />}
-          </>}
         </section>
       </div>
     </main>

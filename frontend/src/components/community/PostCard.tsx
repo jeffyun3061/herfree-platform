@@ -5,7 +5,7 @@ import type { Post } from '@/domain/post/types';
 import { formatRelativeTime } from '@/domain/common/format';
 import { formatAuthorIpLabel } from '@/domain/post/ipDisplay';
 import { getBoardTagClass } from '@/domain/board/types';
-import { getCommunityBoardTabLabel, isMaskedBoardType, isSecretStoryBoardType } from '@/domain/board/privateBoard';
+import { getCommunityBoardTabLabel, isMaskedBoardType, isSecretStoryBoardType, isAnonymousConcernBoard } from '@/domain/board/privateBoard';
 import { cn } from '@/lib/cn';
 
 type PostCardProps = {
@@ -26,7 +26,7 @@ export function PostCard({ post, boardName }: PostCardProps) {
   const displayBoard = normalizeBoardLabel(boardName ?? post.boardName, post.boardType);
   const isSecretStory = isSecretStoryBoardType(post.boardType);
   const canOpen = post.readable !== false || isSecretStory;
-  const showReplyStatus = isMaskedBoardType(post.boardType) && (post.readable !== false || isSecretStory);
+  const showReplyStatus = (isMaskedBoardType(post.boardType) || isAnonymousConcernBoard(post.boardType)) && (post.readable !== false || isSecretStory);
   const tagClass = getBoardTagClass(post.boardType);
   const authorIpLabel = formatAuthorIpLabel(post.authorIpMasked);
 
@@ -45,7 +45,7 @@ export function PostCard({ post, boardName }: PostCardProps) {
   }
 
   return (
-    <Link href={`/community/posts/${post.id}`} className="block">
+    <Link href={`/community/posts/${post.id}`} className="block" aria-label={post.title}>
       <article className="community-feed-row transition-colors hover:bg-[#F7EFE5]">
         <div className="community-feed-row__header">
           <div className="community-feed-row__title-line">

@@ -56,5 +56,9 @@ export default defineConfig({
         viewport: { width: 390, height: 844 },
       },
     },
+    {
+      name: 'iphone-webkit',
+      use: devices['iPhone 13'],
+    },
   ],
 });

@@ -5,7 +5,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { useApiQuery } from '@/hooks/useApiQuery';
 import { fetchAdminStatsOverview } from '@/lib/api/admin';
-import { OperatorTaskSection } from './OperatorTaskSection';
+import { AdminConcernsSection } from '@/components/admin/AdminConcernsSection';
 
 const EVENT_LABELS: Record<string, string> = {
   page_view: '페이지 조회',
@@ -47,14 +47,14 @@ export function AdminDashboardSection() {
   const topEvents = data.topEvents7d.slice(0, 6);
 
   return (
-    <section className="grid gap-4 lg:grid-cols-2">
-      <OperatorTaskSection />
+    <section className="grid gap-4">
       <div className="space-y-4">
+        <AdminConcernsSection compact />
         <section className="rounded-[22px] bg-[#082B25] p-4 text-white shadow-[0_18px_38px_-26px_rgba(6,26,22,.55)]">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#D8C691]/70">
-                오늘의 현황
+                Operations
               </p>
               <h2 className="mt-1 text-[20px] font-extrabold leading-tight">오늘 운영 흐름</h2>
             </div>
@@ -73,7 +73,7 @@ export function AdminDashboardSection() {
           <div className="flex items-center justify-between gap-2">
             <h3 className="text-[15px] font-extrabold text-[#1E2621]">운영 체크</h3>
             <span className="rounded-full bg-[#EFF7F4] px-2.5 py-1 text-[11px] font-bold text-[#0B3B36]">
-              집계 정보
+              Privacy-safe
             </span>
           </div>
           <div className="mt-3 grid gap-2">
