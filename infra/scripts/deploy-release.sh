@@ -49,6 +49,13 @@ PROJECT="herfree-${DEPLOY_ENV}"
 PORT=8080
 BIND_HOST="127.0.0.1"
 HEALTH_ATTEMPTS=60
+HEALTH_DEADLINE_SECONDS=0
+if [[ "${DEPLOY_ENV}" == "staging" ]]; then
+  # A cold start on the small staging host took 314 seconds in production-like
+  # configuration. Keep the health gate strict, but allow eight minutes.
+  HEALTH_ATTEMPTS=240
+  HEALTH_DEADLINE_SECONDS=480
+fi
 
 if [[ ! -f "${ENV_FILE}" || ! -f "${COMPOSE_FILE}" ]]; then
   echo "release config missing for ${DEPLOY_ENV}"
@@ -163,7 +170,11 @@ stop_service() {
 
 wait_until_healthy() {
   local attempts="${1:-${HEALTH_ATTEMPTS}}"
+  local deadline=$((SECONDS + HEALTH_DEADLINE_SECONDS))
   for ((attempt = 1; attempt <= attempts; attempt++)); do
+    if (( HEALTH_DEADLINE_SECONDS > 0 && SECONDS >= deadline )); then
+      return 1
+    fi
     if curl --fail --silent --show-error --max-time 3 \
         "http://127.0.0.1:${PORT}/actuator/health" \
         | grep -q '"status":"UP"'; then
