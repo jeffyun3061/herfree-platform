@@ -23,7 +23,9 @@ if [[ "${NEW_IMAGE}" == *$'\n'* || "${NEW_IMAGE}" == *$'\r'* || "${NEW_IMAGE}" =
   echo "container image contains invalid control characters"
   exit 2
 fi
-if [[ ! "${NEW_IMAGE}" =~ ^[0-9]{12}\.dkr\.ecr\.[a-z0-9-]+\.amazonaws\.com/[A-Za-z0-9._/-]+(@sha256:[0-9a-f]{64}|:[0-9a-f]{40})$ ]]; then
+if [[ "${DEPLOY_MODE}" == "reconcile" && "${NEW_IMAGE}" == "pending" ]]; then
+  : # Reconciliation reads the candidate image from the protected pending state.
+elif [[ ! "${NEW_IMAGE}" =~ ^[0-9]{12}\.dkr\.ecr\.[a-z0-9-]+\.amazonaws\.com/[A-Za-z0-9._/-]+(@sha256:[0-9a-f]{64}|:[0-9a-f]{40})$ ]]; then
   echo "container image must be an immutable ECR image URI"
   exit 2
 fi
