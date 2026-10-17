@@ -137,16 +137,16 @@ jobs:
               "/opt/herfree/infra/scripts/render-release-env.sh staging",
               ("aws ecr get-login-password --region " + $region + " | docker login --username AWS --password-stdin " + $registry),
               ("/opt/herfree/infra/scripts/deploy-release.sh staging " + $image)
-            ],executionTimeout:["900"]}' > /tmp/ssm-parameters.json
+            ],executionTimeout:["1500"]}' > /tmp/ssm-parameters.json
           command_id="$(aws ssm send-command \
             --instance-ids "${INSTANCE_ID}" \
             --document-name AWS-RunShellScript \
-            --timeout-seconds 900 \
+            --timeout-seconds 1500 \
             --parameters file:///tmp/ssm-parameters.json \
             --query 'Command.CommandId' --output text)"
           status=""
           terminal="false"
-          for _ in {1..240}; do
+          for _ in {1..360}; do
             status="$(aws ssm get-command-invocation \
               --command-id "${command_id}" --instance-id "${INSTANCE_ID}" \
               --query 'Status' --output text 2>/dev/null || true)"
