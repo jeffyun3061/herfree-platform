@@ -55,10 +55,16 @@ jobs:
           latest_job="$(aws amplify list-jobs \
             --app-id "${AMPLIFY_APP_ID}" \
             --branch-name "${AMPLIFY_BRANCH}" \
-            --max-results 1 \
+            --max-results 2 \
             --output json)"
+          # A manual rebuild of the same branch reports HEAD; require its
+          # immediately preceding successful build to identify the exact SHA.
           jq -e --arg commit "${frontend_sha}" \
-            '.jobSummaries[0] | .status == "SUCCEED" and .commitId == $commit' \
+            '(.jobSummaries[0].status == "SUCCEED") and
+             ((.jobSummaries[0].commitId == $commit) or
+              (.jobSummaries[0].commitId == "HEAD" and
+               .jobSummaries[1].status == "SUCCEED" and
+               .jobSummaries[1].commitId == $commit))' \
             <<<"${latest_job}" >/dev/null || {
               echo "Existing Amplify staging branch/build is missing or stale; refusing to create or start one automatically."
               echo "Restore the existing develop branch/build manually, then rerun this workflow."
@@ -238,6 +244,8 @@ jobs:
       - name: Run staging release smoke
         working-directory: frontend
         env:
+          E2E_HTTP_USERNAME: ${{ secrets.E2E_HTTP_USERNAME }}
+          E2E_HTTP_PASSWORD: ${{ secrets.E2E_HTTP_PASSWORD }}
           PLAYWRIGHT_BASE_URL: ${{ vars.STAGING_FRONTEND_URL }}
           STAGING_AMPLIFY_APP_ID: ${{ vars.STAGING_AMPLIFY_APP_ID }}
           STAGING_API_URL: ${{ vars.STAGING_API_URL }}
@@ -267,6 +275,8 @@ jobs:
       - name: Run staging mutation QA
         working-directory: frontend
         env:
+          E2E_HTTP_USERNAME: ${{ secrets.E2E_HTTP_USERNAME }}
+          E2E_HTTP_PASSWORD: ${{ secrets.E2E_HTTP_PASSWORD }}
           PLAYWRIGHT_BASE_URL: ${{ vars.STAGING_FRONTEND_URL }}
           STAGING_AMPLIFY_APP_ID: ${{ vars.STAGING_AMPLIFY_APP_ID }}
           E2E_EXPECTED_BASE_URL: ${{ vars.STAGING_FRONTEND_URL }}
