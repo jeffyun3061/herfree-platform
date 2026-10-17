@@ -208,6 +208,10 @@ jobs:
     environment: staging
     steps:
       - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -222,10 +226,9 @@ jobs:
         working-directory: frontend
         env:
           PLAYWRIGHT_BASE_URL: ${{ vars.STAGING_FRONTEND_URL }}
+          STAGING_AMPLIFY_APP_ID: ${{ vars.STAGING_AMPLIFY_APP_ID }}
           STAGING_API_URL: ${{ vars.STAGING_API_URL }}
-          E2E_HTTP_USERNAME: ${{ secrets.E2E_HTTP_USERNAME }}
-          E2E_HTTP_PASSWORD: ${{ secrets.E2E_HTTP_PASSWORD }}
-        run: npm run e2e:staging:smoke
+        run: bash ../infra/scripts/run-staging-e2e.sh e2e:staging:smoke
 
   staging-mutation-qa:
     if: inputs.target == 'staging'
@@ -234,6 +237,10 @@ jobs:
     environment: staging
     steps:
       - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -248,11 +255,10 @@ jobs:
         working-directory: frontend
         env:
           PLAYWRIGHT_BASE_URL: ${{ vars.STAGING_FRONTEND_URL }}
+          STAGING_AMPLIFY_APP_ID: ${{ vars.STAGING_AMPLIFY_APP_ID }}
           E2E_EXPECTED_BASE_URL: ${{ vars.STAGING_FRONTEND_URL }}
           E2E_ALLOW_MUTATION: 'true'
-          E2E_HTTP_USERNAME: ${{ secrets.E2E_HTTP_USERNAME }}
-          E2E_HTTP_PASSWORD: ${{ secrets.E2E_HTTP_PASSWORD }}
-        run: npm run e2e:staging:mutation
+        run: bash ../infra/scripts/run-staging-e2e.sh e2e:staging:mutation
 
   promote-staging-image:
     if: inputs.target == 'staging'
