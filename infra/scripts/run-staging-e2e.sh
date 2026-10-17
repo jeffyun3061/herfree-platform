@@ -19,11 +19,7 @@ fi
 credentials="$(aws amplify get-branch --app-id "${STAGING_AMPLIFY_APP_ID}" \
   --branch-name develop --query 'branch.basicAuthCredentials' --output text)"
 if [[ -z "${credentials}" || "${credentials}" == "None" ]]; then
-  credentials="$(aws amplify get-app --app-id "${STAGING_AMPLIFY_APP_ID}" \
-    --query 'app.basicAuthCredentials' --output text)"
-fi
-if [[ -z "${credentials}" || "${credentials}" == "None" ]]; then
-  echo "staging Amplify Basic auth credentials are unavailable" >&2
+  echo "staging branch Basic auth credentials are unavailable" >&2
   exit 1
 fi
 

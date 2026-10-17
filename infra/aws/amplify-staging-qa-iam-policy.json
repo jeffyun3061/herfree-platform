@@ -1,0 +1,11 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ReadOnlyProtectedStagingBranchForReleaseQA",
+      "Effect": "Allow",
+      "Action": "amplify:GetBranch",
+      "Resource": "arn:aws:amplify:ap-northeast-2:439777528445:apps/d2bcg3vnlv5hkh/branches/develop"
+    }
+  ]
+}
