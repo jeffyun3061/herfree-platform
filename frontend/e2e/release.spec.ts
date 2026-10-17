@@ -198,8 +198,12 @@ test.describe('release smoke', () => {
     expect(healthData.status).toBe('UP');
     expect(healthData.environment).toBe(expectedBackendEnvironment);
     const homeStats = await request.get('/api/journal/public/home-stats');
-    const homeStatsData = await data<Record<string, unknown>>(homeStats);
-    expect(homeStatsData).toEqual({});
+    const homeStatsData = await data<{ activeMemberCount: number; postsToday: number }>(homeStats);
+    expect(Object.keys(homeStatsData).sort()).toEqual(['activeMemberCount', 'postsToday']);
+    expect(Number.isSafeInteger(homeStatsData.activeMemberCount)).toBe(true);
+    expect(homeStatsData.activeMemberCount).toBeGreaterThanOrEqual(0);
+    expect(Number.isSafeInteger(homeStatsData.postsToday)).toBe(true);
+    expect(homeStatsData.postsToday).toBeGreaterThanOrEqual(0);
     expect(homeStats.headers()['cache-control']).toContain('no-store');
     await data(await request.get('/api/boards'));
     await data(await request.get('/api/posts?page=0&size=5'));
