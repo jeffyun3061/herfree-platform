@@ -14,27 +14,18 @@ if [[ "${PLAYWRIGHT_BASE_URL}" != "https://develop.${STAGING_AMPLIFY_APP_ID}.amp
   exit 1
 fi
 
-# Read the credential already protecting Amplify instead of keeping an
-# independent GitHub secret that silently becomes stale after a rotation.
-credentials="$(aws amplify get-branch --app-id "${STAGING_AMPLIFY_APP_ID}" \
-  --branch-name develop --query 'branch.basicAuthCredentials' --output text)"
-if [[ -z "${credentials}" || "${credentials}" == "None" ]]; then
-  echo "staging branch Basic auth credentials are unavailable" >&2
+# Amplify returns an encrypted password from GetBranch, not a reusable
+# credential. The staging environment secrets must match the branch password.
+: "${E2E_HTTP_USERNAME:?staging Basic auth username is required}"
+: "${E2E_HTTP_PASSWORD:?staging Basic auth password is required}"
+enabled="$(aws amplify get-branch --app-id "${STAGING_AMPLIFY_APP_ID}" \
+  --branch-name develop --query 'branch.enableBasicAuth' --output text)"
+if [[ "${enabled}" != "True" ]]; then
+  echo "staging branch Basic auth must remain enabled" >&2
   exit 1
 fi
 
-decoded="$(printf '%s' "${credentials}" | base64 --decode)"
-if [[ "${decoded}" != *:* ]]; then
-  echo "staging Amplify Basic auth credentials are malformed" >&2
-  exit 1
-fi
-export E2E_HTTP_USERNAME="${decoded%%:*}"
-export E2E_HTTP_PASSWORD="${decoded#*:}"
-if [[ -z "${E2E_HTTP_USERNAME}" || -z "${E2E_HTTP_PASSWORD}" ]]; then
-  echo "staging Amplify Basic auth credentials are incomplete" >&2
-  exit 1
-fi
-
+credentials="$(printf '%s:%s' "${E2E_HTTP_USERNAME}" "${E2E_HTTP_PASSWORD}" | base64 --wrap=0)"
 printf '::add-mask::%s\n' "${credentials}" "${E2E_HTTP_USERNAME}" "${E2E_HTTP_PASSWORD}"
 status="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' \
   --max-time 10 --header "Authorization: Basic ${credentials}" "${PLAYWRIGHT_BASE_URL}/")"
