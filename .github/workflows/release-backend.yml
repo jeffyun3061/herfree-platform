@@ -67,13 +67,25 @@ jobs:
       - id: ecr
         uses: aws-actions/amazon-ecr-login@v2
       - id: image
-        name: Build immutable image
+        name: Reuse or build immutable image
         env:
           ECR_REGISTRY: ${{ steps.ecr.outputs.registry }}
         run: |
           set -euo pipefail
           image="${ECR_REGISTRY}/${ECR_REPOSITORY}:${GITHUB_SHA}"
-          docker build --file infra/docker/Dockerfile.backend --tag "${image}" .
+          existing="$(aws ecr batch-get-image \
+            --repository-name "${ECR_REPOSITORY}" \
+            --image-ids imageTag="${GITHUB_SHA}" --output json)"
+          if jq -e '(.images | length) == 1 and (.failures | length) == 0' <<<"${existing}" >/dev/null; then
+            docker pull "${image}"
+            echo 'source=existing' >> "${GITHUB_OUTPUT}"
+          elif jq -e '(.images | length) == 0 and (.failures | length) == 1 and .failures[0].failureCode == "ImageNotFound"' <<<"${existing}" >/dev/null; then
+            docker build --file infra/docker/Dockerfile.backend --tag "${image}" .
+            echo 'source=built' >> "${GITHUB_OUTPUT}"
+          else
+            echo 'ECR returned an unexpected image lookup result; refusing to overwrite an immutable tag.' >&2
+            exit 1
+          fi
           echo "uri=${image}" >> "${GITHUB_OUTPUT}"
       - name: Reject high and critical image vulnerabilities
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
@@ -88,6 +100,7 @@ jobs:
           ignore-unfixed: true
           severity: HIGH,CRITICAL
       - name: Push scanned image
+        if: steps.image.outputs.source == 'built'
         run: docker push "${{ steps.image.outputs.uri }}"
 
   deploy-staging:
