@@ -20,7 +20,9 @@ extra["netty.version"] = "4.1.137.Final"
 // release containing the October 2026 security fixes.
 extra["jackson-2-bom.version"] = "2.21.7"
 
-// Boot 4 manages Tomcat 11; do not force the older Tomcat 10 line.
+// The Boot 4.1.1 BOM predates the patched Jackson 3 and Tomcat 11 releases.
+extra["jackson-bom.version"] = "3.1.7"
+extra["tomcat.version"] = "11.0.27"
 
 repositories {
     mavenCentral()
