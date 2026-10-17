@@ -1,6 +1,6 @@
 plugins {
     java
-    id("org.springframework.boot") version "3.5.16"
+    id("org.springframework.boot") version "4.1.1"
     id("io.spring.dependency-management") version "1.1.6"
 }
 
@@ -16,16 +16,19 @@ java {
 // Trivy release gate: keep Netty at the first version fixing current CVEs.
 extra["netty.version"] = "4.1.137.Final"
 
-// Trivy release gate: Apache Tomcat CVE-2026-65182/65905/68525 (10.1.58+).
-// 10.1.59 is the current published 10.1.x patch release.
-extra["tomcat.version"] = "10.1.59"
+// Spring Boot 4 retains Jackson 2 for legacy integrations; pin the first
+// release containing the October 2026 security fixes.
+extra["jackson-2-bom.version"] = "2.21.7"
+
+// Boot 4 manages Tomcat 11; do not force the older Tomcat 10 line.
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-webmvc")
+    implementation("org.springframework.boot:spring-boot-jackson2")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-validation")
@@ -33,10 +36,10 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-mail")
     implementation("com.mysql:mysql-connector-j")
 
-    implementation("org.flywaydb:flyway-core")
+    implementation("org.springframework.boot:spring-boot-starter-flyway")
     implementation("org.flywaydb:flyway-mysql")
 
-    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.17")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.0")
 
     implementation("software.amazon.awssdk:s3:2.29.45")
 
@@ -48,11 +51,13 @@ dependencies {
     annotationProcessor("org.projectlombok:lombok")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
+    testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
     testImplementation("org.springframework.security:spring-security-test")
     testImplementation("com.h2database:h2")
-    testImplementation("org.testcontainers:junit-jupiter")
-    testImplementation("org.testcontainers:mysql")
+    testImplementation("org.testcontainers:testcontainers-junit-jupiter")
+    testImplementation("org.testcontainers:testcontainers-mysql")
 
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
