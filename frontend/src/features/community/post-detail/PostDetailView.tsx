@@ -6,7 +6,6 @@ import { ReadableContent } from '@/components/content/ReadableContent';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { cn } from '@/lib/cn';
 import { formatRelativeTime } from '@/domain/common/format';
-import { formatAuthorIpLabel } from '@/domain/post/ipDisplay';
 import { displayAuthorNickname, type PostDetail } from '@/domain/post/types';
 import { PostDetailActionBar } from '@/features/community/post-detail/PostDetailActionBar';
 import type { PendingPostDetailConfirmation } from '@/features/community/post-detail/types';
@@ -87,9 +86,6 @@ export function PostDetailView({
           </p>
           <p className="mt-px text-[10.5px] text-[#A6ABA0]">
             {formatRelativeTime(post.createdAt)}
-            {formatAuthorIpLabel(post.authorIpMasked)
-              ? ` · ${formatAuthorIpLabel(post.authorIpMasked)}`
-              : ''}
           </p>
         </div>
       </div>

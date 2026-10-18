@@ -53,6 +53,16 @@ class AnonymousConcernIntegrationTest {
         assertThat(db.queryForObject("SELECT view_count FROM posts WHERE id=95002",Integer.class)).isZero();
     }
 
+    @Test void legacyPostIpIsAbsentFromListAndDetailResponses() throws Exception {
+        db.update("UPDATE posts SET author_ip_masked='172.20.*' WHERE id=95002");
+        mvc.perform(get("/api/posts").param("boardId", "94002").param("period", "all"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content[0].authorIpMasked").doesNotExist());
+        mvc.perform(get("/api/posts/95002"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.authorIpMasked").doesNotExist());
+    }
+
     @Test void privateMemberOnlyHiddenAndDeletedPreviewsStayUnavailableToEveryone() throws Exception {
         for(long id=95003;id<=95007;id++) {
             mvc.perform(get("/api/posts/"+id+"/share-preview")).andExpect(status().isNotFound());
@@ -67,7 +77,7 @@ class AnonymousConcernIntegrationTest {
         mvc.perform(post("/api/posts").header("Authorization",token(93001,"USER")).contentType(MediaType.APPLICATION_JSON).content(request.formatted(true)))
                 .andExpect(status().isCreated()).andExpect(jsonPath("$.data.isAnonymous").value(true))
                 .andExpect(jsonPath("$.data.authorNickname").value("익명(나)"))
-                .andExpect(jsonPath("$.data.authorIpMasked").isEmpty());
+                .andExpect(jsonPath("$.data.authorIpMasked").doesNotExist());
         assertThat(db.queryForObject("SELECT is_anonymous FROM posts WHERE title='new concern'",Boolean.class)).isTrue();
     }
 
