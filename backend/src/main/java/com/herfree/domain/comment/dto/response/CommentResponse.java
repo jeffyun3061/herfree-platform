@@ -27,14 +27,14 @@ public record CommentResponse(
         boolean concern = AnonymousConcernPolicy.isConcernBoard(comment.getPost().getBoard().getBoardType());
         boolean operator = concern && comment.getUser().getStatus() == UserStatus.ACTIVE
                 && StaffRolePolicy.isStaff(comment.getUser().getRole());
-        String displayNickname = operator ? "운영팀" : AnonymousNicknamePolicy.displayNickname(
-                concern || comment.isAnonymous(), isMyComment, authorNickname);
+        String displayNickname = AnonymousNicknamePolicy.displayNickname(
+                comment.isAnonymous(), isMyComment, authorNickname);
         return new CommentResponse(
                 comment.getId(),
                 comment.getPost().getId(),
                 displayNickname,
                 comment.getContent(),
-                concern || comment.isAnonymous(),
+                comment.isAnonymous(),
                 comment.getParent() != null ? comment.getParent().getId() : null,
                 isMyComment,
                 comment.getCreatedAt(),

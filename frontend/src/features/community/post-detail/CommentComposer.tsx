@@ -10,6 +10,7 @@ type CommentComposerProps = {
   inputRef: RefObject<HTMLTextAreaElement>;
   replyTarget: Comment | null;
   isMaskedPost: boolean;
+  isConcernPost: boolean;
   value: string;
   isSubmitting: boolean;
   onChange: (value: string) => void;
@@ -30,6 +31,7 @@ export function CommentComposer({
   inputRef,
   replyTarget,
   isMaskedPost,
+  isConcernPost,
   value,
   isSubmitting,
   onChange,
@@ -67,7 +69,9 @@ export function CommentComposer({
               ? `${displayAuthorNickname(replyTarget.authorNickname)}님에게 답글을 남겨 주세요.`
               : isMaskedPost
                 ? '운영자 답변을 작성해 주세요.'
-                : '따뜻한 댓글을 남겨주세요'
+                : isConcernPost
+                  ? '답변을 남겨 주세요.'
+                  : '따뜻한 댓글을 남겨주세요'
           }
           value={value}
           onChange={(event) => onChange(event.target.value)}
@@ -82,7 +86,7 @@ export function CommentComposer({
           disabled={isSubmitting}
           onClick={onSubmit}
           className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-[12px] px-0 lg:h-[52px] lg:w-[52px]"
-          aria-label={replyTarget ? '답글 등록' : isMaskedPost ? '답변 등록' : '댓글 등록'}
+          aria-label={replyTarget ? '답글 등록' : isMaskedPost || isConcernPost ? '답변 등록' : '댓글 등록'}
         >
           <CommentSendIcon />
         </Button>

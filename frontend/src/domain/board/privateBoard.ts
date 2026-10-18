@@ -55,7 +55,7 @@ export const COMMUNITY_ALL_TAB_LABEL = '전체';
 
 export const COMMUNITY_TAB_BOARD_TYPES = [
   { boardType: 'NOTICE', label: '공지' },
-  { boardType: 'ANONYMOUS_QUESTION', label: '익명 고민·질문' },
+  { boardType: 'ANONYMOUS_QUESTION', label: '익명 고민' },
   { boardType: 'FREE', label: '자유게시판' },
   { boardType: 'EXPERIENCE', label: '정보공유' },
   { boardType: 'RELATIONSHIP', label: '연애고지' },
