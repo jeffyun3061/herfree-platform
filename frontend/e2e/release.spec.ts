@@ -234,14 +234,14 @@ test.describe('staging data flow', () => {
       const payload = { boardId: board!.id, title, content: 'Temporary public experience for staging verification.', isAnonymous: false, visibility: 'PUBLIC' };
       const rejected = await account.api.post('/api/posts', { headers: csrf(account), data: payload });
       expect(rejected.status()).toBe(400);
-      const created = await data<{ id: number; authorNickname: string; isAnonymous: boolean; authorIpMasked: string | null }>(await account.api.post('/api/posts', { headers: csrf(account), data: { ...payload, publicDisclosureAccepted: true } }));
+      const created = await data<{ id: number; authorNickname: string; isAnonymous: boolean }>(await account.api.post('/api/posts', { headers: csrf(account), data: { ...payload, publicDisclosureAccepted: true } }));
       postId = created.id;
       expect(created.isAnonymous).toBe(true);
       expect(created.authorNickname).not.toBe(account.user.nickname);
-      expect(created.authorIpMasked).toBeNull();
-      const guest = await data<{ authorNickname: string; authorIpMasked: string | null }>(await request.get(`/api/posts/${postId}`));
+      expect(created).not.toHaveProperty('authorIpMasked');
+      const guest = await data<{ authorNickname: string }>(await request.get(`/api/posts/${postId}`));
       expect(guest.authorNickname).toBe('익명');
-      expect(guest.authorIpMasked).toBeNull();
+      expect(guest).not.toHaveProperty('authorIpMasked');
       const search = await data<{ content: Array<{ id: number }> }>(await request.get(`/api/posts?boardId=${board!.id}&keyword=${encodeURIComponent(title)}&page=0&size=20`));
       expect(search.content.some(item => item.id === postId)).toBe(true);
       const preview = await data<Record<string, unknown>>(await request.get(`/api/posts/${postId}/share-preview`));
