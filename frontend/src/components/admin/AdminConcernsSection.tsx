@@ -13,7 +13,7 @@ export function AdminConcernsSection({ compact = false }: { compact?: boolean })
   const [page, setPage] = useState(0);
   const { data, isLoading, error, refetch } = useApiQuery(() => fetchAdminConcerns(answered, page), [answered, page]);
   return <section className="rounded-[20px] border border-[#E7DFD2] bg-[#FFFCF7] p-4">
-    <div className="flex items-center justify-between gap-2"><h2 className="text-[15px] font-extrabold">익명 고민·질문 {data ? `· ${data.totalElements}건` : ''}</h2><button type="button" onClick={() => void refetch()} className="text-xs font-bold text-[#0B3B36]">새로고침</button></div>
+    <div className="flex items-center justify-between gap-2"><h2 className="text-[15px] font-extrabold">익명 고민 {data ? `· ${data.totalElements}건` : ''}</h2><button type="button" onClick={() => void refetch()} className="text-xs font-bold text-[#0B3B36]">새로고침</button></div>
     <p className="mt-2 text-xs leading-relaxed text-muted">오래 기다린 고민부터 답변해 주세요. 답변은 공개 글의 댓글로 등록하며 닉네임은 표시하지 않습니다.</p>
     {!compact && <div className="mt-3 flex gap-2">{[false, true].map(value => <button key={String(value)} type="button" aria-pressed={answered === value} onClick={() => {setAnswered(value);setPage(0);}} className={`rounded-full px-3 py-2 text-xs font-bold ${answered === value ? 'bg-[#0B3B36] text-white' : 'bg-[#EDF4F0]'}`}>{value ? '운영자 답변 완료' : '답변 대기'}</button>)}</div>}
     {isLoading ? <LoadingSpinner /> : error ? <ErrorMessage message={error} /> : <div className="mt-3 space-y-2">
