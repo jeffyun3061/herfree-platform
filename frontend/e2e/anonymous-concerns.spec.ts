@@ -142,9 +142,12 @@ test('empty anonymous concerns keep the next step close to search',async({page})
   await expect(emptyTitle).toBeVisible();
   const searchBox=await search.boundingBox();
   const titleBox=await emptyTitle.boundingBox();
+  const countBox=await page.getByText('총 0개의 이야기').boundingBox();
   expect(searchBox).not.toBeNull();
   expect(titleBox).not.toBeNull();
-  expect(titleBox!.y-searchBox!.y).toBeLessThan(130);
+  expect(countBox).not.toBeNull();
+  expect(titleBox!.y-searchBox!.y).toBeLessThan(100);
+  expect(Math.abs(titleBox!.x-countBox!.x)).toBeLessThan(2);
   await expect(page.getByRole('link',{name:'고민 남기기'})).toHaveCount(1);
 });
 

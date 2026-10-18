@@ -303,9 +303,9 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
           )}
 
           {!isLoadingAll && !listError && postPage.content.length === 0 && (
-            <div className={isPublicConcernFeed ? 'py-3' : 'py-6'}>
+            <div className={isPublicConcernFeed ? 'py-0' : 'py-6'}>
               <EmptyState
-                className={isPublicConcernFeed ? 'items-start gap-2 py-5 text-left' : undefined}
+                variant={isPublicConcernFeed ? 'compact' : 'default'}
                 title={keyword ? '검색 결과가 없습니다' : isPublicConcernFeed ? '아직 등록된 고민이 없어요' : '아직 글이 없습니다'}
                 description={
                   keyword
