@@ -33,7 +33,7 @@ describe('community board tabs', () => {
   it('keeps the user-facing board names stable', () => {
     expect(COMMUNITY_TAB_BOARD_TYPES.map((tab) => tab.label)).toEqual([
       '공지',
-      '익명 고민·질문',
+      '익명 고민',
       '자유게시판',
       '정보공유',
       '연애고지',

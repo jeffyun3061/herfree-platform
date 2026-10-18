@@ -72,7 +72,7 @@ export default function PostDetailContainer() {
   const postActions = usePostDetailActions(postId);
 
   const [commentText, setCommentText] = useState('');
-  const [isAnonymous, setIsAnonymous] = useState(false);
+  const [commentIdentity, setCommentIdentity] = useState<{ postId: number; isAnonymous: boolean } | null>(null);
   const [replyParentId, setReplyParentId] = useState<number | null>(null);
   const [reportOpen, setReportOpen] = useState(false);
   const [reportCommentId, setReportCommentId] = useState<number | null>(null);
@@ -84,6 +84,9 @@ export default function PostDetailContainer() {
 
   const loginHref = `/login?from=${encodeURIComponent(`/community/posts/${postId}`)}`;
   const staffUser = isStaff(user?.role);
+  const isConcernPost = isAnonymousConcernBoard(postBoard?.boardType);
+  const commentIsAnonymous = (isConcernPost && post?.isMyPost)
+    || (commentIdentity?.postId === postId ? commentIdentity.isAnonymous : isConcernPost);
   const replyTarget = replyParentId === null
     ? null
     : commentPage.content.find((comment) => comment.id === replyParentId) ?? null;
@@ -113,12 +116,13 @@ export default function PostDetailContainer() {
     setCommentError(null);
     const created = await addComment({
       content: commentText,
-      isAnonymous: isAnonymousConcernBoard(postBoard?.boardType) || isAnonymous,
+      isAnonymous: commentIsAnonymous,
       parentId: replyParentId,
     });
     if (created) {
       setCommentText('');
       setReplyParentId(null);
+      setCommentIdentity(null);
       await refetchPost();
     }
   };
@@ -184,7 +188,7 @@ export default function PostDetailContainer() {
       </div>
     );
   }
-  if (!isLoggedIn && !isAnonymousConcernBoard(postBoard?.boardType)) {
+  if (!isLoggedIn && !isConcernPost) {
     return (
       <div className="mx-auto max-w-app hf-scroll-pad-nav-tight">
         <PostDetailBackHeader backHref="/community" pathname={pathname} />
@@ -269,6 +273,7 @@ export default function PostDetailContainer() {
               isStaffUser={staffUser}
               isStaffOnlyPost={isStaffOnlyPost}
               isMaskedPost={isMaskedPost}
+              isConcernPost={isConcernPost}
               canWriteComments={canWriteComments}
               privateCommentHint={privateCommentHint}
               activeReplyId={replyParentId}
@@ -279,16 +284,45 @@ export default function PostDetailContainer() {
             />
 
             {canWriteComments ? (
-              <CommentComposer
-                inputRef={commentInputRef}
-                replyTarget={replyTarget}
-                isMaskedPost={isMaskedPost}
-                value={commentText}
-                isSubmitting={isSubmitting}
-                onChange={setCommentText}
-                onCancelReply={cancelReply}
-                onSubmit={() => void handleComment()}
-              />
+              <>
+                {isConcernPost && post.isMyPost && (
+                  <p className="mt-4 text-[12px] text-muted">글쓴이의 답변과 대댓글은 닉네임 비공개로 표시됩니다. 내용은 모두에게 공개됩니다.</p>
+                )}
+                {isConcernPost && !post.isMyPost && (
+                  <fieldset className="mt-4">
+                    <legend className="mb-2 text-[12px] font-semibold text-[#36453B]">답변 작성자 표시</legend>
+                    <div className="flex w-full rounded-md bg-[#EDF4F0] p-1" aria-label="답변 작성자 표시">
+                      {[
+                        { anonymous: true, label: '익명' },
+                        { anonymous: false, label: '닉네임 공개' },
+                      ].map((option) => (
+                        <label key={option.label} className={`flex min-h-11 flex-1 cursor-pointer items-center justify-center rounded text-[12px] font-semibold ${commentIsAnonymous === option.anonymous ? 'bg-white text-[#0B3B36] shadow-sm' : 'text-[#5C645A]'}`}>
+                          <input
+                            type="radio"
+                            name="comment-identity"
+                            checked={commentIsAnonymous === option.anonymous}
+                            onChange={() => setCommentIdentity({ postId, isAnonymous: option.anonymous })}
+                            className="sr-only"
+                          />
+                          {option.label}
+                        </label>
+                      ))}
+                    </div>
+                    <p className="mt-2 text-[12px] text-muted">답변 내용은 모두에게 공개됩니다.</p>
+                  </fieldset>
+                )}
+                <CommentComposer
+                  inputRef={commentInputRef}
+                  replyTarget={replyTarget}
+                  isMaskedPost={isMaskedPost}
+                  isConcernPost={isConcernPost}
+                  value={commentText}
+                  isSubmitting={isSubmitting}
+                  onChange={setCommentText}
+                  onCancelReply={cancelReply}
+                  onSubmit={() => void handleComment()}
+                />
+              </>
             ) : !isLoggedIn ? (
               <div className="mt-5 rounded-xl border border-dashed border-[#ECE5D8] bg-[#F8F4EC] p-5 text-center">
                 <p className="text-sm text-muted">댓글을 남기려면 로그인이 필요합니다.</p>
@@ -297,13 +331,12 @@ export default function PostDetailContainer() {
                 </Link>
               </div>
             ) : null}
-            {isAnonymousConcernBoard(postBoard?.boardType) && canWriteComments && <p className="mt-3 text-[12px] text-muted">닉네임은 비공개이며 댓글 내용은 공개됩니다. 운영팀 답변에는 운영자 표시가 붙어요.</p>}
-            {!isMaskedPost && !isAnonymousConcernBoard(postBoard?.boardType) && canWriteComments && (
+            {!isMaskedPost && !isConcernPost && canWriteComments && (
               <label className="mt-3 flex items-center gap-2 text-[12px] text-muted">
                 <input
                   type="checkbox"
-                  checked={isAnonymous}
-                  onChange={(event) => setIsAnonymous(event.target.checked)}
+                  checked={commentIsAnonymous}
+                  onChange={(event) => setCommentIdentity({ postId, isAnonymous: event.target.checked })}
                 />
                 익명으로 작성
               </label>

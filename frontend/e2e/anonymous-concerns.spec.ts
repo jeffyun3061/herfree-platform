@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
-const boards=[{id:1,name:'공지',boardType:'NOTICE'},{id:2,name:'자유게시판',boardType:'FREE'},{id:23,name:'익명 고민·질문',boardType:'ANONYMOUS_QUESTION'}];
-const detail={id:11,boardId:23,boardName:'익명 고민·질문',title:'같은 고민을 나눠요',content:'혼자 고민했던 이야기를 나눕니다.\n경험을 듣고 싶어요.',authorNickname:'익명',viewCount:1,visibility:'PUBLIC',isAnonymous:true,isMyPost:false,readable:true,imageUrl:null,staffReplied:true,createdAt:'2026-10-14T01:00:00Z',updatedAt:'2026-10-14T01:00:00Z'};
+const boards=[{id:1,name:'공지',boardType:'NOTICE'},{id:2,name:'자유게시판',boardType:'FREE'},{id:23,name:'익명 고민',boardType:'ANONYMOUS_QUESTION'}];
+const detail={id:11,boardId:23,boardName:'익명 고민',title:'같은 고민을 나눠요',content:'혼자 고민했던 이야기를 나눕니다.\n경험을 듣고 싶어요.',authorNickname:'익명',viewCount:1,visibility:'PUBLIC',isAnonymous:true,isMyPost:false,readable:true,imageUrl:null,staffReplied:true,createdAt:'2026-10-14T01:00:00Z',updatedAt:'2026-10-14T01:00:00Z'};
 const post={...detail,boardType:'ANONYMOUS_QUESTION',contentPreview:'혼자 고민했던 이야기를 나눕니다.',commentCount:2,reactionCount:0};
 const paged=(content:unknown[])=>({content,totalElements:content.length,totalPages:content.length?1:0,number:0,size:20,first:true,last:true});
 
@@ -38,8 +38,8 @@ async function fixtures(page:Page,role?:'USER'|'ADMIN') {
 test('anonymous concerns are readable without login and show genuine operator badges',async({page})=>{
   await fixtures(page);
   await page.goto('/community/23');
-  await expect(page.getByRole('heading',{name:'익명 고민·질문'})).toBeVisible();
-  await expect(page.getByLabel('고민·질문 검색')).toBeVisible();
+  await expect(page.getByRole('heading',{name:'익명 고민'})).toBeVisible();
+  await expect(page.getByLabel('고민 검색')).toBeVisible();
   await expect(page.locator('.community-feed-row__title')).toHaveText('같은 고민을 나눠요');
   await page.getByRole('link',{name:/같은 고민을 나눠요/}).click();
   await expect(page.getByText('혼자 고민했던 이야기를 나눕니다.',{exact:false})).toBeVisible();
@@ -80,6 +80,7 @@ test('narrow phones can read the thread without horizontal scrolling',async({pag
   await fixtures(page);
   await page.setViewportSize({width:320,height:568});
   await page.goto('/community/23');
+  await expect(page.getByRole('tab',{name:'익명 고민'})).toBeVisible();
   await expect(page.getByRole('link',{name:'같은 고민을 나눠요'})).toBeVisible();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
   await page.getByRole('link',{name:'같은 고민을 나눠요'}).click();
@@ -101,10 +102,51 @@ test('concern writing acknowledges public content and forces hidden nicknames',a
   await expect.poll(submitted).toMatchObject({isAnonymous:true,visibility:'PUBLIC',publicDisclosureAccepted:true});
 });
 
+test('any signed-in member can choose anonymous or named answers',async({page})=>{
+  await fixtures(page,'USER');
+  const answers:Record<string,unknown>[]=[];
+  await page.route('**/api/posts/11/comments',async route=>{
+    if(route.request().method()!=='POST') return route.fallback();
+    const answer=route.request().postDataJSON() as Record<string,unknown>;
+    answers.push(answer);
+    await route.fulfill({status:201,contentType:'application/json',body:JSON.stringify({success:true,data:{id:answers.length+2,postId:11,authorNickname:answer.isAnonymous?'익명(나)':'실제 닉네임',content:answer.content,isAnonymous:answer.isAnonymous,parentId:null,isMyComment:true,operatorReply:false,createdAt:detail.createdAt}})});
+  });
+  await page.goto('/community/posts/11');
+  await expect(page.getByRole('radio',{name:'익명'})).toBeChecked();
+  await page.getByPlaceholder('답변을 남겨 주세요.').fill('익명 답변');
+  await page.getByRole('button',{name:'답변 등록'}).click();
+  await expect.poll(()=>answers.length).toBe(1);
+  expect(answers[0]).toMatchObject({content:'익명 답변',isAnonymous:true});
+  await page.getByText('닉네임 공개',{exact:true}).click();
+  await expect(page.getByRole('radio',{name:'닉네임 공개'})).toBeChecked();
+  await page.getByPlaceholder('답변을 남겨 주세요.').fill('공개 답변');
+  await page.getByRole('button',{name:'답변 등록'}).click();
+  await expect.poll(()=>answers.length).toBe(2);
+  expect(answers[1]).toMatchObject({content:'공개 답변',isAnonymous:false});
+  await page.getByRole('button',{name:'답글',exact:true}).first().click();
+  await expect(page.getByRole('radio',{name:'익명'})).toBeChecked();
+  await page.getByText('닉네임 공개',{exact:true}).click();
+  await page.getByPlaceholder(/답글을 남겨 주세요/).fill('공개 대댓글');
+  await page.getByRole('button',{name:'답글 등록'}).click();
+  await expect.poll(()=>answers.length).toBe(3);
+  expect(answers[2]).toMatchObject({content:'공개 대댓글',isAnonymous:false,parentId:1});
+});
+
+test('question author cannot reveal their nickname in comments or nested replies',async({page})=>{
+  await fixtures(page,'USER');
+  await page.route('**/api/posts/11',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({success:true,data:{...detail,isMyPost:true}})}));
+  await page.goto('/community/posts/11');
+  await expect(page.getByText('글쓴이의 답변과 대댓글은 닉네임 비공개로 표시됩니다.',{exact:false})).toBeVisible();
+  await expect(page.getByRole('radio',{name:'닉네임 공개'})).toHaveCount(0);
+  await page.getByRole('button',{name:'답글',exact:true}).first().click();
+  await expect(page.getByRole('radio',{name:'닉네임 공개'})).toHaveCount(0);
+});
+
 test('operators have a concern queue and can open the public reply thread',async({page})=>{
   await fixtures(page,'ADMIN');
   await page.goto('/admin?tab=concerns');
   await expect(page.getByRole('button',{name:'운영자 답변 완료',exact:true})).toBeVisible();
   await page.getByRole('link',{name:/글 열고 답변하기/}).click();
-  await expect(page.getByText('닉네임은 비공개이며 댓글 내용은 공개됩니다.',{exact:false})).toBeVisible();
+  await expect(page.getByRole('radio',{name:'익명'})).toBeChecked();
+  await expect(page.getByRole('radio',{name:'닉네임 공개'})).toBeVisible();
 });

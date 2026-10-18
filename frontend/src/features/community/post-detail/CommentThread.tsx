@@ -16,6 +16,7 @@ type CommentThreadProps = {
   isStaffUser: boolean;
   isStaffOnlyPost: boolean;
   isMaskedPost: boolean;
+  isConcernPost: boolean;
   canWriteComments: boolean;
   privateCommentHint: boolean;
   activeReplyId: number | null;
@@ -35,6 +36,7 @@ export function CommentThread({
   isStaffUser,
   isStaffOnlyPost,
   isMaskedPost,
+  isConcernPost,
   canWriteComments,
   privateCommentHint,
   activeReplyId,
@@ -49,7 +51,7 @@ export function CommentThread({
     <>
       <div className="mb-3 flex items-center justify-between gap-3">
         <h2 className="text-[13px] font-bold text-[#15201D]">
-          {isMaskedPost ? '운영자 답변' : '댓글'}
+          {isMaskedPost ? '운영자 답변' : isConcernPost ? '답변' : '댓글'}
           {isMaskedPost ? ` ${totalElements}` : ''}
         </h2>
         {totalPages > 1 && (
@@ -85,10 +87,10 @@ export function CommentThread({
       ) : (
         <div className="rounded-[16px] border border-[#E7DFD2] bg-[#FBF6EA] px-4 py-6 text-center">
           <p className="text-[13px] font-bold text-[#1E2621]">
-            {isMaskedPost ? '아직 운영자 답변이 없어요' : '아직 댓글이 없어요'}
+            {isMaskedPost ? '아직 운영자 답변이 없어요' : isConcernPost ? '아직 답변이 없어요' : '아직 댓글이 없어요'}
           </p>
           <p className="mt-1 text-[12px] text-[#7A847C]">
-            {isMaskedPost ? '답변이 등록되면 이곳에 표시됩니다.' : '첫 댓글로 따뜻한 마음을 남겨보세요.'}
+            {isMaskedPost ? '답변이 등록되면 이곳에 표시됩니다.' : isConcernPost ? '첫 답변을 남겨 주세요.' : '첫 댓글로 따뜻한 마음을 남겨보세요.'}
           </p>
         </div>
       )}
