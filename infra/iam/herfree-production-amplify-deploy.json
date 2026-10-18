@@ -1,0 +1,14 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "DeployProductionFrontend",
+      "Effect": "Allow",
+      "Action": [
+        "amplify:StartJob",
+        "amplify:GetJob"
+      ],
+      "Resource": "arn:aws:amplify:ap-northeast-2:439777528445:apps/d2bcg3vnlv5hkh/branches/main/jobs/*"
+    }
+  ]
+}

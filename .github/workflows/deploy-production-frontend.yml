@@ -50,7 +50,11 @@ jobs:
             commit="$(jq -r '.job.summary.commitId' <<<"${job}")"
             echo "Amplify job ${job_id}: ${status}"
             if [[ "${status}" == SUCCEED ]]; then
-              test "${commit}" = "${GITHUB_SHA}"
+              if [[ "${commit}" != HEAD && "${commit}" != "${GITHUB_SHA}" ]]; then
+                echo "Amplify built unexpected commit: ${commit}" >&2
+                exit 1
+              fi
+              test "${GITHUB_SHA}" = "$(git ls-remote origin refs/heads/main | cut -f1)"
               exit 0
             fi
             if [[ "${status}" == FAILED || "${status}" == CANCELLED ]]; then
