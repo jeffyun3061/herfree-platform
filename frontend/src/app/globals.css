@@ -565,8 +565,13 @@ body {
     @apply relative min-w-0;
   }
 
-  .community-tabs-nav {
-    @apply flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#DDE3E1] bg-white text-[#0B3B36] shadow-[0_8px_20px_-16px_rgba(15,30,25,.5)] transition-opacity hover:bg-[#F8FAF9];
+  .community-tabs-scroll {
+    scrollbar-width: none;
+    scroll-padding-inline: var(--hf-page-px);
+  }
+
+  .community-tabs-scroll::-webkit-scrollbar {
+    display: none;
   }
 
   .post-card {
@@ -578,7 +583,7 @@ body {
   }
 
   .community-feed-row {
-    @apply -mx-4 rounded-[16px] px-4 py-[15px];
+    @apply py-3;
   }
 
   .community-feed-list > a:not(:last-child) .community-feed-row,
@@ -591,7 +596,7 @@ body {
   }
 
   .community-feed-row__title-line {
-    @apply flex w-full min-w-0 flex-wrap items-center gap-2;
+    @apply flex w-full min-w-0 items-start gap-2;
   }
 
   .community-feed-tag {
@@ -599,7 +604,7 @@ body {
   }
 
   .community-feed-row__title {
-    @apply line-clamp-2 min-w-0 basis-full break-words text-[15px] font-semibold leading-[1.5] tracking-normal text-[#1E2621];
+    @apply line-clamp-2 min-w-0 flex-1 break-words text-[14px] font-semibold leading-[1.5] tracking-normal text-[#1E2621];
   }
 
   .community-feed-row__meta {

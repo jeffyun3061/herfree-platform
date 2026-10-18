@@ -88,6 +88,65 @@ test('narrow phones can read the thread without horizontal scrolling',async({pag
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
 });
 
+for (const width of [320, 390, 768, 1280]) {
+  test(`community tabs and rows stay compact at ${width}px`,async({page})=>{
+    await fixtures(page);
+    await page.setViewportSize({width,height:800});
+    await page.goto('/community/23');
+    const tab=page.getByRole('tab',{name:'익명 고민'});
+    await expect(tab).toBeVisible();
+    expect(await tab.evaluate(element=>element.scrollHeight<=element.clientHeight)).toBe(true);
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
+    const row=page.locator('.community-feed-row').first();
+    const tag=row.locator('.community-feed-tag');
+    const title=row.locator('.community-feed-row__title');
+    await expect(title).toBeVisible();
+    const tagBox=await tag.boundingBox();
+    const titleBox=await title.boundingBox();
+    expect(tagBox).not.toBeNull();
+    expect(titleBox).not.toBeNull();
+    expect(Math.abs(tagBox!.y-titleBox!.y)).toBeLessThan(12);
+    if(process.env.UI_CAPTURE) await page.screenshot({path:`test-results/community-${width}.png`,fullPage:true});
+    await expect(tab).toHaveAttribute('aria-selected','true');
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
+  });
+}
+
+test('mixed-board mobile feed remains readable with several posts',async({page})=>{
+  await fixtures(page,'USER');
+  const titles=['개인일지 이용 안내','커뮤니티 이용수칙 함께 지켜주세요','헤르프리 홈페이지를 시작합니다','국내 라이신 영양제 3종 비교표','고지 성공했습니다','고지 두려움','가입인사','첫글은 제가 올려볼게요'];
+  await page.route('**/api/posts?**',async route=>{
+    const content=titles.map((title,index)=>({...post,id:index+20,title,boardType:index<3?'NOTICE':index===3?'EXPERIENCE':'FREE',boardName:index<3?'공지':index===3?'정보공유':'자유게시판',authorNickname:index<4?'헤르프리':'익명'}));
+    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({success:true,data:paged(content)})});
+  });
+  await page.setViewportSize({width:390,height:844});
+  await page.goto('/community');
+  await expect(page.locator('.community-feed-row__title')).toHaveCount(titles.length);
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
+  if(process.env.UI_CAPTURE) await page.screenshot({path:'test-results/community-feed-390.png',fullPage:true});
+});
+
+test('later board tabs scroll into view when selected on a phone',async({page})=>{
+  await fixtures(page,'USER');
+  await page.route('**/api/boards',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({success:true,data:[
+    ...boards,
+    {id:24,name:'정보공유',boardType:'EXPERIENCE'},
+    {id:25,name:'연애고지',boardType:'RELATIONSHIP'},
+    {id:26,name:'검사대기',boardType:'PHOBIA'},
+  ]})}));
+  await page.setViewportSize({width:320,height:700});
+  await page.goto('/community/23');
+  const lastTab=page.getByRole('tab',{name:'검사대기'});
+  await lastTab.click();
+  await expect(lastTab).toHaveAttribute('aria-selected','true');
+  expect(await lastTab.evaluate(element=>{
+    const bounds=element.getBoundingClientRect();
+    const viewport=element.parentElement!.getBoundingClientRect();
+    return bounds.left>=viewport.left && bounds.right<=viewport.right;
+  })).toBe(true);
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
+});
+
 test('concern writing acknowledges public content and forces hidden nicknames',async({page})=>{
   const submitted=await fixtures(page,'USER');
   await page.goto('/community/write?boardId=23');
