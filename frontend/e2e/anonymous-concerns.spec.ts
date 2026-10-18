@@ -123,7 +123,29 @@ test('mixed-board mobile feed remains readable with several posts',async({page})
   await page.goto('/community');
   await expect(page.locator('.community-feed-row__title')).toHaveCount(titles.length);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
+  await page.evaluate(()=>window.scrollTo(0,document.documentElement.scrollHeight));
+  const lastRow=await page.locator('.community-feed-row').last().boundingBox();
+  const fab=await page.getByRole('link',{name:'커뮤니티 글쓰기'}).boundingBox();
+  expect(lastRow).not.toBeNull();
+  expect(fab).not.toBeNull();
+  expect(lastRow!.y+lastRow!.height).toBeLessThanOrEqual(fab!.y);
   if(process.env.UI_CAPTURE) await page.screenshot({path:'test-results/community-feed-390.png',fullPage:true});
+});
+
+test('empty anonymous concerns keep the next step close to search',async({page})=>{
+  await fixtures(page);
+  await page.route('**/api/posts?**',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({success:true,data:paged([])})}));
+  await page.setViewportSize({width:390,height:844});
+  await page.goto('/community/23');
+  const search=page.getByRole('searchbox',{name:'고민 검색'});
+  const emptyTitle=page.getByText('아직 등록된 고민이 없어요');
+  await expect(emptyTitle).toBeVisible();
+  const searchBox=await search.boundingBox();
+  const titleBox=await emptyTitle.boundingBox();
+  expect(searchBox).not.toBeNull();
+  expect(titleBox).not.toBeNull();
+  expect(titleBox!.y-searchBox!.y).toBeLessThan(130);
+  await expect(page.getByRole('link',{name:'고민 남기기'})).toHaveCount(1);
 });
 
 test('later board tabs scroll into view when selected on a phone',async({page})=>{
