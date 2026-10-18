@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
 const boards=[{id:1,name:'공지',boardType:'NOTICE'},{id:2,name:'자유게시판',boardType:'FREE'},{id:23,name:'익명 고민·질문',boardType:'ANONYMOUS_QUESTION'}];
-const detail={id:11,boardId:23,boardName:'익명 고민·질문',title:'같은 고민을 나눠요',content:'혼자 고민했던 이야기를 나눕니다.\n경험을 듣고 싶어요.',authorNickname:'익명',viewCount:1,visibility:'PUBLIC',isAnonymous:true,isMyPost:false,readable:true,imageUrl:null,staffReplied:true,authorIpMasked:null,createdAt:'2026-10-14T01:00:00Z',updatedAt:'2026-10-14T01:00:00Z'};
+const detail={id:11,boardId:23,boardName:'익명 고민·질문',title:'같은 고민을 나눠요',content:'혼자 고민했던 이야기를 나눕니다.\n경험을 듣고 싶어요.',authorNickname:'익명',viewCount:1,visibility:'PUBLIC',isAnonymous:true,isMyPost:false,readable:true,imageUrl:null,staffReplied:true,createdAt:'2026-10-14T01:00:00Z',updatedAt:'2026-10-14T01:00:00Z'};
 const post={...detail,boardType:'ANONYMOUS_QUESTION',contentPreview:'혼자 고민했던 이야기를 나눕니다.',commentCount:2,reactionCount:0};
 const paged=(content:unknown[])=>({content,totalElements:content.length,totalPages:content.length?1:0,number:0,size:20,first:true,last:true});
 
