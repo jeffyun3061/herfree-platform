@@ -1,0 +1,64 @@
+name: Deploy production frontend
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: production-frontend
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      AMPLIFY_APP_ID: d2bcg3vnlv5hkh
+      AMPLIFY_BRANCH: main
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Deploy current main to Amplify
+        run: |
+          set -euo pipefail
+          test "${GITHUB_REF}" = refs/heads/main
+          current_main="$(git ls-remote origin refs/heads/main | cut -f1)"
+          test "${GITHUB_SHA}" = "${current_main}"
+
+          job_id="$(aws amplify start-job \
+            --app-id "${AMPLIFY_APP_ID}" \
+            --branch-name "${AMPLIFY_BRANCH}" \
+            --job-type RELEASE \
+            --query 'jobSummary.jobId' \
+            --output text)"
+          test -n "${job_id}"
+
+          for attempt in $(seq 1 90); do
+            job="$(aws amplify get-job \
+              --app-id "${AMPLIFY_APP_ID}" \
+              --branch-name "${AMPLIFY_BRANCH}" \
+              --job-id "${job_id}" \
+              --output json)"
+            status="$(jq -r '.job.summary.status' <<<"${job}")"
+            commit="$(jq -r '.job.summary.commitId' <<<"${job}")"
+            echo "Amplify job ${job_id}: ${status}"
+            if [[ "${status}" == SUCCEED ]]; then
+              test "${commit}" = "${GITHUB_SHA}"
+              exit 0
+            fi
+            if [[ "${status}" == FAILED || "${status}" == CANCELLED ]]; then
+              exit 1
+            fi
+            sleep 20
+          done
+          echo 'Timed out waiting for Amplify production deployment.' >&2
+          exit 1
+      - name: Check public frontend
+        run: curl --fail --silent --show-error --location --retry 6 --retry-delay 10 --output /dev/null https://www.herpfree.co.kr/community
