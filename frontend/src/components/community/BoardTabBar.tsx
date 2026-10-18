@@ -24,7 +24,17 @@ export function BoardTabBar({ boards, selectedBoardId, onSelect, showAllTab = fa
   ], [boards, showAllTab]);
 
   useEffect(() => {
-    selectedTabRef.current?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    const selected = selectedTabRef.current;
+    const scroller = selected?.parentElement;
+    if (!selected || !scroller) return;
+
+    const selectedBounds = selected.getBoundingClientRect();
+    const scrollerBounds = scroller.getBoundingClientRect();
+    if (selectedBounds.left < scrollerBounds.left) {
+      scroller.scrollLeft -= scrollerBounds.left - selectedBounds.left + 8;
+    } else if (selectedBounds.right > scrollerBounds.right) {
+      scroller.scrollLeft += selectedBounds.right - scrollerBounds.right + 8;
+    }
   }, [selectedBoardId, tabs]);
 
   return (
