@@ -34,9 +34,7 @@ import com.herfree.global.util.PostSearchKeywordPolicy;
 import com.herfree.global.util.PostVisibilityPolicy;
 import com.herfree.global.storage.PostImageStorageService;
 import com.herfree.domain.reaction.repository.ReactionRepository;
-import com.herfree.global.util.AuthorIpMaskPolicy;
 import com.herfree.global.util.BoardWritePolicy;
-import com.herfree.global.util.ClientIpExtractor;
 import com.herfree.global.util.PrivateBoardPolicy;
 import com.herfree.global.util.AnonymousConcernPolicy;
 import com.herfree.global.exception.BusinessException;
@@ -60,7 +58,7 @@ import java.util.stream.Collectors;
  * 커뮤니티 게시글 — 작성·목록·상세·수정·삭제.
  * <p>
  * 비밀사연·문의·상담 등은 {@link com.herfree.global.util.PrivateBoardPolicy}로 제목·본문을 마스킹하고,
- * 작성자 IP는 {@link com.herfree.global.util.AuthorIpMaskPolicy}로 목록에 노출하지 않는다.
+ * 작성자 IP는 게시글 응답에 포함하지 않는다.
  */
 @Service
 @RequiredArgsConstructor
@@ -77,7 +75,6 @@ public class PostService {
     private final UserProfileRepository userProfileRepository;
     private final PostImageStorageService postImageStorageService;
     private final ReactionRepository reactionRepository;
-    private final ClientIpExtractor clientIpExtractor;
     private final AnalyticsService analyticsService;
 
     @Transactional
@@ -101,8 +98,6 @@ public class PostService {
                 ? PostVisibility.MEMBERS_ONLY
                 : concern ? PostVisibility.PUBLIC : request.visibility();
 
-        String authorIpMasked = AuthorIpMaskPolicy.mask(clientIpExtractor.extract(httpRequest));
-
         Post post = Post.builder()
                 .board(board)
                 .user(user)
@@ -110,7 +105,6 @@ public class PostService {
                 .content(request.content())
                 .visibility(visibility)
                 .isAnonymous(concern || request.isAnonymous())
-                .authorIpMasked(concern ? null : authorIpMasked)
                 .build();
 
         postRepository.save(post);

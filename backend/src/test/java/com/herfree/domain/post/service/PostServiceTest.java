@@ -22,7 +22,6 @@ import com.herfree.domain.user.entity.UserStatus;
 import com.herfree.domain.user.repository.UserProfileRepository;
 import com.herfree.domain.user.repository.UserRepository;
 import com.herfree.domain.reaction.repository.ReactionRepository;
-import com.herfree.global.util.ClientIpExtractor;
 import com.herfree.global.util.PostListPeriod;
 import com.herfree.global.util.PostListSort;
 import com.herfree.global.exception.BusinessException;
@@ -92,9 +91,6 @@ class PostServiceTest {
     @Mock
     private ReactionRepository reactionRepository;
 
-    @Mock
-    private ClientIpExtractor clientIpExtractor;
-
     @InjectMocks
     private PostService postService;
 
@@ -127,14 +123,13 @@ class PostServiceTest {
 
         // when
         HttpServletRequest httpRequest = mock(HttpServletRequest.class);
-        given(clientIpExtractor.extract(httpRequest)).willReturn("203.0.113.10");
         PostDetailResponse response = postService.createPost(userId, request, httpRequest);
 
         // then — 작성된 게시글의 제목과 내용이 요청과 일치하는지 확인한다
         assertThat(response.title()).isEqualTo(request.title());
         assertThat(response.content()).isEqualTo(request.content());
         assertThat(response.isMyPost()).isTrue();
-        assertThat(response.authorIpMasked()).isEqualTo("203.0.*");
+        verify(postRepository).save(argThat(post -> post.getAuthorIpMasked() == null));
     }
 
     @Test

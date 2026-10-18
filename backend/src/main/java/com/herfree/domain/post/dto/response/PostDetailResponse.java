@@ -23,7 +23,6 @@ public record PostDetailResponse(
         boolean readable,
         String imageUrl,
         boolean staffReplied,
-        String authorIpMasked,
         Instant createdAt,
         Instant updatedAt
 ) {
@@ -59,8 +58,6 @@ public record PostDetailResponse(
                         || AnonymousConcernPolicy.isConcernBoard(post.getBoard().getBoardType()), isMyPost, authorNickname);
         String title = mask ? PrivateBoardPolicy.MASKED_TITLE : post.getTitle();
         String content = mask ? PrivateBoardPolicy.SECRET_STORY_DETAIL_MESSAGE : post.getContent();
-        String authorIpMasked = mask || AnonymousConcernPolicy.isConcernBoard(post.getBoard().getBoardType())
-                ? null : post.getAuthorIpMasked();
 
         return new PostDetailResponse(
                 post.getId(),
@@ -76,7 +73,6 @@ public record PostDetailResponse(
                 readable,
                 mask ? null : imageUrl,
                 staffReplied,
-                authorIpMasked,
                 post.getCreatedAt(),
                 post.getUpdatedAt()
         );

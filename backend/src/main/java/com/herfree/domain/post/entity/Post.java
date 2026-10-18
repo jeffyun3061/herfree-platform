@@ -69,7 +69,7 @@ public class Post extends BaseTimeEntity {
     @Column(nullable = false)
     private boolean isAnonymous;
 
-    // 작성 시점 클라이언트 IP 마스킹 값 (예: 123.45.*) — 커뮤니티 표시용
+    // 기존 게시글의 마스킹 IP 값. 새 글에서는 저장하지 않고 API에도 노출하지 않는다.
     @Column(name = "author_ip_masked", length = 24)
     private String authorIpMasked;
 

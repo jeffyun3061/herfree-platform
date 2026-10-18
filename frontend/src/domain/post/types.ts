@@ -16,7 +16,6 @@ export type Post = {
   isMyPost: boolean;
   readable: boolean;
   staffReplied: boolean;
-  authorIpMasked?: string | null;
 };
 
 // 게시글 상세 (PostDetailResponse) — isMyPost로 수정·삭제 버튼 노출을 결정한다
@@ -34,7 +33,6 @@ export type PostDetail = {
   readable: boolean;
   imageUrl: string | null;
   staffReplied: boolean;
-  authorIpMasked?: string | null;
   createdAt: string;
   updatedAt: string;
 };
