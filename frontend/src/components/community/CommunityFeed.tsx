@@ -258,7 +258,7 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
 
           {!isLoadingAll && !listError && (
             <div className="pt-2">
-              <p className="text-[12px] hf-text-subtle">
+              <p className="text-[12px] text-[#65736B]">
                 총 {postPage.totalElements.toLocaleString('ko-KR')}개의 이야기
               </p>
             </div>
@@ -303,18 +303,21 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
           )}
 
           {!isLoadingAll && !listError && postPage.content.length === 0 && (
-            <div className="py-6">
+            <div className={isPublicConcernFeed ? 'py-3' : 'py-6'}>
               <EmptyState
-                title={keyword ? '검색 결과가 없습니다' : '아직 글이 없습니다'}
+                className={isPublicConcernFeed ? 'items-start gap-2 py-5 text-left' : undefined}
+                title={keyword ? '검색 결과가 없습니다' : isPublicConcernFeed ? '아직 등록된 고민이 없어요' : '아직 글이 없습니다'}
                 description={
                   keyword
                     ? '다른 검색어로 다시 시도해 보세요.'
                     : isNoticeBoard
                       ? '등록된 공지가 없습니다.'
-                      : '첫 이야기를 함께 남겨 보세요.'
+                      : isPublicConcernFeed
+                        ? '첫 고민을 남겨 주세요.'
+                        : '첫 이야기를 함께 남겨 보세요.'
                 }
                 action={
-                  !isNoticeBoard && canCommunityWrite ? (
+                  !isNoticeBoard && !isPublicConcernFeed && canCommunityWrite ? (
                     <Link href={writeHref}>
                       <Button size="sm">글쓰기</Button>
                     </Link>
