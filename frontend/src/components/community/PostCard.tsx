@@ -48,22 +48,17 @@ export function PostCard({ post, boardName }: PostCardProps) {
         <div className="community-feed-row__header">
           <div className="community-feed-row__title-line">
             <span className={cn('community-feed-tag', tagClass)}>{displayBoard}</span>
-            {showReplyStatus && (
-              <span
-                className={cn(
-                  'shrink-0 rounded-md px-2 py-0.5 text-[10px] font-semibold',
-                  post.staffReplied ? 'bg-primary/15 text-primary' : 'bg-[#F4F6F5] text-[#8B9590]',
-                )}
-              >
-                {post.staffReplied ? '답변 완료' : '답변 대기'}
-              </span>
-            )}
             <span className="community-feed-row__title" title={post.title}>{post.title}</span>
           </div>
           <div className="community-feed-row__meta">
             <span className="max-w-[46%] truncate" title={post.authorNickname}>{post.authorNickname}</span>
             <MetaDot />
             <time dateTime={post.createdAt}>{formatRelativeTime(post.createdAt)}</time>
+            {showReplyStatus && (
+              <span className={cn('rounded px-1.5 py-0.5 text-[10px] font-semibold', post.staffReplied ? 'bg-primary/15 text-primary' : 'bg-[#E7EAE7] text-[#65736B]')}>
+                {post.staffReplied ? '답변 완료' : '답변 대기'}
+              </span>
+            )}
             <span className="ml-auto flex shrink-0 items-center gap-3">
               <span aria-label={`좋아요 ${post.reactionCount ?? 0}개`}>♡ {post.reactionCount ?? 0}</span>
               <span aria-label={`댓글 ${post.commentCount ?? 0}개`}>💬 {post.commentCount ?? 0}</span>
