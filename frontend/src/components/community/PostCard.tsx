@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import type { Post } from '@/domain/post/types';
 import { formatRelativeTime } from '@/domain/common/format';
-import { formatAuthorIpLabel } from '@/domain/post/ipDisplay';
 import { getBoardTagClass } from '@/domain/board/types';
 import { getCommunityBoardTabLabel, isMaskedBoardType, isSecretStoryBoardType, isAnonymousConcernBoard } from '@/domain/board/privateBoard';
 import { cn } from '@/lib/cn';
@@ -28,7 +27,6 @@ export function PostCard({ post, boardName }: PostCardProps) {
   const canOpen = post.readable !== false || isSecretStory;
   const showReplyStatus = (isMaskedBoardType(post.boardType) || isAnonymousConcernBoard(post.boardType)) && (post.readable !== false || isSecretStory);
   const tagClass = getBoardTagClass(post.boardType);
-  const authorIpLabel = formatAuthorIpLabel(post.authorIpMasked);
 
   if (!canOpen) {
     return (
@@ -64,12 +62,6 @@ export function PostCard({ post, boardName }: PostCardProps) {
           </div>
           <div className="community-feed-row__meta">
             <span className="max-w-[46%] truncate" title={post.authorNickname}>{post.authorNickname}</span>
-            {authorIpLabel ? (
-              <>
-                <MetaDot />
-                <span>{authorIpLabel}</span>
-              </>
-            ) : null}
             <MetaDot />
             <time dateTime={post.createdAt}>{formatRelativeTime(post.createdAt)}</time>
             <span className="ml-auto flex shrink-0 items-center gap-3">
