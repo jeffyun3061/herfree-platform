@@ -29,9 +29,9 @@ class AnonymousConcernIntegrationTest {
 
     @BeforeEach void fixtures() {
         var now = Timestamp.from(Instant.now());
-        for (int i = 1; i <= 3; i++) {
+        for (int i = 1; i <= 4; i++) {
             db.update("INSERT INTO users (id,email,password,role,status,credential_version,created_at,updated_at) VALUES (?,?,?,?,'ACTIVE',0,?,?)",
-                    93000+i, "concern-"+i+"@example.invalid", "test-encoded", i==1?"USER":i==2?"ADMIN":"DOCTOR", now,now);
+                    93000+i, "concern-"+i+"@example.invalid", "test-encoded", i==1||i==4?"USER":i==2?"ADMIN":"DOCTOR", now,now);
             db.update("INSERT INTO user_profiles (user_id,nickname,is_public,created_at,updated_at) VALUES (?, ?, true, ?, ?)",
                     93000+i, "private-real-nickname-"+i, now,now);
         }
@@ -81,13 +81,51 @@ class AnonymousConcernIntegrationTest {
         assertThat(db.queryForObject("SELECT is_anonymous FROM posts WHERE title='new concern'",Boolean.class)).isTrue();
     }
 
-    @Test void anonymitySurvivesGuestReadEditAndAnExplicitNonanonymousComment() throws Exception {
+    @Test void questionAnonymitySurvivesGuestReadEditWhileAnAnswerCanShowItsNickname() throws Exception {
         mvc.perform(get("/api/posts/95001")).andExpect(status().isOk()).andExpect(jsonPath("$.data.authorNickname").value("익명"));
         mvc.perform(patch("/api/posts/95001").header("Authorization",token(93001,"USER")).contentType(MediaType.APPLICATION_JSON).content("{\"title\":\"edited\",\"content\":\"edited content\",\"isAnonymous\":false}"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.data.isAnonymous").value(true));
-        mvc.perform(post("/api/posts/95001/comments").header("Authorization",token(93001,"USER")).contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"experience\",\"isAnonymous\":false}"))
-                .andExpect(status().isCreated()).andExpect(jsonPath("$.data.isAnonymous").value(true)).andExpect(jsonPath("$.data.operatorReply").value(false));
-        mvc.perform(get("/api/posts/95001/comments")).andExpect(status().isOk()).andExpect(jsonPath("$.data.content[0].authorNickname").value("익명"));
+        mvc.perform(post("/api/posts/95001/comments").header("Authorization",token(93004,"USER")).contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"experience\",\"isAnonymous\":false}"))
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.data.isAnonymous").value(false))
+                .andExpect(jsonPath("$.data.authorNickname").value("private-real-nickname-4"))
+                .andExpect(jsonPath("$.data.operatorReply").value(false));
+        mvc.perform(get("/api/posts/95001/comments")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content[0].authorNickname").value("private-real-nickname-4"));
+    }
+
+    @Test void aMemberCanAnswerAnonymouslyWithoutExposingTheirNicknameToGuests() throws Exception {
+        mvc.perform(post("/api/posts/95001/comments").header("Authorization",token(93004,"USER"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"content\":\"anonymous answer\",\"isAnonymous\":true}"))
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.data.isAnonymous").value(true))
+                .andExpect(jsonPath("$.data.authorNickname").value("익명(나)"));
+        mvc.perform(get("/api/posts/95001/comments")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content[0].authorNickname").value("익명"));
+    }
+
+    @Test void questionAuthorStaysAnonymousInNestedRepliesWhileOtherMembersChooseTheirIdentity() throws Exception {
+        mvc.perform(post("/api/posts/95001/comments").header("Authorization",token(93004,"USER"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"content\":\"named answer\",\"isAnonymous\":false}"))
+                .andExpect(status().isCreated());
+        Long parentId = db.queryForObject("SELECT id FROM comments WHERE content='named answer'", Long.class);
+        mvc.perform(post("/api/posts/95001/comments").header("Authorization",token(93001,"USER"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"content\":\"author follow-up\",\"isAnonymous\":false,\"parentId\":"+parentId+"}"))
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.data.isAnonymous").value(true))
+                .andExpect(jsonPath("$.data.authorNickname").value("익명(나)"));
+        Long followUpId = db.queryForObject("SELECT id FROM comments WHERE content='author follow-up'", Long.class);
+        mvc.perform(post("/api/posts/95001/comments").header("Authorization",token(93004,"USER"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"content\":\"named follow-up\",\"isAnonymous\":false,\"parentId\":"+followUpId+"}"))
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.data.isAnonymous").value(false))
+                .andExpect(jsonPath("$.data.authorNickname").value("private-real-nickname-4"));
+        mvc.perform(get("/api/posts/95001/comments")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content[0].authorNickname").value("private-real-nickname-4"))
+                .andExpect(jsonPath("$.data.content[1].authorNickname").value("익명"))
+                .andExpect(jsonPath("$.data.content[1].parentId").value(parentId))
+                .andExpect(jsonPath("$.data.content[2].authorNickname").value("private-real-nickname-4"))
+                .andExpect(jsonPath("$.data.content[2].parentId").value(followUpId));
     }
 
     @Test void onlyVerifiedOtherOperatorsResolveTheQueueAndPublicBadge() throws Exception {
@@ -97,11 +135,24 @@ class AnonymousConcernIntegrationTest {
         mvc.perform(get("/api/admin/concerns").header("Authorization",token(93002,"ADMIN"))).andExpect(status().isOk()).andExpect(jsonPath("$.data.totalElements").value(1));
         mvc.perform(get("/api/admin/concerns").header("Authorization",token(93001,"USER"))).andExpect(status().isForbidden());
         mvc.perform(post("/api/posts/95001/comments").header("Authorization",token(93002,"ADMIN")).contentType(MediaType.APPLICATION_JSON).content(body))
-                .andExpect(status().isCreated()).andExpect(jsonPath("$.data.operatorReply").value(true)).andExpect(jsonPath("$.data.authorNickname").value("운영팀"));
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.data.operatorReply").value(true))
+                .andExpect(jsonPath("$.data.authorNickname").value("private-real-nickname-2"));
         mvc.perform(get("/api/admin/concerns").header("Authorization",token(93002,"ADMIN"))).andExpect(status().isOk()).andExpect(jsonPath("$.data.totalElements").value(0));
         mvc.perform(get("/api/posts/95001")).andExpect(status().isOk()).andExpect(jsonPath("$.data.staffReplied").value(true));
         db.update("UPDATE comments SET status='HIDDEN' WHERE post_id=95001 AND user_id=93002");
         mvc.perform(get("/api/admin/concerns").header("Authorization",token(93002,"ADMIN"))).andExpect(status().isOk()).andExpect(jsonPath("$.data.totalElements").value(1));
+    }
+
+    @Test void anOperatorCanKeepTheirNicknameHiddenWhileAnswering() throws Exception {
+        mvc.perform(post("/api/posts/95001/comments").header("Authorization",token(93002,"ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"content\":\"private operator reply\",\"isAnonymous\":true}"))
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.data.isAnonymous").value(true))
+                .andExpect(jsonPath("$.data.authorNickname").value("익명(나)"))
+                .andExpect(jsonPath("$.data.operatorReply").value(true));
+        mvc.perform(get("/api/posts/95001/comments")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content[0].authorNickname").value("익명"))
+                .andExpect(jsonPath("$.data.content[0].operatorReply").value(true));
     }
 
     @Test void anOperatorsOwnReplyAndAnInactiveOperatorDoNotResolveTheQueue() throws Exception {

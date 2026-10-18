@@ -76,7 +76,9 @@ public class CommentService {
                 .user(user)
                 .parent(parent)
                 .content(request.content().trim())
-                .isAnonymous(AnonymousConcernPolicy.isConcernBoard(post.getBoard().getBoardType()) || request.isAnonymous())
+                .isAnonymous(request.isAnonymous()
+                        || (AnonymousConcernPolicy.isConcernBoard(post.getBoard().getBoardType())
+                        && post.getUser().getId().equals(userId)))
                 .build();
 
         commentRepository.save(comment);

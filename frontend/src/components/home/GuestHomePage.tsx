@@ -221,7 +221,7 @@ function PreviewPostCard({ post }: { post: PreviewPost }) {
         <span className="truncate text-[13px] font-semibold text-[#2C342E]">{post.name}</span>
         <span className="ml-auto shrink-0 text-[12px] hf-text-muted">{post.time}</span>
       </div>
-      {post.concern && <p className="mb-2 text-[11px] font-bold text-[#0B3B36]">익명 고민·질문 · {post.answered ? '운영자 답변 완료' : '답변 대기'}</p>}
+      {post.concern && <p className="mb-2 text-[11px] font-bold text-[#0B3B36]">익명 고민 · {post.answered ? '운영자 답변 완료' : '답변 대기'}</p>}
       <p className="text-[13.5px] leading-[1.6] tracking-[-0.01em] text-[#2C342E]">{post.text}</p>
       <div className="mt-[11px] flex items-center gap-3.5 text-[12px] text-[#A6ABA0]">
         <span className="inline-flex items-center gap-1">
