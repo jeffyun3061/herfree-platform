@@ -583,7 +583,7 @@ body {
   }
 
   .community-feed-row {
-    @apply py-3;
+    @apply py-[14px];
   }
 
   .community-feed-list > a:not(:last-child) .community-feed-row,
@@ -604,12 +604,12 @@ body {
   }
 
   .community-feed-row__title {
-    @apply line-clamp-2 min-w-0 flex-1 break-words text-[14px] font-semibold leading-[1.5] tracking-normal text-[#1E2621];
+    @apply line-clamp-2 min-w-0 flex-1 break-words text-[15px] font-semibold leading-[1.45] tracking-normal text-[#1E2621];
   }
 
   .community-feed-row__meta {
-    @apply flex w-full min-w-0 flex-wrap items-center gap-x-[10px] gap-y-1 text-[12px] font-medium;
-    color: var(--hf-text-muted);
+    @apply flex w-full min-w-0 flex-wrap items-center gap-x-[10px] gap-y-1 text-[12.5px] font-medium;
+    color: #627169;
   }
 
   .video-feed-card {
