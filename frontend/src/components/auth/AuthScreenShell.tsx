@@ -24,7 +24,7 @@ export function AuthScreenShell({
         <div className="px-5">
           <Link
             href={backHref}
-            className="-ml-2 inline-flex h-11 w-11 items-center justify-center text-[24px] leading-none text-[#5C645A] transition-opacity hover:opacity-80"
+            className="hf-auth-back relative inline-flex text-[24px] leading-none text-[#5C645A] transition-opacity hover:opacity-80"
             aria-label="이전 화면으로"
           >
             ‹

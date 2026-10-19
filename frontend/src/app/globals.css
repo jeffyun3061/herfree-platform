@@ -830,6 +830,13 @@ body {
     bottom: max(2.75rem, calc(100dvh - 54rem));
   }
 }
+
+/* Expand the auth back link's touch area without shifting the existing form. */
+.hf-auth-back::before {
+  content: '';
+  position: absolute;
+  inset: -12px -21px -12px -16px;
+}
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
