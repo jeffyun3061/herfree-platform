@@ -57,7 +57,7 @@ export function MobileHeader() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 flex h-11 items-center justify-between gap-2 border-b border-[#E3E6E4]/80 bg-white px-[18px] lg:hidden">
+      <header className="hf-mobile-header sticky top-0 z-40 flex items-center justify-between gap-2 border-b border-[#E3E6E4]/80 bg-white px-[18px] lg:hidden">
         <div className="flex min-w-0 flex-1 items-center gap-2">
           {shouldShowBack ? (
             <button
