@@ -87,6 +87,16 @@ body {
   overflow-x: hidden;
 }
 
+@media (max-width: 1023px) {
+  /* Small form text makes iOS Safari zoom the entire page on focus. */
+  input:not([type]),
+  input:is([type='text'], [type='email'], [type='password'], [type='search'], [type='tel'], [type='url'], [type='number'], [type='date'], [type='time'], [type='datetime-local']),
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
+
 ::selection {
   background-color: rgba(47, 143, 131, 0.18);
 }
@@ -142,6 +152,12 @@ body {
 
   .hf-page-top {
     padding-top: var(--hf-page-pt);
+  }
+
+  /* Keep the mobile shell header below the iOS notch in standalone browsers. */
+  .hf-mobile-header {
+    height: calc(var(--hf-mobile-header-h) + env(safe-area-inset-top, 0px));
+    padding-top: env(safe-area-inset-top, 0px);
   }
 
   /* Shell 헤더 없는 서브화면(게시글·글쓰기) — safe-area + 헤더 높이 */
@@ -238,6 +254,7 @@ body {
     .hf-page-top {
       padding-top: var(--hf-page-pt-lg);
     }
+
   }
 
   .hf-menu-panel {
@@ -805,6 +822,13 @@ body {
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* The desktop phone frame can end above the browser viewport. */
+@media (min-width: 1024px) {
+  .hf-bottom-nav {
+    bottom: max(2.75rem, calc(100dvh - 54rem));
+  }
 }
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
