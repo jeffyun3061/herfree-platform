@@ -64,3 +64,25 @@ deadline; do not use audit --force to replace major UI/build dependencies silent
 
 Primary advisories: [Next.js](https://github.com/vercel/next.js/security/advisories/GHSA-vcvr-r3jv-pc5j),
 [tinypool](https://github.com/tinylibs/tinypool/security/advisories/GHSA-5gmw-xhrv-c9v3).
+
+## 2026-10-23 candidate verification
+
+The preproduction candidate upgrades Next.js to 16.4.2 and Vitest to 4.1.12.
+Vite is explicitly pinned to the patched 7.3.7 line to retain the existing
+esbuild test configuration and Node 20 CI compatibility. Compatible transitive
+patches are also recorded in the lockfile. No audit gate has been relaxed.
+
+The production dependency audit reports zero vulnerabilities. The complete
+audit reports zero critical, seven high and two moderate development-only
+findings. Remaining roots are the unpatched `braces` parser used by the
+ESLint/Tailwind glob tree and the older PostCSS selector parser used by Tailwind.
+They process repository files during development/build, not user post content.
+CI must stay read-only and without production secrets for pull requests.
+These findings are still open; a tested lint/Tailwind migration remains due
+by the existing 2026-10-29 review date. Do not force-install Tailwind 4 as an
+unreviewed substitute during this privacy/UI release.
+
+Patched upstream advisories:
+[Next image optimization](https://github.com/vercel/next.js/security/advisories/GHSA-2464-fhr4-w9xw),
+[Next cache components](https://github.com/vercel/next.js/security/advisories/GHSA-673q-mjm6-r5xr),
+[Vitest manual mocks](https://github.com/vitest-dev/vitest/security/advisories/GHSA-qxg6-89mg-rqv8).
