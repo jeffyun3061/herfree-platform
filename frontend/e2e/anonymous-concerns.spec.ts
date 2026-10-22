@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
 const boards=[{id:1,name:'공지',boardType:'NOTICE'},{id:2,name:'자유게시판',boardType:'FREE'},{id:23,name:'익명 고민',boardType:'ANONYMOUS_QUESTION'}];
-const detail={id:11,boardId:23,boardName:'익명 고민',title:'같은 고민을 나눠요',content:'혼자 고민했던 이야기를 나눕니다.\n경험을 듣고 싶어요.',authorNickname:'익명',viewCount:1,visibility:'PUBLIC',isAnonymous:true,isMyPost:false,readable:true,imageUrl:null,staffReplied:true,createdAt:'2026-10-14T01:00:00Z',updatedAt:'2026-10-14T01:00:00Z'};
+const detail={id:11,boardId:23,boardName:'익명 고민',title:'같은 고민을 나눠요',content:'혼자 고민했던 이야기를 나눕니다.\n경험을 듣고 싶어요.',authorNickname:'익명',viewCount:1,visibility:'PUBLIC',isAnonymous:true,isMyPost:false,readable:true,shareable:true,imageUrl:null,staffReplied:true,createdAt:'2026-10-14T01:00:00Z',updatedAt:'2026-10-14T01:00:00Z'};
 const post={...detail,boardType:'ANONYMOUS_QUESTION',contentPreview:'혼자 고민했던 이야기를 나눕니다.',commentCount:2,reactionCount:0};
 const paged=(content:unknown[])=>({content,totalElements:content.length,totalPages:content.length?1:0,number:0,size:20,first:true,last:true});
 
@@ -17,6 +17,7 @@ async function fixtures(page:Page,role?:'USER'|'ADMIN') {
     if(path==='/api/users/me'&&!role){await route.fulfill({status:401,contentType:'application/json',body:JSON.stringify({success:false,message:'인증이 필요합니다.'})});return;}
     let data:unknown={};
     if(path==='/api/users/me')data={id:1,nickname:'실제 닉네임',email:'fixture@example.invalid',role,status:'ACTIVE'};
+    else if(path==='/api/auth/admin-mfa/status')data={enrolled:true,verified:true,expiresIn:900};
     else if(path==='/api/boards')data=boards;
     else if(path==='/api/posts'&&route.request().method()==='POST'){
       submitted=route.request().postDataJSON();
@@ -61,11 +62,11 @@ test('writing preview keeps exact line breaks and wrapping on the published post
     return {width:element.clientWidth,fontFamily:style.fontFamily,fontSize:style.fontSize,lineHeight:style.lineHeight,letterSpacing:style.letterSpacing};
   });
   const editorMetrics=await metrics('#content');
-  expect(editorMetrics.fontSize).toBe('16px');
-  await page.getByRole('button',{name:'미리보기'}).click();
-  const preview=page.locator('[data-testid="community-post-preview"] .hf-readable-content--community');
+  expect(editorMetrics.fontSize).toBe('17px');
+  await page.getByRole('button',{name:'본문 미리보기',exact:true}).click();
+  const preview=page.locator('section[aria-label="게시글 본문 미리보기"] .hf-community-body');
   await expect(preview).toHaveText(content);
-  expect(await metrics('[data-testid="community-post-preview"] .hf-readable-content--community')).toEqual(editorMetrics);
+  expect(await metrics('section[aria-label="게시글 본문 미리보기"] .hf-community-body')).toEqual(editorMetrics);
   await page.getByLabel('본문이 공개되는 것을 확인했습니다.').check();
   await page.locator('button[type=submit]').last().click();
   await expect(page).toHaveURL(/\/community\/posts\/11$/);

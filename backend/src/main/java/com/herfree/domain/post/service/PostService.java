@@ -107,6 +107,7 @@ public class PostService {
                 .isAnonymous(concern || request.isAnonymous())
                 .build();
 
+        post.updateRichContent(RichPostContent.validate(request.content(), request.richContent()));
         postRepository.save(post);
         savePostImageIfPresent(post, request.imageUrl());
         recordAnalyticsEvent(AnalyticsService.POST_CREATED, userId);
@@ -281,6 +282,7 @@ public class PostService {
 
         post.update(request.title(), request.content(),
                 AnonymousConcernPolicy.isConcernBoard(post.getBoard().getBoardType()) || request.isAnonymous());
+        post.updateRichContent(RichPostContent.validate(request.content(), request.richContent()));
         postImageStorageService.assertImageUrlAllowed(userId, request.imageUrl());
         updatePostImage(post, request.imageUrl());
 
@@ -348,7 +350,9 @@ public class PostService {
             throw new PostAccessDeniedException();
         }
         BoardWritePolicy.assertCommunityWritable(post.getBoard());
-        post.update(request.title().trim(), request.content().trim(), post.isAnonymous());
+        String content = request.richContent() == null ? request.content().trim() : request.content();
+        post.update(request.title().trim(), content, post.isAnonymous());
+        post.updateRichContent(RichPostContent.validate(content, request.richContent()));
         recordAnalyticsEvent(AnalyticsService.ADMIN_ACTION, null);
     }
 

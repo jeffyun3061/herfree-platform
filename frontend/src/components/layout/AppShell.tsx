@@ -10,6 +10,8 @@ import { useBackNavigationGuard } from '@/hooks/useBackNavigationGuard';
 import { shouldShowBottomNav, shouldShowShellHeader } from '@/lib/navigation';
 import { AppNoticeToast } from '@/components/ui/AppNoticeToast';
 import { cn } from '@/lib/cn';
+import { AdminMfaBoundary } from '@/components/admin/AdminMfaBoundary';
+import { isStaff } from '@/domain/user/types';
 
 type AppShellProps = {
   children: React.ReactNode;
@@ -17,11 +19,13 @@ type AppShellProps = {
 
 export function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, user } = useAuth();
   useBackNavigationGuard();
   const isAdminPage = pathname.startsWith('/admin');
   const showNav = shouldShowBottomNav(pathname);
   const showHeader = shouldShowShellHeader(pathname) && (pathname !== '/' || isLoggedIn);
+  const operatorCommunity = isStaff(user?.role) && (pathname === '/' ||
+    ['/community', '/inquiry', '/consult'].some((root) => pathname === root || pathname.startsWith(`${root}/`)));
 
   return (
     <PageHeaderProvider>
@@ -31,11 +35,11 @@ export function AppShell({ children }: AppShellProps) {
           <AppHeader visible={showHeader} mobileOnly />
           <main
             className={cn(
-              'min-h-[100dvh] bg-[#F3EDE3] lg:min-h-[min(844px,calc(100vh-4rem))]',
+              'min-h-[100dvh] bg-[#F3EDE3]',
               showNav && 'hf-main-with-bottom-nav',
             )}
           >
-            {children}
+            {operatorCommunity ? <AdminMfaBoundary>{children}</AdminMfaBoundary> : children}
           </main>
           {showHeader && !showNav && <SiteFooter />}
         </div>

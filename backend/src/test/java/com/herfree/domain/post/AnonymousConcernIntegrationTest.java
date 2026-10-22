@@ -71,6 +71,34 @@ class AnonymousConcernIntegrationTest {
         mvc.perform(get("/api/posts/999999/share-preview")).andExpect(status().isNotFound());
     }
 
+    @Test void serverShareabilityNeverGrantsPrivateOrMemberOnlySharing() throws Exception {
+        for (long id : java.util.List.of(95001L, 95002L)) {
+            mvc.perform(get("/api/posts/" + id)).andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.shareable").value(true));
+        }
+        for (long id : java.util.List.of(95003L, 95004L, 95006L)) {
+            mvc.perform(get("/api/posts/" + id).header("Authorization", token(93001, "USER")))
+                    .andExpect(status().isOk()).andExpect(jsonPath("$.data.shareable").value(false));
+            mvc.perform(get("/api/posts/" + id)).andExpect(status().isNotFound());
+            mvc.perform(get("/api/posts/" + id + "/comments")).andExpect(status().isNotFound());
+        }
+        for (long id : java.util.List.of(95003L, 95004L)) {
+            mvc.perform(get("/api/posts/" + id).header("Authorization", token(93004, "USER")))
+                    .andExpect(status().isNotFound());
+            mvc.perform(get("/api/posts/" + id + "/comments").header("Authorization", token(93004, "USER")))
+                    .andExpect(status().isNotFound());
+        }
+        db.update("UPDATE posts SET rich_content=? WHERE id=95005",
+                "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"private-rich-body\"}]}]}");
+        mvc.perform(get("/api/posts/95005")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.readable").value(false))
+                .andExpect(jsonPath("$.data.shareable").value(false))
+                .andExpect(jsonPath("$.data.richContent").isEmpty())
+                .andExpect(jsonPath("$.data.imageUrl").isEmpty())
+                .andExpect(jsonPath("$.data.title").value("******"));
+        mvc.perform(get("/api/posts/95005/comments")).andExpect(status().isForbidden());
+    }
+
     @Test void concernCreationRequiresPublicAcknowledgementAndCannotExposeNickname() throws Exception {
         String request="{\"boardId\":94001,\"title\":\"new concern\",\"content\":\"shared experience\",\"isAnonymous\":false,\"visibility\":\"PUBLIC\",\"publicDisclosureAccepted\":%s}";
         mvc.perform(post("/api/posts").header("Authorization",token(93001,"USER")).contentType(MediaType.APPLICATION_JSON).content(request.formatted(false))).andExpect(status().isBadRequest());

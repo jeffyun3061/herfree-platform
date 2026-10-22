@@ -8,7 +8,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: production-frontend
+  group: frontend-main
   cancel-in-progress: false
 
 jobs:
@@ -32,37 +32,7 @@ jobs:
           current_main="$(git ls-remote origin refs/heads/main | cut -f1)"
           test "${GITHUB_SHA}" = "${current_main}"
 
-          job_id="$(aws amplify start-job \
-            --app-id "${AMPLIFY_APP_ID}" \
-            --branch-name "${AMPLIFY_BRANCH}" \
-            --job-type RELEASE \
-            --query 'jobSummary.jobId' \
-            --output text)"
-          test -n "${job_id}"
-
-          for attempt in $(seq 1 90); do
-            job="$(aws amplify get-job \
-              --app-id "${AMPLIFY_APP_ID}" \
-              --branch-name "${AMPLIFY_BRANCH}" \
-              --job-id "${job_id}" \
-              --output json)"
-            status="$(jq -r '.job.summary.status' <<<"${job}")"
-            commit="$(jq -r '.job.summary.commitId' <<<"${job}")"
-            echo "Amplify job ${job_id}: ${status}"
-            if [[ "${status}" == SUCCEED ]]; then
-              if [[ "${commit}" != HEAD && "${commit}" != "${GITHUB_SHA}" ]]; then
-                echo "Amplify built unexpected commit: ${commit}" >&2
-                exit 1
-              fi
-              test "${GITHUB_SHA}" = "$(git ls-remote origin refs/heads/main | cut -f1)"
-              exit 0
-            fi
-            if [[ "${status}" == FAILED || "${status}" == CANCELLED ]]; then
-              exit 1
-            fi
-            sleep 20
-          done
-          echo 'Timed out waiting for Amplify production deployment.' >&2
-          exit 1
+          python3 infra/scripts/release-amplify.py \
+            --app "${AMPLIFY_APP_ID}" --branch "${AMPLIFY_BRANCH}" --sha "${GITHUB_SHA}"
       - name: Check public frontend
         run: curl --fail --silent --show-error --location --retry 6 --retry-delay 10 --output /dev/null https://www.herpfree.co.kr/community

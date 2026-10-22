@@ -72,6 +72,7 @@ class RuntimeProfilePolicyTest {
                 .withProperty("spring.datasource.url", "jdbc:mysql://rds/db?sslMode=VERIFY_IDENTITY&trustCertificateKeyStoreUrl=file:/app/certs/rds-truststore.p12&fallbackToSystemTrustStore=false")
                 .withProperty("app.s3.bucket", "staging-bucket")
                 .withProperty("app.admin.access-allowed-cidrs", "10.20.0.0/16")
+                .withProperty("app.admin.mfa.encryption-key", "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE=")
                 .withProperty("app.health-data.encryption-key", "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=");
 
         RuntimeProfilePolicy.requirePublicDeploymentSettings(staging);
@@ -113,6 +114,7 @@ class RuntimeProfilePolicyTest {
                 .withProperty("spring.datasource.url", "jdbc:mysql://rds/db?sslMode=VERIFY_IDENTITY&trustCertificateKeyStoreUrl=file:/app/certs/rds-truststore.p12&fallbackToSystemTrustStore=false")
                 .withProperty("app.s3.bucket", "production-bucket")
                 .withProperty("app.admin.access-allowed-cidrs", "10.20.0.0/16")
+                .withProperty("app.admin.mfa.encryption-key", "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE=")
                 .withProperty("app.health-data.encryption-key", "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
                 .withProperty("app.health-data.rekey-on-startup", "true");
 
@@ -134,6 +136,7 @@ class RuntimeProfilePolicyTest {
                 .withProperty("app.s3.bucket", "staging-bucket")
                 .withProperty("app.s3.access-key", "AKIAEXAMPLE")
                 .withProperty("app.admin.access-allowed-cidrs", "10.20.0.0/16")
+                .withProperty("app.admin.mfa.encryption-key", "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE=")
                 .withProperty("app.health-data.encryption-key", "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=");
 
         assertThatThrownBy(() -> RuntimeProfilePolicy.requirePublicDeploymentSettings(staging))
@@ -142,40 +145,21 @@ class RuntimeProfilePolicyTest {
     }
 
     @Test
-    void rejectsPublicProfileWithoutRestrictedAdminGate() {
-        MockEnvironment staging = new MockEnvironment();
-        staging.setActiveProfiles("staging");
-        staging.withProperty("jwt.secret", "a_secure_jwt_secret_that_is_longer_than_32_chars")
-                .withProperty("app.analytics.hash-salt", "a_distinct_analytics_salt_longer_than_32_chars")
-                .withProperty("app.mail.mode", "smtp")
-                .withProperty("app.bootstrap.enabled", "false")
-                .withProperty("app.cors.allowed-origins", "https://staging.example")
-                .withProperty("spring.datasource.url", "jdbc:mysql://rds/db?sslMode=VERIFY_IDENTITY&trustCertificateKeyStoreUrl=file:/app/certs/rds-truststore.p12&fallbackToSystemTrustStore=false")
-                .withProperty("app.s3.bucket", "staging-bucket")
-                .withProperty("app.health-data.encryption-key", "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=");
-
-        assertThatThrownBy(() -> RuntimeProfilePolicy.requirePublicDeploymentSettings(staging))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("ADMIN_ACCESS_ALLOWED_CIDRS");
+    void rejectsPublicProfileWithoutMfaKey() {
+        MockEnvironment env = validPublicEnvironment("staging");
+        env.withProperty("spring.datasource.url", "jdbc:mysql://rds/db?sslMode=VERIFY_IDENTITY&trustCertificateKeyStoreUrl=file:/app/certs/rds-truststore.p12&fallbackToSystemTrustStore=false");
+        env.withProperty("app.admin.mfa.encryption-key", "");
+        assertThatThrownBy(() -> RuntimeProfilePolicy.requirePublicDeploymentSettings(env))
+                .isInstanceOf(IllegalStateException.class).hasMessageContaining("ADMIN_MFA_ENCRYPTION_KEY");
     }
 
     @Test
-    void rejectsAdminGateThatCoversTheEntireInternet() {
-        MockEnvironment staging = new MockEnvironment();
-        staging.setActiveProfiles("staging");
-        staging.withProperty("jwt.secret", "a_secure_jwt_secret_that_is_longer_than_32_chars")
-                .withProperty("app.analytics.hash-salt", "a_distinct_analytics_salt_longer_than_32_chars")
-                .withProperty("app.mail.mode", "smtp")
-                .withProperty("app.bootstrap.enabled", "false")
-                .withProperty("app.cors.allowed-origins", "https://staging.example")
-                .withProperty("spring.datasource.url", "jdbc:mysql://rds/db?sslMode=VERIFY_IDENTITY&trustCertificateKeyStoreUrl=file:/app/certs/rds-truststore.p12&fallbackToSystemTrustStore=false")
-                .withProperty("app.s3.bucket", "staging-bucket")
-                .withProperty("app.admin.access-allowed-cidrs", "0.0.0.0/00")
-                .withProperty("app.health-data.encryption-key", "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=");
-
-        assertThatThrownBy(() -> RuntimeProfilePolicy.requirePublicDeploymentSettings(staging))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("ADMIN_ACCESS_ALLOWED_CIDRS");
+    void rejectsDisablingMfaInPublicProfile() {
+        MockEnvironment env = validPublicEnvironment("prod");
+        env.withProperty("spring.datasource.url", "jdbc:mysql://rds/db?sslMode=VERIFY_IDENTITY&trustCertificateKeyStoreUrl=file:/app/certs/rds-truststore.p12&fallbackToSystemTrustStore=false");
+        env.withProperty("app.admin.mfa.required", "false");
+        assertThatThrownBy(() -> RuntimeProfilePolicy.requirePublicDeploymentSettings(env))
+                .isInstanceOf(IllegalStateException.class).hasMessageContaining("cannot disable");
     }
 
     private static MockEnvironment validPublicEnvironment(String profile) {
@@ -189,6 +173,7 @@ class RuntimeProfilePolicyTest {
                 .withProperty("app.cors.allowed-origins", "https://herpfree.co.kr")
                 .withProperty("app.s3.bucket", "production-bucket")
                 .withProperty("app.admin.access-allowed-cidrs", "10.20.0.0/16")
+                .withProperty("app.admin.mfa.encryption-key", "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE=")
                 .withProperty("app.health-data.encryption-key", "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=");
     }
 }

@@ -45,3 +45,22 @@ repository content could still attack the CI runner.
 - `npm audit --audit-level=critical` must pass.
 - `npm run lint`, `npm run test`, and `npm run build` must pass.
 - Review this ADR when upgrading Next.js or no later than 2026-10-29.
+
+## 2026-10-11 verification
+
+The MFA/operations release patches Next.js to 16.3.8, sharp to 0.35.5 and the
+Vitest worker override to tinypool 2.1.2. Browserslist/source-map dependency
+patches are reflected in the lockfile. All 38 frontend tests, lint and the
+production build pass with these versions (Node 20+ remains required).
+
+The shipped dependency audit reports zero vulnerabilities. The complete audit
+reports zero critical vulnerabilities and twelve development-only findings
+(eight high, four moderate) in Vitest mock handling and the legacy ESLint/Tailwind
+build tree. These findings remain outstanding; this verification is not a claim
+that every dependency is fixed. CI retains its existing production-high and
+all-dependencies-critical gates and read-only, secret-free pull-request jobs.
+Track the remaining toolchain migration separately before the existing review
+deadline; do not use audit --force to replace major UI/build dependencies silently.
+
+Primary advisories: [Next.js](https://github.com/vercel/next.js/security/advisories/GHSA-vcvr-r3jv-pc5j),
+[tinypool](https://github.com/tinylibs/tinypool/security/advisories/GHSA-5gmw-xhrv-c9v3).

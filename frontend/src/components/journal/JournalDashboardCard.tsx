@@ -4,8 +4,6 @@ import { useMemo } from 'react';
 import Link from 'next/link';
 import type { JournalDashboard, JournalRecord, StressLevel } from '@/domain/journal/types';
 import { PUBLIC_IMAGES } from '@/domain/assets/static';
-import { JournalShareButton } from '@/components/journal/JournalShareButton';
-import { HERFREE_SITE_URL } from '@/domain/journal/share';
 import {
   avgSleepToHours,
   countRecordStreak,
@@ -179,12 +177,6 @@ export function JournalDashboardCard({
               <span className="text-[12.5px] font-medium text-white [text-shadow:0_1px_6px_rgba(0,0,0,.3)]">
                 {formatDashboardDateBadge(new Date())}
               </span>
-              <JournalShareButton
-                dashboard={dashboard}
-                lastRecord={lastRecord}
-                showRecordButton={Boolean(onRecordDaily)}
-                variant="icon"
-              />
             </div>
 
             <div>
@@ -252,16 +244,6 @@ export function JournalDashboardCard({
             </button>
           )}
 
-          <div
-            data-share-only="1"
-            aria-hidden="true"
-            className="hidden items-center justify-between border-t border-white/10 pt-3 text-[10px] text-white/45"
-          >
-            <span className="font-semibold text-white/60">헤르프리 개인일지</span>
-            <a href={HERFREE_SITE_URL} className="text-white/55">
-              {HERFREE_SITE_URL.replace(/^https?:\/\//, '')}
-            </a>
-          </div>
         </div>
       </section>
     </div>
