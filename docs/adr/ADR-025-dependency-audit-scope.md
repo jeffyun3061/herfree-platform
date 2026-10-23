@@ -86,3 +86,23 @@ Patched upstream advisories:
 [Next image optimization](https://github.com/vercel/next.js/security/advisories/GHSA-2464-fhr4-w9xw),
 [Next cache components](https://github.com/vercel/next.js/security/advisories/GHSA-673q-mjm6-r5xr),
 [Vitest manual mocks](https://github.com/vitest-dev/vitest/security/advisories/GHSA-qxg6-89mg-rqv8).
+
+## 2026-10-24 final code review
+
+The unchanged candidate lockfile now reports zero production findings and three
+moderate development/build findings, with zero high or critical findings. The
+three entries (`postcss-selector-parser`, `postcss-nested`, and `tailwindcss`)
+represent one advisory, GHSA-rj75-hqrm-r3gf. This is an updated advisory database
+result, not evidence that this review changed or patched seven dependencies.
+
+The lockfile and `npm ls postcss-selector-parser --all` both resolve the parser
+to **6.1.5**. The [maintainer's advisory](https://github.com/postcss/postcss-selector-parser/security/advisories/GHSA-rj75-hqrm-r3gf)
+lists **6.1.5 and 7.1.6 as patched**, while npm's current advisory payload still
+matches every version below 7.1.6. Record this discrepancy rather than claiming
+that the complete npm audit is clean or forcing Tailwind 4 merely to remove the
+warning. The parser is used on repository CSS at build time, not on user posts.
+Recheck the registry advisory by 2026-10-29; existing audit gates stay enabled.
+
+Candidate `cabf6d4` passed the full CI, 50 frontend unit tests and 96 browser
+checks across Chromium, mobile Chromium and iPhone WebKit. The final PR commit
+must also pass the current CI and CodeQL checks before staging validation.

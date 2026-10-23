@@ -25,16 +25,19 @@ public record CommentResponse(
         boolean isMyComment = currentUserId != null
                 && comment.getUser().getId().equals(currentUserId);
         boolean concern = AnonymousConcernPolicy.isConcernBoard(comment.getPost().getBoard().getBoardType());
-        boolean operator = concern && comment.getUser().getStatus() == UserStatus.ACTIVE
+        boolean concernAuthor = concern && comment.getPost().getUser().getId().equals(comment.getUser().getId());
+        // Enforce the board's promise on reads too, including legacy rows without the stored flag.
+        boolean anonymous = comment.isAnonymous() || concernAuthor;
+        boolean operator = concern && !concernAuthor && comment.getUser().getStatus() == UserStatus.ACTIVE
                 && StaffRolePolicy.isStaff(comment.getUser().getRole());
         String displayNickname = AnonymousNicknamePolicy.displayNickname(
-                comment.isAnonymous(), isMyComment, authorNickname);
+                anonymous, isMyComment, authorNickname);
         return new CommentResponse(
                 comment.getId(),
                 comment.getPost().getId(),
                 displayNickname,
                 comment.getContent(),
-                comment.isAnonymous(),
+                anonymous,
                 comment.getParent() != null ? comment.getParent().getId() : null,
                 isMyComment,
                 comment.getCreatedAt(),

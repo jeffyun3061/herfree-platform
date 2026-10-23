@@ -131,6 +131,45 @@ class AnonymousConcernIntegrationTest {
                 .andExpect(jsonPath("$.data.content[0].authorNickname").value("익명"));
     }
 
+    @Test void legacyConcernAuthorCommentsStayAnonymousEvenWithoutTheStoredFlag() throws Exception {
+        var now = Timestamp.from(Instant.now());
+        db.update("INSERT INTO comments(id,post_id,user_id,content,status,is_anonymous,created_at,updated_at) VALUES (96001,95001,93001,'legacy author reply','ACTIVE',false,?,?)", now, now);
+        mvc.perform(get("/api/posts/95001/comments"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content[0].isAnonymous").value(true))
+                .andExpect(jsonPath("$.data.content[0].authorNickname").value("익명"));
+        mvc.perform(get("/api/posts/95001/comments").header("Authorization", token(93001, "USER")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content[0].isMyComment").value(true))
+                .andExpect(jsonPath("$.data.content[0].authorNickname").value("익명(나)"));
+    }
+
+    @Test void concernReportsDoNotReconnectAnonymousContentToMemberIdentity() throws Exception {
+        var now = Timestamp.from(Instant.now());
+        db.update("INSERT INTO comments(id,post_id,user_id,content,status,is_anonymous,created_at,updated_at) VALUES (96001,95001,93001,'reported author reply','ACTIVE',false,?,?)", now, now);
+        for (String target : java.util.List.of("\"targetType\":\"POST\",\"targetId\":95001", "\"targetType\":\"COMMENT\",\"targetId\":96001")) {
+            mvc.perform(post("/api/reports").header("Authorization", token(93004, "USER"))
+                            .contentType(MediaType.APPLICATION_JSON).content("{" + target + ",\"reason\":\"SPAM\"}"))
+                    .andExpect(status().isCreated());
+        }
+        String body = mvc.perform(get("/api/admin/reports/targets").header("Authorization", token(93002, "ADMIN")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.length()").value(2))
+                .andReturn().getResponse().getContentAsString();
+        for (var target : new com.fasterxml.jackson.databind.ObjectMapper().readTree(body).path("data")) {
+            assertThat(target.path("authorNickname").asText()).isEqualTo("익명");
+            assertThat(target.path("authorId").isNull()).isTrue();
+            assertThat(target.path("targetId").asLong()).isIn(95001L, 96001L);
+        }
+        assertThat(body).doesNotContain("private-real-nickname-1");
+        // Content moderation uses the target ID and must still work without exposing the member ID.
+        mvc.perform(patch("/api/admin/reports/targets/POST/95001/decision")
+                        .header("Authorization", token(93002, "ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"status\":\"ACCEPTED\",\"processNote\":\"spam confirmed\",\"moderationAction\":\"HIDE\"}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data[0].status").value("ACCEPTED"));
+        mvc.perform(get("/api/posts/95001")).andExpect(status().isNotFound());
+    }
+
     @Test void questionAuthorStaysAnonymousInNestedRepliesWhileOtherMembersChooseTheirIdentity() throws Exception {
         mvc.perform(post("/api/posts/95001/comments").header("Authorization",token(93004,"USER"))
                         .contentType(MediaType.APPLICATION_JSON)
@@ -187,7 +226,7 @@ class AnonymousConcernIntegrationTest {
         db.update("UPDATE posts SET user_id=93002 WHERE id=95001");
         mvc.perform(post("/api/posts/95001/comments").header("Authorization",token(93002,"ADMIN"))
                 .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"own reply\",\"isAnonymous\":false}"))
-                .andExpect(status().isCreated());
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.data.operatorReply").value(false));
         mvc.perform(get("/api/admin/concerns").header("Authorization",token(93002,"ADMIN")))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.data.totalElements").value(1));
         db.update("UPDATE posts SET user_id=93001 WHERE id=95001");
