@@ -32,10 +32,10 @@ Testcontainers MySQL에 Flyway를 적용하고 Hibernate 스키마 검증을 강
 ## 2. 배포 순서
 
 1. 변경을 feature/fix 브랜치에서 PR로 올리고 CI·CodeQL·secret scan을 통과시킨다.
-2. `main`과 frontend `develop` tree가 일치하는지 확인한다.
+2. 운영 적용 승인 전에는 검토 후보와 frontend `develop` tree가 일치하는지 확인한다. 스테이징은 current `develop`에서도 검증할 수 있다.
 3. Release workflow에서 staging을 배포하고 smoke·mutation E2E를 통과시킨다.
 4. staging에서 실제 브라우저로 OAuth 3종, 비밀번호 재설정, 이미지 업로드/삭제, 개인 일지, 비공개 문의, 다른 계정의 401/403 차단을 확인한다.
-5. staging 검증 이미지의 immutable digest만 production에 승격한다.
+5. 결과를 사용자에게 보여주고 운영 적용 승인을 받는다. 이후 current `main`과 정확히 일치하는 staging 검증 이미지의 immutable digest만 production에 승격한다. 병합으로 SHA가 달라지면 새 main SHA의 스테이징 검증이 필요하다.
 6. production 배포 직전 로컬 MySQL S3 백업 dump/checksum/완료 metadata와 rollback 대상 image를 기록한다.
 7. 배포 후 `/api/health`, Swagger 404, 일반 사용자 관리자 API 403, 로그 개인정보 미포함을 확인하고 30분 모니터링한다.
 
@@ -51,7 +51,7 @@ Testcontainers MySQL에 Flyway를 적용하고 Hibernate 스키마 검증을 강
 - staging/prod 애플리케이션은 JWT·SMTP·HTTPS CORS·S3·DB TLS·독립 MFA 키 설정이 없으면 시작 단계에서 fail-closed 한다. 로컬 MySQL은 REQUIRED, RDS 복구 모드는 VERIFY_IDENTITY를 요구한다.
 - 개인 일지 memo는 `HEALTH_DATA_ENCRYPTION_KEY`로 AES-GCM 암호화한다. 키는 JWT·분석 salt와 다른 Secrets Manager 값으로 생성한다(`openssl rand -base64 32`).
 - 기존 평문 memo가 있는 환경은 먼저 staging snapshot을 만들고 re-key 작업을 완료한 뒤 production으로 승격한다. 암호화 키를 잃으면 memo를 복구할 수 없으므로 키 백업·접근권한·교체 절차를 별도로 기록한다.
-- 복구훈련은 [`infra/scripts/restore-rds-drill.sh`](../infra/scripts/restore-rds-drill.sh)에 승인 플래그·private subnet·격리 SG·자동 삭제 게이트가 있는지 확인한 뒤 실행한다. production SG나 인터넷 경로를 재사용하지 않는다.
+- 월간 복구훈련은 [`infra/scripts/run-staging-restore-drill.py`](../infra/scripts/run-staging-restore-drill.py)로 기존 스테이징과 암호화 임시 EBS를 사용한다. [`infra/scripts/restore-local-db-drill.sh`](../infra/scripts/restore-local-db-drill.sh)가 격리 MySQL에 복원하고 실제 복호화·핵심 기능을 확인한다. `restore-rds-drill.sh`는 과거 RDS snapshot이 필요한 별도 복구에만 사용한다.
 
 ## 4. 로그·디버깅
 

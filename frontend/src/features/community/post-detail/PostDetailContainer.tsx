@@ -195,7 +195,7 @@ export default function PostDetailContainer() {
       </div>
     );
   }
-  if (!isLoggedIn && !isConcernPost) {
+  if (!isLoggedIn && post.visibility !== 'PUBLIC') {
     return (
       <div className="mx-auto max-w-[720px] hf-scroll-pad-nav-tight">
         <PostDetailBackHeader backHref="/community" pathname={pathname} />
