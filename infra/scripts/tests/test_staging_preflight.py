@@ -51,6 +51,19 @@ class PreflightTests(unittest.TestCase):
     def test_basic_auth_redirects_are_not_followed(self):
         self.assertIsNone(probe.NoRedirect().redirect_request(None, None, 302, "", {}, "https://other.invalid"))
 
+    def test_aws_error_reason_never_echoes_the_request_or_credentials(self):
+        error = subprocess.CalledProcessError(1, "aws", stderr="An error occurred (AccessDeniedException) account/sentinel-secret")
+        self.assertEqual(probe.failure_reason(error), "AccessDeniedException")
+        error.stderr = "sentinel-secret connection details"
+        self.assertEqual(probe.failure_reason(error), "aws_request_failed")
+
+    def test_release_key_must_be_independent_and_exactly_32_bytes(self):
+        valid = "a" * 43 + "="
+        self.assertTrue(host.independent_key(valid, ("other",)))
+        self.assertFalse(host.independent_key(valid, (valid,)))
+        for invalid in (None, "short", "!" * 43 + "=", "a" * 40):
+            self.assertFalse(host.independent_key(invalid, ()))
+
     def test_host_probe_never_queries_users_or_returns_secrets(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -62,6 +75,9 @@ class PreflightTests(unittest.TestCase):
 
             def run(args, **kwargs):
                 commands.append(args)
+                if args[0] == "aws":
+                    self.assertIn("herfree/staging/app-config", args)
+                    return json.dumps({"adminMfaEncryptionKey": "a" * 43 + "=", "jwtSecret": "sentinel-secret"})
                 if args[1] == "ps":
                     return "abcdef012345\n"
                 if args[1] == "port":
@@ -75,8 +91,10 @@ class PreflightTests(unittest.TestCase):
             self.assertTrue(report["mysqlHasNoHostPorts"])
             self.assertFalse(report["mfaKeyConfigured"])
             self.assertFalse(report["mfaRequired"])
+            self.assertTrue(report["mfaKeyAvailableForRelease"])
             self.assertNotIn("sentinel", json.dumps(report))
-            self.assertEqual(len(commands), 3)
+            self.assertNotIn("a" * 43, json.dumps(report))
+            self.assertEqual(len(commands), 4)
 
     def test_non_staging_profile_stops_before_container_access(self):
         with tempfile.TemporaryDirectory() as tmp:
