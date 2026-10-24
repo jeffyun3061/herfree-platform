@@ -39,7 +39,7 @@ DEPLOY_ENV=production /opt/herfree/infra/scripts/backup-db.sh manual
 
 ## Deployment policy
 
-Production builds its own immutable image from the selected `main` commit, rejects HIGH or CRITICAL Trivy findings, pushes the scanned image, and deploys by digest. This MFA/security release requires staging verification before production. Staging need not remain continuously running.
+Staging builds or reuses the immutable candidate image, rejects fixable HIGH or CRITICAL Trivy findings, and marks its exact digest only after smoke and mutation QA pass. Production resolves the selected current `main` SHA to that staging-tested digest; it does not rebuild the image. A candidate can first be verified on `develop` before production approval. After merging to `main`, its exact SHA must also acquire staging evidence before promotion. Staging need not remain continuously running.
 
 Do not run the old RDS provisioning script for these improvements. The historical production-host restore timer is disabled by `install-local-db-ops.sh`; configure and manually verify `restore-drill.yml` before relying on the monthly schedule. See [implementation and rollout](operations-improvements.md).
 

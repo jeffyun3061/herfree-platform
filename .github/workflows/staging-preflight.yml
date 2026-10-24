@@ -1,0 +1,40 @@
+name: Staging preflight
+
+on:
+  push:
+    branches: [develop]
+    paths:
+      - '.github/workflows/staging-preflight.yml'
+      - 'infra/scripts/staging-preflight.py'
+      - 'infra/scripts/staging-host-preflight.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backend-staging
+  cancel-in-progress: false
+
+jobs:
+  inspect:
+    if: github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    environment: staging
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test the bounded inspection scripts
+        run: python3 -m unittest discover -s infra/scripts/tests -p 'test_staging_preflight.py' -v
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - name: Inspect existing staging without changing resources
+        env:
+          E2E_HTTP_USERNAME: ${{ secrets.E2E_HTTP_USERNAME }}
+          E2E_HTTP_PASSWORD: ${{ secrets.E2E_HTTP_PASSWORD }}
+        run: python3 infra/scripts/staging-preflight.py

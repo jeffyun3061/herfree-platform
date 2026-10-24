@@ -60,6 +60,14 @@
 
 ## 상태 점검
 
+`Staging preflight` workflow는 기존 GitHub `staging` Environment와 배포 역할로 실행한다.
+`develop`의 점검 스크립트 변경 시 또는 수동 실행으로 고정된 기존 스테이징만 조사한다.
+EC2/EBS/SSM·Amplify Basic 보호·실제 Basic 로그인·API 상태를 확인하고, SSM에서는
+환경값의 존재/안전 여부와 Flyway 버전·스크립트·체크섬만 읽는다. 비밀번호, 키 원문,
+회원·건강정보, 전체 환경 파일과 AWS/SSM 원문 오류를 로그에 출력하지 않는다.
+리소스 시작/중지·생성·배포·DB 수정·IAM/secret 변경은 하지 않으며 권한 부족도 실패로 남긴다.
+이 점검 통과는 후보 배포·실제 MFA·E2E·복원 성공을 대신하지 않는다.
+
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check-staging-status.ps1 -DatabaseRuntime local
 ```
