@@ -24,6 +24,17 @@ API = "https://api-staging.herpfree.co.kr"
 ROOT = Path(__file__).resolve().parents[2]
 
 
+def failure_reason(error):
+    if isinstance(error, subprocess.CalledProcessError):
+        match = re.search(r"An error occurred \(([A-Za-z0-9.]+)\)", error.stderr or "")
+        if match and match.group(1) in {"AccessDenied", "AccessDeniedException", "UnauthorizedOperation",
+                                     "InvalidInstanceId", "InvalidInstanceID.NotFound", "ResourceNotFoundException",
+                                     "ThrottlingException", "ExpiredToken", "RequestExpired"}:
+            return match.group(1)
+        return "aws_request_failed"
+    return "inspection_unavailable"
+
+
 def aws(*args):
     result = subprocess.run(["aws", *args, "--region", REGION, "--output", "json", "--no-cli-pager"],
                             check=True, capture_output=True, text=True, timeout=45)
@@ -76,13 +87,13 @@ def http_status(url, authorization=None):
 
 def main():
     validate_identity(aws("sts", "get-caller-identity"))
-    report = {"target": "staging", "resourceChanges": False, "checks": {}, "unavailable": []}
+    report = {"target": "staging", "resourceChanges": False, "checks": {}, "unavailable": {}}
 
     def check(name, action):
         try:
             report["checks"][name] = action()
-        except Exception:
-            report["unavailable"].append(name)
+        except Exception as error:
+            report["unavailable"][name] = failure_reason(error)
 
     check("instance", lambda: aws("ec2", "describe-instances", "--instance-ids", INSTANCE, "--query",
           "Reservations[].Instances[].{state:State.Name,type:InstanceType,metadataTokens:MetadataOptions.HttpTokens}"))
@@ -101,7 +112,7 @@ def main():
         authorization = "Basic " + base64.b64encode(f"{username}:{password}".encode()).decode()
         check("frontendAuthenticatedStatus", lambda: http_status(FRONTEND, authorization))
     else:
-        report["unavailable"].append("frontendAuthenticatedStatus")
+        report["unavailable"]["frontendAuthenticatedStatus"] = "credentials_not_configured"
     check("apiHealthStatus", lambda: http_status(API + "/api/health"))
 
     def host():
@@ -121,7 +132,7 @@ def main():
                 raise ValueError("Host probe unavailable")
             value = json.loads(result["StandardOutputContent"])
             # Never echo remote stdout/stderr wholesale; only known metadata fields.
-            allowed = ("profile", "configPrivate", "localDatabase", "mfaKeyConfigured", "mfaRequired",
+            allowed = ("profile", "configPrivate", "localDatabase", "mfaKeyConfigured", "mfaRequired", "mfaKeyAvailableForRelease",
                        "bootstrapDisabled", "currentImageRevision", "mysqlHasNoHostPorts")
             clean = {key: value[key] for key in allowed if key in value}
             clean["migrationHistory"] = migration_check(value.get("migrations"), ROOT / "backend/src/main/resources/db/migration")
@@ -139,7 +150,9 @@ def main():
         bool(checks.get("encryptedVolumes")) and all(v.get("encrypted") is True for v in checks["encryptedVolumes"]),
         bool(checks.get("instance")) and all(v.get("state") == "running" and v.get("metadataTokens") == "required" for v in checks["instance"]),
         bool(checks.get("ssm")) and all(v.get("status") == "Online" for v in checks["ssm"]),
-        all(host_report.get(key) is True for key in ("configPrivate", "localDatabase", "mfaKeyConfigured", "mfaRequired", "bootstrapDisabled", "mysqlHasNoHostPorts")),
+        # Existing runtime predates MFA; the candidate renderer enables MFA when deploying.
+        # Readiness requires its independent key in Secrets Manager, not a prior MFA deployment.
+        all(host_report.get(key) is True for key in ("configPrivate", "localDatabase", "mfaKeyAvailableForRelease", "bootstrapDisabled", "mysqlHasNoHostPorts")),
         host_report.get("migrationHistory", {}).get("compatible") is True,
     ])
     rendered = json.dumps(report, indent=2)
