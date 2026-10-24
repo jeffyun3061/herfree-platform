@@ -26,6 +26,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @ExtendWith(MockitoExtension.class)
 class AnalyticsServiceTest {
@@ -48,6 +49,8 @@ class AnalyticsServiceTest {
     private VideoRepository videoRepository;
     @Mock
     private ClientIpExtractor clientIpExtractor;
+    @Mock
+    private AnalyticsEventWriter analyticsEventWriter;
 
     @InjectMocks
     private AnalyticsService analyticsService;
@@ -73,7 +76,7 @@ class AnalyticsServiceTest {
             analyticsService.recordBackendEvent(event, null);
         }
 
-        verify(eventLogRepository, org.mockito.Mockito.times(events.length)).save(any(AppEventLog.class));
+        verify(analyticsEventWriter, org.mockito.Mockito.times(events.length)).write(any(), org.mockito.ArgumentMatchers.isNull());
     }
 
     @Test
@@ -105,5 +108,22 @@ class AnalyticsServiceTest {
                 null);
 
         verify(eventLogRepository, never()).save(any(AppEventLog.class));
+    }
+
+    @Test
+    void recordBackendEvent_defersUntilOuterTransactionCommits() {
+        TransactionSynchronizationManager.initSynchronization();
+        TransactionSynchronizationManager.setActualTransactionActive(true);
+        try {
+            analyticsService.recordBackendEvent(AnalyticsService.JOURNAL_CREATED, 42L);
+            verify(analyticsEventWriter, never()).write(any(), any());
+
+            TransactionSynchronizationManager.getSynchronizations()
+                    .forEach(synchronization -> synchronization.afterCommit());
+            verify(analyticsEventWriter).write(AnalyticsService.JOURNAL_CREATED, 42L);
+        } finally {
+            TransactionSynchronizationManager.clearSynchronization();
+            TransactionSynchronizationManager.setActualTransactionActive(false);
+        }
     }
 }

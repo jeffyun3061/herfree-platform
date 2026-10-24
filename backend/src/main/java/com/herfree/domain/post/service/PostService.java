@@ -34,10 +34,11 @@ import com.herfree.global.util.PostSearchKeywordPolicy;
 import com.herfree.global.util.PostVisibilityPolicy;
 import com.herfree.global.storage.PostImageStorageService;
 import com.herfree.domain.reaction.repository.ReactionRepository;
-import com.herfree.global.util.AuthorIpMaskPolicy;
 import com.herfree.global.util.BoardWritePolicy;
-import com.herfree.global.util.ClientIpExtractor;
 import com.herfree.global.util.PrivateBoardPolicy;
+import com.herfree.global.util.AnonymousConcernPolicy;
+import com.herfree.global.exception.BusinessException;
+import com.herfree.global.exception.ErrorCode;
 import com.herfree.global.util.StaffRolePolicy;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -57,7 +58,7 @@ import java.util.stream.Collectors;
  * 커뮤니티 게시글 — 작성·목록·상세·수정·삭제.
  * <p>
  * 비밀사연·문의·상담 등은 {@link com.herfree.global.util.PrivateBoardPolicy}로 제목·본문을 마스킹하고,
- * 작성자 IP는 {@link com.herfree.global.util.AuthorIpMaskPolicy}로 목록에 노출하지 않는다.
+ * 작성자 IP는 게시글 응답에 포함하지 않는다.
  */
 @Service
 @RequiredArgsConstructor
@@ -74,7 +75,6 @@ public class PostService {
     private final UserProfileRepository userProfileRepository;
     private final PostImageStorageService postImageStorageService;
     private final ReactionRepository reactionRepository;
-    private final ClientIpExtractor clientIpExtractor;
     private final AnalyticsService analyticsService;
 
     @Transactional
@@ -87,13 +87,16 @@ public class PostService {
 
         BoardWritePolicy.assertCommunityWritable(board, user.getRole());
 
+        boolean concern = AnonymousConcernPolicy.isConcernBoard(board.getBoardType());
+        if (concern && (!request.publicDisclosureAccepted() || request.visibility() == PostVisibility.MEMBERS_ONLY)) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
+        }
+
         postImageStorageService.assertImageUrlAllowed(userId, request.imageUrl());
 
         PostVisibility visibility = PrivateBoardPolicy.isAdminMaskedBoard(board.getBoardType())
                 ? PostVisibility.MEMBERS_ONLY
-                : request.visibility();
-
-        String authorIpMasked = AuthorIpMaskPolicy.mask(clientIpExtractor.extract(httpRequest));
+                : concern ? PostVisibility.PUBLIC : request.visibility();
 
         Post post = Post.builder()
                 .board(board)
@@ -101,10 +104,10 @@ public class PostService {
                 .title(request.title())
                 .content(request.content())
                 .visibility(visibility)
-                .isAnonymous(request.isAnonymous())
-                .authorIpMasked(authorIpMasked)
+                .isAnonymous(concern || request.isAnonymous())
                 .build();
 
+        post.updateRichContent(RichPostContent.validate(request.content(), request.richContent()));
         postRepository.save(post);
         savePostImageIfPresent(post, request.imageUrl());
         recordAnalyticsEvent(AnalyticsService.POST_CREATED, userId);
@@ -128,10 +131,9 @@ public class PostService {
         UserRole viewerRole = resolveViewerRole(userId);
         PostListPeriod listPeriod = PostListPeriod.from(period);
         Page<Post> posts = fetchActivePosts(boardId, normalizedKeyword, userId, viewerRole, pageable, listPeriod);
-        boolean trackStaffReplies = boardId != null
-                && boardRepository.findById(boardId)
-                        .map(board -> PrivateBoardPolicy.isAdminMaskedBoard(board.getBoardType()))
-                        .orElse(false);
+        boolean trackStaffReplies = posts.getContent().stream().anyMatch(post ->
+                PrivateBoardPolicy.isAdminMaskedBoard(post.getBoard().getBoardType())
+                || AnonymousConcernPolicy.isConcernBoard(post.getBoard().getBoardType()));
         Map<Long, Boolean> staffRepliedMap = trackStaffReplies
                 ? resolveStaffRepliedMap(posts.getContent())
                 : Map.of();
@@ -166,7 +168,9 @@ public class PostService {
             PostListPeriod period
     ) {
         // 비회원 통합·게시판 검색 차단 — 커뮤니티 목록 잠금과 동일 정책
-        if (userId == null && StringUtils.hasText(keyword)) {
+        boolean publicConcernSearch = boardId != null && boardRepository.findById(boardId)
+                .map(board -> AnonymousConcernPolicy.isConcernBoard(board.getBoardType())).orElse(false);
+        if (userId == null && StringUtils.hasText(keyword) && !publicConcernSearch) {
             return Page.empty(pageable);
         }
 
@@ -245,7 +249,14 @@ public class PostService {
         UserRole viewerRole = resolveViewerRole(userId);
         PostVisibilityPolicy.assertReadable(post, userId, viewerRole);
 
-        post.increaseViewCount();
+        int updated = postRepository.incrementViewCount(postId);
+        if (updated != 1) {
+            throw new PostNotFoundException();
+        }
+        // 원자 UPDATE 뒤 다시 읽어 응답에도 실제 DB 조회수가 반영되게 한다.
+        post = postRepository.findByIdAndStatus(postId, PostStatus.ACTIVE)
+                .orElseThrow(PostNotFoundException::new);
+        PostVisibilityPolicy.assertReadable(post, userId, viewerRole);
 
         String nickname = userProfileRepository.findByUserId(post.getUser().getId())
                 .map(UserProfile::getNickname)
@@ -269,7 +280,9 @@ public class PostService {
 
         BoardWritePolicy.assertCommunityWritable(post.getBoard());
 
-        post.update(request.title(), request.content(), request.isAnonymous());
+        post.update(request.title(), request.content(),
+                AnonymousConcernPolicy.isConcernBoard(post.getBoard().getBoardType()) || request.isAnonymous());
+        post.updateRichContent(RichPostContent.validate(request.content(), request.richContent()));
         postImageStorageService.assertImageUrlAllowed(userId, request.imageUrl());
         updatePostImage(post, request.imageUrl());
 
@@ -337,7 +350,9 @@ public class PostService {
             throw new PostAccessDeniedException();
         }
         BoardWritePolicy.assertCommunityWritable(post.getBoard());
-        post.update(request.title().trim(), request.content().trim(), post.isAnonymous());
+        String content = request.richContent() == null ? request.content().trim() : request.content();
+        post.update(request.title().trim(), content, post.isAnonymous());
+        post.updateRichContent(RichPostContent.validate(content, request.richContent()));
         recordAnalyticsEvent(AnalyticsService.ADMIN_ACTION, null);
     }
 
@@ -364,7 +379,8 @@ public class PostService {
     }
 
     private boolean resolveStaffReplied(Post post) {
-        if (!PrivateBoardPolicy.isAdminMaskedBoard(post.getBoard().getBoardType())) {
+        if (!PrivateBoardPolicy.isAdminMaskedBoard(post.getBoard().getBoardType())
+                && !AnonymousConcernPolicy.isConcernBoard(post.getBoard().getBoardType())) {
             return false;
         }
         return commentRepository.existsStaffReplyOnPost(post.getId(), CommentStatus.ACTIVE);

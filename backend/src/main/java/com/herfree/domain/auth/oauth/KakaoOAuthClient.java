@@ -1,9 +1,10 @@
 package com.herfree.domain.auth.oauth;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import com.herfree.domain.auth.entity.OAuthProvider;
 import com.herfree.domain.auth.exception.OAuthAuthenticationFailedException;
 import com.herfree.global.config.OAuthProperties;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
@@ -18,9 +19,14 @@ public class KakaoOAuthClient implements OAuthClient {
     private final OAuthProperties.Provider config;
     private final RestClient restClient;
 
+    @Autowired
     public KakaoOAuthClient(OAuthProperties properties) {
-        this.config = properties.kakao();
-        this.restClient = RestClient.create();
+        this(properties.kakao(), RestClient.create());
+    }
+
+    KakaoOAuthClient(OAuthProperties.Provider config, RestClient restClient) {
+        this.config = config;
+        this.restClient = restClient;
     }
 
     @Override

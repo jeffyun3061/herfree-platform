@@ -4,7 +4,7 @@ param(
     [string]$Region = "ap-northeast-2",
     [string]$Repo = "jeffyun3061/herfree-platform",
     [string]$ProductionApiUrl = "https://api.herpfree.co.kr",
-    [string]$ProductionFrontendUrl = "https://herpfree.co.kr",
+    [string]$ProductionFrontendUrl = "https://www.herpfree.co.kr",
     [string]$ProductionDeployRoleArn = "arn:aws:iam::439777528445:role/herfree-github-production-deploy",
     [switch]$SkipStagingFix,
     [switch]$SkipProductionAws,
@@ -26,6 +26,20 @@ Write-Host "Herfree production go-live" -ForegroundColor Cyan
 Write-Host "DryRun=$DryRun" -ForegroundColor DarkGray
 Write-Host ""
 
+# Legal/privacy facts are a production release gate. The non-strict alignment
+# check runs in the normal harness; go-live additionally requires operator,
+# processor, region and analytics facts to be explicitly supplied.
+Write-Step "Legal and privacy alignment"
+$legalArgs = @(
+    "-NoProfile", "-ExecutionPolicy", "Bypass", "-File",
+    (Join-Path $PSScriptRoot "verify-legal-policy-alignment.ps1"),
+    "-StrictOperationalFacts"
+)
+powershell.exe @legalArgs
+if ($LASTEXITCODE -ne 0) {
+    throw "Legal/privacy operational facts are incomplete or inconsistent; production release is refused."
+}
+
 # 0. AWS login
 Write-Step "0. AWS login"
 if ($DryRun) {
@@ -46,8 +60,11 @@ if (-not $SkipStagingFix) {
 
 # 2. Staging status
 Write-Step "2. Staging status"
-$statusArgs = @("-File", (Join-Path $PSScriptRoot "check-staging-status.ps1"), "-AwsProfile", $AwsProfile)
+$statusArgs = @("-File", (Join-Path $PSScriptRoot "check-staging-status.ps1"), "-AwsProfile", $AwsProfile, "-Strict")
 powershell -ExecutionPolicy Bypass @statusArgs
+if ($LASTEXITCODE -ne 0) {
+    throw "Staging has blocking checks; production setup is refused."
+}
 
 # 3. Production AWS
 if (-not $SkipProductionAws) {

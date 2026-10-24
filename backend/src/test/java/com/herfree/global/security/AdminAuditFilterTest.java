@@ -1,6 +1,5 @@
 package com.herfree.global.security;
 
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 import com.herfree.domain.audit.service.AdminAuditService;
@@ -45,18 +44,18 @@ class AdminAuditFilterTest {
     }
 
     @Test
-    void ignoresReadOnlyAdminRequests() throws Exception {
+    void recordsAuthenticatedAdminReadWithoutQueryOrBody() throws Exception {
+        SecurityContextHolder.getContext().setAuthentication(
+                UsernamePasswordAuthenticationToken.authenticated(42L, null, java.util.List.of()));
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/admin/users");
+        request.setQueryString("email=must-not-be-stored");
+        request.setAttribute(RequestCorrelationFilter.ATTRIBUTE, "request-read-123");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
         new AdminAuditFilter(adminAuditService, new SimpleMeterRegistry())
-                .doFilter(request, response, (req, res) -> { });
+                .doFilter(request, response, (req, res) -> response.setStatus(200));
 
-        verify(adminAuditService, never()).record(
-                org.mockito.ArgumentMatchers.anyLong(),
-                org.mockito.ArgumentMatchers.anyString(),
-                org.mockito.ArgumentMatchers.anyString(),
-                org.mockito.ArgumentMatchers.anyInt(),
-                org.mockito.ArgumentMatchers.anyString());
+        verify(adminAuditService).record(
+                42L, "GET", "/api/admin/users", 200, "request-read-123");
     }
 }

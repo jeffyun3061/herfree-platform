@@ -1,6 +1,6 @@
 ﻿# Herfree 실서비스 배포 한방 체크리스트
 
-기준일: 2026-07-30
+기준일: 2026-07-31
 
 이 문서 하나를 배포 기준으로 사용한다. `[x]`는 코드와 로컬 자동 검증이 끝난 항목이고, `[ ]`는 AWS·외부 콘솔·법적 검토처럼 운영자가 직접 완료해야 하는 항목이다.
 
@@ -10,7 +10,8 @@
 
 현재 판정:
 
-- **staging NO-GO:** PR #56 병합, `develop` 동기화, Amplify 동일 revision 확인 전에는 배포하지 않는다.
+- **staging GO (자동 게이트):** Release run `30621103854`에서 Amplify revision, 이미지 취약점, EC2 health, smoke, mutation QA를 모두 통과했다. 검증 이미지 태그는 `staging-passed-aa1a5b5a7d3644e103d6d83b02d7355af71ed23a`다.
+- **staging 수동 검수:** 아래 7절의 실제 브라우저·OAuth·관리자 흐름은 운영자가 직접 확인하기 전까지 `NO-GO`로 본다.
 - **production NO-GO:** staging 통과와 3절의 운영·법무·의료·복구 증적이 모두 필요하다.
 
 ## 1. 환경별로 무엇이 다른가
@@ -37,7 +38,8 @@
 - [x] Next.js 15.5.21 주요 라우트와 API 흐름 검증
 - [x] npm audit production high/critical 0건, 전체 critical 0건 (개발용 ESLint 8 high는 ADR-025로 추적)
 - [x] 로컬 BFF E2E: 가입·로그인·HttpOnly 세션·일지 CRUD·탈퇴와 stale session 차단 2개 통과
-- [ ] S3를 포함한 회원가입·게시글·댓글·일지·비공개 이미지 mutation E2E는 staging에서 통과
+- [x] staging Release `30621103854`: revision gate·immutable image·Trivy HIGH/CRITICAL 0·ECR push·EC2 SSM health rollback gate·smoke·mutation QA 통과
+- [ ] S3를 포함한 회원가입·게시글·댓글·일지·비공개 이미지 mutation E2E는 운영자가 staging에서 실제 데이터로 재확인
 - [x] 서버 `/users/me` 검증 전에는 sessionStorage 사용자 캐시로 개인 화면을 렌더링하지 않는다.
 - [x] 401·403·검증 시간 초과 시 인증 복원을 guest 상태로 끝내고 stale 사용자 캐시를 제거한다.
 - [x] 로그인·OAuth 세션 성공 시 이전 `session_expired` 알림을 즉시 제거한다.
@@ -49,7 +51,7 @@
 - [x] 이메일 정규화, DB unique 제약, 동시 중복 가입 409 변환
 - [x] 게시글·댓글·칼럼 목록 쿼리 수 회귀 테스트와 관리자 신고 대상 일괄 조회
 - [x] S3 이미지 크기·타입 제한과 삭제 정리
-- [x] 민감정보 별도 동의와 Flyway V32 적용
+- [x] 커뮤니티 가입과 개인일지 민감정보 동의를 분리하고 Flyway V39(`health_data_consents`)를 적용
 - [x] 관리자 감사 로그와 Flyway V33 적용
 - [x] `X-Request-ID`와 관리자 변경 감사 추적
 - [x] Swagger 운영 비활성화
@@ -93,10 +95,11 @@
 - [ ] `ADMIN_BOOTSTRAP_ENABLED=false`이고 demo 계정이 운영 DB에 없다.
 - [ ] 관리자 계정은 개인별로 발급하고 공용 계정을 사용하지 않는다.
 - [ ] 관리자 MFA를 적용하거나 도입 전까지 `/api/admin/**`를 VPN, Cloudflare Access 또는 고정 IP로 제한했다.
+- [ ] `ADMIN_ACCESS_ALLOWED_CIDRS`가 실제 운영자 VPN/고정 관리망으로 설정됐고 `0.0.0.0/0`이 아니다. 코드 게이트가 외부 IP에 403을 반환하는 것을 확인했다.
 
 ### AWS와 네트워크
 
-- [x] staging RDS `herfree-staging-mysql` 생성: MySQL 8.0.46, `db.t4g.micro`, 단일 AZ, 20GB gp3, 저장 암호화, 삭제 보호 (2026-07-17)
+- [x] staging RDS `herfree-staging-mysql` 생성 후 MySQL 8.4.10으로 업그레이드: `db.t4g.micro`, 단일 AZ, 20GB gp3, 저장 암호화, 삭제 보호 (2026-08-14 검증)
 - [x] staging RDS Public access 비활성화, 전용 보안 그룹 인바운드 0개, `require_secure_transport=ON` 적용
 - [x] staging RDS 관리형 master secret 사용, error 로그 그룹 30일 보존, 시점 복구 가능 상태 확인
 - [x] staging RDS 자동 백업 1일 적용. 현재 AWS Free plan 제한값이며 staging 검증용으로만 사용한다.
@@ -135,7 +138,7 @@
 - [ ] 탈퇴 후 동의 이력·감사 로그·게시물의 보존기간과 재가입 정책을 운영 책임자가 승인했다.
 - [x] 공개 일지 통계가 서로 다른 사용자 20명 최소 표본과 5명 미만 소수 셀 억제를 적용한다.
 - [ ] RDS JDBC 연결이 서버 인증서를 검증하는 TLS를 사용하고 비암호화 연결을 거부한다.
-- [ ] 건강정보 저장 암호화와 field-level encryption 적용 범위를 승인했다.
+- [ ] 건강정보 저장 암호화와 field-level encryption 적용 범위를 운영 책임자가 승인했다. (코드: `journal_records.memo` AES-GCM + `HEALTH_DATA_ENCRYPTION_KEY`; staging re-key 증적 필요)
 - [ ] 자동 파기 보유기간을 운영 책임자가 승인하고 staging/production 실행 로그를 증거로 남겼다.
 - [ ] 침해 신고 담당자와 사용자 공지·신고 절차를 정했다.
 - [ ] `docs/templates/security-incident-record.md`로 SEV-1 모의훈련을 수행했다.
@@ -232,7 +235,7 @@ Docker가 없으면 `-SkipDocker`로 workflow·preflight만 검사할 수 있다
 
 ## 7. staging 수동 사용자 흐름
 
-- [ ] 비회원 홈 → 회원가입 → 이메일 로그인 → 로그아웃
+- [ ] 비회원 홈 → 회원가입 → 이메일 로그인 → 로그아웃 (자동 mutation QA 외 실제 브라우저 확인)
 - [ ] Kakao·Naver·Google 로그인
 - [ ] 만료 쿠키와 stale `sessionUser`가 있어도 개인 홈·일지·관리자 UI가 노출되지 않는다.
 - [ ] 세션 만료 직후 개인 화면이 사라지고, 재로그인 성공 즉시 만료 알림도 사라진다.

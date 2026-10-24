@@ -2,6 +2,9 @@ package com.herfree.domain.comment.dto.response;
 
 import com.herfree.domain.comment.entity.Comment;
 import com.herfree.global.util.AnonymousNicknamePolicy;
+import com.herfree.global.util.AnonymousConcernPolicy;
+import com.herfree.global.util.StaffRolePolicy;
+import com.herfree.domain.user.entity.UserStatus;
 import java.time.Instant;
 
 // 댓글 응답 DTO — Entity를 직접 노출하지 않아 민감 필드 유출을 방지한다
@@ -15,22 +18,30 @@ public record CommentResponse(
         Long parentId,
         // 현재 로그인 사용자가 작성자인지 — 삭제 버튼 표시에 사용한다
         boolean isMyComment,
-        Instant createdAt
+        Instant createdAt,
+        boolean operatorReply
 ) {
     public static CommentResponse of(Comment comment, String authorNickname, Long currentUserId) {
         boolean isMyComment = currentUserId != null
                 && comment.getUser().getId().equals(currentUserId);
+        boolean concern = AnonymousConcernPolicy.isConcernBoard(comment.getPost().getBoard().getBoardType());
+        boolean concernAuthor = concern && comment.getPost().getUser().getId().equals(comment.getUser().getId());
+        // Enforce the board's promise on reads too, including legacy rows without the stored flag.
+        boolean anonymous = comment.isAnonymous() || concernAuthor;
+        boolean operator = concern && !concernAuthor && comment.getUser().getStatus() == UserStatus.ACTIVE
+                && StaffRolePolicy.isStaff(comment.getUser().getRole());
         String displayNickname = AnonymousNicknamePolicy.displayNickname(
-                comment.isAnonymous(), isMyComment, authorNickname);
+                anonymous, isMyComment, authorNickname);
         return new CommentResponse(
                 comment.getId(),
                 comment.getPost().getId(),
                 displayNickname,
                 comment.getContent(),
-                comment.isAnonymous(),
+                anonymous,
                 comment.getParent() != null ? comment.getParent().getId() : null,
                 isMyComment,
-                comment.getCreatedAt()
+                comment.getCreatedAt(),
+                operator
         );
     }
 }

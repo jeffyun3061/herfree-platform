@@ -1,6 +1,7 @@
 param(
     [switch]$SkipPreflight,
-    [switch]$SkipDocker
+    [switch]$SkipDocker,
+    [switch]$RequireLegalFacts
 )
 
 $ErrorActionPreference = "Continue"
@@ -46,9 +47,15 @@ foreach ($path in $requiredFiles) {
     else { Fail "missing file" $path }
 }
 
+$alignmentArgs = @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", (Join-Path $root "scripts/verify-legal-policy-alignment.ps1"))
+if ($RequireLegalFacts) { $alignmentArgs += "-StrictOperationalFacts" }
+& powershell.exe @alignmentArgs
+if ($LASTEXITCODE -eq 0) { Pass "verify-legal-policy-alignment.ps1" }
+else { Fail "verify-legal-policy-alignment.ps1" "exit $LASTEXITCODE" }
+
 $dirty = git status --porcelain
 if ([string]::IsNullOrWhiteSpace($dirty)) { Pass "Git working tree clean" }
-else { Warn "Git working tree dirty" "commit the reviewed deployment candidate before release" }
+else { Fail "Git working tree dirty" "commit the reviewed deployment candidate before release" }
 Pass "current commit: $(git rev-parse --short HEAD)"
 
 if (-not $SkipPreflight) {

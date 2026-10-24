@@ -26,10 +26,13 @@ import java.time.temporal.ChronoUnit;
 import java.util.HexFormat;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.util.StringUtils;
 
 /**
@@ -39,6 +42,7 @@ import org.springframework.util.StringUtils;
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AnalyticsService {
 
     public static final String PAGE_VIEW = "page_view";
@@ -85,6 +89,7 @@ public class AnalyticsService {
     private final ContentRepository contentRepository;
     private final VideoRepository videoRepository;
     private final ClientIpExtractor clientIpExtractor;
+    private final AnalyticsEventWriter analyticsEventWriter;
 
     @Value("${app.analytics.hash-salt:${JWT_SECRET:local-analytics-salt}}")
     private String hashSalt;
@@ -94,9 +99,26 @@ public class AnalyticsService {
         recordEvent(request.eventName(), "FRONTEND", request.route(), request.sessionId(), userId, httpRequest);
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void recordBackendEvent(String eventName, Long userId) {
-        recordEvent(eventName, "BACKEND", null, null, userId, null);
+        if (!ALLOWED_EVENTS.contains(eventName)) {
+            return;
+        }
+
+        // A caller may still hold a pessimistic user lock (journal upsert, signup,
+        // role change). Waiting in a REQUIRES_NEW transaction on that same FK can
+        // turn a successful business write into a 500 lock timeout. Defer the
+        // best-effort analytics insert until the outer transaction commits.
+        if (TransactionSynchronizationManager.isSynchronizationActive()
+                && TransactionSynchronizationManager.isActualTransactionActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    writeBackendEventSafely(eventName, userId);
+                }
+            });
+            return;
+        }
+        writeBackendEventSafely(eventName, userId);
     }
 
     // 관리자 대시보드는 개인 데이터가 아니라 서비스 상태를 보는 화면이다.
@@ -150,6 +172,16 @@ public class AnalyticsService {
                 .ipHash(hashNullable(clientIpExtractor.extract(httpRequest)))
                 .userAgentHash(hashNullable(httpRequest == null ? null : httpRequest.getHeader("User-Agent")))
                 .build());
+    }
+
+    private void writeBackendEventSafely(String eventName, Long userId) {
+        try {
+            analyticsEventWriter.write(eventName, userId);
+        } catch (RuntimeException ex) {
+            // Analytics must never make a core account/journal operation fail.
+            log.warn("Backend analytics event skipped. eventType={} failureType={}",
+                    eventName, ex.getClass().getSimpleName());
+        }
     }
 
     private String sanitizeRoute(String route) {

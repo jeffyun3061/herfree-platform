@@ -7,7 +7,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Set;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
@@ -18,7 +17,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @Slf4j
 public class AdminAuditFilter extends OncePerRequestFilter {
 
-    private static final Set<String> MUTATING_METHODS = Set.of("POST", "PUT", "PATCH", "DELETE");
     private final AdminAuditService adminAuditService;
     private final Counter auditFailureCounter;
 
@@ -29,8 +27,14 @@ public class AdminAuditFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        return !request.getRequestURI().startsWith("/api/admin/")
-                || !MUTATING_METHODS.contains(request.getMethod());
+        Authentication actor = SecurityContextHolder.getContext().getAuthentication();
+        boolean operatorContent = AdminAccessGateFilter.privilegedCommunityPath(request.getRequestURI())
+                && actor != null && actor.getAuthorities().stream().anyMatch(a ->
+                    java.util.Set.of("ROLE_MODERATOR", "ROLE_ADMIN", "ROLE_SUPER_ADMIN").contains(a.getAuthority()));
+        return !(request.getRequestURI().startsWith("/api/admin/")
+                || operatorContent
+                || (request.getRequestURI().startsWith("/api/auth/admin-mfa/") && "POST".equals(request.getMethod())))
+                || "OPTIONS".equalsIgnoreCase(request.getMethod());
     }
 
     @Override

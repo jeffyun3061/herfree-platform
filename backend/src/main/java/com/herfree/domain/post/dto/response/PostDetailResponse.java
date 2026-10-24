@@ -5,6 +5,8 @@ import com.herfree.domain.post.entity.PostVisibility;
 import com.herfree.domain.user.entity.UserRole;
 import com.herfree.global.util.AnonymousNicknamePolicy;
 import com.herfree.global.util.PrivateBoardPolicy;
+import com.herfree.global.util.AnonymousConcernPolicy;
+import com.herfree.global.util.PostVisibilityPolicy;
 import java.time.Instant;
 
 // 게시글 상세 응답 DTO — 목록 응답에 content, visibility, isMyPost 필드를 추가한다
@@ -20,11 +22,12 @@ public record PostDetailResponse(
         boolean isAnonymous,
         boolean isMyPost,
         boolean readable,
+        boolean shareable,
         String imageUrl,
         boolean staffReplied,
-        String authorIpMasked,
         Instant createdAt,
-        Instant updatedAt
+        Instant updatedAt,
+        String richContent
 ) {
     public static PostDetailResponse of(Post post, String authorNickname, boolean isMyPost, String imageUrl) {
         return of(post, authorNickname, isMyPost, imageUrl, false, null, null);
@@ -54,10 +57,10 @@ public record PostDetailResponse(
 
         String displayNickname = mask
                 ? "비공개"
-                : AnonymousNicknamePolicy.displayNickname(post.isAnonymous(), isMyPost, authorNickname);
+                : AnonymousNicknamePolicy.displayNickname(post.isAnonymous()
+                        || AnonymousConcernPolicy.isConcernBoard(post.getBoard().getBoardType()), isMyPost, authorNickname);
         String title = mask ? PrivateBoardPolicy.MASKED_TITLE : post.getTitle();
         String content = mask ? PrivateBoardPolicy.SECRET_STORY_DETAIL_MESSAGE : post.getContent();
-        String authorIpMasked = mask ? null : post.getAuthorIpMasked();
 
         return new PostDetailResponse(
                 post.getId(),
@@ -68,14 +71,15 @@ public record PostDetailResponse(
                 displayNickname,
                 post.getViewCount(),
                 post.getVisibility(),
-                post.isAnonymous(),
+                post.isAnonymous() || AnonymousConcernPolicy.isConcernBoard(post.getBoard().getBoardType()),
                 isMyPost,
                 readable,
+                readable && PostVisibilityPolicy.isPublicShareable(post),
                 mask ? null : imageUrl,
                 staffReplied,
-                authorIpMasked,
                 post.getCreatedAt(),
-                post.getUpdatedAt()
+                post.getUpdatedAt(),
+                mask ? null : post.getRichContent()
         );
     }
 }

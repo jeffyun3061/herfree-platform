@@ -19,6 +19,7 @@ class PostControllerImageCacheTest {
     private final PostImageServingService imageServingService = mock(PostImageServingService.class);
     private final PostController controller = new PostController(
             postService,
+            mock(com.herfree.domain.post.service.PostSharePreviewService.class),
             postBookmarkService,
             storage,
             imageServingService

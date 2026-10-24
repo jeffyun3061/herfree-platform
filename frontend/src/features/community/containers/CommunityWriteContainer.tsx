@@ -31,7 +31,7 @@ import { isStaff } from '@/domain/user/types';
 import { getErrorMessage } from '@/lib/api/client';
 import * as adminApi from '@/lib/api/admin';
 import { CommunityWriteGuidelines } from '@/components/community/CommunityWriteGuidelines';
-import { ReadableContent } from '@/components/content/ReadableContent';
+import { CommunityContentEditor } from '@/components/community/CommunityContentEditor';
 import type { PostVisibility } from '@/domain/post/types';
 
 const TITLE_UI_MAX = 30;
@@ -58,7 +58,8 @@ function WritePostForm() {
   const [boardId, setBoardId] = useState(0);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [showContentPreview, setShowContentPreview] = useState(false);
+  const [richContent, setRichContent] = useState<string | null>(null);
+  const changeRichContent = (plain: string, document: string) => { setContent(plain); setRichContent(document); };
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [visibility, setVisibility] = useState<PostVisibility>('PUBLIC');
   const [publicDisclosureAccepted, setPublicDisclosureAccepted] = useState(false);
@@ -148,6 +149,7 @@ function WritePostForm() {
     setBoardId(existingPost.boardId);
     setTitle(existingPost.title);
     setContent(existingPost.content);
+    setRichContent(existingPost.richContent ?? null);
     setIsAnonymous(existingPost.isAnonymous);
     setVisibility(existingPost.visibility);
     setImageUrl(existingPost.imageUrl ?? null);
@@ -157,7 +159,7 @@ function WritePostForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting || isImageUploading) return;
-    const validation = validatePostInput({ title, content });
+    const validation = validatePostInput({ title, content, richContent });
     if (validation) {
       setValidationError(validation);
       return;
@@ -193,7 +195,8 @@ function WritePostForm() {
         try {
           await adminApi.updateAdminPost(editPostId, {
             title: title.trim(),
-            content: content.trim(),
+            content: richContent ? content : content.trim(),
+            richContent,
           });
           router.replace(`/community/posts/${editPostId}`);
         } catch (err) {
@@ -207,6 +210,7 @@ function WritePostForm() {
       const result = await updatePost(editPostId, {
         title,
         content,
+        richContent,
         isAnonymous: concern || isAnonymous,
         imageUrl: imageUrl ?? '',
       });
@@ -218,6 +222,7 @@ function WritePostForm() {
       boardId,
       title,
       content,
+      richContent,
       isAnonymous: concern || isAnonymous,
       visibility: concern ? 'PUBLIC' : visibility,
       publicDisclosureAccepted: concern && publicDisclosureAccepted,
@@ -323,7 +328,7 @@ function WritePostForm() {
   const boardPickerDisabled = isEditMode || lockedPrivateBoard;
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#F3EDE3] pb-10 hf-subpage-top">
+    <div className="mx-auto flex min-h-screen w-full max-w-[720px] flex-col bg-[#F3EDE3] pb-10 hf-subpage-top">
       <header className="flex items-center justify-between border-b border-[#E4D8C7] bg-[#F3EDE3]/95 px-[18px] pb-3.5 pt-0.5">
         <Link
           href={backHref}
@@ -351,12 +356,12 @@ function WritePostForm() {
         className="flex flex-1 flex-col"
       >
         {isSymptomBoard && !isEditMode && (
-          <div className="px-5 pt-4">
+          <div className="px-4 sm:px-5 pt-4">
             <SymptomBoardRedirectBanner />
           </div>
         )}
 
-        <div className="px-5 pt-[18px]">
+        <div className="px-4 sm:px-5 pt-[18px]">
           <p className="mb-2.5 text-[12px] font-semibold text-[#9A9F94]">게시판 선택</p>
           <div className="-mx-2 flex items-center gap-1">
             <button
@@ -411,12 +416,12 @@ function WritePostForm() {
         </div>
 
         {isSecretStoryWrite && (
-          <div className="px-5 pt-4">
+          <div className="px-4 sm:px-5 pt-4">
             <SecretStoryBoardBanner />
           </div>
         )}
 
-        <div className="px-5 pt-[18px]">
+        <div className="px-4 sm:px-5 pt-[18px]">
           <div
             className={cn(
               'flex items-center gap-1.5 border-b-2 transition-colors',
@@ -451,7 +456,7 @@ function WritePostForm() {
         </div>
 
         {!isMaskedWrite && (
-          <div className="flex-1 px-5 pt-3.5">
+          <div className="flex-1 px-4 sm:px-5 pt-3.5">
             {!isEditMode && <CommunityWriteGuidelines />}
             {!isEditMode && !isConcernWrite && (
               <fieldset className="mt-3 rounded-[14px] border border-[#ECE5D8] bg-white p-3">
@@ -490,35 +495,9 @@ function WritePostForm() {
                 {!isEditMode && <label className="mt-3 flex items-start gap-2"><input type="checkbox" checked={publicDisclosureAccepted} onChange={(event) => setPublicDisclosureAccepted(event.target.checked)} className="mt-1 accent-[#0B3B36]" /><span>본문이 공개되는 것을 확인했습니다.</span></label>}
               </div>
             )}
-            <div className="mt-4 flex items-center justify-between gap-3">
-              <label htmlFor="content" className="text-[13px] font-bold text-[#36453B]">본문</label>
-              <button
-                type="button"
-                aria-pressed={showContentPreview}
-                onClick={() => setShowContentPreview((value) => !value)}
-                className="min-h-11 rounded-lg px-3 text-[13px] font-bold text-[#0B3B36] underline underline-offset-4"
-              >
-                {showContentPreview ? '계속 쓰기' : '미리보기'}
-              </button>
+            <div className="mt-3">
+              <CommunityContentEditor value={content} onChange={setContent} richContent={richContent} onRichChange={changeRichContent} placeholder={contentPlaceholder} />
             </div>
-            {showContentPreview ? (
-              <div data-testid="community-post-preview" className="min-h-[240px] w-full border-b border-[#D9CDB8] py-3">
-                {content ? (
-                  <ReadableContent text={content} variant="community" />
-                ) : (
-                  <p className="hf-community-writing-content text-[#7C8279]">본문을 입력하면 게시될 모습이 여기에 보여요.</p>
-                )}
-              </div>
-            ) : (
-              <textarea
-                id="content"
-                required
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder={contentPlaceholder}
-                className="hf-community-writing-content min-h-[240px] w-full resize-y border-x-0 border-t-0 border-b border-[#D9CDB8] bg-transparent px-0 py-3 placeholder:text-[#8A9089] outline-none focus:border-[#0B3B36]"
-              />
-            )}
             <div className="mt-3">
               <CommunityPhotoAttach
                 imageUrl={imageUrl}
@@ -533,22 +512,12 @@ function WritePostForm() {
         )}
 
         {isMaskedWrite && (
-          <div className="flex-1 px-5 pt-3.5">
-            <label htmlFor="content" className="sr-only">
-              본문
-            </label>
-            <textarea
-              id="content"
-              required
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder={contentPlaceholder}
-              className="min-h-[200px] w-full resize-y rounded-[14px] border border-[#E2D5C2] bg-[#FFFCF7] p-[15px] text-[16px] leading-[1.7] text-[#1E2621] shadow-[0_10px_24px_-24px_rgba(7,37,31,.45)] placeholder:text-[#B4B2A6] outline-none focus:border-[#0B3B36]/35"
-            />
+          <div className="flex-1 px-4 sm:px-5 pt-3.5">
+            <CommunityContentEditor value={content} onChange={setContent} richContent={richContent} onRichChange={changeRichContent} placeholder={contentPlaceholder} />
           </div>
         )}
 
-        <div className="mt-auto flex items-center gap-2.5 px-5 pt-3">
+        <div className="mt-auto flex items-center gap-2.5 px-4 sm:px-5 pt-3">
           {isConcernWrite && <p className="text-[12px] font-semibold text-[#0B3B36]">닉네임 비공개로 작성됩니다.</p>}
           {!isMaskedWrite && !isConcernWrite && (
             <label className="flex cursor-pointer items-center gap-1.5 text-[12px] text-[#6E766F]">
@@ -582,7 +551,7 @@ function WritePostForm() {
           </Button>
         </div>
 
-        <div className="space-y-3 px-5 pt-4">
+        <div className="space-y-3 px-4 sm:px-5 pt-4">
           {validationError && <ErrorMessage message={validationError} />}
           {adminSubmitError && <ErrorMessage message={adminSubmitError} />}
           {error && <ErrorMessage message={error} />}

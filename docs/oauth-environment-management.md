@@ -9,7 +9,7 @@ Herfree는 OAuth 앱과 키를 `Dev`와 `Prod`로 분리한다. 주석을 풀고
 | OAuth 콘솔 앱 | `Herfree Dev` | `Herfree Prod` |
 | 프론트 공개 Client ID | `frontend/.env.local` | 배포 플랫폼 환경변수 |
 | 백엔드 Client ID/Secret | `backend/local-secrets.yml` | EC2 `.env.prod` 또는 AWS Secrets Manager |
-| Redirect origin | `http://localhost:3000` | `https://herpfree.co.kr` |
+| Redirect origin | `http://localhost:3000` | `https://www.herpfree.co.kr` |
 | Git 커밋 | 예제 파일만 | 예제 파일만 |
 
 ## 개발자가 직접 변경하는 곳
@@ -39,12 +39,12 @@ cd ..\backend
 운영에서는 저장소의 로컬 파일을 수정하지 않는다. `.env.prod.example`을 기준표로 사용하고 실제 값은 EC2 환경변수나 AWS Secrets Manager에 입력한다.
 
 ```env
-NEXT_PUBLIC_OAUTH_REDIRECT_ORIGIN=https://herpfree.co.kr
+NEXT_PUBLIC_OAUTH_REDIRECT_ORIGIN=https://www.herpfree.co.kr
 NEXT_PUBLIC_OAUTH_REQUIRED_PROVIDERS=kakao,google,naver
 
-OAUTH_KAKAO_REDIRECT_URI=https://herpfree.co.kr/auth/callback/kakao
-OAUTH_GOOGLE_REDIRECT_URI=https://herpfree.co.kr/auth/callback/google
-OAUTH_NAVER_REDIRECT_URI=https://herpfree.co.kr/auth/callback/naver
+OAUTH_KAKAO_REDIRECT_URI=https://www.herpfree.co.kr/auth/callback/kakao
+OAUTH_GOOGLE_REDIRECT_URI=https://www.herpfree.co.kr/auth/callback/google
+OAUTH_NAVER_REDIRECT_URI=https://www.herpfree.co.kr/auth/callback/naver
 ```
 
 실제 Client ID와 Client Secret은 문서나 Git에 적지 않는다.
@@ -60,7 +60,7 @@ OAUTH_NAVER_REDIRECT_URI=https://herpfree.co.kr/auth/callback/naver
 ## 배포 전 확인
 
 - Kakao, Google, Naver에 Dev/Prod 앱이 각각 존재한다.
-- 운영 Callback URI가 모두 `https://herpfree.co.kr/auth/callback/{provider}` 형식이다.
+- 운영 Callback URI가 모두 `https://www.herpfree.co.kr/auth/callback/{provider}` 형식이다.
 - 로컬 빌드는 Dev 키로, CI/운영 빌드는 Prod 키로 실행된다.
 - 세 provider 로그인 후 신규 가입과 기존 계정 재로그인을 각각 확인한다.
 - 브라우저 네트워크와 백엔드 로그에 Client Secret, authorization code, access token이 남지 않는다.

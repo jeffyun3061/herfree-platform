@@ -12,6 +12,7 @@ describe('anonymous server share metadata', () => {
     const metadata = publicPostMetadata('11', preview);
     expect(metadata.openGraph).toMatchObject({title:'고민 제목',description:'본문 첫 부분',url:'https://www.herpfree.co.kr/community/posts/11'});
     expect(JSON.stringify(metadata)).not.toContain('must-not-be-exported');
+    expect(metadata.openGraph).toMatchObject({ images: [{ url: '/brand/logo-hfree-on-primary.png', width: 512, height: 512 }] });
   });
   it.each(['INQUIRY','PRIVATE_CONSULT','SECRET_STORY'])('refuses private %s data even from a malformed upstream response', async boardType => {
     vi.stubEnv('API_REWRITE_TARGET', 'https://api.example.test');
@@ -23,6 +24,7 @@ describe('anonymous server share metadata', () => {
     const fetchMock=vi.fn().mockRejectedValue(new Error('unavailable'));vi.stubGlobal('fetch', fetchMock);
     expect(await loadPublicPostPreview('../private')).toBeNull();expect(fetchMock).not.toHaveBeenCalled();
     vi.stubEnv('API_REWRITE_TARGET', 'https://api.example.test');expect(await loadPublicPostPreview('1')).toBeNull();
-    expect(publicPostMetadata('1', null).robots).toEqual({index:false,follow:true});
+    expect(publicPostMetadata('1', null).robots).toEqual({index:false,follow:false});
+    expect(publicPostMetadata('1', null).title).toEqual({absolute:'헤르프리'});
   });
 });

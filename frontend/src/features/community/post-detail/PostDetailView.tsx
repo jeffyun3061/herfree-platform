@@ -52,7 +52,7 @@ export function PostDetailView({
   const isContentMasked = post.readable === false;
 
   return (
-    <section className="px-5 pt-1.5">
+    <section className="px-4 pt-1.5 sm:px-5">
       <div className="flex flex-wrap items-center gap-2">
         <span className={cn('rounded-[7px] px-[9px] py-[3px] text-[10.5px] font-bold', boardTagClass)}>
           {boardTagLabel}
@@ -107,6 +107,7 @@ export function PostDetailView({
       >
         <ReadableContent
           text={post.content}
+          richContent={isContentMasked ? null : post.richContent}
           variant="community"
           className={isContentMasked ? 'text-[#7A847C]' : 'text-[#2C342E]'}
         />

@@ -4,7 +4,7 @@ WORKDIR /workspace
 
 COPY backend/gradlew backend/gradle backend/build.gradle.kts backend/settings.gradle.kts ./
 COPY backend/gradle/wrapper ./gradle/wrapper
-RUN chmod +x gradlew
+RUN sed -i 's/\r$//' gradlew && chmod +x gradlew
 
 COPY backend/src ./src
 RUN ./gradlew bootJar --no-daemon -x test

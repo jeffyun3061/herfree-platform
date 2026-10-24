@@ -15,9 +15,13 @@ SECRET_PREFIX="herfree/${DEPLOY_ENV}"
 if [[ "${DEPLOY_ENV}" == "production" ]]; then
   PROFILE="prod"
   ENV_FILE="${CONFIG_DIR}/.env.prod"
+  MYSQL_ENV_FILE="${CONFIG_DIR}/.env.mysql.prod"
+  JWT_ACCESS_EXPIRATION=604800
 else
   PROFILE="staging"
   ENV_FILE="${CONFIG_DIR}/.env.staging"
+  MYSQL_ENV_FILE="${CONFIG_DIR}/.env.mysql.staging"
+  JWT_ACCESS_EXPIRATION=3600
 fi
 
 # 원문 secret은 stdout이나 SSM 결과에 남기지 않고 메모리에서만 조합한다.
@@ -45,14 +49,32 @@ json_value() {
 
 DB_HOST="$(json_value "${APP_JSON}" '.dbHost')"
 DB_NAME="$(json_value "${DB_JSON}" '.database')"
+DB_RUNTIME="$(printf '%s' "${APP_JSON}" | jq -er '.dbMode // "rds"')"
+if [[ "${DB_RUNTIME}" != "rds" && "${DB_RUNTIME}" != "local" ]]; then
+  echo "app-config dbMode must be rds or local"
+  exit 1
+fi
+
+if [[ "${DB_RUNTIME}" == "local" ]]; then
+  DB_HOST="mysql"
+  DATASOURCE_URL="jdbc:mysql://${DB_HOST}:3306/${DB_NAME}?serverTimezone=UTC&characterEncoding=UTF-8&sslMode=REQUIRED"
+  DB_BACKUP_S3_BUCKET="$(json_value "${APP_JSON}" '.dbBackupBucket')"
+else
+  DATASOURCE_URL="jdbc:mysql://${DB_HOST}:3306/${DB_NAME}?serverTimezone=UTC&characterEncoding=UTF-8&sslMode=VERIFY_IDENTITY&trustCertificateKeyStoreUrl=file:/app/certs/rds-truststore.p12&trustCertificateKeyStoreType=PKCS12&trustCertificateKeyStorePassword=changeit&fallbackToSystemTrustStore=false"
+  DB_BACKUP_S3_BUCKET=""
+fi
+
 install -d -m 0700 "${CONFIG_DIR}"
 umask 077
 TMP_FILE="$(mktemp "${CONFIG_DIR}/.env.${DEPLOY_ENV}.XXXXXX")"
-trap 'rm -f "${TMP_FILE}"' EXIT
+TMP_MYSQL_FILE=""
+trap 'rm -f "${TMP_FILE}" "${TMP_MYSQL_FILE}"' EXIT
 
 cat > "${TMP_FILE}" <<EOF
 SPRING_PROFILES_ACTIVE=${PROFILE}
-SPRING_DATASOURCE_URL=jdbc:mysql://${DB_HOST}:3306/${DB_NAME}?serverTimezone=UTC&characterEncoding=UTF-8&sslMode=VERIFY_IDENTITY&trustCertificateKeyStoreUrl=file:/app/certs/rds-truststore.p12&trustCertificateKeyStoreType=PKCS12&trustCertificateKeyStorePassword=changeit&fallbackToSystemTrustStore=false
+DB_RUNTIME=${DB_RUNTIME}
+DB_BACKUP_S3_BUCKET=${DB_BACKUP_S3_BUCKET}
+SPRING_DATASOURCE_URL=${DATASOURCE_URL}
 SPRING_DATASOURCE_USERNAME=$(json_value "${DB_JSON}" '.username')
 SPRING_DATASOURCE_PASSWORD=$(json_value "${DB_JSON}" '.password')
 SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE=5
@@ -61,11 +83,15 @@ SPRING_DATASOURCE_HIKARI_CONNECTION_TIMEOUT=10000
 
 JWT_SECRET=$(json_value "${APP_JSON}" '.jwtSecret')
 ANALYTICS_HASH_SALT=$(json_value "${APP_JSON}" '.analyticsHashSalt')
-JWT_ACCESS_EXPIRATION=3600
+HEALTH_DATA_ENCRYPTION_KEY=$(json_value "${APP_JSON}" '.healthDataEncryptionKey')
+ADMIN_MFA_ENCRYPTION_KEY=$(json_value "${APP_JSON}" '.adminMfaEncryptionKey')
+ADMIN_MFA_REQUIRED=true
+JWT_ACCESS_EXPIRATION=${JWT_ACCESS_EXPIRATION}
 JAVA_TOOL_OPTIONS=-XX:MaxRAMPercentage=65.0 -XX:+ExitOnOutOfMemoryError
 
 AWS_REGION=${AWS_REGION}
 CLOUDWATCH_LOG_GROUP=$(json_value "${APP_JSON}" '.cloudWatchLogGroup')
+OPERATIONS_PUBLIC_URL=$(json_value "${APP_JSON}" '.frontendOrigin')
 CORS_ALLOWED_ORIGINS=$(json_value "${APP_JSON}" '.frontendOrigin')
 TRUSTED_PROXY_CIDRS=127.0.0.1/32
 
@@ -103,8 +129,23 @@ EOF
 
 chmod 0600 "${TMP_FILE}"
 mv -f "${TMP_FILE}" "${ENV_FILE}"
+
+if [[ "${DB_RUNTIME}" == "local" ]]; then
+  TMP_MYSQL_FILE="$(mktemp "${CONFIG_DIR}/.env.mysql.${DEPLOY_ENV}.XXXXXX")"
+  cat > "${TMP_MYSQL_FILE}" <<EOF
+MYSQL_DATABASE=${DB_NAME}
+MYSQL_USER=$(json_value "${DB_JSON}" '.username')
+MYSQL_PASSWORD=$(json_value "${DB_JSON}" '.password')
+MYSQL_ROOT_PASSWORD=$(json_value "${DB_JSON}" '.rootPassword')
+EOF
+  chmod 0600 "${TMP_MYSQL_FILE}"
+  mv -f "${TMP_MYSQL_FILE}" "${MYSQL_ENV_FILE}"
+else
+  rm -f "${MYSQL_ENV_FILE}"
+fi
 trap - EXIT
 
 unset APP_JSON DB_JSON SMTP_JSON
-"${APP_DIR}/infra/scripts/validate-release-env.sh" "${DEPLOY_ENV}" "${ENV_FILE}"
+HERFREE_MYSQL_ENV_FILE="${MYSQL_ENV_FILE}" \
+  "${APP_DIR}/infra/scripts/validate-release-env.sh" "${DEPLOY_ENV}" "${ENV_FILE}"
 echo "${DEPLOY_ENV} environment rendered"

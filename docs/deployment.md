@@ -65,7 +65,7 @@
 | **1단계 (확정·시작)** | Vercel + **VPS Docker** (API+MySQL) + S3 | **2~4만 원** | 런칭 ~ 일 방문 400 전후 |
 | **2단계 (확장)** | Vercel + EC2 + **RDS** + S3 (+ CloudFront 선택) | 5~10만 원 | 일 400~600+ **지속**, 동시 50+ 자주 |
 
-**1단계가 기본값.** `docker-compose.prod.yml` + `infra/` 참고.
+**이 문서는 legacy 참고 자료다.** `docker-compose.prod.yml` + Docker MySQL은 건강정보 실서비스에 사용하지 않는다. 운영 기준은 `deployment-aws.md`의 `docker-compose.release.yml` + private RDS + Secrets Manager 경로다.
 
 ### 트래픽 가이드 (운영 참고)
 
@@ -111,7 +111,7 @@
 |------|-----|
 | `API_REWRITE_TARGET` | `https://api.도메인` (끝에 `/` 없음) |
 | `NEXT_PUBLIC_API_URL` | **비움** — 브라우저는 same-origin `/api` 사용 |
-| `NEXT_PUBLIC_OAUTH_REDIRECT_ORIGIN` | 실제 프론트 도메인, 예: `https://herpfree.co.kr` |
+| `NEXT_PUBLIC_OAUTH_REDIRECT_ORIGIN` | 실제 프론트 도메인, 예: `https://www.herpfree.co.kr` |
 
 OAuth 콘솔과 환경변수는 Dev/Prod를 분리한다. 상세 기준은 [`oauth-setup.md`](./oauth-setup.md)를 따른다.
 
@@ -152,7 +152,8 @@ cp .env.prod.example .env.prod   # 값 채우기
 
 | 파일 | 역할 |
 |------|------|
-| `docker-compose.prod.yml` | MySQL + Spring Boot API |
+| `docker-compose.release.yml` | immutable Spring Boot API + private RDS (운영 기준) |
+| `docker-compose.prod.yml` | legacy/reference only — 운영 공개 금지 |
 | `.env.prod.example` | 운영 환경변수 템플릿 |
 | `infra/nginx/herfree.conf` | HTTPS, `/api` → Spring |
 | `infra/scripts/backup-db.sh` | 일일 DB 백업 (cron) |
@@ -255,7 +256,7 @@ cp .env.prod.example .env.prod   # 값 채우기
                                          [S3 + CloudFront?]
 ```
 
-- Engine: MySQL 8.0+, `utf8mb4_unicode_ci`
+- Engine: MySQL 8.4+, `utf8mb4_unicode_ci`
 - RDS: 자동 스냅샷, EC2 SG만 3306 inbound
 - Flyway·백업 정책 **1단계와 동일**
 

@@ -47,6 +47,9 @@ public class Post extends BaseTimeEntity {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
+    @Column(name = "rich_content", columnDefinition = "LONGTEXT")
+    private String richContent;
+
     // 조회수는 매 요청마다 +1되므로, 읽기 성능에 영향을 줄 수 있다.
     // 트래픽이 많아지면 Redis 캐시로 관리하고 주기적으로 DB에 반영하는 방식을 고려한다.
     @Column(nullable = false)
@@ -69,7 +72,7 @@ public class Post extends BaseTimeEntity {
     @Column(nullable = false)
     private boolean isAnonymous;
 
-    // 작성 시점 클라이언트 IP 마스킹 값 (예: 123.45.*) — 커뮤니티 표시용
+    // 기존 게시글의 마스킹 IP 값. 새 글에서는 저장하지 않고 API에도 노출하지 않는다.
     @Column(name = "author_ip_masked", length = 24)
     private String authorIpMasked;
 
@@ -103,7 +106,10 @@ public class Post extends BaseTimeEntity {
         this.title = title;
         this.content = content;
         this.isAnonymous = isAnonymous;
+        this.richContent = null;
     }
+
+    public void updateRichContent(String validatedRichContent) { this.richContent = validatedRichContent; }
 
     // 관리자에 의한 숨김 처리 — 작성자는 볼 수 없지만 데이터는 보존된다
     // 신고 처리 결과로도 호출될 수 있으므로 도메인 메서드로 분리한다
@@ -123,22 +129,6 @@ public class Post extends BaseTimeEntity {
     // 탈퇴 회원의 글은 삭제하지 않고 익명으로 전환한다 — 커뮤니티 맥락을 유지하기 위함이다
     public void anonymize() {
         this.isAnonymous = true;
-    }
-
-    // 조회수는 도메인 메서드로 관리해 단순 필드 접근과 의도를 구분한다.
-    // 동시성 이슈(Race condition)는 향후 낙관적 락 또는 Redis 카운터로 해결한다.
-    public void increaseViewCount() {
-        this.viewCount++;
-    }
-
-    public void increaseCommentCount() {
-        this.commentCount++;
-    }
-
-    public void decreaseCommentCount() {
-        if (this.commentCount > 0) {
-            this.commentCount--;
-        }
     }
 
     public void updateSortOrder(int sortOrder) {

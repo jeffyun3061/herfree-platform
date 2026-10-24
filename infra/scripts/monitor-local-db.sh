@@ -1,0 +1,123 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+DEPLOY_ENV="${DEPLOY_ENV:-production}"
+APP_DIR="${HERFREE_APP_DIR:-/opt/herfree}"
+CONFIG_DIR="${HERFREE_CONFIG_DIR:-${APP_DIR}/config}"
+if [[ "${DEPLOY_ENV}" == "production" ]]; then
+  APP_ENV_FILE="${CONFIG_DIR}/.env.prod"
+else
+  APP_ENV_FILE="${CONFIG_DIR}/.env.staging"
+fi
+
+value_of() {
+  local key="$1"
+  sed -n "s/^${key}=//p" "${APP_ENV_FILE}" | tail -n 1 | tr -d '\r'
+}
+
+AWS_REGION="$(value_of AWS_REGION)"
+BACKUP_BUCKET="$(value_of DB_BACKUP_S3_BUCKET)"
+PROJECT="herfree-${DEPLOY_ENV}"
+MYSQL_CONTAINER="$(docker ps \
+  --filter "label=com.docker.compose.project=${PROJECT}" \
+  --filter "label=com.docker.compose.service=mysql" \
+  --format '{{.ID}}' | head -n 1)"
+
+database_healthy=0
+if [[ -n "${MYSQL_CONTAINER}" \
+   && "$(docker inspect "${MYSQL_CONTAINER}" --format '{{.State.Health.Status}}' 2>/dev/null || true)" == "healthy" \
+   && "$(curl --silent --output /dev/null --write-out '%{http_code}' --max-time 5 http://127.0.0.1:8080/actuator/health || true)" == "200" ]]; then
+  database_healthy=1
+fi
+
+disk_used_percent="$(df -P /var/lib/herfree | awk 'NR==2 {gsub(/%/,"",$5); print $5}')"
+[[ "${disk_used_percent}" =~ ^[0-9]+$ ]] || disk_used_percent=100
+
+latest_backup="$(aws s3api list-objects-v2 \
+  --region "${AWS_REGION}" \
+  --bucket "${BACKUP_BUCKET}" \
+  --prefix "db-backups/${DEPLOY_ENV}/frequent/" \
+  --query 'sort_by(Contents[?ends_with(Key, `.sql.gz.metadata.json`)], &LastModified)[-1].LastModified' \
+  --output text 2>/dev/null || true)"
+backup_age_hours=999
+if [[ -n "${latest_backup}" && "${latest_backup}" != "None" ]]; then
+  now_epoch="$(date -u +%s)"
+  backup_epoch="$(date -u -d "${latest_backup}" +%s)"
+  backup_age_hours="$(awk -v seconds="$((now_epoch-backup_epoch))" 'BEGIN {printf "%.3f", seconds/3600}')"
+fi
+
+# Host memory and root disk are independent of the dedicated database volume.
+host_memory_percent="$(awk '/MemTotal:/ {total=$2} /MemAvailable:/ {available=$2} END {if (total>0) printf "%.2f", 100*(total-available)/total; else print 100}' /proc/meminfo)"
+root_disk_percent="$(df -P / | awk 'NR==2 {gsub(/%/,"",$5); print $5}')"
+[[ "${root_disk_percent}" =~ ^[0-9]+$ ]] || root_disk_percent=100
+public_url="$(value_of OPERATIONS_PUBLIC_URL)"
+public_healthy=0
+if [[ "${public_url}" == https://* && "$(curl --silent --output /dev/null --write-out '%{http_code}' --proto '=https' --max-time 10 "${public_url}" || true)" == 200 ]]; then
+  public_healthy=1
+fi
+drill_age_days=999
+drill_healthy=0
+drill_known=false
+drill_state="$(mktemp /tmp/herfree-drill-state.XXXXXX)"
+trap 'rm -f "${drill_state}"' EXIT
+if aws s3api get-object --region "${AWS_REGION}" --bucket "${BACKUP_BUCKET}" \
+    --key "operations/${DEPLOY_ENV}/restore-drill/last-success.json" "${drill_state}" >/dev/null 2>&1; then
+  success_epoch="$(jq -er '.completedEpoch | select(type=="number" and .>0)' "${drill_state}" 2>/dev/null || true)"
+  if [[ "${success_epoch}" =~ ^[0-9]+$ ]]; then
+    elapsed=$(( $(date -u +%s) - success_epoch ))
+    if (( elapsed >= 0 )); then drill_age_days="$(awk -v seconds="${elapsed}" 'BEGIN {printf "%.3f", seconds/86400}')"; fi
+  fi
+fi
+if aws s3api get-object --region "${AWS_REGION}" --bucket "${BACKUP_BUCKET}" \
+    --key "operations/${DEPLOY_ENV}/restore-drill/last-attempt.json" "${drill_state}" >/dev/null 2>&1; then
+  drill_known=true
+  [[ "$(jq -r '.success' "${drill_state}" 2>/dev/null || true)" == true ]] && drill_healthy=1
+fi
+# Publish only non-sensitive metadata, atomically, before CloudWatch delivery.
+# The API mounts this directory read-only; the application role gains no AWS permissions.
+snapshot_dir="${APP_DIR}/operations/${DEPLOY_ENV}"
+install -d -m 0755 "${snapshot_dir}"
+snapshot_tmp="$(mktemp "${snapshot_dir}/.status.XXXXXX")"
+trap 'rm -f "${drill_state}" "${snapshot_tmp}"' EXIT
+jq -nc --arg env "${DEPLOY_ENV}" --arg at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+  --argjson mem "${host_memory_percent}" --argjson root "${root_disk_percent}" \
+  --argjson disk "${disk_used_percent}" --argjson db "${database_healthy}" \
+  --argjson https "${public_healthy}" --arg url "${public_url}" \
+  --argjson backup "${backup_age_hours}" --argjson age "${drill_age_days}" \
+  --argjson restore "${drill_healthy}" --argjson known "${drill_known}" '
+  {environment:$env,collectedAt:$at,memoryPercent:$mem,rootDiskPercent:$root,
+   databaseDiskPercent:$disk,databaseHealthy:($db==1),
+   httpsHealthy:(if ($url|startswith("https://")) then ($https==1) else null end),
+   backupAgeHours:(if $backup<999 then $backup else null end),
+   restoreAgeDays:(if $age<999 then $age else null end),
+   restoreHealthy:(if $known then ($restore==1) else null end)}' >"${snapshot_tmp}"
+chmod 0644 "${snapshot_tmp}"
+mv -f "${snapshot_tmp}" "${snapshot_dir}/status.json"
+extra_metrics="$(jq -nc --arg env "${DEPLOY_ENV}" --argjson mem "${host_memory_percent}" \
+  --argjson disk "${root_disk_percent}" --argjson https "${public_healthy}" \
+  --argjson age "${drill_age_days}" --argjson restore "${drill_healthy}" '
+  [{MetricName:"HostMemoryUsedPercent",Value:$mem,Unit:"Percent"},
+   {MetricName:"RootDiskUsedPercent",Value:$disk,Unit:"Percent"},
+   {MetricName:"PublicHttpsHealthy",Value:$https,Unit:"Count"},
+   {MetricName:"LastSuccessfulRestoreDrillAgeDays",Value:$age,Unit:"Count"},
+   {MetricName:"RestoreDrillHealthy",Value:$restore,Unit:"Count"}]
+  | map(.+{Dimensions:[{Name:"Environment",Value:$env}]})')"
+aws cloudwatch put-metric-data --region "${AWS_REGION}" --namespace Herfree/Operations --metric-data "${extra_metrics}"
+
+aws cloudwatch put-metric-data --region "${AWS_REGION}" \
+  --namespace Herfree/Operations --metric-name LocalDatabaseHealthy \
+  --dimensions "Environment=${DEPLOY_ENV}" --value "${database_healthy}" --unit Count
+aws cloudwatch put-metric-data --region "${AWS_REGION}" \
+  --namespace Herfree/Operations --metric-name LocalDatabaseDiskUsedPercent \
+  --dimensions "Environment=${DEPLOY_ENV}" --value "${disk_used_percent}" --unit Percent
+aws cloudwatch put-metric-data --region "${AWS_REGION}" \
+  --namespace Herfree/Operations --metric-name DatabaseBackupAgeHours \
+  --dimensions "Environment=${DEPLOY_ENV}" --value "${backup_age_hours}" --unit Count
+
+if [[ "${database_healthy}" -ne 1 || "${disk_used_percent}" -ge 80 ]] \
+  || awk -v age="${backup_age_hours}" 'BEGIN {exit !(age>8)}'; then
+  echo "local DB operations check failed: healthy=${database_healthy} disk=${disk_used_percent}% backupAge=${backup_age_hours}h" >&2
+  exit 1
+fi
+
+echo "local DB operations healthy: disk=${disk_used_percent}% backupAge=${backup_age_hours}h"

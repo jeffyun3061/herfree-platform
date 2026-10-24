@@ -34,6 +34,8 @@ public class JwtTokenProvider {
 
         return Jwts.builder()
                 .subject(subject)
+                // Each login must remain distinct even when JWT timestamps fall in the same second.
+                .id(java.util.UUID.randomUUID().toString())
                 .claim("role", role)
                 .claim("purpose", ACCESS_TOKEN_PURPOSE)
                 .claim(CREDENTIAL_VERSION_CLAIM, credentialVersion)

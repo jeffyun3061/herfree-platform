@@ -1,9 +1,10 @@
 package com.herfree.domain.auth.oauth;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import com.herfree.domain.auth.entity.OAuthProvider;
 import com.herfree.domain.auth.exception.OAuthAuthenticationFailedException;
 import com.herfree.global.config.OAuthProperties;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
@@ -17,9 +18,14 @@ public class GoogleOAuthClient implements OAuthClient {
     private final OAuthProperties.Provider config;
     private final RestClient restClient;
 
+    @Autowired
     public GoogleOAuthClient(OAuthProperties properties) {
-        this.config = properties.google();
-        this.restClient = RestClient.create();
+        this(properties.google(), RestClient.create());
+    }
+
+    GoogleOAuthClient(OAuthProperties.Provider config, RestClient restClient) {
+        this.config = config;
+        this.restClient = restClient;
     }
 
     @Override

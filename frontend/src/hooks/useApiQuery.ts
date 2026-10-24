@@ -1,12 +1,13 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { getErrorMessage } from '@/lib/api/client';
+import { getErrorMessage, isApiError } from '@/lib/api/client';
 
 type QueryState<T> = {
   data: T | null;
   isLoading: boolean;
   error: string | null;
+  errorStatus: number | null;
 };
 
 // 조회 API 호출의 공통 패턴(로딩·에러·재조회)을 한곳에 모은 범용 훅.
@@ -21,6 +22,7 @@ export function useApiQuery<T>(
     data: null,
     isLoading: enabled,
     error: null,
+    errorStatus: null,
   });
 
   // 의존성이 바뀌어 새 요청이 나간 뒤 이전 응답이 늦게 도착하는 경합을 방지한다
@@ -30,15 +32,15 @@ export function useApiQuery<T>(
 
   const execute = useCallback(async () => {
     const requestId = ++requestIdRef.current;
-    setState((prev) => ({ ...prev, isLoading: true, error: null }));
+    setState((prev) => ({ ...prev, isLoading: true, error: null, errorStatus: null }));
     try {
       const data = await fetcherRef.current();
       if (requestId === requestIdRef.current) {
-        setState({ data, isLoading: false, error: null });
+        setState({ data, isLoading: false, error: null, errorStatus: null });
       }
     } catch (error) {
       if (requestId === requestIdRef.current) {
-        setState({ data: null, isLoading: false, error: getErrorMessage(error) });
+        setState({ data: null, isLoading: false, error: getErrorMessage(error), errorStatus: isApiError(error) ? error.status : null });
       }
     }
   }, []);

@@ -4,7 +4,6 @@ import type { JournalDashboard } from '@/domain/journal/types';
 import { PUBLIC_IMAGES } from '@/domain/assets/static';
 import { PublicStaticImage } from '@/components/ui/PublicStaticImage';
 import { formatDashboardDateBadge, formatLastRelapseLabel } from '@/domain/journal/routine';
-import { JournalShareButton } from '@/components/journal/JournalShareButton';
 
 type JournalDashboardHeroProps = {
   dashboard: JournalDashboard | null;
@@ -50,7 +49,6 @@ export function JournalDashboardHero({
           <span className="text-[11px] font-medium tracking-wide text-white/70">
             {formatDashboardDateBadge(today)}
           </span>
-          <JournalShareButton dashboard={dashboard} variant="icon" />
         </div>
 
         <div className="flex flex-1 flex-col justify-center py-2">

@@ -1,6 +1,6 @@
 plugins {
     java
-    id("org.springframework.boot") version "3.5.16"
+    id("org.springframework.boot") version "4.1.1"
     id("io.spring.dependency-management") version "1.1.6"
 }
 
@@ -13,15 +13,24 @@ java {
     }
 }
 
-// Trivy release gate: Netty CVE-2026-59901/55831/55833/56745 (4.1.136.Final+)
-extra["netty.version"] = "4.1.136.Final"
+// Trivy release gate: keep Netty at the first version fixing current CVEs.
+extra["netty.version"] = "4.1.137.Final"
+
+// Spring Boot 4 retains Jackson 2 for legacy integrations; pin the first
+// release containing the October 2026 security fixes.
+extra["jackson-2-bom.version"] = "2.21.7"
+
+// The Boot 4.1.1 BOM predates the patched Jackson 3 and Tomcat 11 releases.
+extra["jackson-bom.version"] = "3.1.7"
+extra["tomcat.version"] = "11.0.27"
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-webmvc")
+    implementation("org.springframework.boot:spring-boot-jackson2")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-validation")
@@ -29,10 +38,10 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-mail")
     implementation("com.mysql:mysql-connector-j")
 
-    implementation("org.flywaydb:flyway-core")
+    implementation("org.springframework.boot:spring-boot-starter-flyway")
     implementation("org.flywaydb:flyway-mysql")
 
-    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.17")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.0")
 
     implementation("software.amazon.awssdk:s3:2.29.45")
 
@@ -44,17 +53,22 @@ dependencies {
     annotationProcessor("org.projectlombok:lombok")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
+    testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
     testImplementation("org.springframework.security:spring-security-test")
     testImplementation("com.h2database:h2")
-    testImplementation("org.testcontainers:junit-jupiter")
-    testImplementation("org.testcontainers:mysql")
+    testImplementation("org.testcontainers:testcontainers-junit-jupiter")
+    testImplementation("org.testcontainers:testcontainers-mysql")
 
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 tasks.test {
     useJUnitPlatform()
+    // A synthetic test-only key makes ORM integration exercise encrypted storage.
+    // This belongs only to the forked test worker, never bootRun or release JARs.
+    environment("HEALTH_DATA_ENCRYPTION_KEY", "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
     // Windows + 한글/OneDrive 경로에서 forked test worker ClassNotFound 방지
     maxParallelForks = 1
     jvmArgs(

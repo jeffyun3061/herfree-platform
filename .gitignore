@@ -3,9 +3,13 @@ backend/build/
 backend/.gradle/
 backend/out/
 *.class
+__pycache__/
 
 # Node / Next.js
 frontend/node_modules/
+frontend/.npm-cache/
+**/__pycache__/
+artifacts/aws-operations/
 frontend/.next/
 frontend/.next-preflight/
 frontend/out/
@@ -60,6 +64,9 @@ frontend/.env.production
 # Logs
 *.log
 logs/
+artifacts/service-harness/
+artifacts/production-live/
+artifacts/production-ops/
 
 # IDE / editor (local only — do not commit)
 .idea/

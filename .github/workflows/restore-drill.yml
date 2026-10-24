@@ -1,0 +1,46 @@
+name: Monthly staging restore drill
+on:
+  schedule:
+    - cron: '30 4 1 * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: backend-staging
+  cancel-in-progress: false
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    environment: production
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      STAGING_INSTANCE_ID: ${{ vars.RESTORE_STAGING_INSTANCE_ID }}
+      RESTORE_PROFILE_ARN: ${{ vars.RESTORE_INSTANCE_PROFILE_ARN }}
+      RESTORE_API_IMAGE: ${{ vars.RESTORE_API_IMAGE }}
+      BACKUP_BUCKET: ${{ vars.DB_BACKUP_S3_BUCKET }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_OPERATIONS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Restore and verify on existing staging
+        run: |
+          set -euo pipefail
+          : "${STAGING_INSTANCE_ID:?}" "${RESTORE_PROFILE_ARN:?}" "${RESTORE_API_IMAGE:?}" "${BACKUP_BUCKET:?}"
+          python3 infra/scripts/run-staging-restore-drill.py run \
+            --state /tmp/herfree-drill-state.json --region "${AWS_REGION}" \
+            --instance "${STAGING_INSTANCE_ID}" --profile "${RESTORE_PROFILE_ARN}" \
+            --image "${RESTORE_API_IMAGE}" --bucket "${BACKUP_BUCKET}"
+      - name: Reconcile cleanup after interruption
+        if: always()
+        run: python3 infra/scripts/run-staging-restore-drill.py cleanup --state /tmp/herfree-drill-state.json
+      - name: Retain resource cleanup evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: restore-resource-state
+          path: /tmp/herfree-drill-state.json
+          retention-days: 32

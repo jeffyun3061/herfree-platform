@@ -90,6 +90,7 @@ public class User extends BaseTimeEntity {
     }
 
     public void suspend(Instant suspendedUntil, String reason, String note) {
+        if (this.status != UserStatus.SUSPENDED) this.credentialVersion++;
         this.status = UserStatus.SUSPENDED;
         this.suspendedUntil = suspendedUntil;
         this.suspensionReason = reason;
@@ -117,6 +118,8 @@ public class User extends BaseTimeEntity {
     }
 
     public void changeRole(UserRole role) {
+        // A role change permanently invalidates old login/MFA proofs, even if the old role is restored.
+        if (this.role != role) this.credentialVersion++;
         this.role = role;
     }
 

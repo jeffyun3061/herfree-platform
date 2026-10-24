@@ -11,6 +11,18 @@ class JwtTokenProviderTest {
             new JwtProperties("test-jwt-secret-minimum-32-characters!!", 3600L));
 
     @Test
+    void everyLoginHasAUniqueIdForMfaSessionBinding() {
+        String first = provider.createAccessToken("1", "ADMIN", 0);
+        String second = provider.createAccessToken("1", "ADMIN", 0);
+        var key = io.jsonwebtoken.security.Keys.hmacShaKeyFor(
+                "test-jwt-secret-minimum-32-characters!!".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        String firstId = io.jsonwebtoken.Jwts.parser().verifyWith(key).build().parseSignedClaims(first).getPayload().getId();
+        String secondId = io.jsonwebtoken.Jwts.parser().verifyWith(key).build().parseSignedClaims(second).getPayload().getId();
+        assertThat(firstId).isNotBlank().isNotEqualTo(secondId);
+        assertThat(first).isNotEqualTo(second);
+    }
+
+    @Test
     @DisplayName("액세스 토큰은 API 인증에 통과한다")
     void validateAccessToken_accessToken_passes() {
         String token = provider.createAccessToken("1", "USER", 3);
