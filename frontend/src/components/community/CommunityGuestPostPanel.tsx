@@ -1,6 +1,7 @@
 'use client';
 
 import { usePathname, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { ButtonLink } from '@/components/ui/Button';
 import { cn } from '@/lib/cn';
 
@@ -39,8 +40,6 @@ export function CommunityGuestPostPanel({
     loginFromProp ??
     encodeURIComponent(pathname + (searchParams.toString() ? `?${searchParams.toString()}` : ''));
 
-  const boardPhrase = boardLabel ? `${boardLabel}은` : '커뮤니티 글은';
-
   return (
     <section
       className={cn(
@@ -58,12 +57,12 @@ export function CommunityGuestPostPanel({
           id="community-guest-post-lock-title"
           className="mt-4 text-[15px] font-bold leading-snug text-[#15201D] break-keep"
         >
-          {boardPhrase} 로그인한 회원만 볼 수 있어요
+          {boardLabel ? `${boardLabel}을 확인하려면 로그인해 주세요` : '로그인 후 글을 확인해 주세요'}
         </h2>
 
         <div className="mt-3 space-y-1.5 break-keep text-[13px] leading-relaxed text-[#65706B]">
-          <p>익명으로 안전하게 이야기를 나눌 수 있어요.</p>
-          <p>로그인 후 게시판을 둘러보세요.</p>
+          <p>로그인하면 요청한 글로 돌아옵니다.</p>
+          <p>작성자가 정한 공개 범위에 따라 열람이 제한될 수 있어요.</p>
         </div>
 
         <ButtonLink
@@ -72,9 +71,9 @@ export function CommunityGuestPostPanel({
           size="lg"
           className="mt-5 rounded-[14px]"
         >
-          로그인하고 보기
+          로그인하고 계속하기
         </ButtonLink>
-
+        <Link href="/" className="mt-4 text-sm font-medium text-primary underline">홈으로 이동</Link>
       </div>
     </section>
   );

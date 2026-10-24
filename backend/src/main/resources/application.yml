@@ -1,13 +1,16 @@
 spring:
+  http:
+    converters:
+      preferred-json-mapper: jackson2
+  jackson2:
+    serialization:
+      write-dates-as-timestamps: false
   application:
     name: herfree-api
   servlet:
     multipart:
       max-file-size: 10MB
       max-request-size: 10MB
-  jackson:
-    serialization:
-      write-dates-as-timestamps: false
   data:
     web:
       pageable:
@@ -33,7 +36,7 @@ server:
 
 jwt:
   secret: ${JWT_SECRET}
-  access-expiration-seconds: ${JWT_ACCESS_EXPIRATION:3600}
+  access-expiration-seconds: ${JWT_ACCESS_EXPIRATION:604800}
 
 springdoc:
   api-docs:
@@ -53,12 +56,19 @@ management:
       show-details: never
 
 logging:
+  pattern:
+    # Request IDs are safe correlation metadata; request/response bodies and
+    # health-data values must never be added to this pattern.
+    console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level [%X{requestId:-}] %logger{36} - %msg%n"
   level:
     root: INFO
     com.herfree: DEBUG
 
 # CORS — 로컬은 패턴(모바일/LAN/ngrok), 운영은 Vercel URL을 환경변수로 주입한다
 app:
+  operations:
+    environment: ${APP_OPERATIONS_ENVIRONMENT:unknown}
+    image: ${APP_OPERATIONS_IMAGE:unknown}
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:}
     allowed-origin-patterns: ${CORS_ALLOWED_ORIGIN_PATTERNS:}
@@ -68,6 +78,10 @@ app:
     password: ${ADMIN_PASSWORD:}
     nickname: ${ADMIN_NICKNAME:HerfreeOps}
     sync-existing: ${ADMIN_BOOTSTRAP_SYNC_EXISTING:false}
+  admin:
+    mfa:
+      required: ${ADMIN_MFA_REQUIRED:true}
+      encryption-key: ${ADMIN_MFA_ENCRYPTION_KEY:}
   retention:
     event-days: ${APP_RETENTION_EVENT_DAYS:90}
     reset-token-grace-days: ${APP_RETENTION_RESET_TOKEN_GRACE_DAYS:7}
@@ -80,6 +94,12 @@ app:
     access-key: ${S3_ACCESS_KEY:${AWS_ACCESS_KEY_ID:}}
     secret-key: ${S3_SECRET_KEY:${AWS_SECRET_ACCESS_KEY:}}
     public-base-url: ${S3_PUBLIC_BASE_URL:}
+  health-data:
+    encryption-key: ${HEALTH_DATA_ENCRYPTION_KEY:}
+    rekey-on-startup: ${HEALTH_DATA_REKEY_ON_STARTUP:false}
+  analytics:
+    # Keep analytics pseudonymisation material independent from JWT signing.
+    hash-salt: ${ANALYTICS_HASH_SALT:${JWT_SECRET:local-analytics-salt}}
   # 운영(prod)에서는 반드시 false — local 전용 데모 시드 (DemoDataSeedRunner)
   demo-seed:
     enabled: false

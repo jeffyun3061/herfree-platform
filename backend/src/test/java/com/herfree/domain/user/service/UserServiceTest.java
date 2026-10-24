@@ -160,7 +160,8 @@ class UserServiceTest {
                 .isAnonymous(false)
                 .build();
 
-        given(userRepository.findByIdAndStatus(userId, UserStatus.ACTIVE)).willReturn(Optional.of(user));
+        given(userRepository.findByIdAndStatusForUpdate(userId, UserStatus.ACTIVE))
+                .willReturn(Optional.of(user));
         given(userProfileRepository.findByUserId(userId)).willReturn(Optional.of(profile));
         given(postRepository.findByUserIdAndStatusNot(userId, PostStatus.DELETED)).willReturn(List.of(post));
         given(commentRepository.findByUserIdAndStatusNot(userId, CommentStatus.DELETED)).willReturn(List.of(comment));
@@ -187,7 +188,8 @@ class UserServiceTest {
     @DisplayName("이미 탈퇴한 계정은 UserNotFoundException을 던진다")
     void withdraw_deletedUser_throwsNotFound() {
         Long userId = 99L;
-        given(userRepository.findByIdAndStatus(userId, UserStatus.ACTIVE)).willReturn(Optional.empty());
+        given(userRepository.findByIdAndStatusForUpdate(userId, UserStatus.ACTIVE))
+                .willReturn(Optional.empty());
 
         assertThatThrownBy(() -> userService.withdraw(userId))
                 .isInstanceOf(UserNotFoundException.class);

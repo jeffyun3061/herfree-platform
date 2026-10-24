@@ -68,6 +68,7 @@ public class JournalRecord extends BaseTimeEntity {
     @Column(length = 500)
     private List<String> triggers = new ArrayList<>();
 
+    @Convert(converter = HealthDataStringAttributeConverter.class)
     @Column(columnDefinition = "TEXT")
     private String memo;
 

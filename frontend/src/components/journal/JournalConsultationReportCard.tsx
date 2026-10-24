@@ -8,8 +8,6 @@ import {
   formatReviewDateRange,
   formatLabelList,
 } from '@/domain/journal/types';
-import { buildConsultationReportShareText } from '@/domain/journal/reviewShare';
-import { shareJournalText } from '@/domain/journal/share';
 import { downloadElementPng, printElement } from '@/lib/domCapture';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/cn';
@@ -38,31 +36,12 @@ export function JournalConsultationReportCard({
   const [message, setMessage] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
-  const shareText = buildConsultationReportShareText(summary);
   const symptomTimelineDays = summary.timelineDays.filter((day) => day.hadSymptoms);
 
   const handlePdfSave = () => {
     if (!cardRef.current) return;
     printElement(cardRef.current, 'Herfree 기록 요약 리포트');
     setMessage('인쇄 창에서 PDF로 저장할 수 있습니다.');
-  };
-
-  const handleCreateLink = async () => {
-    setPending(true);
-    setMessage(null);
-    try {
-      const result = await shareJournalText(shareText);
-      setMessage(
-        result === 'shared'
-          ? '요약 링크 문구가 공유되었습니다.'
-          : '요약 문구가 클립보드에 복사됐습니다. 상담 시 붙여넣기 해 주세요.',
-      );
-    } catch (error) {
-      if (error instanceof Error && error.name === 'AbortError') return;
-      setMessage(error instanceof Error ? error.message : '링크 만들기에 실패했습니다.');
-    } finally {
-      setPending(false);
-    }
   };
 
   const handleSaveImage = async () => {
@@ -194,14 +173,6 @@ export function JournalConsultationReportCard({
           onClick={handlePdfSave}
         >
           PDF
-        </Button>
-        <Button
-          fullWidth
-          size={compact ? 'sm' : 'md'}
-          disabled={pending}
-          onClick={() => void handleCreateLink()}
-        >
-          링크
         </Button>
       </div>
 

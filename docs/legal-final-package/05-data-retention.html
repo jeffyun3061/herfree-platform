@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>05. 보관·삭제 (현행 구현)</title>
+  <link rel="stylesheet" href="_styles.css" />
+</head>
+<body>
+
+<h1>개인정보 보관 · 삭제 (현행 구현 기준)</h1>
+<p class="meta">Herfree · 2026년 7월</p>
+
+<div class="note">별도 「개인정보 보관·파기 정책」 문서는 아직 없습니다. 아래는 <strong>현재 시스템·처리방침·내부 기준</strong>이며, 변호사 검토 후 확정·문서화 예정입니다.</div>
+
+<h2>1. 회원 탈퇴 시 (즉시 처리)</h2>
+<table>
+  <tr><th>데이터</th><th>처리</th></tr>
+  <tr><td>개인 일지 전체</td><td><strong>물리 삭제</strong></td></tr>
+  <tr><td>이메일·비밀번호</td><td>비식별 값으로 교체, 계정 DELETED</td></tr>
+  <tr><td>OAuth 연결</td><td>삭제</td></tr>
+  <tr><td>게시글·댓글</td><td><strong>익명 처리</strong> (내용 유지, 작성자 표시 제거)</td></tr>
+  <tr><td>게시글 사진</td><td>S3에서 <strong>삭제</strong></td></tr>
+  <tr><td>스크랩·북마크</td><td>삭제</td></tr>
+  <tr><td>닉네임·프로필</td><td>withdrawn_{id} 등으로 마스킹</td></tr>
+</table>
+
+<h2>2. 회원 이용 중</h2>
+<table>
+  <tr><th>항목</th><th>보관</th></tr>
+  <tr><td>계정·프로필</td><td>탈퇴 또는 삭제 요청 전까지</td></tr>
+  <tr><td>동의 이력</td><td>가입·변경 시점 기록 (append-only)</td></tr>
+  <tr><td>게시글·댓글</td><td>작성자 삭제 시 soft delete 또는 익명</td></tr>
+</table>
+
+<h2>3. 로그 · 백업 (내부 권장 — 미확정)</h2>
+<table>
+  <tr><th>구분</th><th>현재·권장</th></tr>
+  <tr><td>애플리케이션 로그</td><td>30~90일 (내부 logging-policy.md)</td></tr>
+  <tr><td>관리자 감사 로그</td><td>최소 1년 권장</td></tr>
+  <tr><td>분석 이벤트 (IP 해시)</td><td>운영 통계 목적 필요 기간 (구체 일수 미확정)</td></tr>
+  <tr><td>RDS 백업</td><td>AWS 자동 백업 (단기, 운영 설정)</td></tr>
+</table>
+
+<h2>4. 로그에 남기지 않는 것</h2>
+<ul>
+  <li>비밀번호, JWT, 재설정 토큰 원문</li>
+  <li>일지·게시글 본문 전문</li>
+  <li>OAuth 토큰</li>
+</ul>
+
+<h2>5. 처리방침과의 차이 (검토 필요)</h2>
+<ul>
+  <li>방침: 「필요한 기간」「법령에 따라」— <strong>구체 보관 일수 미기재</strong></li>
+  <li>장기 미접속 회원 자동 파기 — <strong>미구현</strong></li>
+  <li>백업·로그 내 탈퇴자 데이터 — <strong>보관 기간 법률 자문 필요</strong></li>
+</ul>
+
+<div class="footer">Herfree · 보관·삭제 현행 구현 · api-spec.md · logging-policy.md 기준</div>
+</body>
+</html>

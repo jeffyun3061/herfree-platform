@@ -1,10 +1,38 @@
 # Herfree — AWS 배포 가이드
 
-> **전제:** 프론트 UI 2차 통합 커밋 완료 후, **AWS 전체 스택**으로 런칭  
-> **기존 문서:** [deployment.md](./deployment.md) (Vercel+VPS 1단계) · 본 문서는 **AWS 중심** 절차  
-> **리전 권장:** `ap-northeast-2` (서울)
+## 현재 배포 기준 — 2026-10-24
 
----
+Amplify + 기존 EC2의 API·로컬 MySQL을 유지한다. 새 RDS나 서버를 만들지 않는다.
+정식 경로는 `docker-compose.release.yml` + `docker-compose.release-local-db.yml`이다.
+`docker-compose.prod.yml`, `deploy-vps.sh`는 과거 참고 경로이며 현재 배포에 쓰지 않는다.
+
+- MySQL 호스트 포트 미공개·내부 Docker 네트워크, 별도 암호화 EBS와 S3 백업을 유지한다.
+- 로컬 DB 연결은 `sslMode=REQUIRED`와 DB의 TLS 강제를 검증한다. 이것은 RDS의 서버 인증서/호스트
+  검증과 동일하지 않다. RDS 복구가 필요한 경우에만 `VERIFY_IDENTITY`와 CA truststore를 적용한다.
+- Secrets Manager에서 환경 파일을 생성하며 파일 권한 600, 건강정보 암호화 키와 별도 MFA 키,
+  `ADMIN_MFA_REQUIRED=true`를 검사한다. 키 원문·회원 데이터는 로그나 CI artifact에 저장하지 않는다.
+- 6시간 백업과 8/32/15일 보관·일일 EBS 7개를 유지한다. RPO 목표는 백업 성공 전제 최대 6시간이며
+  PITR 지원으로 설명하지 않는다. 실제 복원·키 복구·RTO 4시간은 훈련으로 확인한다.
+
+배포 순서:
+
+1. 후보 CI·CodeQL·실제 MySQL 검사 통과와 현재 환경/마이그레이션 이력을 확인한다.
+2. 후보를 `develop`에서 검증한다. Amplify의 정확한 SHA 성공 빌드 이후 `Release backend`의
+   `target=staging`을 실행하고 실제 권한·MFA·회원 흐름·복원 검증 및 정리/중지를 확인한다.
+3. 화면·증적·미통과 항목과 비용을 사용자에게 보여준 뒤 **운영 적용 승인을 받는다**.
+4. 승인 후 `main` 병합으로 생긴 정확한 SHA도 staging 검증을 거쳐야 한다. production은
+   `staging-passed-<main SHA>`가 가리키는 동일 digest를 재사용하며 이미지를 다시 빌드하지 않는다.
+5. 배포 전 백업 본체·체크섬·완료 마커·복구 키 버전을 확인하고 배포한다. 장애 시 직전 정상
+   이미지로 복구하고 MFA 보호를 재확인한다. 적용된 Flyway 파일을 수정하거나 repair하지 않는다.
+
+실행 문서: [스테이징](staging-operations.md), [배포·복구](release-runbook.md),
+[현재 런타임](cost-optimized-runtime.md), [운영 개선](operations-improvements.md),
+[검토 증적](preproduction-review-2026-10-23.md).
+
+## 과거 구축 참고 기록 — 아래 절차는 현재 배포에 사용하지 않음
+
+아래 초기 구성안·금액·명령은 변경 이력 확인용이다. 현재 비용, RDS 필수 여부, 실제 배포 성공의
+근거로 사용하지 않는다. 현재 운영 기준은 위 절차와 연결된 실행 문서를 따른다.
 
 ## 0. AWS 아키텍처 (권장 2안)
 
@@ -171,7 +199,7 @@ API 응답 `createdAt` 등은 ISO-8601 UTC (`…Z`) — 프론트는 브라우�
 | `SPRING_MAIL_PORT` | `587` |
 | `SPRING_MAIL_USERNAME` | SES SMTP 사용자 |
 | `SPRING_MAIL_PASSWORD` | SES SMTP 비밀번호 |
-| `PASSWORD_RESET_FRONTEND_BASE_URL` | `https://herpfree.co.kr` (프로덕션 프론트 URL) |
+| `PASSWORD_RESET_FRONTEND_BASE_URL` | `https://www.herpfree.co.kr` (프로덕션 프론트 URL) |
 
 `.env.prod` 에 값을 채운 뒤 `docker compose` 재기동. 배포 후 **비밀번호 찾기** 1회로 실제 수신을 확인한다.
 
@@ -193,7 +221,7 @@ API 응답 `createdAt` 등은 ISO-8601 UTC (`…Z`) — 프론트는 브라우�
 |------|-----|
 | `API_REWRITE_TARGET` | `https://api.실제도메인` (끝 `/` 없음) |
 | `NEXT_PUBLIC_API_URL` | **비움** |
-| `NEXT_PUBLIC_OAUTH_REDIRECT_ORIGIN` | 실제 프론트 도메인, 예: `https://herpfree.co.kr` |
+| `NEXT_PUBLIC_OAUTH_REDIRECT_ORIGIN` | 실제 프론트 도메인, 예: `https://www.herpfree.co.kr` |
 
 OAuth 콘솔과 환경변수는 Dev/Prod를 분리한다. 상세 기준은 [`oauth-setup.md`](./oauth-setup.md)를 따른다.
 
@@ -209,12 +237,12 @@ docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
 
 ## 5. RDS 전환 (B안, 선택)
 
-### 현재 staging 구성 (2026-07-17)
+### 현재 staging 구성 (2026-08-14)
 
 | 항목 | 값 |
 | --- | --- |
 | DB identifier | `herfree-staging-mysql` |
-| 엔진/크기 | MySQL 8.0.46 / `db.t4g.micro` / Single-AZ |
+| 엔진/크기 | MySQL 8.4.10 / `db.t4g.micro` / Single-AZ |
 | 저장소 | 암호화된 gp3 20GB, 최대 자동 확장 50GB |
 | 네트워크 | Public access 비활성화, RDS SG 인바운드 0개 |
 | 전송 보안 | `require_secure_transport=ON` |
@@ -239,7 +267,7 @@ aws rds create-db-snapshot `
 
 수동 스냅샷은 자동 삭제되지 않으므로 검증이 끝난 오래된 staging 스냅샷은 월 1회 정리한다. production 스냅샷 삭제 주기는 개인정보 보존·파기 정책과 함께 확정한다.
 
-1. RDS MySQL 8.0 생성 (`utf8mb4_unicode_ci`)
+1. RDS MySQL 8.4 생성 (`utf8mb4_unicode_ci`)
 2. 보안 그룹: **EC2 SG → RDS 3306** 만 허용
 3. `.env.prod`에 JDBC URL 추가:
 

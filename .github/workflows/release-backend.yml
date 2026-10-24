@@ -10,10 +10,6 @@ on:
         options:
           - staging
           - production
-      image_tag:
-        description: Production only - staging-passed-<commit SHA>
-        required: false
-        type: string
 
 permissions:
   contents: read
@@ -48,32 +44,51 @@ jobs:
           AMPLIFY_BRANCH: develop
         run: |
           set -euo pipefail
-          test "${GITHUB_REF}" = "refs/heads/main"
+          [[ "${GITHUB_REF}" == refs/heads/main || "${GITHUB_REF}" == refs/heads/develop ]]
+          test "${GITHUB_SHA}" = "$(git ls-remote origin "${GITHUB_REF}" | cut -f1)"
           : "${AMPLIFY_APP_ID:?STAGING_AMPLIFY_APP_ID is required}"
           git fetch --no-tags origin "${AMPLIFY_BRANCH}"
           frontend_sha="$(git rev-parse "origin/${AMPLIFY_BRANCH}")"
           if ! git diff --quiet "${GITHUB_SHA}" "${frontend_sha}" -- frontend amplify.yml; then
-            echo "main and ${AMPLIFY_BRANCH} do not contain the same frontend release."
+            echo "The selected candidate and ${AMPLIFY_BRANCH} do not contain the same frontend release."
             exit 1
           fi
           latest_job="$(aws amplify list-jobs \
             --app-id "${AMPLIFY_APP_ID}" \
             --branch-name "${AMPLIFY_BRANCH}" \
-            --max-results 1 \
+            --max-results 2 \
             --output json)"
+          # Candidate validation on develop is allowed before main approval.
+          # HEAD alone is not reliable evidence of what was built.
           jq -e --arg commit "${frontend_sha}" \
-            '.jobSummaries[0] | .status == "SUCCEED" and .commitId == $commit' \
-            <<<"${latest_job}" >/dev/null
+            '(.jobSummaries[0].status == "SUCCEED") and (.jobSummaries[0].commitId == $commit)' \
+            <<<"${latest_job}" >/dev/null || {
+              echo "Existing Amplify staging branch/build is missing or stale; refusing to create or start one automatically."
+              echo "Restore the existing develop branch/build manually, then rerun this workflow."
+              exit 1
+            }
       - id: ecr
         uses: aws-actions/amazon-ecr-login@v2
       - id: image
-        name: Build immutable image
+        name: Reuse or build immutable image
         env:
           ECR_REGISTRY: ${{ steps.ecr.outputs.registry }}
         run: |
           set -euo pipefail
           image="${ECR_REGISTRY}/${ECR_REPOSITORY}:${GITHUB_SHA}"
-          docker build --file infra/docker/Dockerfile.backend --tag "${image}" .
+          existing="$(aws ecr batch-get-image \
+            --repository-name "${ECR_REPOSITORY}" \
+            --image-ids imageTag="${GITHUB_SHA}" --output json)"
+          if jq -e '(.images | length) == 1 and (.failures | length) == 0' <<<"${existing}" >/dev/null; then
+            docker pull "${image}"
+            echo 'source=existing' >> "${GITHUB_OUTPUT}"
+          elif jq -e '(.images | length) == 0 and (.failures | length) == 1 and .failures[0].failureCode == "ImageNotFound"' <<<"${existing}" >/dev/null; then
+            docker build --file infra/docker/Dockerfile.backend --tag "${image}" .
+            echo 'source=built' >> "${GITHUB_OUTPUT}"
+          else
+            echo 'ECR returned an unexpected image lookup result; refusing to overwrite an immutable tag.' >&2
+            exit 1
+          fi
           echo "uri=${image}" >> "${GITHUB_OUTPUT}"
       - name: Reject high and critical image vulnerabilities
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
@@ -88,6 +103,7 @@ jobs:
           ignore-unfixed: true
           severity: HIGH,CRITICAL
       - name: Push scanned image
+        if: steps.image.outputs.source == 'built'
         run: docker push "${{ steps.image.outputs.uri }}"
 
   deploy-staging:
@@ -110,13 +126,26 @@ jobs:
           registry="${IMAGE%%/*}"
           tar -czf /tmp/herfree-release-bundle.tgz \
             docker-compose.release.yml \
+            docker-compose.release-local-db.yml \
             infra/nginx/herfree-staging.conf \
             infra/nginx/herfree-staging-bootstrap.conf \
+            infra/scripts/backup-db.sh \
+            infra/scripts/approve-admin-mfa-enrollment.sh \
             infra/scripts/deploy-release.sh \
+            infra/scripts/install-local-db-ops.sh \
+            infra/scripts/migrate-rds-to-local.sh \
+            infra/scripts/monitor-local-db.sh \
+            infra/scripts/prepare-local-db-env.sh \
+            infra/scripts/preflight-rds-local-restore.sh \
             infra/scripts/setup-staging-tls.sh \
+            infra/scripts/restore-local-db-drill.sh \
             infra/scripts/render-release-env.sh \
             infra/scripts/validate-release-env.sh
           bundle="$(base64 -w 0 /tmp/herfree-release-bundle.tgz)"
+          if (( ${#bundle} >= 80000 )); then
+            echo "release bundle is too large for the AWS SSM parameter limit" >&2
+            exit 1
+          fi
           jq -n --arg bundle "${bundle}" --arg image "${IMAGE}" --arg registry "${registry}" \
             --arg region "${AWS_REGION}" '{commands:[
               "install -d -m 0755 /opt/herfree/infra/scripts",
@@ -125,24 +154,69 @@ jobs:
               "/opt/herfree/infra/scripts/render-release-env.sh staging",
               ("aws ecr get-login-password --region " + $region + " | docker login --username AWS --password-stdin " + $registry),
               ("/opt/herfree/infra/scripts/deploy-release.sh staging " + $image)
-            ]}' > /tmp/ssm-parameters.json
+            ],executionTimeout:["1500"]}' > /tmp/ssm-parameters.json
           command_id="$(aws ssm send-command \
             --instance-ids "${INSTANCE_ID}" \
             --document-name AWS-RunShellScript \
+            --timeout-seconds 1500 \
             --parameters file:///tmp/ssm-parameters.json \
             --query 'Command.CommandId' --output text)"
           status=""
-          for _ in {1..120}; do
+          terminal="false"
+          for _ in {1..360}; do
             status="$(aws ssm get-command-invocation \
               --command-id "${command_id}" --instance-id "${INSTANCE_ID}" \
               --query 'Status' --output text 2>/dev/null || true)"
             case "${status}" in
-              Success|Failed|Cancelled|TimedOut|Cancelling) break ;;
+              Success|Failed|Cancelled|TimedOut)
+                terminal="true"
+                break
+                ;;
             esac
             sleep 5
           done
+          if [[ "${terminal}" != "true" ]]; then
+            aws ssm cancel-command --command-id "${command_id}" >/dev/null || true
+            for _ in {1..120}; do
+              status="$(aws ssm get-command-invocation \
+                --command-id "${command_id}" --instance-id "${INSTANCE_ID}" \
+                --query 'Status' --output text 2>/dev/null || true)"
+              case "${status}" in
+                Success|Failed|Cancelled|TimedOut)
+                  terminal="true"
+                  break
+                  ;;
+              esac
+              sleep 5
+            done
+          fi
+          test "${terminal}" = "true"
           aws ssm get-command-invocation --command-id "${command_id}" --instance-id "${INSTANCE_ID}"
           test "${status}" = "Success"
+      - name: Reconcile interrupted staging deployment state
+        if: failure()
+        env:
+          INSTANCE_ID: ${{ vars.STAGING_INSTANCE_ID }}
+        run: |
+          set -euo pipefail
+          jq -n '{commands:[
+            "set -eu",
+            "test ! -s /opt/herfree/.deploy/staging.pending-operation || /opt/herfree/infra/scripts/deploy-release.sh staging pending reconcile"
+          ],executionTimeout:["300"]}' > /tmp/reconcile-parameters.json
+          command_id="$(aws ssm send-command \
+            --instance-ids "${INSTANCE_ID}" \
+            --document-name AWS-RunShellScript \
+            --timeout-seconds 300 \
+            --parameters file:///tmp/reconcile-parameters.json \
+            --query 'Command.CommandId' --output text)"
+          if ! aws ssm wait command-executed \
+              --command-id "${command_id}" --instance-id "${INSTANCE_ID}"; then
+            aws ssm get-command-invocation \
+              --command-id "${command_id}" --instance-id "${INSTANCE_ID}" || true
+            exit 1
+          fi
+          aws ssm get-command-invocation \
+            --command-id "${command_id}" --instance-id "${INSTANCE_ID}"
 
   verify-staging:
     if: inputs.target == 'staging'
@@ -151,6 +225,10 @@ jobs:
     environment: staging
     steps:
       - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -164,11 +242,12 @@ jobs:
       - name: Run staging release smoke
         working-directory: frontend
         env:
-          PLAYWRIGHT_BASE_URL: ${{ vars.STAGING_FRONTEND_URL }}
-          STAGING_API_URL: ${{ vars.STAGING_API_URL }}
           E2E_HTTP_USERNAME: ${{ secrets.E2E_HTTP_USERNAME }}
           E2E_HTTP_PASSWORD: ${{ secrets.E2E_HTTP_PASSWORD }}
-        run: npm run e2e:staging:smoke
+          PLAYWRIGHT_BASE_URL: ${{ vars.STAGING_FRONTEND_URL }}
+          STAGING_AMPLIFY_APP_ID: ${{ vars.STAGING_AMPLIFY_APP_ID }}
+          STAGING_API_URL: ${{ vars.STAGING_API_URL }}
+        run: bash ../infra/scripts/run-staging-e2e.sh e2e:staging:smoke
 
   staging-mutation-qa:
     if: inputs.target == 'staging'
@@ -177,6 +256,10 @@ jobs:
     environment: staging
     steps:
       - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -190,11 +273,13 @@ jobs:
       - name: Run staging mutation QA
         working-directory: frontend
         env:
-          PLAYWRIGHT_BASE_URL: ${{ vars.STAGING_FRONTEND_URL }}
-          E2E_ALLOW_MUTATION: 'true'
           E2E_HTTP_USERNAME: ${{ secrets.E2E_HTTP_USERNAME }}
           E2E_HTTP_PASSWORD: ${{ secrets.E2E_HTTP_PASSWORD }}
-        run: npm run e2e:staging:mutation
+          PLAYWRIGHT_BASE_URL: ${{ vars.STAGING_FRONTEND_URL }}
+          STAGING_AMPLIFY_APP_ID: ${{ vars.STAGING_AMPLIFY_APP_ID }}
+          E2E_EXPECTED_BASE_URL: ${{ vars.STAGING_FRONTEND_URL }}
+          E2E_ALLOW_MUTATION: 'true'
+        run: bash ../infra/scripts/run-staging-e2e.sh e2e:staging:mutation
 
   promote-staging-image:
     if: inputs.target == 'staging'
@@ -213,43 +298,107 @@ jobs:
           test -n "${manifest}" && test "${manifest}" != "None"
           aws ecr put-image --repository-name "${ECR_REPOSITORY}" --image-tag "staging-passed-${GITHUB_SHA}" --image-manifest "${manifest}"
 
-  deploy-production:
+  build-production:
     if: inputs.target == 'production'
     runs-on: ubuntu-latest
     environment: production
+    outputs:
+      commit_sha: ${{ steps.release.outputs.commit_sha }}
+      image_digest: ${{ steps.release.outputs.image_digest }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Require the current main commit
+        run: |
+          set -euo pipefail
+          test "${GITHUB_REF}" = "refs/heads/main"
+          git fetch --no-tags origin main
+          test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
       - id: ecr
         uses: aws-actions/amazon-ecr-login@v2
-      - name: Validate promoted image and deploy with rollback
+      - id: release
+        name: Resolve the exact staging-tested production image
+        env:
+          ECR_REGISTRY: ${{ steps.ecr.outputs.registry }}
+        run: |
+          set -euo pipefail
+          release="$(python3 infra/scripts/resolve-staging-release.py \
+            --sha "${GITHUB_SHA}" --repository "${ECR_REPOSITORY}" \
+            --registry "${ECR_REGISTRY}" --region "${AWS_REGION}")"
+          echo "commit_sha=$(jq -er '.commit' <<<"${release}")" >> "${GITHUB_OUTPUT}"
+          echo "image_digest=$(jq -er '.digest' <<<"${release}")" >> "${GITHUB_OUTPUT}"
+          echo "uri=$(jq -er '.image' <<<"${release}")" >> "${GITHUB_OUTPUT}"
+      - name: Reject high and critical image vulnerabilities
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        env:
+          TRIVY_DB_REPOSITORY: ghcr.io/aquasecurity/trivy-db:2
+          TRIVY_JAVA_DB_REPOSITORY: ghcr.io/aquasecurity/trivy-java-db:1
+        with:
+          version: v0.72.0
+          image-ref: ${{ steps.release.outputs.uri }}
+          format: table
+          exit-code: '1'
+          ignore-unfixed: true
+          severity: HIGH,CRITICAL
+  deploy-production:
+    if: inputs.target == 'production'
+    needs: build-production
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.build-production.outputs.commit_sha }}
+          fetch-depth: 0
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+      - name: Validate scanned image and deploy with rollback
         env:
           ECR_REGISTRY: ${{ steps.ecr.outputs.registry }}
           INSTANCE_ID: ${{ vars.PRODUCTION_INSTANCE_ID }}
-          IMAGE_TAG: ${{ inputs.image_tag }}
-          RDS_INSTANCE_ID: ${{ vars.PRODUCTION_RDS_INSTANCE_ID }}
-          RELEASE_ID: ${{ github.run_id }}-${{ github.run_attempt }}
+          IMAGE_DIGEST: ${{ needs.build-production.outputs.image_digest }}
+          RELEASE_SHA: ${{ needs.build-production.outputs.commit_sha }}
         run: |
           set -euo pipefail
-          if [[ ! "${IMAGE_TAG}" =~ ^staging-passed-[0-9a-f]{40}$ ]]; then
-            echo "Production requires staging-passed-<40 character commit SHA>."
-            exit 2
-          fi
-          aws ecr describe-images --repository-name "${ECR_REPOSITORY}" --image-ids imageTag="${IMAGE_TAG}" >/dev/null
-          ./infra/scripts/create-rds-predeploy-snapshot.sh
-          image="${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}"
+          test "${GITHUB_REF}" = "refs/heads/main"
+          test "$(git rev-parse HEAD)" = "${RELEASE_SHA}"
+          [[ "${IMAGE_DIGEST}" =~ ^sha256:[0-9a-f]{64}$ ]]
+          test "$(aws ecr describe-repositories \
+            --repository-names "${ECR_REPOSITORY}" \
+            --query 'repositories[0].imageTagMutability' --output text)" = "IMMUTABLE"
+          aws ecr describe-images --repository-name "${ECR_REPOSITORY}" --image-ids imageDigest="${IMAGE_DIGEST}" >/dev/null
+          image="${ECR_REGISTRY}/${ECR_REPOSITORY}@${IMAGE_DIGEST}"
           tar -czf /tmp/herfree-release-bundle.tgz \
             docker-compose.release.yml \
+            docker-compose.release-local-db.yml \
             infra/nginx/herfree-production.conf \
             infra/nginx/herfree-production-bootstrap.conf \
+            infra/scripts/backup-db.sh \
+            infra/scripts/approve-admin-mfa-enrollment.sh \
             infra/scripts/deploy-release.sh \
+            infra/scripts/install-local-db-ops.sh \
+            infra/scripts/migrate-rds-to-local.sh \
+            infra/scripts/monitor-local-db.sh \
+            infra/scripts/prepare-local-db-env.sh \
+            infra/scripts/preflight-rds-local-restore.sh \
+            infra/scripts/restore-local-db-drill.sh \
             infra/scripts/setup-production-tls.sh \
             infra/scripts/render-release-env.sh \
             infra/scripts/validate-release-env.sh
           bundle="$(base64 -w 0 /tmp/herfree-release-bundle.tgz)"
+          if (( ${#bundle} >= 80000 )); then
+            echo "release bundle is too large for the AWS SSM parameter limit" >&2
+            exit 1
+          fi
           jq -n --arg bundle "${bundle}" --arg image "${image}" --arg registry "${ECR_REGISTRY}" \
             --arg region "${AWS_REGION}" '{commands:[
               "install -d -m 0755 /opt/herfree/infra/scripts",
@@ -258,24 +407,69 @@ jobs:
               "/opt/herfree/infra/scripts/render-release-env.sh production",
               ("aws ecr get-login-password --region " + $region + " | docker login --username AWS --password-stdin " + $registry),
               ("/opt/herfree/infra/scripts/deploy-release.sh production " + $image)
-            ]}' > /tmp/ssm-parameters.json
+            ],executionTimeout:["900"]}' > /tmp/ssm-parameters.json
           command_id="$(aws ssm send-command \
             --instance-ids "${INSTANCE_ID}" \
             --document-name AWS-RunShellScript \
+            --timeout-seconds 900 \
             --parameters file:///tmp/ssm-parameters.json \
             --query 'Command.CommandId' --output text)"
           status=""
-          for _ in {1..120}; do
+          terminal="false"
+          for _ in {1..240}; do
             status="$(aws ssm get-command-invocation \
               --command-id "${command_id}" --instance-id "${INSTANCE_ID}" \
               --query 'Status' --output text 2>/dev/null || true)"
             case "${status}" in
-              Success|Failed|Cancelled|TimedOut|Cancelling) break ;;
+              Success|Failed|Cancelled|TimedOut)
+                terminal="true"
+                break
+                ;;
             esac
             sleep 5
           done
+          if [[ "${terminal}" != "true" ]]; then
+            aws ssm cancel-command --command-id "${command_id}" >/dev/null || true
+            for _ in {1..120}; do
+              status="$(aws ssm get-command-invocation \
+                --command-id "${command_id}" --instance-id "${INSTANCE_ID}" \
+                --query 'Status' --output text 2>/dev/null || true)"
+              case "${status}" in
+                Success|Failed|Cancelled|TimedOut)
+                  terminal="true"
+                  break
+                  ;;
+              esac
+              sleep 5
+            done
+          fi
+          test "${terminal}" = "true"
           aws ssm get-command-invocation --command-id "${command_id}" --instance-id "${INSTANCE_ID}"
           test "${status}" = "Success"
+      - name: Reconcile interrupted production deployment state
+        if: failure()
+        env:
+          INSTANCE_ID: ${{ vars.PRODUCTION_INSTANCE_ID }}
+        run: |
+          set -euo pipefail
+          jq -n '{commands:[
+            "set -eu",
+            "test ! -s /opt/herfree/.deploy/production.pending-operation || /opt/herfree/infra/scripts/deploy-release.sh production pending reconcile"
+          ],executionTimeout:["300"]}' > /tmp/reconcile-parameters.json
+          command_id="$(aws ssm send-command \
+            --instance-ids "${INSTANCE_ID}" \
+            --document-name AWS-RunShellScript \
+            --timeout-seconds 300 \
+            --parameters file:///tmp/reconcile-parameters.json \
+            --query 'Command.CommandId' --output text)"
+          if ! aws ssm wait command-executed \
+              --command-id "${command_id}" --instance-id "${INSTANCE_ID}"; then
+            aws ssm get-command-invocation \
+              --command-id "${command_id}" --instance-id "${INSTANCE_ID}" || true
+            exit 1
+          fi
+          aws ssm get-command-invocation \
+            --command-id "${command_id}" --instance-id "${INSTANCE_ID}"
 
   production-smoke:
     if: inputs.target == 'production'
@@ -283,19 +477,137 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     steps:
-      - name: Public health and security smoke
+      - id: smoke
+        name: Public health and security smoke
+        continue-on-error: true
         env:
           API_URL: ${{ vars.PRODUCTION_API_URL }}
         run: |
           set -euo pipefail
-          curl --fail --silent --show-error --dump-header /tmp/health-headers "${API_URL}/api/health"
+          : "${API_URL:?PRODUCTION_API_URL is required}"
+          curl --fail --silent --show-error --retry 3 --retry-all-errors --retry-delay 5 \
+            --connect-timeout 5 --max-time 20 \
+            --dump-header /tmp/health-headers \
+            --output /tmp/health.json \
+            "${API_URL}/api/health"
           grep -qi '^x-request-id:' /tmp/health-headers
-          curl --fail --silent --show-error \
+          jq -e '.success == true and .data.status == "UP" and .data.environment == "prod"' /tmp/health.json
+          curl --fail --silent --show-error --retry 3 --retry-all-errors --retry-delay 5 \
+            --connect-timeout 5 --max-time 20 \
             --dump-header /tmp/journal-headers \
             --output /tmp/journal-home-stats.json \
             "${API_URL}/api/journal/public/home-stats"
           grep -qi '^cache-control:.*no-store' /tmp/journal-headers
-          jq -e '.success == true and (.data | has("usersRecordingToday") | not)' /tmp/journal-home-stats.json
+          jq -e '
+            .success == true
+            and (.data | type == "object")
+            and (.data.activeMemberCount | type == "number")
+            and (.data.activeMemberCount >= 0)
+            and (.data.postsToday | type == "number")
+            and (.data.postsToday >= 0)
+          ' /tmp/journal-home-stats.json
           test "$(curl --silent --output /dev/null --write-out '%{http_code}' "${API_URL}/swagger-ui.html")" = "404"
           code="$(curl --silent --output /dev/null --write-out '%{http_code}' "${API_URL}/api/admin/reports")"
           test "${code}" = "401" || test "${code}" = "403"
+      - name: Configure AWS credentials for automatic rollback
+        if: steps.smoke.outcome == 'failure'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Roll back failed production smoke through SSM
+        if: steps.smoke.outcome == 'failure'
+        env:
+          INSTANCE_ID: ${{ vars.PRODUCTION_INSTANCE_ID }}
+        run: |
+          set -euo pipefail
+          jq -n '{commands:[
+            "set -eu",
+            "previous_image=$(cat /opt/herfree/.deploy/production.previous-image)",
+            "test -n \"${previous_image}\"",
+            "/opt/herfree/infra/scripts/deploy-release.sh production \"${previous_image}\" rollback"
+          ],executionTimeout:["900"]}' > /tmp/rollback-parameters.json
+          command_id="$(aws ssm send-command \
+            --instance-ids "${INSTANCE_ID}" \
+            --document-name AWS-RunShellScript \
+            --timeout-seconds 900 \
+            --parameters file:///tmp/rollback-parameters.json \
+            --query 'Command.CommandId' --output text)"
+          status=""
+          terminal="false"
+          for _ in {1..240}; do
+            status="$(aws ssm get-command-invocation \
+              --command-id "${command_id}" --instance-id "${INSTANCE_ID}" \
+              --query 'Status' --output text 2>/dev/null || true)"
+            case "${status}" in
+              Success|Failed|Cancelled|TimedOut)
+                terminal="true"
+                break
+                ;;
+            esac
+            sleep 5
+          done
+          if [[ "${terminal}" != "true" ]]; then
+            aws ssm cancel-command --command-id "${command_id}" >/dev/null || true
+            for _ in {1..120}; do
+              status="$(aws ssm get-command-invocation \
+                --command-id "${command_id}" --instance-id "${INSTANCE_ID}" \
+                --query 'Status' --output text 2>/dev/null || true)"
+              case "${status}" in
+                Success|Failed|Cancelled|TimedOut)
+                  terminal="true"
+                  break
+                  ;;
+              esac
+              sleep 5
+            done
+          fi
+          test "${terminal}" = "true"
+          aws ssm get-command-invocation --command-id "${command_id}" --instance-id "${INSTANCE_ID}"
+          test "${status}" = "Success"
+      - name: Reconcile interrupted production rollback state
+        if: failure() && steps.smoke.outcome == 'failure'
+        env:
+          INSTANCE_ID: ${{ vars.PRODUCTION_INSTANCE_ID }}
+        run: |
+          set -euo pipefail
+          jq -n '{commands:[
+            "set -eu",
+            "test ! -s /opt/herfree/.deploy/production.pending-operation || /opt/herfree/infra/scripts/deploy-release.sh production pending reconcile"
+          ],executionTimeout:["300"]}' > /tmp/reconcile-parameters.json
+          command_id="$(aws ssm send-command \
+            --instance-ids "${INSTANCE_ID}" \
+            --document-name AWS-RunShellScript \
+            --timeout-seconds 300 \
+            --parameters file:///tmp/reconcile-parameters.json \
+            --query 'Command.CommandId' --output text)"
+          if ! aws ssm wait command-executed \
+              --command-id "${command_id}" --instance-id "${INSTANCE_ID}"; then
+            aws ssm get-command-invocation \
+              --command-id "${command_id}" --instance-id "${INSTANCE_ID}" || true
+            exit 1
+          fi
+          aws ssm get-command-invocation \
+            --command-id "${command_id}" --instance-id "${INSTANCE_ID}"
+      - name: Verify the rolled-back service externally
+        if: steps.smoke.outcome == 'failure'
+        env:
+          API_URL: ${{ vars.PRODUCTION_API_URL }}
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --retry 3 --retry-all-errors --retry-delay 5 \
+            --connect-timeout 5 --max-time 20 \
+            --dump-header /tmp/rollback-health-headers \
+            --output /tmp/rollback-health.json \
+            "${API_URL}/api/health"
+          grep -qi '^x-request-id:' /tmp/rollback-health-headers
+          jq -e '
+            .success == true
+            and .data.status == "UP"
+            and ((.data.environment // "prod") == "prod")
+          ' /tmp/rollback-health.json
+      - name: Fail the release after automatic rollback
+        if: steps.smoke.outcome == 'failure'
+        run: |
+          echo "Production smoke failed. The previous image was restored and verified."
+          exit 1

@@ -6,7 +6,7 @@ Herfree는 실제 운영 배포를 전제로 관리한다. 운영 서버에 올�
 
 | 브랜치 | 용도 | 규칙 |
 | --- | --- | --- |
-| `main` | 운영 배포 기준 | 항상 배포 가능한 상태를 유지한다. **GitHub Actions 배포는 main 커밋 기준** |
+| `main` | 운영 배포 기준 | 운영 적용 승인 후 병합. **production은 검증된 current main 커밋 기준** |
 | `develop` | 통합·검증 브랜치 | `feature/*`·`fix/*` PR을 모아 CI를 통과시킨 뒤 `main`으로 승격한다 |
 | `feature/*` | 새 기능 | 예: `feature/admin-user-search` |
 | `fix/*` | 버그 수정 | 예: `fix/mobile-menu-layout` |
@@ -19,7 +19,7 @@ Herfree는 실제 운영 배포를 전제로 관리한다. 운영 서버에 올�
 CI(`ci.yml`, `codeql.yml`)는 **`main`과 `develop` 모두**에서 실행된다.
 
 ```text
-feature/oauth-ui ──PR──► develop ──PR──► main ──Release backend──► staging → production
+feature/oauth-ui ──PR──► develop ──staging 검증──► 운영 적용 승인──PR──► main
 fix/tab-ux       ──PR──► develop
 hotfix/prod-*    ──PR──► main (긴급만 develop 생략 가능)
 ```
@@ -90,7 +90,9 @@ git push -u origin feature/example
 gh pr create --base develop --title "fix(frontend): 로그인 오류 메시지 정리"
 ```
 
-`develop`이 CI를 통과하면 `develop` → `main` PR을 연다. `main` merge 후 **Release backend** workflow로 staging 배포한다.
+`develop`이 CI를 통과하면 **Release backend** workflow를 `develop`, `target=staging`으로 실행해 먼저 검증한다.
+최종 결과와 미통과 항목을 운영 책임자에게 보여준 뒤 운영 적용 승인을 받아 `main` PR을 병합한다.
+병합으로 SHA가 바뀌면 current `main`의 정확한 SHA도 staging에서 검증해야 production으로 승격할 수 있다.
 
 ## 로컬 Git 설정
 
@@ -109,15 +111,17 @@ cd C:\dev\herfree-platform
 
 ## 배포 기준
 
-배포는 **`main` 커밋 SHA** 기준으로만 한다. 커밋 메시지에 “배포용”“테스트용”을 붙이지 않는다.
+운영 배포는 **current `main` 커밋 SHA** 기준이다. 사전 검증은 current `develop`에서도 가능하다.
+커밋 메시지에 “배포용”“테스트용”을 붙이지 않는다.
 
 ```text
 feature/* → develop (PR, CI)
-         → main (PR, CI)
-         → GitHub Actions Release backend (target=staging)
-         → main/develop frontend tree + Amplify develop revision 확인
-         → smoke + 변경형 BFF E2E → staging-passed-<SHA>
-         → target=production (RDS snapshot, 동일 이미지)
+         → Amplify develop의 정확한 SHA 빌드 확인
+         → Release backend (ref=develop, target=staging), smoke + 변경형 BFF E2E
+         → 검토 결과 제시·운영 적용 승인 → main (PR, CI)
+         → main/develop frontend tree 동일성 + Amplify develop SHA 확인
+         → Release backend (ref=main, target=staging) → staging-passed-<main SHA>
+         → target=production (완료 마커·키 버전이 확인된 S3 백업, 동일 이미지 digest)
          → smoke test
 ```
 

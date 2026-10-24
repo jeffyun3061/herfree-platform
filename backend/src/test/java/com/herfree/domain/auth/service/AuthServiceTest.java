@@ -14,6 +14,7 @@ import com.herfree.domain.user.repository.UserProfileRepository;
 import com.herfree.domain.user.repository.UserRepository;
 import com.herfree.domain.user.service.UserConsentAgreementService;
 import com.herfree.domain.user.service.HealthStatisticsConsentService;
+import com.herfree.domain.user.service.HealthDataConsentService;
 import com.herfree.global.security.JwtProperties;
 import com.herfree.global.security.JwtTokenProvider;
 import org.junit.jupiter.api.DisplayName;
@@ -65,6 +66,9 @@ class AuthServiceTest {
     @Mock
     private HealthStatisticsConsentService healthStatisticsConsentService;
 
+    @Mock
+    private HealthDataConsentService healthDataConsentService;
+
     @InjectMocks
     private AuthService authService;
 
@@ -95,6 +99,7 @@ class AuthServiceTest {
         verify(userProfileRepository).save(any(UserProfile.class));
         verify(userConsentAgreementService).recordSignupConsent(any(User.class), eq(true), eq(true), eq(false));
         verify(healthStatisticsConsentService).recordInitialConsent(any(User.class), eq(true));
+        verify(healthDataConsentService).recordInitialConsent(any(User.class), eq(true));
     }
 
     @Test

@@ -24,8 +24,8 @@ value_of() {
 
 required=(
   AWS_REGION CLOUDWATCH_LOG_GROUP
-  SPRING_PROFILES_ACTIVE SPRING_DATASOURCE_URL SPRING_DATASOURCE_USERNAME
-  SPRING_DATASOURCE_PASSWORD JWT_SECRET ANALYTICS_HASH_SALT CORS_ALLOWED_ORIGINS
+  SPRING_PROFILES_ACTIVE DB_RUNTIME SPRING_DATASOURCE_URL SPRING_DATASOURCE_USERNAME
+  SPRING_DATASOURCE_PASSWORD JWT_SECRET ANALYTICS_HASH_SALT HEALTH_DATA_ENCRYPTION_KEY ADMIN_MFA_ENCRYPTION_KEY CORS_ALLOWED_ORIGINS
   TRUSTED_PROXY_CIDRS S3_BUCKET S3_REGION APP_MAIL_MODE APP_MAIL_FROM
   SPRING_MAIL_HOST SPRING_MAIL_USERNAME SPRING_MAIL_PASSWORD
   PASSWORD_RESET_FRONTEND_BASE_URL OAUTH_KAKAO_CLIENT_ID OAUTH_KAKAO_CLIENT_SECRET
@@ -53,8 +53,19 @@ fi
 
 jwt_secret="$(value_of JWT_SECRET)"
 analytics_salt="$(value_of ANALYTICS_HASH_SALT)"
+health_data_key="$(value_of HEALTH_DATA_ENCRYPTION_KEY)"
+mfa_key="$(value_of ADMIN_MFA_ENCRYPTION_KEY)"
+if [[ "$(value_of ADMIN_MFA_REQUIRED)" != true || ! "${mfa_key}" =~ ^[A-Za-z0-9+/]{43}=$ \
+   || "${mfa_key}" == "${health_data_key}" || "${mfa_key}" == "${jwt_secret}" ]]; then
+  echo "Public deployments require MFA and an independent 32-byte base64 MFA encryption key"
+  exit 1
+fi
 if [[ ${#jwt_secret} -lt 32 || ${#analytics_salt} -lt 32 ]]; then
   echo "JWT_SECRET and ANALYTICS_HASH_SALT must be at least 32 characters"
+  exit 1
+fi
+if [[ ${#health_data_key} -ne 64 && ${#health_data_key} -lt 43 ]]; then
+  echo "HEALTH_DATA_ENCRYPTION_KEY must be 32-byte base64 or 64-character hex"
   exit 1
 fi
 if [[ "${jwt_secret}" == "${analytics_salt}" ]]; then
@@ -70,21 +81,85 @@ if [[ "$(value_of CORS_ALLOWED_ORIGINS)" != https://* ]]; then
   exit 1
 fi
 datasource_url="$(value_of SPRING_DATASOURCE_URL)"
-if [[ "${datasource_url}" != *"sslMode=VERIFY_IDENTITY"* \
-   || "${datasource_url}" != *"trustCertificateKeyStoreUrl=file:/app/certs/rds-truststore.p12"* \
-   || "${datasource_url}" != *"fallbackToSystemTrustStore=false"* ]]; then
-  echo "release datasource must verify the RDS certificate and hostname"
-  exit 1
-fi
+db_runtime="$(value_of DB_RUNTIME)"
+case "${db_runtime}" in
+  rds)
+    if [[ "${datasource_url}" != *"sslMode=VERIFY_IDENTITY"* \
+       || "${datasource_url}" != *"trustCertificateKeyStoreUrl=file:/app/certs/rds-truststore.p12"* \
+       || "${datasource_url}" != *"fallbackToSystemTrustStore=false"* ]]; then
+      echo "RDS datasource must verify the certificate and hostname"
+      exit 1
+    fi
+    ;;
+  local)
+    if [[ "${datasource_url}" != jdbc:mysql://mysql:3306/* \
+       || "${datasource_url}" != *"sslMode=REQUIRED"* \
+       || "${datasource_url}" == *"sslMode=DISABLED"* ]]; then
+      echo "local datasource must use the private mysql service with required TLS"
+      exit 1
+    fi
+    backup_bucket="$(value_of DB_BACKUP_S3_BUCKET)"
+    if [[ ! "${backup_bucket}" =~ ^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$ ]]; then
+      echo "local DB runtime requires a valid private backup bucket name"
+      exit 1
+    fi
+
+    mysql_env_file="${HERFREE_MYSQL_ENV_FILE:-}"
+    if [[ -z "${mysql_env_file}" || ! -f "${mysql_env_file}" ]]; then
+      echo "local DB runtime requires a dedicated MySQL environment file"
+      exit 1
+    fi
+    mysql_mode="$(stat -c '%a' "${mysql_env_file}")"
+    mysql_mode="${mysql_mode: -3}"
+    if (( (8#${mysql_mode} & 8#077) != 0 )); then
+      echo "MySQL environment file permissions must be 600 or stricter"
+      exit 1
+    fi
+
+    mysql_value_of() {
+      local key="$1"
+      sed -n "s/^${key}=//p" "${mysql_env_file}" | tail -n 1 | tr -d '\r'
+    }
+    for mysql_key in MYSQL_DATABASE MYSQL_USER MYSQL_PASSWORD MYSQL_ROOT_PASSWORD; do
+      mysql_value="$(mysql_value_of "${mysql_key}")"
+      if [[ -z "${mysql_value}" || "${mysql_value}" =~ ^\< || "${mysql_value}" =~ [Cc][Hh][Aa][Nn][Gg][Ee]_[Mm][Ee] ]]; then
+        echo "invalid or missing MySQL environment variable: ${mysql_key}"
+        exit 1
+      fi
+    done
+    if [[ "$(mysql_value_of MYSQL_PASSWORD)" != "$(value_of SPRING_DATASOURCE_PASSWORD)" ]]; then
+      echo "application and MySQL application passwords must match"
+      exit 1
+    fi
+    mysql_root_password="$(mysql_value_of MYSQL_ROOT_PASSWORD)"
+    if [[ "${mysql_root_password}" == "$(mysql_value_of MYSQL_PASSWORD)" \
+       || ${#mysql_root_password} -lt 16 ]]; then
+      echo "MySQL root password must be strong and distinct"
+      exit 1
+    fi
+    ;;
+  *)
+    echo "DB_RUNTIME must be rds or local"
+    exit 1
+    ;;
+esac
 if [[ "$(value_of APP_MAIL_MODE)" != "smtp" ]]; then
   echo "APP_MAIL_MODE must be smtp"
   exit 1
 fi
-if [[ "${DEPLOY_ENV}" == "production" && "$(value_of ADMIN_BOOTSTRAP_ENABLED)" != "false" ]]; then
-  echo "ADMIN_BOOTSTRAP_ENABLED must be false in production"
+if [[ "$(value_of ADMIN_BOOTSTRAP_ENABLED)" != "false" ]]; then
+  echo "ADMIN_BOOTSTRAP_ENABLED must be false for staging and production"
   exit 1
 fi
-if [[ "${DEPLOY_ENV}" == "production" ]]; then
+if [[ -n "$(value_of S3_ACCESS_KEY)" || -n "$(value_of S3_SECRET_KEY)" ]]; then
+  echo "release env must not contain static S3 credentials; use the instance IAM role"
+  exit 1
+fi
+if [[ "${DEPLOY_ENV}" == "production" && "$(value_of HEALTH_DATA_REKEY_ON_STARTUP)" == "true" ]]; then
+  echo "production must not enable HEALTH_DATA_REKEY_ON_STARTUP"
+  exit 1
+fi
+if [[ "${DEPLOY_ENV}" == "production" && "${db_runtime}" == "rds" ]]; then
   datasource_password="$(value_of SPRING_DATASOURCE_PASSWORD)"
   if [[ "${datasource_url}" =~ (localhost|127\.0\.0\.1|herfree-mysql|jdbc:mysql://mysql:) ]]; then
     echo "production datasource must point to the private RDS endpoint, not local MySQL"

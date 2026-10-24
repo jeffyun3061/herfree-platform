@@ -26,7 +26,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ErrorResponse> handleBusinessException(BusinessException ex) {
         ErrorCode errorCode = ex.getErrorCode();
-        return jsonResponse(errorCode.getHttpStatus(), ErrorResponse.of(ex.getMessage()));
+        return jsonResponse(errorCode.getHttpStatus(), ErrorResponse.of(errorCode));
     }
 
     // MethodArgumentNotValidException이 BindException을 상속하므로
@@ -47,6 +47,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
+        return jsonResponse(HttpStatus.BAD_REQUEST, ErrorResponse.of(ErrorCode.INVALID_INPUT.getMessage()));
+    }
+
+    @ExceptionHandler(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleParameterTypeMismatch() {
+        // Do not echo an invalid query value; it may contain sensitive input.
         return jsonResponse(HttpStatus.BAD_REQUEST, ErrorResponse.of(ErrorCode.INVALID_INPUT.getMessage()));
     }
 
@@ -74,6 +80,16 @@ public class GlobalExceptionHandler {
             return jsonResponse(
                     ErrorCode.DUPLICATE_NICKNAME.getHttpStatus(),
                     ErrorResponse.of(ErrorCode.DUPLICATE_NICKNAME.getMessage()));
+        }
+        if (normalized.contains("uk_reactions_user_target_type")) {
+            return jsonResponse(
+                    ErrorCode.DUPLICATE_REACTION.getHttpStatus(),
+                    ErrorResponse.of(ErrorCode.DUPLICATE_REACTION.getMessage()));
+        }
+        if (normalized.contains("uk_journal_user_date")) {
+            return jsonResponse(
+                    ErrorCode.CONFLICT.getHttpStatus(),
+                    ErrorResponse.of(ErrorCode.CONFLICT.getMessage()));
         }
 
         log.error(

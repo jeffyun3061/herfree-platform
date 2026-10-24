@@ -2,6 +2,8 @@
 param(
     [string]$AwsProfile = "herfree-staging",
     [string]$Region = "ap-northeast-2",
+    [ValidateSet("local", "rds")]
+    [string]$DatabaseRuntime = "local",
     [switch]$Strict
 )
 
@@ -71,7 +73,7 @@ try {
     Add-Check "AWS login" ($identity.Account -eq "439777528445") "account $($identity.Account)"
 }
 catch {
-    Add-Check "AWS login" $false "Run: aws sso login --profile $AwsProfile" $true
+    Add-Check "AWS login" $false "Run: aws login --profile $AwsProfile" $true
 }
 
 try {
@@ -88,7 +90,7 @@ catch {
     Add-Check "EC2" $false $_.Exception.Message $true
 }
 
-try {
+if ($DatabaseRuntime -eq "rds") { try {
     $rds = aws rds describe-db-instances `
         --profile $AwsProfile --region $Region `
         --db-instance-identifier herfree-staging-mysql `
@@ -101,6 +103,9 @@ try {
 catch {
     Add-Check "RDS" $false $_.Exception.Message $true
 }
+} else {
+    Add-Check "DB runtime selection" $true "local MySQL; SQL health, Flyway history, encryption and backup restore still require host validation"
+}
 
 try {
     $amplify = aws amplify get-app `
@@ -108,7 +113,12 @@ try {
         --app-id d2bcg3vnlv5hkh `
         --query "app.{Repository:repository,DefaultDomain:defaultDomain,BasicAuth:enableBasicAuth}" `
         --output json | ConvertFrom-Json
-    Add-Check "Amplify Basic Auth" ($amplify.BasicAuth -eq $true) "enabled=$($amplify.BasicAuth)" $true
+    $branchBasicAuth = aws amplify get-branch `
+        --profile $AwsProfile --region $Region `
+        --app-id d2bcg3vnlv5hkh --branch-name develop `
+        --query "branch.enableBasicAuth" --output json | ConvertFrom-Json
+    $basicAuthEnabled = $amplify.BasicAuth -eq $true -or $branchBasicAuth -eq $true
+    Add-Check "Amplify Basic Auth" $basicAuthEnabled "app or develop branch enabled=$basicAuthEnabled" $true
     Add-Check "Amplify GitHub connection" (-not [string]::IsNullOrWhiteSpace($amplify.Repository)) $(if ($amplify.Repository) { $amplify.Repository } else { "repository connection required" }) $true
     try {
         $domains = aws amplify list-domain-associations `
@@ -154,7 +164,7 @@ if ($apiIps.Count -gt 0) {
 }
 
 $frontendCode = Test-Https $StagingFrontendUrl
-Add-Check "Amplify frontend" ($frontendCode -in @(200, 401)) "HTTP $frontendCode at $StagingFrontendUrl" $true
+Add-Check "Amplify anonymous access blocked" ($frontendCode -eq 401) "HTTP $frontendCode at $StagingFrontendUrl" $true
 
 try {
     gh auth status 2>&1 | Out-Null
@@ -166,10 +176,12 @@ try {
     $frontendVar = gh variable get STAGING_FRONTEND_URL -e staging 2>$null
     Add-Check "GitHub STAGING_FRONTEND_URL" ($frontendVar -eq $StagingFrontendUrl) $(if ($frontendVar) { $frontendVar } else { "missing" }) $true
 
-    $runJson = gh run list --workflow "Release backend" --limit 1 --json databaseId,status,conclusion,headSha,url | ConvertFrom-Json
+    $runJson = gh run list --workflow "Release backend" --branch develop --event workflow_dispatch --limit 1 --json databaseId,status,conclusion,headSha,url | ConvertFrom-Json
     if ($runJson.Count -gt 0) {
         $run = $runJson[0]
         Add-Check "Latest staging release" ($run.conclusion -eq "success") "$($run.conclusion), $($run.headSha.Substring(0, 7)), $($run.url)" $true
+    } else {
+        Add-Check "Latest staging release" $false "No develop release evidence; verify the candidate SHA and staging tests" $true
     }
 }
 catch {
@@ -179,7 +191,7 @@ catch {
 $blocking = @($checks | Where-Object { -not $_.Passed -and $_.Blocking })
 Write-Host ""
 if ($blocking.Count -eq 0) {
-    Write-Host "STAGING READY: automated status checks passed. Continue manual user-flow QA." -ForegroundColor Green
+    Write-Host "INFRASTRUCTURE CHECKS PASSED: DB/Flyway, restore, candidate SHA and user-flow QA remain required. This is not release approval." -ForegroundColor Green
 }
 else {
     Write-Host "STAGING BLOCKED: complete the following $($blocking.Count) item(s)." -ForegroundColor Red

@@ -14,6 +14,7 @@ import com.herfree.domain.journal.entity.SleepRange;
 import com.herfree.domain.journal.exception.JournalRecordNotFoundException;
 import com.herfree.domain.journal.repository.JournalRecordRepository;
 import com.herfree.domain.user.entity.User;
+import com.herfree.domain.user.entity.UserStatus;
 import com.herfree.domain.user.repository.UserRepository;
 import com.herfree.global.common.AppTimeZone;
 import java.time.LocalDate;
@@ -84,7 +85,8 @@ class JournalRecordServiceTest {
                 false,
                 false
         );
-        given(userRepository.findById(userId)).willReturn(Optional.of(user));
+        given(userRepository.findByIdAndStatusForUpdate(userId, UserStatus.ACTIVE))
+                .willReturn(Optional.of(user));
         given(journalRecordRepository.findByUserIdAndRecordDate(userId, date)).willReturn(Optional.empty());
         given(journalRecordRepository.save(any(JournalRecord.class)))
                 .willAnswer(invocation -> invocation.getArgument(0));
@@ -104,7 +106,8 @@ class JournalRecordServiceTest {
         JournalRecord existing = record(userId, date);
         JournalRecordUpsertRequest request = new JournalRecordUpsertRequest(
                 date, null, null, null, false, List.of(), null, List.of(), null, null, null, false, false);
-        given(userRepository.findById(userId)).willReturn(Optional.of(user));
+        given(userRepository.findByIdAndStatusForUpdate(userId, UserStatus.ACTIVE))
+                .willReturn(Optional.of(user));
         given(journalRecordRepository.findByUserIdAndRecordDate(userId, date)).willReturn(Optional.of(existing));
         given(journalRecordRepository.save(existing)).willReturn(existing);
 

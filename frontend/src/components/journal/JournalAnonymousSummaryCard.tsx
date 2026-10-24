@@ -6,8 +6,6 @@ import type { JournalReviewSummary } from '@/domain/journal/types';
 import {
   formatLabelList,
 } from '@/domain/journal/types';
-import { buildAnonymousReviewShareText } from '@/domain/journal/reviewShare';
-import { shareJournalText } from '@/domain/journal/share';
 import { downloadElementPng } from '@/lib/domCapture';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/cn';
@@ -32,22 +30,6 @@ export function JournalAnonymousSummaryCard({
   const [message, setMessage] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
-  const shareText = buildAnonymousReviewShareText(summary);
-
-  const handleShare = async () => {
-    setPending(true);
-    setMessage(null);
-    try {
-      const result = await shareJournalText(shareText);
-      setMessage(result === 'shared' ? '공유 창이 열렸습니다.' : '공유 문구가 복사됐습니다.');
-    } catch (error) {
-      if (error instanceof Error && error.name === 'AbortError') return;
-      setMessage(error instanceof Error ? error.message : '공유에 실패했습니다.');
-    } finally {
-      setPending(false);
-    }
-  };
-
   const handleSaveImage = async () => {
     if (!cardRef.current) return;
     setPending(true);
@@ -55,13 +37,8 @@ export function JournalAnonymousSummaryCard({
     try {
       await downloadElementPng(cardRef.current, 'herfree-journal-summary.png');
       setMessage('이미지가 저장되었습니다.');
-    } catch {
-      try {
-        await shareJournalText(shareText);
-        setMessage('이미지 저장을 지원하지 않아 공유 문구를 복사했습니다.');
-      } catch (error) {
-        setMessage(error instanceof Error ? error.message : '이미지 저장에 실패했습니다.');
-      }
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : '이미지 저장에 실패했습니다.');
     } finally {
       setPending(false);
     }
@@ -127,28 +104,9 @@ export function JournalAnonymousSummaryCard({
           </section>
         </div>
 
-        {!compact && (
-          <div className="space-y-2 border-t border-border/50 bg-canvas/60 px-5 py-4">
-            <p className="flex items-center gap-1.5 text-xs text-muted">
-              <span aria-hidden>🔒</span>
-              메모는 공유되지 않아요
-            </p>
-            <p className="rounded-xl bg-primary/10 px-3 py-2 text-xs font-medium text-primary">
-              개인 정보는 포함되지 않아요. 안심하고 공유하세요.
-            </p>
-          </div>
-        )}
       </div>
 
       <div className={cn('flex gap-2', compact ? 'flex-row' : 'flex-col sm:flex-row')}>
-        <Button
-          fullWidth
-          size={compact ? 'sm' : 'md'}
-          disabled={pending}
-          onClick={() => void handleShare()}
-        >
-          공유
-        </Button>
         <Button
           fullWidth
           variant="secondary"

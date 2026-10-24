@@ -10,6 +10,6 @@ public record DemoDataSeedProperties(
         boolean syncExisting
 ) {
     public String resolvedPassword() {
-        return (password != null && !password.isBlank()) ? password : "Demo1234!";
+        return password == null ? "" : password;
     }
 }

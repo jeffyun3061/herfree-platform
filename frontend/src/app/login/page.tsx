@@ -39,6 +39,7 @@ function LoginForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const returnUrl = resolveReturnUrl(searchParams.get('from'));
+  const returningToPost = /^\/community\/posts\/\d+$/.test(returnUrl);
 
   const sessionNotice =
     searchParams.get('reason') === 'session_expired'
@@ -93,12 +94,12 @@ function LoginForm() {
       title="만나서 반가워요"
       subtitle="오늘도 담담하게."
     >
-      {sessionNotice && (
+      {(sessionNotice || returningToPost) && (
         <div
           className="mt-5 rounded-[14px] border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] leading-relaxed text-amber-900"
           role="status"
         >
-          {sessionNotice}
+          {sessionNotice || '로그인하면 요청한 글로 돌아갑니다. 글의 공개 범위에 따라 열람이 제한될 수 있어요.'}
         </div>
       )}
 

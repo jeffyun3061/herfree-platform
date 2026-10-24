@@ -7,6 +7,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
+/** Emits an operational S3 configuration signal without logging credentials. */
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -21,11 +22,16 @@ public class S3ConfigurationLogger {
         boolean hasStaticKey = StringUtils.hasText(s3Properties.accessKey())
                 && StringUtils.hasText(s3Properties.secretKey());
 
-        if (!hasBucket || !hasRegion || !hasStaticKey) {
-            log.warn("S3 image upload NOT ready — check local-secrets.yml (bucket, access-key, secret-key)");
+        if (!hasBucket || !hasRegion) {
+            log.error("S3 image upload is not configured: bucket and region are required");
             return;
         }
 
-        log.info("S3 image upload ready: bucket={}, region={}", s3Properties.bucket(), s3Properties.region());
+        if (hasStaticKey) {
+            log.warn("S3 image upload uses configured static credentials; prefer the EC2 instance role");
+        } else {
+            log.info("S3 image upload uses the AWS default credential chain (instance role expected)");
+        }
+        log.info("S3 image upload configured: bucket={}, region={}", s3Properties.bucket(), s3Properties.region());
     }
 }

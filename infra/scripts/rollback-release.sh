@@ -14,4 +14,4 @@ if [[ ! -s "${STATE_FILE}" ]]; then
   exit 1
 fi
 
-exec "${APP_DIR}/infra/scripts/deploy-release.sh" "${DEPLOY_ENV}" "$(cat "${STATE_FILE}")"
+exec "${APP_DIR}/infra/scripts/deploy-release.sh" "${DEPLOY_ENV}" "$(cat "${STATE_FILE}")" rollback

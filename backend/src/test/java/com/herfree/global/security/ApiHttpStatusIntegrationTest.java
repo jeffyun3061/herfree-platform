@@ -8,7 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
@@ -182,15 +182,15 @@ class ApiHttpStatusIntegrationTest {
     }
 
     @Test
-    @DisplayName("민감정보 처리에 동의하지 않으면 가입을 거절한다")
-    void signup_withoutSensitiveInformationConsent_returns400() throws Exception {
+    @DisplayName("민감정보 처리에 동의하지 않아도 커뮤니티 가입은 성공한다")
+    void signup_withoutSensitiveInformationConsent_succeedsForCommunity() throws Exception {
         mockMvc.perform(post("/api/auth/signup")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"email":"no-sensitive-consent@example.com","password":"Test-password-123!","nickname":"consentcheck","agreeTerms":true,"agreePrivacy":true,"agreeSensitive":false,"agreeAge":true,"agreeMarketing":false}
                                 """))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.success").value(false));
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.success").value(true));
     }
 
     @Test

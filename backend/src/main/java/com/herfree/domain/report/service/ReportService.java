@@ -26,6 +26,7 @@ import com.herfree.domain.user.entity.UserProfile;
 import com.herfree.domain.user.exception.UserNotFoundException;
 import com.herfree.domain.user.repository.UserProfileRepository;
 import com.herfree.domain.user.repository.UserRepository;
+import com.herfree.global.util.AnonymousConcernPolicy;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -205,22 +206,28 @@ public class ReportService {
                                 UserProfile::getNickname));
 
         Map<TargetKey, TargetSnapshot> snapshots = new java.util.HashMap<>();
-        posts.forEach(post -> snapshots.put(
-                new TargetKey(ReportTargetType.POST, post.getId()),
-                new TargetSnapshot(
-                        post.getTitle(),
-                        preview(post.getContent()),
-                        post.getStatus().name(),
-                        post.getUser().getId(),
-                        nicknames.get(post.getUser().getId()))));
-        comments.forEach(comment -> snapshots.put(
-                new TargetKey(ReportTargetType.COMMENT, comment.getId()),
-                new TargetSnapshot(
-                        "댓글 #" + comment.getId(),
-                        preview(comment.getContent()),
-                        comment.getStatus().name(),
-                        comment.getUser().getId(),
-                        nicknames.get(comment.getUser().getId()))));
+        posts.forEach(post -> {
+            boolean anonymous = AnonymousConcernPolicy.isConcernBoard(post.getBoard().getBoardType());
+            snapshots.put(
+                    new TargetKey(ReportTargetType.POST, post.getId()),
+                    new TargetSnapshot(
+                            post.getTitle(),
+                            preview(post.getContent()),
+                            post.getStatus().name(),
+                            anonymous ? null : post.getUser().getId(),
+                            anonymous ? "익명" : nicknames.get(post.getUser().getId())));
+        });
+        comments.forEach(comment -> {
+            boolean anonymous = AnonymousConcernPolicy.isConcernBoard(comment.getPost().getBoard().getBoardType());
+            snapshots.put(
+                    new TargetKey(ReportTargetType.COMMENT, comment.getId()),
+                    new TargetSnapshot(
+                            "댓글 #" + comment.getId(),
+                            preview(comment.getContent()),
+                            comment.getStatus().name(),
+                            anonymous ? null : comment.getUser().getId(),
+                            anonymous ? "익명" : nicknames.get(comment.getUser().getId())));
+        });
         users.forEach(user -> snapshots.put(
                 new TargetKey(ReportTargetType.USER, user.getId()),
                 new TargetSnapshot(

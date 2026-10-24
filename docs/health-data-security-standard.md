@@ -79,7 +79,7 @@ Herfree는 건강·질병, 증상, 투약, 수면, 스트레스, 상담 내용�
 
 ## 4. 현재 프로젝트 엄격 판정
 
-이 표는 2026-07-16 코드 확인 기준이다. AWS와 외부 콘솔을 실제 확인하지 않은 항목은 `PASS`로 표시하지 않는다.
+이 표의 인프라·세션 기준은 2026-10-24 후보 코드에 맞췄다. AWS와 외부 콘솔을 실제 확인하지 않은 항목은 `PASS`로 표시하지 않는다. 기존 법무/운영 미확인 항목을 코드 테스트로 승인 처리하지 않는다.
 
 | 영역 | 현재 상태 | 근거 또는 남은 일 |
 | --- | --- | --- |
@@ -89,22 +89,22 @@ Herfree는 건강·질병, 증상, 투약, 수면, 스트레스, 상담 내용�
 | 비공개 게시판 | `CODE` | 소유자·운영자 query 범위와 테스트 존재 |
 | 개인일지 객체 권한 | `CODE` | record 조회·삭제 시 소유자 불일치에 404 처리 |
 | 파일 업로드·조회 제한 | `CODE` | 타입·크기·S3 prefix·제한 읽기 검증 존재 |
-| 민감정보 별도 동의 | `CODE` | 가입 요청과 `V32`에 별도 동의 기록 존재 |
+| 민감정보 별도 동의 | `CODE` | 가입 시 선택 기록은 보존하고 개인일지 진입 전에 `health_data_consents` 별도 동의를 요구하며 `V39`로 이력을 보존 |
 | 관리자 감사 | `CODE` | `admin_audit_logs`, 역할 감사, request ID 존재 |
 | 운영 profile·secret 차단 | `CODE` | profile guard, secret scan, release env 검사 존재 |
 | N+1 회귀 방지 | `CODE` | 목록 query count 통합 테스트 존재 |
-| 운영 RDS·S3·CloudWatch | `BLOCK` | 실제 private RDS, KMS, 알람, IAM, 복원 증거 필요 |
+| 운영 EC2·로컬 MySQL·S3·CloudWatch | `BLOCK` | 실제 내부 DB 네트워크, 암호화 EBS/S3, 알람, IAM, 격리 복원 증거 필요. RDS 새 구축은 현재 계획에 없음 |
 | OAuth secret 교체 | `BLOCK` | 대화·화면에 노출된 기존 secret 전부 폐기·재발급 필요 |
-| 관리자 강한 인증 | `BLOCK` | MFA 또는 관리 API 접근 게이트가 실제 적용됐다는 증거 필요 |
+| 관리자 강한 인증 | `CODE / BLOCK` | 서버 검증 MFA·15분 만료·재사용/실패 차단 구현. 실제 등록 승인·관리자 계정·운영 적용 증거 필요 |
 | 탈퇴·재가입·보존 정책 | `DECISION` | 이메일·비밀번호·OAuth·reset token·닉네임 원문은 제거한다. 동의·감사·게시물 보존기간과 재가입 정책 승인 필요 |
 | 개인정보 처리방침 | `DECISION` | 실제 운영 주체, 주소, 책임자, 위탁사, 국외 이전, 보유기간 확정 필요 |
 | 공개 건강 통계 | `CODE` | 선택 동의 회원만 집계하고, 서로 다른 사용자 20명 이상·항목별 5명 이상일 때만 공개하도록 구현·테스트 |
 | 건강 통계 동의 철회 | `CODE` | 별도 이력 테이블과 마이페이지 API를 사용하며 최신 철회 상태는 공개·관리자 집계에서 즉시 제외 |
-| DB 전송 암호화 | `BLOCK` | RDS CA 검증을 포함한 TLS JDBC 연결과 RDS TLS 강제 필요 |
-| 건강정보 DB 보호 | `DECISION` | RDS 저장 암호화는 필수. 일지 memo 등 필드 단위 KMS envelope 암호화 도입 범위 결정 필요 |
+| DB 전송 암호화 | `BLOCK` | local은 내부 Docker 네트워크·호스트 포트 차단·REQUIRED/TLS 강제. RDS 복구 시에만 VERIFY_IDENTITY/CA 검증. 서로 다른 보장을 동일시하지 않음 |
+| 건강정보 DB 보호 | `IMPLEMENTED / DECISION` | 별도 암호화 EBS·S3와 일지 memo AES-GCM. 기존 키를 유지하고 복구 가능성을 검증. 단순 키 교체나 운영 시작 시 일괄 재암호화 금지 |
 | 자동 보존·파기 | `CODE` | 이벤트·reset token·감사 로그 파기 job과 탈퇴 즉시 비식별화 구현. 운영 보존기간 승인·실행 증거 필요 |
 | 사고 대응 체계 | `BLOCK` | 연락망, 권한, 72시간 타이머, 공지 초안, 모의훈련 기록 필요 |
-| refresh token 회전 | `ROADMAP` | 현재 access token을 sessionStorage에 저장. XSS 영향 축소를 위해 HttpOnly cookie 기반 회전 구조 검토 |
+| 세션 보호·refresh token 회전 | `CODE / ROADMAP` | BFF HttpOnly·Secure·SameSite 쿠키 사용. refresh token 회전은 별도 로드맵이며 구현 완료로 표시하지 않음 |
 | 분산 rate limit | `ROADMAP` | 현재 메모리 기반이면 다중 인스턴스 전환 전 Redis 등 중앙 저장소 필요 |
 | 독립 보안 검증 | `BLOCK` | 공개 전 OWASP ZAP 또는 동등 DAST와 수동 권한 테스트, 가능하면 외부 점검 필요 |
 
@@ -132,19 +132,19 @@ Herfree는 건강·질병, 증상, 투약, 수면, 스트레스, 상담 내용�
 - [ ] 운영과 같은 MySQL major/minor에서 migration dry run을 완료했다.
 - [ ] 운영 데이터량을 가정한 실행 시간과 lock 범위를 측정했다.
 - [ ] 실패 시 앱 rollback만으로 충분한지, DB restore가 필요한지 적었다.
-- [ ] 배포 직전 snapshot 또는 PITR 시점을 만들고 식별자를 기록했다.
+- [ ] 배포 직전 S3 백업 본체·체크섬·완료 마커와 복구 키 버전 식별자를 기록했다.
 
 ### 운영 DB
 
-- [ ] production RDS는 public access가 꺼져 있다.
-- [ ] 3306은 API 보안 그룹에서만 접근 가능하다.
+- [ ] 로컬 MySQL은 내부 Docker 네트워크에서만 접근하며 호스트 3306 포트를 공개하지 않는다.
+- [ ] RDS 복구 경로를 선택한 경우 public access를 끄고 API 보안 그룹만 허용한다.
 - [ ] DB 애플리케이션 계정에는 DDL·GRANT·FILE 권한이 없다.
 - [ ] migration 계정과 애플리케이션 계정을 분리했다.
-- [ ] 저장 암호화와 자동 백업, 삭제 보호, PITR을 켰다.
-- [ ] JDBC는 RDS CA를 검증하는 TLS 연결을 사용한다.
+- [ ] 별도 암호화 EBS, 6시간 S3 백업, 일일 EBS 스냅샷 7개, EC2 종료 방지를 검증했다. 현재 로컬 구성에 PITR을 보장하지 않는다.
+- [ ] local JDBC는 REQUIRED, RDS JDBC는 VERIFY_IDENTITY와 CA truststore를 사용한다.
 - [ ] DB parameter에서 TLS가 아닌 연결을 거부한다.
-- [ ] slow query log와 Performance Insights를 켜되 SQL parameter 원문 노출 범위를 확인했다.
-- [ ] 월 1회 별도 staging DB로 복원하고 RTO·RPO를 기록한다.
+- [ ] 오류·DB 연결/용량/지연 지표를 수집하며 SQL parameter·건강정보 원문을 로그에 남기지 않는다.
+- [ ] 월 1회 격리된 임시 볼륨/내부 네트워크에 복원하고 복호화·핵심 기능·정리·중지와 RTO·RPO를 기록한다.
 - [ ] 백업 삭제 권한은 운영 DB 수정 권한과 분리한다.
 
 ### 성능·확장
@@ -249,11 +249,11 @@ Herfree는 건강·질병, 증상, 투약, 수면, 스트레스, 상담 내용�
 - [ ] AWS root 계정 MFA와 사용 금지 정책이 있다.
 - [ ] 사람 계정, EC2 role, GitHub deploy role을 분리한다.
 - [ ] production과 staging의 VPC, DB, S3, secret, 로그를 분리한다.
-- [ ] API, RDS, S3, 백업은 저장·전송 중 암호화한다.
+- [ ] API·DB 전송과 EBS·S3·백업 저장을 암호화한다.
 - [ ] 외부 공개는 443만 허용하고 API·DB 관리 포트를 닫는다.
 - [ ] WAF 또는 동등 통제로 rate limit, 악성 요청, bot 급증을 완화한다.
 - [ ] EC2/ECR/OS/JDK/DB의 보안 업데이트 책임과 기한을 정한다.
-- [ ] RDS snapshot, PITR, S3 versioning, 필요 시 Object Lock을 검토한다.
+- [ ] 6시간 S3 백업과 일일 EBS 스냅샷의 복구를 검증한다. S3 versioning/Object Lock은 보존·비용 검토 후 별도 결정한다.
 - [ ] 백업은 production 삭제 권한과 분리하고 암호화한다.
 - [ ] 월 1회 복원, 분기 1회 전체 장애 훈련을 한다.
 - [ ] RPO와 RTO를 운영자가 승인했다.
@@ -263,7 +263,7 @@ Herfree는 건강·질병, 증상, 투약, 수면, 스트레스, 상담 내용�
 
 | 항목 | 목표 |
 | --- | --- |
-| RPO | 15분 이하 또는 사업자가 승인한 값 |
+| RPO | 정상 백업 성공 전제 최대 6시간. 실패가 지속되면 더 길어질 수 있음 |
 | RTO | 4시간 이하 또는 사업자가 승인한 값 |
 | 5xx 알람 | 5분 동안 평소 기준 초과 |
 | 인증 장애 | 로그인·reset 연속 실패 즉시 |
@@ -365,7 +365,7 @@ D3를 새로 수집·조회·집계·공유하는 기능은 코드 작성 전에
 
 - OWASP ZAP 또는 동등 DAST
 - 관리자 권한 검토
-- RDS restore drill
+- 격리 복원 훈련 결과 검토 (훈련 자체는 월 1회)
 - 사고 대응 tabletop
 - 공개 건강 통계 재식별 검토
 

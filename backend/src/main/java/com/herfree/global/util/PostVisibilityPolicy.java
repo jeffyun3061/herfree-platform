@@ -1,6 +1,7 @@
 package com.herfree.global.util;
 
 import com.herfree.domain.post.entity.Post;
+import com.herfree.domain.post.entity.PostStatus;
 import com.herfree.domain.post.entity.PostVisibility;
 import com.herfree.domain.post.exception.PostNotFoundException;
 import com.herfree.domain.user.entity.UserRole;
@@ -8,6 +9,13 @@ import com.herfree.domain.user.entity.UserRole;
 public final class PostVisibilityPolicy {
 
     private PostVisibilityPolicy() {
+    }
+
+    /** The same anonymous rule is used by detail responses and crawler previews. */
+    public static boolean isPublicShareable(Post post) {
+        return post.getStatus() == PostStatus.ACTIVE
+                && post.getVisibility() == PostVisibility.PUBLIC
+                && !PrivateBoardPolicy.isAdminMaskedBoard(post.getBoard().getBoardType());
     }
 
     public static void assertReadable(Post post, Long viewerId, UserRole viewerRole) {

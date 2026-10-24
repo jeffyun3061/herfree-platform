@@ -1,0 +1,38 @@
+name: Deploy production frontend
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: frontend-main
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      AMPLIFY_APP_ID: d2bcg3vnlv5hkh
+      AMPLIFY_BRANCH: main
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Deploy current main to Amplify
+        run: |
+          set -euo pipefail
+          test "${GITHUB_REF}" = refs/heads/main
+          current_main="$(git ls-remote origin refs/heads/main | cut -f1)"
+          test "${GITHUB_SHA}" = "${current_main}"
+
+          python3 infra/scripts/release-amplify.py \
+            --app "${AMPLIFY_APP_ID}" --branch "${AMPLIFY_BRANCH}" --sha "${GITHUB_SHA}"
+      - name: Check public frontend
+        run: curl --fail --silent --show-error --location --retry 6 --retry-delay 10 --output /dev/null https://www.herpfree.co.kr/community

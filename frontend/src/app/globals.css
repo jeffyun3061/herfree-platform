@@ -87,6 +87,16 @@ body {
   overflow-x: hidden;
 }
 
+@media (max-width: 1023px) {
+  /* Small form text makes iOS Safari zoom the entire page on focus. */
+  input:not([type]),
+  input:is([type='text'], [type='email'], [type='password'], [type='search'], [type='tel'], [type='url'], [type='number'], [type='date'], [type='time'], [type='datetime-local']),
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
+
 ::selection {
   background-color: rgba(47, 143, 131, 0.18);
 }
@@ -144,6 +154,12 @@ body {
     padding-top: var(--hf-page-pt);
   }
 
+  /* Keep the mobile shell header below the iOS notch in standalone browsers. */
+  .hf-mobile-header {
+    height: calc(var(--hf-mobile-header-h) + env(safe-area-inset-top, 0px));
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
   /* Shell 헤더 없는 서브화면(게시글·글쓰기) — safe-area + 헤더 높이 */
   .hf-subpage-top {
     padding-top: max(3.375rem, var(--hf-subpage-top));
@@ -190,7 +206,7 @@ body {
   .hf-readable-content {
     max-width: 46rem;
     overflow-wrap: anywhere;
-    word-break: break-word;
+    word-break: normal;
   }
 
   .hf-readable-content > p {
@@ -216,28 +232,54 @@ body {
     line-height: 1.78;
   }
 
-  .hf-readable-content--community {
+  .hf-community-body {
     color: #2c342e;
-    font-size: 16px;
+    font-family: inherit;
+    font-size: 17px;
+    font-weight: 400;
     line-height: 1.8;
+    letter-spacing: normal;
+    text-align: left;
     white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    word-break: keep-all;
+    tab-size: 4;
   }
 
-  .hf-community-writing-content {
-    color: #2c342e;
-    font-size: 16px;
-    line-height: 1.8;
-    overflow-wrap: anywhere;
-    word-break: break-word;
-    white-space: pre-wrap;
+  .hf-community-editor {
+    display: block;
+    width: 100%;
+    min-height: 200px;
+    margin: 0;
+    border: 0;
+    padding: 0;
+    resize: none;
+    overflow: hidden;
+    background: transparent;
+    outline: none;
   }
+
+  .hf-community-rich p { margin: 0; min-height: 1.8em; }
+  .hf-community-rich h2 { margin: 1rem 0 .5rem; font-size: 1.3em; font-weight: 800; line-height: 1.6; }
+  .hf-community-rich h3 { margin: .8rem 0 .4rem; font-size: 1.12em; font-weight: 700; line-height: 1.7; }
+  .hf-community-rich > :first-child { margin-top: 0; }
+  .hf-community-rich ul, .hf-community-rich ol { margin: .5rem 0; padding-left: 1.5em; }
+  .hf-community-rich ul { list-style-type: disc; }
+  .hf-community-rich ol { list-style-type: decimal; }
+  .hf-community-rich blockquote { margin: .6rem 0; border-left: 3px solid #94B7A8; padding-left: 14px; color: #52695E; }
+  .hf-community-rich a { color: #0B6552; text-decoration: underline; text-underline-offset: 3px; }
+  .hf-community-rich strong { font-weight: 700; }
+  .hf-rich-editor { min-height: 200px; outline: none; }
+  .hf-rich-editor p.is-editor-empty:first-child::before { content: attr(data-placeholder); }
 
   @media (min-width: 1024px) {
+    .hf-community-body { font-size: 17px; }
     .hf-screen-header-block,
     .hf-screen-header,
     .hf-page-top {
       padding-top: var(--hf-page-pt-lg);
     }
+
   }
 
   .hf-menu-panel {
@@ -269,7 +311,7 @@ body {
     @apply px-4 py-6 lg:mx-auto lg:max-w-content lg:px-10 lg:py-10;
   }
 
-  /* 데스크톱: 중앙 폰 프레임 / 실제 모바일·앱: 전체 너비 */
+  /* Responsive page canvas: one document scroll on desktop and mobile. */
   .app-canvas {
     @apply min-h-[100dvh] w-full overflow-x-hidden;
     background:
@@ -277,12 +319,12 @@ body {
   }
 
   .app-phone-shell {
-    @apply relative mx-auto min-h-[100dvh] w-full max-w-[100vw] overflow-x-hidden bg-[#F3EDE3] shadow-none lg:my-8 lg:min-h-[min(844px,calc(100vh-4rem))] lg:max-w-app lg:overflow-y-auto lg:rounded-[48px] lg:shadow-[0_50px_90px_-34px_rgba(24,34,28,.5),0_0_0_11px_#16181a,0_0_0_13px_#2c2f31];
+    @apply relative mx-auto min-h-[100dvh] w-full max-w-[100vw] overflow-x-hidden bg-[#F3EDE3] shadow-none;
   }
 
-  /* 관리자: 웹에서도 폰 테두리 유지 + 태블릿형 넓이 */
+  /* Operator panels are centered without a simulated device frame. */
   .app-phone-shell.admin-shell {
-    @apply lg:max-w-app lg:min-h-[min(844px,calc(100vh-4rem))];
+    @apply max-w-none;
   }
 
   .app-phone-shell .admin-panel-inner {
@@ -317,19 +359,19 @@ body {
   }
 
   .app-phone-shell.admin-shell .admin-stats-grid--pair {
-    @apply lg:grid-cols-1;
+    @apply lg:grid-cols-2;
   }
 
   .app-phone-shell.admin-shell .admin-stats-grid--triple {
-    @apply lg:grid-cols-1;
+    @apply lg:grid-cols-3;
   }
 
   .app-phone-shell.admin-shell .admin-stats-grid--quad {
-    @apply lg:grid-cols-1;
+    @apply lg:grid-cols-4;
   }
 
   .app-phone-shell.admin-shell .admin-dashboard-split {
-    @apply grid grid-cols-1 gap-4;
+    @apply grid grid-cols-1 gap-4 lg:grid-cols-2;
   }
 
   .section-stack {
@@ -805,6 +847,13 @@ body {
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* Expand the auth back link's touch area without shifting the existing form. */
+.hf-auth-back::before {
+  content: '';
+  position: absolute;
+  inset: -12px -21px -12px -16px;
 }
 .scrollbar-hide::-webkit-scrollbar {
   display: none;

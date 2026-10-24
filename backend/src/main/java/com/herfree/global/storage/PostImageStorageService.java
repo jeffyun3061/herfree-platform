@@ -48,24 +48,37 @@ public class PostImageStorageService {
     private final S3Properties s3Properties;
     private final S3Client s3Client;
     private final S3Presigner s3Presigner;
+    private final PostImageOptimizer postImageOptimizer;
 
-    /** 브라우저 → API → S3 (로컬·운영 동일) */
+    /** 브라우저 → API → S3 (로컬·운영 동일). 서버에서 긴 변·JPEG 재인코딩을 최종 적용한다. */
     public String uploadImage(Long userId, byte[] data, String contentType) {
         assertS3Configured();
         validateImage(contentType, data.length);
 
+        byte[] uploadBytes = data;
+        String uploadContentType = contentType;
         String extension = CONTENT_TYPE_TO_EXT.get(contentType);
+
+        PostImageOptimizer.OptimizedImage optimized = postImageOptimizer.optimizeOrNull(data);
+        if (optimized != null
+                && optimized.data().length > 0
+                && optimized.data().length <= MAX_BYTES) {
+            uploadBytes = optimized.data();
+            uploadContentType = optimized.contentType();
+            extension = optimized.extension();
+        }
+
         String objectKey = "posts/" + userId + "/" + UUID.randomUUID() + "." + extension;
 
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                 .bucket(s3Properties.bucket())
                 .key(objectKey)
-                .contentType(contentType)
-                .contentLength((long) data.length)
+                .contentType(uploadContentType)
+                .contentLength((long) uploadBytes.length)
                 .build();
 
         try {
-            s3Client.putObject(putObjectRequest, RequestBody.fromBytes(data));
+            s3Client.putObject(putObjectRequest, RequestBody.fromBytes(uploadBytes));
         } catch (SdkException ex) {
             throw mapS3Failure(ex, "upload");
         }

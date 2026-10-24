@@ -21,6 +21,7 @@ import com.herfree.domain.user.exception.UserNotFoundException;
 import com.herfree.domain.user.repository.UserProfileRepository;
 import com.herfree.domain.user.repository.UserRepository;
 import com.herfree.domain.user.service.UserConsentAgreementService;
+import com.herfree.domain.user.service.HealthDataConsentService;
 import com.herfree.domain.user.service.HealthStatisticsConsentService;
 import com.herfree.global.security.JwtProperties;
 import com.herfree.global.security.JwtTokenProvider;
@@ -53,6 +54,7 @@ public class AuthService {
     private final LoginLockoutService loginLockoutService;
     private final AnalyticsService analyticsService;
     private final UserConsentAgreementService userConsentAgreementService;
+    private final HealthDataConsentService healthDataConsentService;
     private final HealthStatisticsConsentService healthStatisticsConsentService;
 
     // 회원가입 — User와 UserProfile을 같은 트랜잭션에서 함께 저장한다.
@@ -97,6 +99,7 @@ public class AuthService {
         userProfileRepository.save(profile);
         userConsentAgreementService.recordSignupConsent(
                 user, request.agreeSensitive(), request.agreeAge(), request.agreeMarketing());
+        healthDataConsentService.recordInitialConsent(user, request.agreeSensitive());
         healthStatisticsConsentService.recordInitialConsent(user, request.agreeHealthStatistics());
         recordAnalyticsEvent(AnalyticsService.SIGNUP_COMPLETED, user.getId());
     }

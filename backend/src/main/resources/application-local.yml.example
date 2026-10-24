@@ -26,14 +26,14 @@ jwt:
 
 app:
   bootstrap:
-    enabled: true
-    email: admin@herfree.local
-    password: HerfreeAdmin01!
+    enabled: ${ADMIN_BOOTSTRAP_ENABLED:true}
+    email: ${ADMIN_EMAIL:}
+    password: ${ADMIN_PASSWORD:}
     nickname: HerfreeOps
     sync-existing: true
   demo-seed:
-    enabled: true
-    password: Demo1234!
+    enabled: ${DEMO_SEED_ENABLED:true}
+    password: ${DEMO_PASSWORD:}
     sync-existing: true
     supplement-enabled: true
   s3:

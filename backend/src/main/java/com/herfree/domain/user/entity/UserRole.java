@@ -20,6 +20,9 @@ public enum UserRole {
     // 운영 관리자 — 콘텐츠·회원 상태·집계 통계
     ADMIN,
 
+    // 기술 진단 전용 — 회원 관리·비공개 상담 권한은 부여하지 않는다.
+    DEVELOPER,
+
     // 최고 관리자 — 권한 부여/회수 (bootstrap 또는 SUPER_ADMIN만 승격)
     SUPER_ADMIN
 }

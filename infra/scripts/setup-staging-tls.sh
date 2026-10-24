@@ -50,7 +50,22 @@ install_nginx_config "${CONF_SRC}"
 nginx -t
 systemctl reload nginx
 
-certbot renew --quiet || true
+# The host's certbot timer handles routine renewal. Avoid making a release wait
+# for ACME when the installed certificate is valid for at least another month.
+if ! openssl x509 -in "${CERT_PATH}" -noout -checkend 2592000 >/dev/null 2>&1; then
+  renew_output="$(mktemp)"
+  if certbot renew --quiet >"${renew_output}" 2>&1; then
+    :
+  elif grep -qi "Another instance of Certbot is already running" "${renew_output}" \
+       && openssl x509 -in "${CERT_PATH}" -noout -checkend 0 >/dev/null 2>&1; then
+    echo "certbot renewal already running; keeping the valid certificate"
+  else
+    cat "${renew_output}" >&2
+    rm -f "${renew_output}"
+    exit 1
+  fi
+  rm -f "${renew_output}"
+fi
 
 nginx -t
 systemctl reload nginx

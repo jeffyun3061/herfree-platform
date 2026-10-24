@@ -10,10 +10,49 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface PostRepository extends JpaRepository<Post, Long> {
+
+    interface WaitingSummary {
+        String getBoardType();
+        long getPending();
+        long getOverdue();
+        Instant getOldest();
+    }
+    interface WaitingTask {
+        Long getId();
+        String getBoardType();
+        Instant getCreatedAt();
+    }
+
+    @Query("""
+            SELECT p.board.boardType AS boardType, COUNT(p) AS pending,
+                   SUM(CASE WHEN p.createdAt < :cutoff THEN 1 ELSE 0 END) AS overdue,
+                   MIN(p.createdAt) AS oldest
+            FROM Post p
+            WHERE p.status = com.herfree.domain.post.entity.PostStatus.ACTIVE
+              AND p.board.boardType IN ('INQUIRY', 'PRIVATE_CONSULT')
+              AND NOT EXISTS (SELECT c.id FROM Comment c WHERE c.post = p
+                  AND c.status = com.herfree.domain.comment.entity.CommentStatus.ACTIVE
+                  AND c.user.id <> p.user.id AND c.user.role IN ('MODERATOR', 'ADMIN', 'SUPER_ADMIN'))
+            GROUP BY p.board.boardType
+            """)
+    List<WaitingSummary> summarizeWaitingReplies(@Param("cutoff") Instant cutoff);
+
+    @Query("""
+            SELECT p.id AS id, p.board.boardType AS boardType, p.createdAt AS createdAt
+            FROM Post p
+            WHERE p.status = com.herfree.domain.post.entity.PostStatus.ACTIVE
+              AND p.board.boardType IN ('INQUIRY', 'PRIVATE_CONSULT')
+              AND NOT EXISTS (SELECT c.id FROM Comment c WHERE c.post = p
+                  AND c.status = com.herfree.domain.comment.entity.CommentStatus.ACTIVE
+                  AND c.user.id <> p.user.id AND c.user.role IN ('MODERATOR', 'ADMIN', 'SUPER_ADMIN'))
+            ORDER BY p.createdAt ASC, p.id ASC
+            """)
+    List<WaitingTask> findWaitingReplies(Pageable pageable);
 
     // 특정 게시판의 활성 게시글을 최신순으로 페이징 조회한다
     // 복합 인덱스 (board_id, status, created_at)를 활용한다
@@ -22,6 +61,41 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     // 게시글 상세 조회 — 삭제/숨김 상태 게시글은 404로 처리하기 위해 status도 함께 조회한다
     Optional<Post> findByIdAndStatus(Long id, PostStatus status);
+
+    @Query("""
+            SELECT p FROM Post p WHERE p.board.boardType = 'ANONYMOUS_QUESTION'
+            AND p.status = 'ACTIVE' AND p.visibility = 'PUBLIC'
+            AND (:answered IS NULL OR
+              (:answered = true AND EXISTS (SELECT c.id FROM Comment c WHERE c.post = p
+                AND c.status = 'ACTIVE' AND c.user.id <> p.user.id AND c.user.status = 'ACTIVE'
+                AND c.user.role IN ('MODERATOR','ADMIN','SUPER_ADMIN'))) OR
+              (:answered = false AND NOT EXISTS (SELECT c.id FROM Comment c WHERE c.post = p
+                AND c.status = 'ACTIVE' AND c.user.id <> p.user.id AND c.user.status = 'ACTIVE'
+                AND c.user.role IN ('MODERATOR','ADMIN','SUPER_ADMIN'))))
+            ORDER BY p.createdAt ASC, p.id ASC
+            """)
+    Page<Post> findAnonymousConcerns(@Param("answered") Boolean answered, Pageable pageable);
+
+    // 카운터는 엔티티 값을 읽고 다시 저장하지 않고 DB에서 바로 증가시켜 동시 요청 손실을 막는다.
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+            update Post p
+            set p.viewCount = p.viewCount + 1
+            where p.id = :postId and p.status = com.herfree.domain.post.entity.PostStatus.ACTIVE
+            """)
+    int incrementViewCount(@Param("postId") Long postId);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("update Post p set p.commentCount = p.commentCount + 1 where p.id = :postId")
+    int incrementCommentCount(@Param("postId") Long postId);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+            update Post p
+            set p.commentCount = case when p.commentCount > 0 then p.commentCount - 1 else 0 end
+            where p.id = :postId
+            """)
+    int decrementCommentCount(@Param("postId") Long postId);
 
     // 내 게시글 목록 조회에 사용 — 삭제된 글도 관리자 목적으로 조회할 수 있도록 상태를 파라미터로 받는다
     @EntityGraph(attributePaths = {"board", "user"})
