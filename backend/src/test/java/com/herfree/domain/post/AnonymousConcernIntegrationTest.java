@@ -71,6 +71,34 @@ class AnonymousConcernIntegrationTest {
         mvc.perform(get("/api/posts/999999/share-preview")).andExpect(status().isNotFound());
     }
 
+    @Test void serverShareabilityNeverGrantsPrivateOrMemberOnlySharing() throws Exception {
+        for (long id : java.util.List.of(95001L, 95002L)) {
+            mvc.perform(get("/api/posts/" + id)).andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.shareable").value(true));
+        }
+        for (long id : java.util.List.of(95003L, 95004L, 95006L)) {
+            mvc.perform(get("/api/posts/" + id).header("Authorization", token(93001, "USER")))
+                    .andExpect(status().isOk()).andExpect(jsonPath("$.data.shareable").value(false));
+            mvc.perform(get("/api/posts/" + id)).andExpect(status().isNotFound());
+            mvc.perform(get("/api/posts/" + id + "/comments")).andExpect(status().isNotFound());
+        }
+        for (long id : java.util.List.of(95003L, 95004L)) {
+            mvc.perform(get("/api/posts/" + id).header("Authorization", token(93004, "USER")))
+                    .andExpect(status().isNotFound());
+            mvc.perform(get("/api/posts/" + id + "/comments").header("Authorization", token(93004, "USER")))
+                    .andExpect(status().isNotFound());
+        }
+        db.update("UPDATE posts SET rich_content=? WHERE id=95005",
+                "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"private-rich-body\"}]}]}");
+        mvc.perform(get("/api/posts/95005")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.readable").value(false))
+                .andExpect(jsonPath("$.data.shareable").value(false))
+                .andExpect(jsonPath("$.data.richContent").isEmpty())
+                .andExpect(jsonPath("$.data.imageUrl").isEmpty())
+                .andExpect(jsonPath("$.data.title").value("******"));
+        mvc.perform(get("/api/posts/95005/comments")).andExpect(status().isForbidden());
+    }
+
     @Test void concernCreationRequiresPublicAcknowledgementAndCannotExposeNickname() throws Exception {
         String request="{\"boardId\":94001,\"title\":\"new concern\",\"content\":\"shared experience\",\"isAnonymous\":false,\"visibility\":\"PUBLIC\",\"publicDisclosureAccepted\":%s}";
         mvc.perform(post("/api/posts").header("Authorization",token(93001,"USER")).contentType(MediaType.APPLICATION_JSON).content(request.formatted(false))).andExpect(status().isBadRequest());
@@ -101,6 +129,45 @@ class AnonymousConcernIntegrationTest {
                 .andExpect(jsonPath("$.data.authorNickname").value("익명(나)"));
         mvc.perform(get("/api/posts/95001/comments")).andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.content[0].authorNickname").value("익명"));
+    }
+
+    @Test void legacyConcernAuthorCommentsStayAnonymousEvenWithoutTheStoredFlag() throws Exception {
+        var now = Timestamp.from(Instant.now());
+        db.update("INSERT INTO comments(id,post_id,user_id,content,status,is_anonymous,created_at,updated_at) VALUES (96001,95001,93001,'legacy author reply','ACTIVE',false,?,?)", now, now);
+        mvc.perform(get("/api/posts/95001/comments"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content[0].isAnonymous").value(true))
+                .andExpect(jsonPath("$.data.content[0].authorNickname").value("익명"));
+        mvc.perform(get("/api/posts/95001/comments").header("Authorization", token(93001, "USER")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content[0].isMyComment").value(true))
+                .andExpect(jsonPath("$.data.content[0].authorNickname").value("익명(나)"));
+    }
+
+    @Test void concernReportsDoNotReconnectAnonymousContentToMemberIdentity() throws Exception {
+        var now = Timestamp.from(Instant.now());
+        db.update("INSERT INTO comments(id,post_id,user_id,content,status,is_anonymous,created_at,updated_at) VALUES (96001,95001,93001,'reported author reply','ACTIVE',false,?,?)", now, now);
+        for (String target : java.util.List.of("\"targetType\":\"POST\",\"targetId\":95001", "\"targetType\":\"COMMENT\",\"targetId\":96001")) {
+            mvc.perform(post("/api/reports").header("Authorization", token(93004, "USER"))
+                            .contentType(MediaType.APPLICATION_JSON).content("{" + target + ",\"reason\":\"SPAM\"}"))
+                    .andExpect(status().isCreated());
+        }
+        String body = mvc.perform(get("/api/admin/reports/targets").header("Authorization", token(93002, "ADMIN")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.length()").value(2))
+                .andReturn().getResponse().getContentAsString();
+        for (var target : new com.fasterxml.jackson.databind.ObjectMapper().readTree(body).path("data")) {
+            assertThat(target.path("authorNickname").asText()).isEqualTo("익명");
+            assertThat(target.path("authorId").isNull()).isTrue();
+            assertThat(target.path("targetId").asLong()).isIn(95001L, 96001L);
+        }
+        assertThat(body).doesNotContain("private-real-nickname-1");
+        // Content moderation uses the target ID and must still work without exposing the member ID.
+        mvc.perform(patch("/api/admin/reports/targets/POST/95001/decision")
+                        .header("Authorization", token(93002, "ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"status\":\"ACCEPTED\",\"processNote\":\"spam confirmed\",\"moderationAction\":\"HIDE\"}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data[0].status").value("ACCEPTED"));
+        mvc.perform(get("/api/posts/95001")).andExpect(status().isNotFound());
     }
 
     @Test void questionAuthorStaysAnonymousInNestedRepliesWhileOtherMembersChooseTheirIdentity() throws Exception {
@@ -159,7 +226,7 @@ class AnonymousConcernIntegrationTest {
         db.update("UPDATE posts SET user_id=93002 WHERE id=95001");
         mvc.perform(post("/api/posts/95001/comments").header("Authorization",token(93002,"ADMIN"))
                 .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"own reply\",\"isAnonymous\":false}"))
-                .andExpect(status().isCreated());
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.data.operatorReply").value(false));
         mvc.perform(get("/api/admin/concerns").header("Authorization",token(93002,"ADMIN")))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.data.totalElements").value(1));
         db.update("UPDATE posts SET user_id=93001 WHERE id=95001");

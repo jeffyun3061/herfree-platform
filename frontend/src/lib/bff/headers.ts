@@ -20,12 +20,13 @@ export const RESPONSE_HEADER_ALLOWLIST = new Set([
   'x-request-id',
 ]);
 
-export function buildBackendRequestHeaders(request: NextRequest, accessToken?: string) {
+export function buildBackendRequestHeaders(request: NextRequest, accessToken?: string, mfaToken?: string) {
   const headers = new Headers();
   request.headers.forEach((value, key) => {
     if (REQUEST_HEADER_ALLOWLIST.has(key.toLowerCase())) headers.set(key, value);
   });
   if (accessToken) headers.set('Authorization', `Bearer ${accessToken}`);
+  if (accessToken && mfaToken) headers.set('X-Herfree-Admin-MFA', mfaToken);
   return headers;
 }
 

@@ -23,7 +23,7 @@ jobs:
       - name: Validate release shell scripts
         run: |
           set -euo pipefail
-          bash -n infra/scripts/*.sh
+          for script in infra/scripts/*.sh; do bash -n "${script}"; done
           grep -q 'DB_RUNTIME=' infra/scripts/render-release-env.sh
           grep -q 'sslMode=REQUIRED' infra/scripts/render-release-env.sh
           grep -q 'internal: true' docker-compose.release-local-db.yml
@@ -31,7 +31,9 @@ jobs:
           grep -q 'CONFIRM_RDS_TO_LOCAL_MIGRATION.*YES' infra/scripts/migrate-rds-to-local.sh
           grep -q 'row-count verification failed' infra/scripts/migrate-rds-to-local.sh
           grep -q -- '--sse AES256' infra/scripts/backup-db.sh
-          grep -q 'sha256sum -c' infra/scripts/restore-local-db-drill.sh
+          grep -q 'Backup checksum mismatch' infra/scripts/restore-local-db-drill.sh
+          grep -q 'Dedicated restore mount required' infra/scripts/restore-local-db-drill.sh
+          python3 -m unittest discover -s infra/scripts/tests -v
           grep -q 'DatabaseBackupAgeHours' infra/scripts/monitor-local-db.sh
           grep -q 'sslMode=VERIFY_IDENTITY' .env.staging.example
           grep -q 'sslMode=VERIFY_IDENTITY' .env.prod.example
@@ -53,7 +55,7 @@ jobs:
           grep -q 'delete-db-instance' infra/scripts/restore-rds-drill.sh
           grep -q 'static S3 credentials' infra/scripts/validate-release-env.sh
           grep -q 'HEALTH_DATA_REKEY_ON_STARTUP' infra/scripts/validate-release-env.sh
-          grep -q 'ADMIN_ACCESS_ALLOWED_CIDRS' infra/scripts/validate-release-env.sh
+          grep -q 'ADMIN_MFA_ENCRYPTION_KEY' infra/scripts/validate-release-env.sh
           grep -q 'AdminAccessGateFilter' backend/src/main/java/com/herfree/global/security/SecurityConfig.java
       - name: Verify immutable staging promotion
         run: python3 -m unittest discover -s infra/scripts/tests -p 'test_staging_promotion.py'
@@ -86,6 +88,14 @@ jobs:
         run: |
           chmod +x ./gradlew
           ./gradlew test --no-daemon
+          python3 - <<'PY'
+          import pathlib, xml.etree.ElementTree as ET
+          report = pathlib.Path('build/test-results/test/TEST-com.herfree.schema.MySqlSchemaValidationIntegrationTest.xml')
+          suite = ET.parse(report).getroot()
+          assert int(suite.get('tests', '0')) == 1, 'MySQL schema validation did not run'
+          assert all(int(suite.get(key, '0')) == 0 for key in ['failures', 'errors', 'skipped']), 'Real MySQL schema validation must pass without skipping'
+          print('MySQL 8.4.10 Flyway/ORM integration: 1 passed, 0 skipped')
+          PY
         env:
           JWT_SECRET: ci-test-jwt-secret-minimum-32-characters-long
       - name: Backend build
@@ -203,3 +213,4 @@ jobs:
           preview_pid=$!
           trap 'kill "$preview_pid"' EXIT
           npx playwright test e2e/signup-validation.spec.ts e2e/anonymous-concerns.spec.ts e2e/post-share-metadata.spec.ts --project=chromium --project=mobile-chromium --project=iphone-webkit
+          npx playwright test e2e/community-writing.spec.ts e2e/community-rich-writing.spec.ts e2e/operations-dashboards.spec.ts e2e/post-access.spec.ts --project=chromium --project=mobile-chromium --project=iphone-webkit

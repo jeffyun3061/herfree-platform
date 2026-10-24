@@ -29,12 +29,12 @@ export function usePostList(
 }
 
 export function usePostDetail(postId: number) {
-  const { data, isLoading, error, refetch } = useApiQuery(
+  const { data, isLoading, error, errorStatus, refetch } = useApiQuery(
     () => postsApi.fetchPost(postId),
     [postId],
     { enabled: postId > 0 },
   );
-  return { post: data, isLoading, error, refetch };
+  return { post: data, isLoading, error, errorStatus, refetch };
 }
 
 // 작성·수정·삭제 — 페이지 컴포넌트에서 fetch를 직접 다루지 않도록 mutation을 훅으로 분리

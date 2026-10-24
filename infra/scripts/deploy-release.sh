@@ -63,7 +63,11 @@ if [[ ! -f "${ENV_FILE}" || ! -f "${COMPOSE_FILE}" ]]; then
 fi
 
 db_runtime="$(sed -n 's/^DB_RUNTIME=//p' "${ENV_FILE}" | tail -n 1 | tr -d '\r')"
-MYSQL_ENV_FILE="${CONFIG_DIR}/.env.mysql.${DEPLOY_ENV}"
+if [[ "${DEPLOY_ENV}" == "production" ]]; then
+  MYSQL_ENV_FILE="${CONFIG_DIR}/.env.mysql.prod"
+else
+  MYSQL_ENV_FILE="${CONFIG_DIR}/.env.mysql.staging"
+fi
 MYSQL_DATA_DIR="${HERFREE_MYSQL_DATA_DIR:-/var/lib/herfree/mysql-${DEPLOY_ENV}}"
 compose_files=(-f "${COMPOSE_FILE}")
 if [[ "${db_runtime}" == "local" ]]; then
@@ -95,6 +99,8 @@ fi
 
 mkdir -p "${STATE_DIR}"
 chmod 700 "${STATE_DIR}"
+install -d -m 0755 "${APP_DIR}/operations/${DEPLOY_ENV}"
+export OPERATIONS_SNAPSHOT_DIR="${APP_DIR}/operations"
 CURRENT_IMAGE_FILE="${STATE_DIR}/${DEPLOY_ENV}.current-image"
 PREVIOUS_IMAGE_FILE="${STATE_DIR}/${DEPLOY_ENV}.previous-image"
 REJECTED_IMAGE_FILE="${STATE_DIR}/${DEPLOY_ENV}.rejected-image"

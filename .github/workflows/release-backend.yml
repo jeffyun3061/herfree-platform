@@ -44,12 +44,13 @@ jobs:
           AMPLIFY_BRANCH: develop
         run: |
           set -euo pipefail
-          test "${GITHUB_REF}" = "refs/heads/main"
+          [[ "${GITHUB_REF}" == refs/heads/main || "${GITHUB_REF}" == refs/heads/develop ]]
+          test "${GITHUB_SHA}" = "$(git ls-remote origin "${GITHUB_REF}" | cut -f1)"
           : "${AMPLIFY_APP_ID:?STAGING_AMPLIFY_APP_ID is required}"
           git fetch --no-tags origin "${AMPLIFY_BRANCH}"
           frontend_sha="$(git rev-parse "origin/${AMPLIFY_BRANCH}")"
           if ! git diff --quiet "${GITHUB_SHA}" "${frontend_sha}" -- frontend amplify.yml; then
-            echo "main and ${AMPLIFY_BRANCH} do not contain the same frontend release."
+            echo "The selected candidate and ${AMPLIFY_BRANCH} do not contain the same frontend release."
             exit 1
           fi
           latest_job="$(aws amplify list-jobs \
@@ -57,14 +58,10 @@ jobs:
             --branch-name "${AMPLIFY_BRANCH}" \
             --max-results 2 \
             --output json)"
-          # A manual rebuild of the same branch reports HEAD; require its
-          # immediately preceding successful build to identify the exact SHA.
+          # Candidate validation on develop is allowed before main approval.
+          # HEAD alone is not reliable evidence of what was built.
           jq -e --arg commit "${frontend_sha}" \
-            '(.jobSummaries[0].status == "SUCCEED") and
-             ((.jobSummaries[0].commitId == $commit) or
-              (.jobSummaries[0].commitId == "HEAD" and
-               .jobSummaries[1].status == "SUCCEED" and
-               .jobSummaries[1].commitId == $commit))' \
+            '(.jobSummaries[0].status == "SUCCEED") and (.jobSummaries[0].commitId == $commit)' \
             <<<"${latest_job}" >/dev/null || {
               echo "Existing Amplify staging branch/build is missing or stale; refusing to create or start one automatically."
               echo "Restore the existing develop branch/build manually, then rerun this workflow."
@@ -133,6 +130,7 @@ jobs:
             infra/nginx/herfree-staging.conf \
             infra/nginx/herfree-staging-bootstrap.conf \
             infra/scripts/backup-db.sh \
+            infra/scripts/approve-admin-mfa-enrollment.sh \
             infra/scripts/deploy-release.sh \
             infra/scripts/install-local-db-ops.sh \
             infra/scripts/migrate-rds-to-local.sh \
@@ -385,6 +383,7 @@ jobs:
             infra/nginx/herfree-production.conf \
             infra/nginx/herfree-production-bootstrap.conf \
             infra/scripts/backup-db.sh \
+            infra/scripts/approve-admin-mfa-enrollment.sh \
             infra/scripts/deploy-release.sh \
             infra/scripts/install-local-db-ops.sh \
             infra/scripts/migrate-rds-to-local.sh \

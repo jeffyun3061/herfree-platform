@@ -27,7 +27,13 @@ public class AdminAuditFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        return !request.getRequestURI().startsWith("/api/admin/")
+        Authentication actor = SecurityContextHolder.getContext().getAuthentication();
+        boolean operatorContent = AdminAccessGateFilter.privilegedCommunityPath(request.getRequestURI())
+                && actor != null && actor.getAuthorities().stream().anyMatch(a ->
+                    java.util.Set.of("ROLE_MODERATOR", "ROLE_ADMIN", "ROLE_SUPER_ADMIN").contains(a.getAuthority()));
+        return !(request.getRequestURI().startsWith("/api/admin/")
+                || operatorContent
+                || (request.getRequestURI().startsWith("/api/auth/admin-mfa/") && "POST".equals(request.getMethod())))
                 || "OPTIONS".equalsIgnoreCase(request.getMethod());
     }
 

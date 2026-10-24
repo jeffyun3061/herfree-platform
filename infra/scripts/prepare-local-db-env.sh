@@ -18,7 +18,11 @@ APP_DIR="${HERFREE_APP_DIR:-/opt/herfree}"
 CONFIG_DIR="${HERFREE_CONFIG_DIR:-${APP_DIR}/config}"
 AWS_REGION="${AWS_REGION:-ap-northeast-2}"
 SECRET_ID="herfree/${DEPLOY_ENV}/db-app"
-MYSQL_ENV_FILE="${CONFIG_DIR}/.env.mysql.${DEPLOY_ENV}"
+if [[ "${DEPLOY_ENV}" == "production" ]]; then
+  MYSQL_ENV_FILE="${CONFIG_DIR}/.env.mysql.prod"
+else
+  MYSQL_ENV_FILE="${CONFIG_DIR}/.env.mysql.staging"
+fi
 
 DB_JSON="$(aws secretsmanager get-secret-value \
   --region "${AWS_REGION}" --secret-id "${SECRET_ID}" \

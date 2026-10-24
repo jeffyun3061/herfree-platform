@@ -21,6 +21,10 @@ export const HIDE_NAV_PATHS = [
   '/reset-password',
   '/auth',
   '/admin',
+  '/community/write',
+  '/community/posts',
+  '/inquiry/write',
+  '/consult/write',
 ] as const;
 
 export const HIDE_SHELL_HEADER_PATHS = [

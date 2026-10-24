@@ -4,6 +4,11 @@ services:
     restart: unless-stopped
     env_file:
       - ${APP_ENV_FILE:?APP_ENV_FILE is required}
+    environment:
+      APP_OPERATIONS_ENVIRONMENT: ${DEPLOY_ENV:?DEPLOY_ENV is required}
+      APP_OPERATIONS_IMAGE: ${API_IMAGE:?API_IMAGE is required}
+    volumes:
+      - ${OPERATIONS_SNAPSHOT_DIR:-/opt/herfree/operations}/${DEPLOY_ENV:?DEPLOY_ENV is required}:/run/herfree-operations:ro
     ports:
       - "${API_BIND_HOST:-127.0.0.1}:${API_BIND_PORT:-8080}:8080"
     read_only: true
