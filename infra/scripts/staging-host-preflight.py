@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Fixed, read-only staging SSM probe. Never print env values or application data."""
 import json
+import base64
 import re
 import subprocess
 from pathlib import Path
@@ -9,6 +10,13 @@ from pathlib import Path
 def read_env(path):
     return dict(line.split("=", 1) for line in path.read_text().splitlines()
                 if "=" in line and not line.startswith("#"))
+
+
+def independent_key(key, other_keys):
+    try:
+        return bool(key) and len(base64.b64decode(key, validate=True)) == 32 and key not in other_keys
+    except (ValueError, TypeError):
+        return False
 
 
 def inspect(root=Path("/opt/herfree"), run=subprocess.check_output):
@@ -23,11 +31,21 @@ def inspect(root=Path("/opt/herfree"), run=subprocess.check_output):
         "profile": "staging",
         "configPrivate": path.stat().st_mode & 0o077 == 0,
         "localDatabase": env.get("DB_RUNTIME") == "local",
-        "mfaKeyConfigured": bool(re.fullmatch(r"[A-Za-z0-9+/]{43}=", key))
-            and key not in (env.get("HEALTH_DATA_ENCRYPTION_KEY"), env.get("JWT_SECRET")),
+        "mfaKeyConfigured": independent_key(key, (env.get("HEALTH_DATA_ENCRYPTION_KEY"), env.get("JWT_SECRET"))),
         "mfaRequired": env.get("ADMIN_MFA_REQUIRED") == "true",
         "bootstrapDisabled": env.get("ADMIN_BOOTSTRAP_ENABLED") == "false",
     }
+    try:
+        # Read on the existing instance role; never return the secret JSON or its values.
+        secret = json.loads(run(["aws", "secretsmanager", "get-secret-value", "--region", "ap-northeast-2",
+                                 "--secret-id", "herfree/staging/app-config", "--query", "SecretString",
+                                 "--output", "text", "--no-cli-pager"], text=True,
+                                stderr=subprocess.DEVNULL, timeout=20))
+        report["mfaKeyAvailableForRelease"] = independent_key(secret.get("adminMfaEncryptionKey"),
+                                                             (secret.get("healthDataEncryptionKey"), secret.get("jwtSecret")))
+        del secret
+    except Exception:
+        report["mfaKeyAvailableForRelease"] = "unavailable"
     image = root / ".deploy/staging.current-image"
     if image.exists():
         match = re.search(r"(?:@sha256:([a-f0-9]{64})|:([a-f0-9]{40}))$", image.read_text().strip())
