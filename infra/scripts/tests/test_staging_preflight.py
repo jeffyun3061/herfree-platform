@@ -77,6 +77,7 @@ class PreflightTests(unittest.TestCase):
                 commands.append(args)
                 if args[0] == "aws":
                     self.assertIn("herfree/staging/app-config", args)
+                    self.assertNotIn("--no-cli-pager", args)  # EC2 uses AWS CLI v1.
                     return json.dumps({"adminMfaEncryptionKey": "a" * 43 + "=", "jwtSecret": "sentinel-secret"})
                 if args[1] == "ps":
                     return "abcdef012345\n"

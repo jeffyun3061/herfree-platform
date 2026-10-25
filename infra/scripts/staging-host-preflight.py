@@ -39,7 +39,7 @@ def inspect(root=Path("/opt/herfree"), run=subprocess.check_output):
         # Read on the existing instance role; never return the secret JSON or its values.
         secret = json.loads(run(["aws", "secretsmanager", "get-secret-value", "--region", "ap-northeast-2",
                                  "--secret-id", "herfree/staging/app-config", "--query", "SecretString",
-                                 "--output", "text", "--no-cli-pager"], text=True,
+                                 "--output", "text"], text=True,
                                 stderr=subprocess.DEVNULL, timeout=20))
         report["mfaKeyAvailableForRelease"] = independent_key(secret.get("adminMfaEncryptionKey"),
                                                              (secret.get("healthDataEncryptionKey"), secret.get("jwtSecret")))
