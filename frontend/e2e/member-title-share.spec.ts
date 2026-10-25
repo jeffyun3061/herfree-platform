@@ -42,6 +42,9 @@ test('member-only title sharing needs explicit consent and resets when the title
   let submitted: Record<string, unknown> | null = null;
   await fixture(page, true, body => { submitted = body; });
   await page.goto('/community/write?boardId=1');
+  await expect(page.getByText('비밀글로 작성')).toHaveCount(0);
+  await expect(page.getByText('익명으로 작성')).toBeVisible();
+  await expect(page.getByText('익명 선택은 닉네임만 가립니다.')).toBeVisible();
   await page.getByRole('radio', { name: /회원 공개/ }).check();
   const titleShare = page.getByRole('checkbox', { name: /로그인 전에도 글 제목만 공유 미리보기에 공개/ });
   await expect(titleShare).not.toBeChecked();
@@ -57,6 +60,19 @@ test('member-only title sharing needs explicit consent and resets when the title
   await expect.poll(() => submitted).toMatchObject({
     title: '제목 공개에 동의한 글', visibility: 'MEMBERS_ONLY', shareTitlePublicly: true,
   });
+});
+
+test('anonymous author choice does not silently change public visibility', async ({ page }) => {
+  let submitted: Record<string, unknown> | null = null;
+  await fixture(page, true, body => { submitted = body; });
+  await page.goto('/community/write?boardId=1');
+  await page.locator('#title').fill('익명 공개 글');
+  await page.getByLabel('본문', { exact: true }).fill('닉네임만 숨긴 공개 본문');
+  await page.getByText('익명으로 작성', { exact: true }).click();
+  await expect(page.getByRole('checkbox', { name: '익명으로 작성' })).toBeChecked();
+  await expect(page.getByRole('radio', { name: /전체 공개/ })).toBeChecked();
+  await page.locator('button[type=submit]').last().click();
+  await expect.poll(() => submitted).toMatchObject({ visibility: 'PUBLIC', isAnonymous: true });
 });
 
 test('editing a shared title requires a new choice', async ({ page }) => {

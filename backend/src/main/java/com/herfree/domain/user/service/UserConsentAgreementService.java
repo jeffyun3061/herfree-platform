@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
 public class UserConsentAgreementService {
 
     private static final String TERMS_VERSION = "2026-08-04";
-    private static final String PRIVACY_VERSION = "2026-08-04";
+    private static final String PRIVACY_VERSION = "2026-10-25";
 
     private final UserConsentAgreementRepository userConsentAgreementRepository;
 
