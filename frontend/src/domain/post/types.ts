@@ -35,6 +35,7 @@ export type PostDetail = {
   isMyPost: boolean;
   readable: boolean;
   shareable: boolean;
+  shareTitlePublicly: boolean;
   imageUrl: string | null;
   staffReplied: boolean;
   createdAt: string;
@@ -50,6 +51,7 @@ export type PostCreateInput = {
   visibility?: PostVisibility;
   imageUrl?: string | null;
   publicDisclosureAccepted?: boolean;
+  shareTitlePublicly?: boolean;
 };
 
 export type PostUpdateInput = {
@@ -58,6 +60,7 @@ export type PostUpdateInput = {
   richContent?: string | null;
   isAnonymous: boolean;
   imageUrl?: string | null;
+  shareTitlePublicly?: boolean;
 };
 
 export type PostImageUploadUrlInput = {

@@ -50,6 +50,9 @@ public class Post extends BaseTimeEntity {
     @Column(name = "rich_content", columnDefinition = "LONGTEXT")
     private String richContent;
 
+    @Column(name = "share_title_publicly", nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
+    private boolean shareTitlePublicly;
+
     // 조회수는 매 요청마다 +1되므로, 읽기 성능에 영향을 줄 수 있다.
     // 트래픽이 많아지면 Redis 캐시로 관리하고 주기적으로 DB에 반영하는 방식을 고려한다.
     @Column(nullable = false)
@@ -103,6 +106,8 @@ public class Post extends BaseTimeEntity {
 
     // 게시글 내용 수정 — setter 대신 명시적인 도메인 메서드를 써서 "수정"이라는 행위를 표현한다
     public void update(String title, String content, boolean isAnonymous) {
+        // A changed title needs a fresh, explicit sharing choice.
+        this.shareTitlePublicly = false;
         this.title = title;
         this.content = content;
         this.isAnonymous = isAnonymous;
@@ -110,6 +115,8 @@ public class Post extends BaseTimeEntity {
     }
 
     public void updateRichContent(String validatedRichContent) { this.richContent = validatedRichContent; }
+
+    public void setShareTitlePublicly(boolean shareTitlePublicly) { this.shareTitlePublicly = shareTitlePublicly; }
 
     // 관리자에 의한 숨김 처리 — 작성자는 볼 수 없지만 데이터는 보존된다
     // 신고 처리 결과로도 호출될 수 있으므로 도메인 메서드로 분리한다
