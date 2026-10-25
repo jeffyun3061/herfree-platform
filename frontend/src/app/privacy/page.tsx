@@ -30,7 +30,7 @@ export default function PrivacyPage() {
       <PageHeader title="개인정보처리방침" showBack mobileOnly />
       <main className="page-container max-w-2xl py-8 lg:py-12">
         <h1 className="hidden text-2xl font-semibold text-ink lg:block">Herpfree 개인정보처리방침</h1>
-        <p className="mt-2 text-[12px] hf-text-muted">시행일: 2026년 8월 4일 · 최종 개정일: 2026년 8월 4일</p>
+        <p className="mt-2 text-[12px] hf-text-muted">시행일: 2026년 10월 25일 · 최종 개정일: 2026년 10월 25일</p>
 
         <div className="prose-policy mt-8 space-y-7 text-sm leading-relaxed text-cream-foreground">
           <Section title="민감정보 처리 안내" id="health-data">
@@ -68,7 +68,7 @@ export default function PrivacyPage() {
           </Section>
 
           <Section title="3. 공개·비공개 게시물과 제3자 제공">
-            <p>공개 게시판의 글·댓글·이미지는 공개범위에 따라 표시됩니다. 공개를 선택하면 비회원에게도 표시될 수 있고, 회원 전용을 선택하면 로그인한 회원에게 표시될 수 있습니다. 작성 화면에서 공개 가능성과 비공개 선택 방법을 안내하며, 개인일지·운영 문의·상담문의의 원문은 다른 회원에게 공개하지 않습니다.</p>
+            <p>공개 게시판의 글·댓글·이미지는 공개범위에 따라 표시됩니다. 공개를 선택하면 비회원에게도 표시될 수 있고, 회원 전용을 선택하면 로그인한 회원에게 표시될 수 있습니다. 회원 전용 일반 글은 작성자가 별도로 선택한 경우 제목만 비회원과 외부 링크 미리보기에 공개될 수 있습니다. 본문·작성자·댓글은 미리보기에 포함되지 않고 기존 글은 기본적으로 제목 공개가 꺼져 있습니다. 익명 고민·질문 글은 닉네임을 숨겨도 본문과 댓글이 비회원에게 공개되고 검색·링크 미리보기에 표시될 수 있습니다. 작성 화면에서 공개 가능성과 비공개 선택 방법을 안내하며, 개인일지·운영 문의·상담문의의 원문은 다른 회원에게 공개하지 않습니다.</p>
             <p>회사는 개인정보를 판매하거나 광고 목적으로 제공하지 않습니다. 다만 회원이 직접 공개한 게시물, 적법한 관계기관 요청, 생명·신체·재산 보호 등 법률상 근거가 있는 경우 필요한 최소 범위에서 제공할 수 있습니다.</p>
           </Section>
 
@@ -101,7 +101,7 @@ export default function PrivacyPage() {
           </Section>
 
           <Section title="7. 안전성 확보조치">
-            <p>접근권한 최소화, 관리자 역할·접근망 제한, 감사 로그, 인증 시도 제한, CSRF·Origin 검증, HttpOnly·SameSite 쿠키, TLS, DB·S3 비공개 정책, 개인일지 필드 암호화, 비밀번호 해시, 백업·복원 통제를 적용합니다. 이러한 조치가 모든 침해 가능성을 제거한다는 의미는 아닙니다.</p>
+            <p>접근권한 최소화, 관리자 역할·추가 인증(MFA), 감사 로그, 인증 시도 제한, CSRF·Origin 검증, HttpOnly·SameSite 쿠키, TLS, DB·S3 비공개 정책, 개인일지 필드 암호화, 비밀번호 해시, 백업·복원 통제를 적용합니다. 이러한 조치가 모든 침해 가능성을 제거한다는 의미는 아닙니다.</p>
           </Section>
 
           <Section title="8. 정보주체의 권리와 행사 방법">

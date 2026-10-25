@@ -48,6 +48,7 @@ class AnonymousConcernIntegrationTest {
                 .andExpect(status().isOk()).andExpect(header().string("Cache-Control","no-store"))
                 .andExpect(jsonPath("$.data.title").value("title-2"))
                 .andExpect(jsonPath("$.data.description").value("body-2"))
+                .andExpect(jsonPath("$.data.mode").value("FULL"))
                 .andExpect(jsonPath("$.data.authorNickname").doesNotExist())
                 .andExpect(jsonPath("$.data.authorIpMasked").doesNotExist());
         assertThat(db.queryForObject("SELECT view_count FROM posts WHERE id=95002",Integer.class)).isZero();
@@ -69,6 +70,59 @@ class AnonymousConcernIntegrationTest {
             mvc.perform(get("/api/posts/"+id+"/share-preview").header("Authorization",token(93002,"ADMIN"))).andExpect(status().isNotFound());
         }
         mvc.perform(get("/api/posts/999999/share-preview")).andExpect(status().isNotFound());
+    }
+
+    @Test void memberTitleSharingRequiresConsentAndNeverIncludesBodyOrMaskedBoardTitle() throws Exception {
+        assertThat(db.queryForObject("SELECT share_title_publicly FROM posts WHERE id=95006", Boolean.class)).isFalse();
+        db.update("UPDATE posts SET share_title_publicly=true WHERE id=95006");
+        mvc.perform(get("/api/posts/95006/share-preview"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.mode").value("TITLE_ONLY"))
+                .andExpect(jsonPath("$.data.title").value("title-6"))
+                .andExpect(jsonPath("$.data.description").value("로그인하면 글을 볼 수 있어요."))
+                .andExpect(jsonPath("$.data.content").doesNotExist())
+                .andExpect(jsonPath("$.data.authorNickname").doesNotExist());
+        mvc.perform(get("/api/posts/95006")).andExpect(status().isNotFound());
+        mvc.perform(get("/api/posts/95006").header("Authorization", token(93001, "USER")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.shareable").value(true));
+
+        // Even a bad stored flag cannot expose titles of sensitive boards.
+        db.update("UPDATE posts SET share_title_publicly=true, visibility='MEMBERS_ONLY' WHERE id=95003");
+        mvc.perform(get("/api/posts/95003/share-preview")).andExpect(status().isNotFound());
+        db.update("UPDATE posts SET share_title_publicly=true WHERE id=95007");
+        mvc.perform(get("/api/posts/95007/share-preview")).andExpect(status().isNotFound());
+
+        mvc.perform(patch("/api/posts/95006").header("Authorization", token(93001, "USER"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"title\":\"changed title\",\"content\":\"body-6\",\"isAnonymous\":false}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.shareable").value(false));
+        mvc.perform(get("/api/posts/95006/share-preview")).andExpect(status().isNotFound());
+    }
+
+    @Test void invalidTitleSharingChoiceIsRejectedOnPublicAndPrivateBoards() throws Exception {
+        for (long boardId : java.util.List.of(94001L, 94003L)) {
+            String request = "{\"boardId\":" + boardId + ",\"title\":\"sensitive title\",\"content\":\"body\",\"visibility\":\"PUBLIC\",\"publicDisclosureAccepted\":true,\"shareTitlePublicly\":true}";
+            mvc.perform(post("/api/posts").header("Authorization", token(93001, "USER"))
+                    .contentType(MediaType.APPLICATION_JSON).content(request)).andExpect(status().isBadRequest());
+        }
+    }
+
+    @Test void authorCanOptInOnMemberPostAndMustOptInAgainAfterChangingTitle() throws Exception {
+        String request = "{\"boardId\":94002,\"title\":\"chosen title\",\"content\":\"sensitive body\",\"visibility\":\"MEMBERS_ONLY\",\"shareTitlePublicly\":true}";
+        var created = mvc.perform(post("/api/posts").header("Authorization", token(93001, "USER"))
+                .contentType(MediaType.APPLICATION_JSON).content(request))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.shareable").value(true))
+                .andReturn();
+        long id = ((Number) com.jayway.jsonpath.JsonPath.read(created.getResponse().getContentAsString(), "$.data.id")).longValue();
+        mvc.perform(get("/api/posts/" + id + "/share-preview"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.title").value("chosen title"))
+                .andExpect(jsonPath("$.data.description").value("로그인하면 글을 볼 수 있어요."));
+        mvc.perform(patch("/api/posts/" + id).header("Authorization", token(93001, "USER"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"title\":\"new title\",\"content\":\"sensitive body\",\"isAnonymous\":false}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.shareable").value(false));
+        mvc.perform(get("/api/posts/" + id + "/share-preview")).andExpect(status().isNotFound());
     }
 
     @Test void serverShareabilityNeverGrantsPrivateOrMemberOnlySharing() throws Exception {

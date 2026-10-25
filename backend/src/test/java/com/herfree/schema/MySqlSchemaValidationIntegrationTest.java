@@ -51,7 +51,7 @@ class MySqlSchemaValidationIntegrationTest {
         var diagnostic = operations.overview();
         assertThat(diagnostic.database().state()).isEqualTo("UP");
         assertThat(diagnostic.database().version()).startsWith("8.4.10");
-        assertThat(diagnostic.database().migrationVersion()).isEqualTo("46");
+        assertThat(diagnostic.database().migrationVersion()).isEqualTo("47");
         assertThat(diagnostic.database().migrationsSuccessful()).isTrue();
         assertThat(diagnostic.database().tables()).extracting(com.herfree.domain.operations.DeveloperOperationsService.TableSize::name)
                 .contains("users", "posts", "admin_mfa_factors");

@@ -155,7 +155,7 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
             <p className="text-[12.5px] text-[#F3EDE3]/70">담담한 하루를 함께 기록해요</p>
           ) : (
             <>
-              <p className="text-[12px] text-[#F3EDE3]/60">익명 기반 비공개 커뮤니티</p>
+              <p className="text-[12px] text-[#F3EDE3]/60">익명 고민과 회원 커뮤니티</p>
               <div className="mt-4 flex gap-[9px]">
                 <Link
                   href="/login"

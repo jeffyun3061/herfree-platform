@@ -20,9 +20,8 @@ public class PostSharePreviewService {
     public PostSharePreviewResponse getPreview(Long postId) {
         var post = postRepository.findByIdAndStatus(postId, PostStatus.ACTIVE)
                 .orElseThrow(PostNotFoundException::new);
-        if (!PostVisibilityPolicy.isPublicShareable(post)) {
-            throw new PostNotFoundException();
-        }
-        return PostSharePreviewResponse.from(post);
+        if (PostVisibilityPolicy.isPublicShareable(post)) return PostSharePreviewResponse.full(post);
+        if (PostVisibilityPolicy.isTitleOnlyShareable(post)) return PostSharePreviewResponse.titleOnly(post);
+        throw new PostNotFoundException();
     }
 }

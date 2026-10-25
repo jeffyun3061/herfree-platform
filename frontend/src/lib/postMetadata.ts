@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { communityPostUrl } from '@/domain/post/share';
 
-type PublicPreview = { id: number; title: string; description: string; boardType: string };
+type PublicPreview = { id: number; title: string; description: string; boardType: string; mode: 'FULL' | 'TITLE_ONLY' };
 
 export async function loadPublicPostPreview(postId: string): Promise<PublicPreview | null> {
   if (!/^[1-9]\d*$/.test(postId) || !Number.isSafeInteger(Number(postId))) return null;
@@ -18,8 +18,11 @@ export async function loadPublicPostPreview(postId: string): Promise<PublicPrevi
     if (envelope?.success !== true || value?.id !== Number(postId) || typeof value.title !== 'string' ||
       !value.title.trim() || value.title.length > 200 || typeof value.description !== 'string' ||
       value.description.length > 500 || typeof value.boardType !== 'string' ||
+      !['FULL', 'TITLE_ONLY'].includes(value.mode) ||
       ['INQUIRY', 'PRIVATE_CONSULT', 'SECRET_STORY'].includes(value.boardType)) return null;
-    return { id: value.id, title: value.title, description: value.description, boardType: value.boardType };
+    return { id: value.id, title: value.title,
+      description: value.mode === 'TITLE_ONLY' ? '로그인하면 글을 볼 수 있어요.' : value.description,
+      boardType: value.boardType, mode: value.mode };
   } catch { return null; }
 }
 
@@ -33,6 +36,6 @@ export function publicPostMetadata(postId: string, preview: PublicPreview | null
     title: preview ? title : { absolute: title }, description, alternates: { canonical: url },
     openGraph: { title, description, url, siteName: '헤르프리', locale: 'ko_KR', type: preview ? 'article' : 'website', images: [image] },
     twitter: { card: 'summary_large_image', title, description, images: [image.url] },
-    robots: { index: preview?.boardType === 'ANONYMOUS_QUESTION', follow: Boolean(preview) },
+    robots: { index: preview?.mode === 'FULL' && preview.boardType === 'ANONYMOUS_QUESTION', follow: preview?.mode === 'FULL' },
   };
 }

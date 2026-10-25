@@ -104,6 +104,9 @@ RequireText "memo field encryption scope in terms" $termsPage "자유입력 메�
 RequireText "structured health data control scope" $privacyPage "구조화된 값.*DB 저장 암호화"
 RequireText "aggregate data is not called fully anonymous" $privacyPage "완전한 익명화"
 RequireText "public/member-only visibility" $termsPage "공개.*비회원.*회원 전용"
+RequireText "member title-only preview in policy" $privacyPage "회원 전용 일반 글.*제목만 비회원.*본문.*작성자.*댓글"
+RequireText "member title-only preview in canonical policy" $privacyDoc "회원 전용 일반 글.*제목이 비회원.*본문.*작성자.*댓글"
+RequireText "anonymous concern public body in policy" $privacyPage "익명 고민.*본문과 댓글이 비회원에게 공개"
 RequireText "non-medical inquiry boundary" $termsPage "상담문의.*의료 상담"
 RequireText "JWT and cookie boundary" $termsPage "HttpOnly.*SameSite.*access JWT"
 RequireText "health consent policy version is explicit" $healthConsentService 'POLICY_VERSION\s*=\s*"2026-08-04"'

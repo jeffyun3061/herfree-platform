@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>헤르프리 공유 카드 목업</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #f3ede3; color: #182923; font-family: "Malgun Gothic", "Apple SD Gothic Neo", sans-serif; }
+    main { max-width: 1180px; margin: auto; padding: 58px 38px 70px; }
+    .eyebrow { color: #496d61; font-size: 14px; font-weight: 800; letter-spacing: .08em; }
+    h1 { font-size: 34px; margin: 11px 0 12px; letter-spacing: -.04em; }
+    .intro { color: #65746d; font-size: 17px; margin: 0 0 38px; }
+    .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .case { min-width: 0; }
+    .label { min-height: 52px; font-size: 16px; font-weight: 800; line-height: 1.5; }
+    .card { overflow: hidden; background: white; border: 1px solid #deddd4; border-radius: 18px; box-shadow: 0 12px 30px #1b3d3214; }
+    .visual { height: 168px; display: grid; place-items: center; background: #e6eee9; }
+    .mark { width: 126px; height: 126px; object-fit: contain; }
+    .body { min-height: 140px; padding: 20px; }
+    .title { font-size: 19px; font-weight: 800; line-height: 1.45; letter-spacing: -.04em; }
+    .summary { color: #63736a; font-size: 14px; line-height: 1.6; margin-top: 9px; }
+    .domain { color: #7f8b84; font-size: 12px; margin-top: 17px; }
+    .note { margin: 15px 1px 0; color: #5e6c64; font-size: 13px; line-height: 1.6; }
+    .legend { margin-top: 30px; padding: 18px 22px; border-left: 4px solid #0b3b36; background: #e8f0ea; border-radius: 0 12px 12px 0; font-size: 14px; line-height: 1.6; }
+    @media (max-width: 760px) { main { padding: 30px 17px; } h1 { font-size: 27px; } .cards { grid-template-columns: 1fr; } .label { min-height: 0; margin-bottom: 10px; } }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="eyebrow">HERFREE · 공유 미리보기</div>
+    <h1>글의 공개 범위에 따라 달라집니다</h1>
+    <p class="intro">합성 제목으로 만든 링크 카드 예시입니다. 실제 카카오톡·메신저의 테두리와 글줄은 다를 수 있습니다.</p>
+    <div class="cards">
+      <div class="case">
+        <div class="label">① 공개 글·공개 익명 고민</div>
+        <div class="card"><div class="visual"><img class="mark" src="../../frontend/public/brand/logo-hfree-on-primary.png" alt="헤르프리 공통 이미지"></div><div class="body"><div class="title">같은 고민을 나눠요</div><div class="summary">혼자 고민했던 이야기를 나눕니다. 경험을 듣고 싶어요.</div><div class="domain">www.herpfree.co.kr</div></div></div>
+        <p class="note">제목과 짧은 요약을 보여줍니다. 링크를 누르면 비회원도 읽을 수 있습니다.</p>
+      </div>
+      <div class="case">
+        <div class="label">② 회원 전용 · 작성자가 제목 공유 선택</div>
+        <div class="card"><div class="visual"><img class="mark" src="../../frontend/public/brand/logo-hfree-on-primary.png" alt="헤르프리 공통 이미지"></div><div class="body"><div class="title">제목 공개에 동의한 글</div><div class="summary">로그인하면 글을 볼 수 있어요.</div><div class="domain">www.herpfree.co.kr</div></div></div>
+        <p class="note">제목만 표시합니다. 본문·작성자·댓글은 카드에 없으며 링크를 누르면 로그인 안내가 나옵니다.</p>
+      </div>
+      <div class="case">
+        <div class="label">③ 비공개·기존 회원 전용 글</div>
+        <div class="card"><div class="visual"><img class="mark" src="../../frontend/public/brand/logo-hfree-on-primary.png" alt="헤르프리 공통 이미지"></div><div class="body"><div class="title">헤르프리</div><div class="summary">헤르프리 커뮤니티에서 이야기를 나누세요.</div><div class="domain">www.herpfree.co.kr</div></div></div>
+        <p class="note">글 제목과 본문을 숨깁니다. 문의·상담·비밀사연·개인일지도 여기에 해당합니다.</p>
+      </div>
+    </div>
+    <div class="legend">작성자가 공개를 선택하지 않은 기존 글은 ③의 상태로 유지됩니다. 질병·신상 정보가 제목에 있으면 제목 공유를 선택하지 않도록 글쓰기 화면에서 안내합니다.</div>
+  </main>
+</body>
+</html>

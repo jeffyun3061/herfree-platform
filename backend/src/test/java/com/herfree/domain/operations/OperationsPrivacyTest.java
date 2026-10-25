@@ -39,7 +39,9 @@ class OperationsPrivacyTest {
         filter.doFilter(request, new MockHttpServletResponse(), (req, res) -> ((jakarta.servlet.http.HttpServletResponse) res).setStatus(500));
         var entry = store.snapshot(true, "safe-id").entries().get(0);
         assertThat(entry.route()).isEqualTo("/api/posts/{postId}");
-        assertThat(entry.toString()).doesNotContain("private-memo", "private@example", "health-memo", "must-not-leak", "123");
+        assertThat(entry.route()).doesNotContain("123");
+        // Timestamp and duration are allowed to contain these digits by chance.
+        assertThat(entry.toString()).doesNotContain("private-memo", "private@example", "health-memo", "must-not-leak");
         for (int i = 0; i < 1010; i++) store.record("id-" + i, "GET", "/api/health", 200, 1);
         assertThat(store.snapshot(false, null).retainedCount()).isEqualTo(1000);
         assertThat(store.snapshot(false, null).entries()).hasSize(50);
