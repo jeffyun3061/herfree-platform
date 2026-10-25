@@ -166,6 +166,7 @@ export default function PostDetailContainer() {
         title: post?.title ?? '', content: post?.content ?? '',
         url: communityPostUrl(postId, window.location.origin),
         publicPreview: post.shareable,
+        titleOnly: post.visibility === 'MEMBERS_ONLY',
       });
       if (result === 'cancelled') return;
       setCopyMessage(result === 'shared' ? '공유 창이 열렸어요.' : '공유 내용을 복사했어요.');

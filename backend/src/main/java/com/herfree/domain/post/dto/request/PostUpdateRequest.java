@@ -15,9 +15,13 @@ public record PostUpdateRequest(
 
         // null이면 기존 이미지 유지, 빈 문자열이면 이미지 제거
         String imageUrl,
-        @Size(max = 200000) String richContent
+        @Size(max = 200000) String richContent,
+        Boolean shareTitlePublicly
 ) {
+    public PostUpdateRequest(String title, String content, boolean isAnonymous, String imageUrl, String richContent) {
+        this(title, content, isAnonymous, imageUrl, richContent, null);
+    }
     public PostUpdateRequest(String title, String content, boolean isAnonymous, String imageUrl) {
-        this(title, content, isAnonymous, imageUrl, null);
+        this(title, content, isAnonymous, imageUrl, null, null);
     }
 }

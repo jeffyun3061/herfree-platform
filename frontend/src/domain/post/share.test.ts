@@ -15,6 +15,11 @@ describe('community sharing privacy', () => {
     expect(writeText).not.toHaveBeenCalled();
     expect(share).not.toHaveBeenCalled();
   });
+  it('copies only the consented member title and URL, never the body', async () => {
+    const writeText = vi.fn(); vi.stubGlobal('navigator', { clipboard: { writeText } });
+    await shareCommunityPost({ title: '공개 선택한 제목', content: '민감한 건강 본문', url: 'https://www.herpfree.co.kr/community/posts/12', publicPreview: true, titleOnly: true });
+    expect(writeText).toHaveBeenCalledWith('공개 선택한 제목\n\nhttps://www.herpfree.co.kr/community/posts/12');
+  });
   it('does not copy after native sharing is cancelled', async () => {
     const writeText = vi.fn(); vi.stubGlobal('navigator', { share: vi.fn().mockRejectedValue(new DOMException('cancelled', 'AbortError')), clipboard: { writeText } });
     expect(await shareCommunityPost({ title: '고민', content: '내용', url: 'https://www.herpfree.co.kr/community/posts/1', publicPreview: true })).toBe('cancelled');

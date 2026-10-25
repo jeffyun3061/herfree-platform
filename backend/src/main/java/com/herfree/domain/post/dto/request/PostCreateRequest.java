@@ -25,15 +25,20 @@ public record PostCreateRequest(
         // S3 presigned 업로드 후 공개 URL (선택)
         String imageUrl,
         boolean publicDisclosureAccepted,
-        @Size(max = 200000) String richContent
+        @Size(max = 200000) String richContent,
+        boolean shareTitlePublicly
 ) {
     public PostCreateRequest(Long boardId, String title, String content, boolean isAnonymous,
+            PostVisibility visibility, String imageUrl, boolean publicDisclosureAccepted, String richContent) {
+        this(boardId, title, content, isAnonymous, visibility, imageUrl, publicDisclosureAccepted, richContent, false);
+    }
+    public PostCreateRequest(Long boardId, String title, String content, boolean isAnonymous,
             PostVisibility visibility, String imageUrl) {
-        this(boardId, title, content, isAnonymous, visibility, imageUrl, false, null);
+        this(boardId, title, content, isAnonymous, visibility, imageUrl, false, null, false);
     }
 
     public PostCreateRequest(Long boardId, String title, String content, boolean isAnonymous,
             PostVisibility visibility, String imageUrl, boolean publicDisclosureAccepted) {
-        this(boardId, title, content, isAnonymous, visibility, imageUrl, publicDisclosureAccepted, null);
+        this(boardId, title, content, isAnonymous, visibility, imageUrl, publicDisclosureAccepted, null, false);
     }
 }

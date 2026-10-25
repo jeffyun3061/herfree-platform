@@ -18,6 +18,17 @@ public final class PostVisibilityPolicy {
                 && !PrivateBoardPolicy.isAdminMaskedBoard(post.getBoard().getBoardType());
     }
 
+    public static boolean isTitleOnlyShareable(Post post) {
+        return post.getStatus() == PostStatus.ACTIVE
+                && post.getVisibility() == PostVisibility.MEMBERS_ONLY
+                && post.isShareTitlePublicly()
+                && !PrivateBoardPolicy.isAdminMaskedBoard(post.getBoard().getBoardType());
+    }
+
+    public static boolean isShareable(Post post) {
+        return isPublicShareable(post) || isTitleOnlyShareable(post);
+    }
+
     public static void assertReadable(Post post, Long viewerId, UserRole viewerRole) {
         if (post.getVisibility() == PostVisibility.MEMBERS_ONLY && viewerId == null) {
             throw new PostNotFoundException();
