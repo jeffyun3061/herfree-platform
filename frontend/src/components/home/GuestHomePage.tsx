@@ -269,7 +269,7 @@ function GuestQuietFooter() {
   return (
     <footer className="px-6 pb-2 pt-[26px] text-center">
       <p className="hf-display text-[14px] leading-[1.7] text-[#8A9089]">오늘도, 담담하게</p>
-      <p className="mt-2 text-[12px] text-[#B4B2A6]">헤르프리 · 익명 기반 비공개 커뮤니티</p>
+      <p className="mt-2 text-[12px] text-[#B4B2A6]">헤르프리 · 익명 고민과 회원 커뮤니티</p>
     </footer>
   );
 }

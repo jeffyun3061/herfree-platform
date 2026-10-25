@@ -549,7 +549,7 @@ function WritePostForm() {
                 <rect x="5" y="11" width="14" height="9" rx="2" />
                 <path d="M8 11V7a4 4 0 0 1 8 0v4" />
               </svg>
-              비밀글로 작성
+              익명으로 작성
             </label>
           )}
           <Button
@@ -560,6 +560,11 @@ function WritePostForm() {
             {bottomSubmitLabel}
           </Button>
         </div>
+        {!isMaskedWrite && !isConcernWrite && (
+          <p className="px-4 pt-1 text-[11px] leading-[1.6] text-[#6E766F] sm:px-5">
+            익명 선택은 닉네임만 가립니다. 글을 볼 수 있는 범위는 위의 공개 범위 설정을 따릅니다.
+          </p>
+        )}
 
         <div className="space-y-3 px-4 sm:px-5 pt-4">
           {validationError && <ErrorMessage message={validationError} />}
