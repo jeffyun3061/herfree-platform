@@ -250,7 +250,8 @@ test.describe('staging data flow', () => {
       expect(search.content.some(item => item.id === postId)).toBe(true);
       const preview = await data<Record<string, unknown>>(await request.get(`/api/posts/${postId}/share-preview`));
       expect(preview.title).toBe(title);
-      expect(Object.keys(preview).sort()).toEqual(['boardType', 'description', 'id', 'title']);
+      expect(preview.mode).toBe('FULL');
+      expect(Object.keys(preview).sort()).toEqual(['boardType', 'description', 'id', 'mode', 'title']);
       await data(await account.api.post(`/api/posts/${postId}/comments`, { headers: csrf(account), data: { content: 'Temporary anonymous experience.', isAnonymous: false } }));
       const comments = await data<{ content: Array<{ authorNickname: string; operatorReply: boolean }> }>(await request.get(`/api/posts/${postId}/comments`));
       expect(comments.content).toEqual(expect.arrayContaining([expect.objectContaining({ authorNickname: '익명', operatorReply: false })]));
@@ -260,6 +261,51 @@ test.describe('staging data flow', () => {
       await expect(page.getByText(account.user.nickname, { exact: true })).toHaveCount(0);
       const html = await request.get(`/community/posts/${postId}`, { headers: { 'User-Agent': 'kakaotalk-scrap/1.0' } });
       expect((await html.text()).match(/<head>[\s\S]*?<\/head>/)?.[0]).toContain(`property="og:title" content="${title}"`);
+    } finally {
+      if (postId) expect((await account.api.delete(`/api/posts/${postId}`, { headers: csrf(account) })).status()).toBe(204);
+      await deleteAccount(account);
+    }
+  });
+
+  test('member-only title sharing reveals only the opted-in title to guests', async ({ page, request }, testInfo) => {
+    const account = await signupAndLogin(`title-${testInfo.project.name}`);
+    let postId: number | undefined;
+    try {
+      const boards = await data<Array<{ id: number; boardType: string }>>(await account.api.get('/api/boards'));
+      const board = boards.find(item => item.boardType === 'FREE');
+      expect(board).toBeTruthy();
+      const title = `E2E member title ${Date.now()}`;
+      const privateBody = `E2E member body ${Date.now()} should never appear in guest preview`;
+      const created = await data<{ id: number; shareTitlePublicly: boolean }>(await account.api.post('/api/posts', {
+        headers: csrf(account),
+        data: { boardId: board!.id, title, content: privateBody, isAnonymous: true,
+          visibility: 'MEMBERS_ONLY', shareTitlePublicly: true },
+      }));
+      postId = created.id;
+      expect(created.shareTitlePublicly).toBe(true);
+
+      const preview = await data<{ title: string; description: string; mode: string }>(
+        await request.get(`/api/posts/${postId}/share-preview`));
+      expect(preview).toMatchObject({ title, mode: 'TITLE_ONLY', description: '로그인하면 글을 볼 수 있어요.' });
+      expect(JSON.stringify(preview)).not.toContain(privateBody);
+
+      const guestDetail = await request.get(`/api/posts/${postId}`);
+      expect([401, 403, 404]).toContain(guestDetail.status());
+      expect(await guestDetail.text()).not.toContain(privateBody);
+
+      const html = await request.get(`/community/posts/${postId}`, {
+        headers: { 'User-Agent': 'kakaotalk-scrap/1.0' },
+      });
+      const head = (await html.text()).match(/<head>[\s\S]*?<\/head>/)?.[0] ?? '';
+      expect(head).toContain(`property="og:title" content="${title}"`);
+      expect(head).toContain('로그인하면 글을 볼 수 있어요.');
+      expect(head).not.toContain(privateBody);
+
+      await page.context().clearCookies();
+      await page.goto(`/community/posts/${postId}`);
+      await expect(page.getByRole('link', { name: '로그인하고 계속하기' }))
+        .toHaveAttribute('href', new RegExp(`from=%2Fcommunity%2Fposts%2F${postId}`));
+      await expect(page.getByText(privateBody)).toHaveCount(0);
     } finally {
       if (postId) expect((await account.api.delete(`/api/posts/${postId}`, { headers: csrf(account) })).status()).toBe(204);
       await deleteAccount(account);
