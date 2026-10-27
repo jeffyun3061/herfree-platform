@@ -75,12 +75,15 @@
 ```bash
 sudo python3 /opt/herfree/infra/scripts/resume-staging-apps.py \
   --instance-id '<staging-instance-id>' \
-  --normal-role-arn 'arn:aws:iam::<account-id>:role/<normal-staging-role>' \
-  --normal-profile-arn 'arn:aws:iam::<account-id>:instance-profile/<normal-staging-profile>'
+  --normal-role-arn 'arn:aws:iam::<account-id>:role/herfree-staging-ec2' \
+  --normal-profile-arn 'arn:aws:iam::<account-id>:instance-profile/herfree-staging-ec2'
 ```
 
 이 helper는 IMDS의 인스턴스·프로필과 STS의 실제 역할, 복원 마운트/컨테이너 잔존,
 미완료 배포, 기존 컨테이너의 staging 프로필·로컬 DB·데이터 마운트를 검사한다.
+허용하는 정상 역할·프로필 이름은 코드에서 각각 `herfree-staging-ec2`로 고정하고 두 ARN의
+계정 일치도 검사한다. 복원 역할 ARN을 두 인자로 전달해 정상 역할이라고 지정할 수 없다.
+향후 정상 역할·프로필 이름을 바꾸려면 helper 코드와 이 runbook을 함께 검토·수정한다.
 모든 검사 후 **기존 MySQL 시작 → DB healthy → 정상 역할 재확인 → 기존 API 시작 → health 200**
 순서로만 처리한다. 이미지를 내려받거나 컨테이너를 재생성하지 않고 환경값·회원 데이터·원문 로그도
 출력하지 않는다. 배포와 같은 lock을 사용하며 복원훈련과 동시에 실행하지 않는다.

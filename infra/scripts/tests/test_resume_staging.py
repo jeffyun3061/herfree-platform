@@ -88,6 +88,18 @@ class StagingResumeTests(unittest.TestCase):
             self.invoke()
         self.assertEqual(self.host.started(), [])
 
+    def test_caller_cannot_relabel_recovery_role_or_cross_account_profile_as_normal(self):
+        self.args.normal_role_arn = "arn:aws:iam::123456789012:role/herfree-restore-drill"
+        self.args.normal_profile_arn = "arn:aws:iam::123456789012:instance-profile/herfree-restore-drill"
+        self.host.caller = "arn:aws:sts::123456789012:assumed-role/herfree-restore-drill/session"
+        with self.assertRaises(resume.ResumeRefused):
+            self.invoke(identify=lambda: {"instance": self.args.instance_id, "profile": self.args.normal_profile_arn})
+        self.args.normal_role_arn = ROLE
+        self.args.normal_profile_arn = "arn:aws:iam::999999999999:instance-profile/herfree-staging-ec2"
+        with self.assertRaises(resume.ResumeRefused):
+            self.invoke(identify=lambda: {"instance": self.args.instance_id, "profile": self.args.normal_profile_arn})
+        self.assertEqual(self.host.calls, [])
+
     def test_restore_mount_container_or_pending_deployment_never_starts_containers(self):
         with self.assertRaises(ValueError):
             self.invoke(mounted=lambda path: True)
