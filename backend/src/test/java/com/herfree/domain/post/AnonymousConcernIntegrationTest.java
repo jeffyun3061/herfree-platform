@@ -178,6 +178,11 @@ class AnonymousConcernIntegrationTest {
                 .andExpect(status().isForbidden());
         mvc.perform(get("/api/posts/95003").header("Authorization",token(93004,"USER")))
                 .andExpect(status().isNotFound());
+        db.update("UPDATE posts SET status='HIDDEN' WHERE id=95004");
+        mvc.perform(get("/api/admin/posts/95004/review").header("Authorization",token(93002,"ADMIN")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.content").value("body-4"));
+        mvc.perform(get("/api/admin/posts/95004/review").header("Authorization",token(93004,"USER")))
+                .andExpect(status().isForbidden());
         db.update("UPDATE posts SET status='DELETED' WHERE id=95007");
         mvc.perform(get("/api/admin/posts/95007/review").header("Authorization",token(93002,"ADMIN")))
                 .andExpect(status().isNotFound());
