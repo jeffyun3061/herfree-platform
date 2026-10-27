@@ -214,7 +214,7 @@ export default function PostDetailContainer() {
 
   return (
     <>
-      <article className="mx-auto max-w-app hf-scroll-pad-nav-tight lg:pb-8">
+      <article className="mx-auto max-w-[720px] pb-10 lg:pb-12">
         <div className="flex items-center justify-between gap-3 px-4 pb-3.5 hf-subpage-top">
           <button
             type="button"

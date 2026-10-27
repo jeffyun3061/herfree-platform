@@ -323,7 +323,7 @@ function WritePostForm() {
   const boardPickerDisabled = isEditMode || lockedPrivateBoard;
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#F3EDE3] pb-10 hf-subpage-top">
+    <div className="mx-auto flex min-h-screen w-full max-w-[720px] flex-col bg-[#F3EDE3] pb-10 hf-subpage-top">
       <header className="flex items-center justify-between border-b border-[#E4D8C7] bg-[#F3EDE3]/95 px-[18px] pb-3.5 pt-0.5">
         <Link
           href={backHref}
