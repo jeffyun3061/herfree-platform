@@ -95,6 +95,9 @@ if ! gzip -dc "${WORK_DIR}/backup.sql.gz" | docker exec -i -e "MYSQL_PWD=${ROOT_
   mysql --host=127.0.0.1 --ssl-mode=REQUIRED --user=root "${MYSQL_DATABASE}" > "${WORK_DIR}/import.log" 2>&1; then
   echo 'Backup import failed; sensitive diagnostic output was not published'; exit 1
 fi
+# The candidate migrates only the isolated copy of the current production
+# backup before Hibernate validates its schema. The container has no route to
+# production, and the restored database is destroyed after the drill.
 cat > "${WORK_DIR}/verify.env" <<EOF
 SPRING_PROFILES_ACTIVE=restore-drill
 SPRING_DATASOURCE_URL=jdbc:mysql://${MYSQL_CONTAINER}:3306/${MYSQL_DATABASE}?sslMode=REQUIRED
@@ -102,7 +105,7 @@ SPRING_DATASOURCE_USERNAME=root
 SPRING_DATASOURCE_PASSWORD=${ROOT_PASSWORD}
 SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE=1
 SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE=1
-SPRING_FLYWAY_ENABLED=false
+SPRING_FLYWAY_ENABLED=true
 SPRING_JPA_HIBERNATE_DDL_AUTO=validate
 HEALTH_DATA_ENCRYPTION_KEY=${HEALTH_KEY}
 JWT_SECRET=$(openssl rand -hex 32)
