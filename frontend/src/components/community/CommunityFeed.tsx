@@ -228,7 +228,7 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
   const listError = canReadFeed ? (boardsError ?? error) : null;
 
   return (
-    <div className="community-screen mx-auto max-w-app hf-scroll-pad-nav lg:max-w-none">
+    <div className="community-screen mx-auto w-full max-w-[1120px] hf-scroll-pad-nav">
       <ScreenHeader
         eyebrow="함께 나누는 공간"
         titleAs="h2"

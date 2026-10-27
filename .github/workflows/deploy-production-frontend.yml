@@ -8,7 +8,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: production-frontend
+  group: frontend-main
   cancel-in-progress: false
 
 jobs:
@@ -21,6 +21,22 @@ jobs:
       AMPLIFY_BRANCH: main
     steps:
       - uses: actions/checkout@v4
+      - name: Verify production legal and privacy facts
+        shell: pwsh
+        env:
+          LEGAL_OPERATOR_CONFIRMED: ${{ secrets.LEGAL_OPERATOR_CONFIRMED }}
+          PRIVACY_CONTACT_CONFIRMED: ${{ secrets.PRIVACY_CONTACT_CONFIRMED }}
+          LEGAL_MAIL_PROVIDER: ${{ secrets.LEGAL_MAIL_PROVIDER }}
+          LEGAL_MAIL_PROVIDER_COUNTRY: ${{ secrets.LEGAL_MAIL_PROVIDER_COUNTRY }}
+          LEGAL_AWS_REGION: ${{ secrets.LEGAL_AWS_REGION }}
+          LEGAL_AWS_CROSS_BORDER_ACCESS_REVIEWED: ${{ secrets.LEGAL_AWS_CROSS_BORDER_ACCESS_REVIEWED }}
+          LEGAL_POLICY_REVIEWED_VERSION: ${{ secrets.LEGAL_POLICY_REVIEWED_VERSION }}
+          LEGAL_OPERATIONAL_REVIEW_REFERENCE: ${{ secrets.LEGAL_OPERATIONAL_REVIEW_REFERENCE }}
+          AWS_REGION: ${{ vars.AWS_REGION }}
+          NEXT_PUBLIC_POSTHOG_KEY: ${{ secrets.NEXT_PUBLIC_POSTHOG_KEY }}
+          NEXT_PUBLIC_POSTHOG_HOST: ${{ secrets.NEXT_PUBLIC_POSTHOG_HOST }}
+          POSTHOG_POLICY_APPROVED: ${{ secrets.POSTHOG_POLICY_APPROVED }}
+        run: ./scripts/verify-legal-policy-alignment.ps1 -StrictOperationalFacts
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
@@ -32,37 +48,7 @@ jobs:
           current_main="$(git ls-remote origin refs/heads/main | cut -f1)"
           test "${GITHUB_SHA}" = "${current_main}"
 
-          job_id="$(aws amplify start-job \
-            --app-id "${AMPLIFY_APP_ID}" \
-            --branch-name "${AMPLIFY_BRANCH}" \
-            --job-type RELEASE \
-            --query 'jobSummary.jobId' \
-            --output text)"
-          test -n "${job_id}"
-
-          for attempt in $(seq 1 90); do
-            job="$(aws amplify get-job \
-              --app-id "${AMPLIFY_APP_ID}" \
-              --branch-name "${AMPLIFY_BRANCH}" \
-              --job-id "${job_id}" \
-              --output json)"
-            status="$(jq -r '.job.summary.status' <<<"${job}")"
-            commit="$(jq -r '.job.summary.commitId' <<<"${job}")"
-            echo "Amplify job ${job_id}: ${status}"
-            if [[ "${status}" == SUCCEED ]]; then
-              if [[ "${commit}" != HEAD && "${commit}" != "${GITHUB_SHA}" ]]; then
-                echo "Amplify built unexpected commit: ${commit}" >&2
-                exit 1
-              fi
-              test "${GITHUB_SHA}" = "$(git ls-remote origin refs/heads/main | cut -f1)"
-              exit 0
-            fi
-            if [[ "${status}" == FAILED || "${status}" == CANCELLED ]]; then
-              exit 1
-            fi
-            sleep 20
-          done
-          echo 'Timed out waiting for Amplify production deployment.' >&2
-          exit 1
+          python3 infra/scripts/release-amplify.py \
+            --app "${AMPLIFY_APP_ID}" --branch "${AMPLIFY_BRANCH}" --sha "${GITHUB_SHA}"
       - name: Check public frontend
         run: curl --fail --silent --show-error --location --retry 6 --retry-delay 10 --output /dev/null https://www.herpfree.co.kr/community

@@ -117,6 +117,8 @@ class ReportServiceTest {
         var result = reportService.getPendingTargets(1, 20);
 
         org.assertj.core.api.Assertions.assertThat(result).hasSize(2);
+        assertThat(result.get(0).authorId()).isEqualTo(11L);
+        assertThat(result.get(0).authorNickname()).isEqualTo("첫번째");
         verify(postRepository).findByIdInAndStatusIn(
                 Set.of(101L, 102L), List.of(PostStatus.ACTIVE, PostStatus.HIDDEN));
         verify(userProfileRepository).findByUser_IdIn(Set.of(11L, 12L));
@@ -203,6 +205,9 @@ class ReportServiceTest {
         given(post.getTitle()).willReturn("신고 대상");
         given(post.getContent()).willReturn("본문");
         given(post.getStatus()).willReturn(PostStatus.ACTIVE);
+        var board = org.mockito.Mockito.mock(com.herfree.domain.board.entity.Board.class);
+        given(board.getBoardType()).willReturn("FREE");
+        given(post.getBoard()).willReturn(board);
         return post;
     }
 

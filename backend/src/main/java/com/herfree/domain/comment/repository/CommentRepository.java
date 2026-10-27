@@ -15,14 +15,19 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface CommentRepository extends JpaRepository<Comment, Long> {
+    @Query("select c.post.id from Comment c where c.id=:id")
+    Optional<Long> findPostIdById(@Param("id") Long id);
+    interface WithdrawalTarget { Long getId(); Long getPostId(); }
+    @Query("select c.id as id,c.post.id as postId from Comment c where c.user.id=:userId and c.communityHealthConsent is not null and c.status<>'CONSENT_WITHDRAWN' order by c.post.id,c.id")
+    List<WithdrawalTarget> findConsentBackedTargetsForWithdrawal(@Param("userId") Long userId);
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select c from Comment c where c.id in :ids order by c.id")
+    List<Comment> lockAllByIdIn(@Param("ids") java.util.Collection<Long> ids);
 
     // 상태 전이는 같은 댓글 행을 잠근 뒤 현재 상태를 다시 확인해야 카운터가 한 번만 바뀐다.
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
             select c from Comment c
-            join fetch c.post p
-            join fetch p.board
-            join fetch c.user
             where c.id = :id
             """)
     Optional<Comment> findByIdForUpdate(@Param("id") Long id);
@@ -45,6 +50,7 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
             JOIN FETCH p.board b
             JOIN FETCH c.user u
             WHERE c.status IN :statuses
+            AND p.status <> 'CONSENT_WITHDRAWN'
             AND (:keyword IS NULL OR :keyword = '' OR LOWER(c.content) LIKE LOWER(CONCAT('%', :keyword, '%')))
             ORDER BY c.createdAt DESC
             """)

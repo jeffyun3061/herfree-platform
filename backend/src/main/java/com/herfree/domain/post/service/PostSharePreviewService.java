@@ -2,10 +2,9 @@ package com.herfree.domain.post.service;
 
 import com.herfree.domain.post.dto.response.PostSharePreviewResponse;
 import com.herfree.domain.post.entity.PostStatus;
-import com.herfree.domain.post.entity.PostVisibility;
 import com.herfree.domain.post.exception.PostNotFoundException;
 import com.herfree.domain.post.repository.PostRepository;
-import com.herfree.global.util.PrivateBoardPolicy;
+import com.herfree.global.util.PostVisibilityPolicy;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,10 +20,8 @@ public class PostSharePreviewService {
     public PostSharePreviewResponse getPreview(Long postId) {
         var post = postRepository.findByIdAndStatus(postId, PostStatus.ACTIVE)
                 .orElseThrow(PostNotFoundException::new);
-        if (post.getVisibility() != PostVisibility.PUBLIC
-                || PrivateBoardPolicy.isAdminMaskedBoard(post.getBoard().getBoardType())) {
-            throw new PostNotFoundException();
-        }
-        return PostSharePreviewResponse.from(post);
+        if (PostVisibilityPolicy.isPublicShareable(post)) return PostSharePreviewResponse.full(post);
+        if (PostVisibilityPolicy.isTitleOnlyShareable(post)) return PostSharePreviewResponse.titleOnly(post);
+        throw new PostNotFoundException();
     }
 }

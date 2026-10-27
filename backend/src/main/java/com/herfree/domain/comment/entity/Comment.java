@@ -2,6 +2,7 @@ package com.herfree.domain.comment.entity;
 
 import com.herfree.domain.post.entity.Post;
 import com.herfree.domain.user.entity.User;
+import com.herfree.domain.user.entity.CommunityHealthConsent;
 import com.herfree.global.common.BaseTimeEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -14,6 +15,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -30,6 +32,9 @@ public class Comment extends BaseTimeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Version @Column(name = "row_version", nullable = false, columnDefinition = "BIGINT DEFAULT 0")
+    private long rowVersion;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id", nullable = false)
     private Post post;
@@ -39,6 +44,10 @@ public class Comment extends BaseTimeEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "community_health_consent_id")
+    private CommunityHealthConsent communityHealthConsent;
 
     // 답글이 어떤 댓글에 연결됐는지 보존하는 자기 참조다.
     @ManyToOne(fetch = FetchType.LAZY)
@@ -69,20 +78,32 @@ public class Comment extends BaseTimeEntity {
 
     // 작성자 또는 탈퇴 시 soft delete — 댓글을 물리 삭제하면 게시글 댓글 수가 갑자기 줄어드는 UX 문제가 생긴다
     public void delete() {
+        if (status == CommentStatus.CONSENT_WITHDRAWN) return;
         this.status = CommentStatus.DELETED;
     }
 
     // 관리자에 의한 숨김 — 신고 처리 결과로 호출될 수도 있다
     public void hide() {
+        if (status == CommentStatus.CONSENT_WITHDRAWN) return;
         this.status = CommentStatus.HIDDEN;
     }
 
     public void restore() {
+        if (status == CommentStatus.CONSENT_WITHDRAWN) return;
         this.status = CommentStatus.ACTIVE;
     }
 
     // 탈퇴 회원의 댓글은 삭제하지 않고 익명으로 전환한다
     public void anonymize() {
         this.isAnonymous = true;
+    }
+    public void linkCommunityHealthConsent(CommunityHealthConsent consent) {
+        if (consent == null || !consent.isAgreed() || !java.util.Objects.equals(user.getId(), consent.getUser().getId()))
+            throw new IllegalArgumentException("Consent must belong to the content author");
+        communityHealthConsent = consent;
+    }
+    public void withdrawCommunityHealthConsent() {
+        if (communityHealthConsent == null) throw new IllegalStateException("Legacy content has no community consent provenance");
+        status = CommentStatus.CONSENT_WITHDRAWN;
     }
 }

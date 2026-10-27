@@ -1,3 +1,5 @@
+import { parseRichContent } from './richContent';
+
 export type PostVisibility = 'PUBLIC' | 'MEMBERS_ONLY';
 
 // 게시글 목록 항목 (PostResponse) — 익명 글 닉네임은 서버가 "익명" / "익명(나)"로 내려준다
@@ -25,12 +27,15 @@ export type PostDetail = {
   boardName: string;
   title: string;
   content: string;
+  richContent?: string | null;
   authorNickname: string;
   viewCount: number;
   visibility: PostVisibility;
   isAnonymous: boolean;
   isMyPost: boolean;
   readable: boolean;
+  shareable: boolean;
+  shareTitlePublicly: boolean;
   imageUrl: string | null;
   staffReplied: boolean;
   createdAt: string;
@@ -41,17 +46,21 @@ export type PostCreateInput = {
   boardId: number;
   title: string;
   content: string;
+  richContent?: string | null;
   isAnonymous: boolean;
   visibility?: PostVisibility;
   imageUrl?: string | null;
   publicDisclosureAccepted?: boolean;
+  shareTitlePublicly?: boolean;
 };
 
 export type PostUpdateInput = {
   title: string;
   content: string;
+  richContent?: string | null;
   isAnonymous: boolean;
   imageUrl?: string | null;
+  shareTitlePublicly?: boolean;
 };
 
 export type PostImageUploadUrlInput = {
@@ -86,12 +95,13 @@ export function resolvePostImageContentType(file: File): string | null {
 // 백엔드 PostCreateRequest의 @Size(max = 200)과 동일 기준
 export const POST_TITLE_MAX_LENGTH = 200;
 
-export function validatePostInput(input: { title: string; content: string }): string | null {
+export function validatePostInput(input: { title: string; content: string; richContent?: string | null }): string | null {
   if (!input.title.trim()) return '제목을 입력해 주세요.';
   if (input.title.length > POST_TITLE_MAX_LENGTH) {
     return `제목은 ${POST_TITLE_MAX_LENGTH}자를 초과할 수 없습니다.`;
   }
   if (!input.content.trim()) return '내용을 입력해 주세요.';
+  if (input.richContent && (!parseRichContent(input.richContent) || new TextEncoder().encode(input.content).length > 60000)) return '글이 너무 길거나 서식이 복잡합니다. 내용을 나누어 작성해 주세요.';
   return null;
 }
 

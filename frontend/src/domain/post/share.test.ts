@@ -9,9 +9,16 @@ describe('community sharing privacy', () => {
     expect(writeText).toHaveBeenCalledWith('고민 제목\n첫 문단 두 번째 문단\n\nhttps://www.herpfree.co.kr/community/posts/11');
   });
   it('does not export private text even when the author can read it', async () => {
+    const writeText = vi.fn(); const share = vi.fn();
+    vi.stubGlobal('navigator', { share, clipboard: { writeText } });
+    await expect(shareCommunityPost({ title: 'private-title', content: 'private-health-body', url: 'https://www.herpfree.co.kr/community/posts/12', publicPreview: false })).rejects.toThrow('이 글은 공유할 수 없습니다.');
+    expect(writeText).not.toHaveBeenCalled();
+    expect(share).not.toHaveBeenCalled();
+  });
+  it('copies only the consented member title and URL, never the body', async () => {
     const writeText = vi.fn(); vi.stubGlobal('navigator', { clipboard: { writeText } });
-    await shareCommunityPost({ title: 'private-title', content: 'private-health-body', url: 'https://www.herpfree.co.kr/community/posts/12', publicPreview: false });
-    expect(writeText).toHaveBeenCalledWith('https://www.herpfree.co.kr/community/posts/12');
+    await shareCommunityPost({ title: '공개 선택한 제목', content: '민감한 건강 본문', url: 'https://www.herpfree.co.kr/community/posts/12', publicPreview: true, titleOnly: true });
+    expect(writeText).toHaveBeenCalledWith('공개 선택한 제목\n\nhttps://www.herpfree.co.kr/community/posts/12');
   });
   it('does not copy after native sharing is cancelled', async () => {
     const writeText = vi.fn(); vi.stubGlobal('navigator', { share: vi.fn().mockRejectedValue(new DOMException('cancelled', 'AbortError')), clipboard: { writeText } });

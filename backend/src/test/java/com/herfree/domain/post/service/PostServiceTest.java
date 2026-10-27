@@ -197,7 +197,7 @@ class PostServiceTest {
                 .isAnonymous(false)
                 .build();
 
-        given(postRepository.findByIdAndStatus(1L, PostStatus.ACTIVE)).willReturn(Optional.of(post));
+        given(postRepository.findByIdForUpdate(1L)).willReturn(Optional.of(post));
 
         // when & then — 작성자가 다를 때 403 예외가 발생해야 한다
         assertThatThrownBy(() -> postService.deletePost(requestUserId, 1L))
@@ -219,7 +219,7 @@ class PostServiceTest {
                 .visibility(PostVisibility.PUBLIC)
                 .isAnonymous(false)
                 .build();
-        given(postRepository.findByIdAndStatus(postId, PostStatus.ACTIVE)).willReturn(Optional.of(post));
+        given(postRepository.findByIdForUpdate(postId)).willReturn(Optional.of(post));
 
         postService.deletePost(userId, postId);
 
@@ -239,8 +239,7 @@ class PostServiceTest {
                 .visibility(PostVisibility.PUBLIC)
                 .isAnonymous(false)
                 .build();
-        given(postRepository.findByIdAndStatusIn(
-                postId, List.of(PostStatus.ACTIVE, PostStatus.HIDDEN))).willReturn(Optional.of(post));
+        given(postRepository.findByIdForUpdate(postId)).willReturn(Optional.of(post));
 
         postService.adminDeletePost(postId);
 
@@ -376,13 +375,27 @@ class PostServiceTest {
                 .build();
         given(boardRepository.findById(1L)).willReturn(Optional.of(board));
         given(userRepository.findById(userId)).willReturn(Optional.of(user));
-        given(postFulltextSearchRepository.searchBoardPosts(eq(1L), eq("검색어"), any(), any(), eq(pageable)))
+        given(postFulltextSearchRepository.searchBoardPosts(eq(1L), eq("검색어"), eq(userId), any(), any(), eq(pageable)))
                 .willReturn(emptyPage);
 
         postService.getPosts(1L, "  검색어  ", pageable, userId, "week");
 
         verify(postFulltextSearchRepository).searchBoardPosts(
-                1L, "검색어", PostListSort.LATEST, PostListPeriod.WEEK, pageable);
+                1L, "검색어", userId, PostListSort.LATEST, PostListPeriod.WEEK, pageable);
+    }
+
+    @Test
+    void guestConcernKeywordSearchPreservesAnonymousVisibilityScope() {
+        Pageable pageable = PageRequest.of(0, 15);
+        Board board = buildBoard("ANONYMOUS_QUESTION");
+        given(boardRepository.findById(1L)).willReturn(Optional.of(board));
+        given(postFulltextSearchRepository.searchBoardPosts(eq(1L), eq("고민"), isNull(), any(), any(), eq(pageable)))
+                .willReturn(Page.empty(pageable));
+
+        postService.getPosts(1L, "고민", pageable, null, "week");
+
+        verify(postFulltextSearchRepository).searchBoardPosts(
+                1L, "고민", null, PostListSort.LATEST, PostListPeriod.WEEK, pageable);
     }
 
     @Test
@@ -496,7 +509,7 @@ class PostServiceTest {
                 .isAnonymous(false)
                 .build();
 
-        given(postRepository.findByIdAndStatus(1L, PostStatus.ACTIVE)).willReturn(Optional.of(post));
+        given(postRepository.findByIdForUpdate(1L)).willReturn(Optional.of(post));
 
         postService.hidePost(1L);
 
@@ -517,7 +530,7 @@ class PostServiceTest {
                 .build();
         post.hide();
 
-        given(postRepository.findByIdAndStatus(1L, PostStatus.HIDDEN)).willReturn(Optional.of(post));
+        given(postRepository.findByIdForUpdate(1L)).willReturn(Optional.of(post));
 
         postService.restorePost(1L);
 

@@ -11,7 +11,7 @@ if [[ "$(id -u)" -ne 0 ]]; then
 fi
 
 APP_DIR="${HERFREE_APP_DIR:-/opt/herfree}"
-for script in backup-db.sh restore-local-db-drill.sh monitor-local-db.sh; do
+for script in backup-db.sh monitor-local-db.sh; do
   [[ -x "${APP_DIR}/infra/scripts/${script}" ]] || { echo "missing executable: ${script}" >&2; exit 1; }
 done
 
@@ -73,35 +73,12 @@ RandomizedDelaySec=300
 WantedBy=timers.target
 EOF
 
-install -m 0644 /dev/stdin /etc/systemd/system/herfree-db-restore-drill.service <<EOF
-[Unit]
-Description=Herfree monthly isolated database restore drill
-After=docker.service network-online.target
-Wants=network-online.target
-
-[Service]
-Type=oneshot
-Environment=DEPLOY_ENV=production
-Environment=HERFREE_APP_DIR=${APP_DIR}
-Environment=CONFIRM_RESTORE_DRILL=YES
-ExecStart=${APP_DIR}/infra/scripts/restore-local-db-drill.sh
-User=root
-Group=root
-Nice=15
-EOF
-
-install -m 0644 /dev/stdin /etc/systemd/system/herfree-db-restore-drill.timer <<'EOF'
-[Unit]
-Description=Run Herfree isolated restore drill monthly
-
-[Timer]
-OnCalendar=*-*-01 04:30:00 UTC
-Persistent=true
-RandomizedDelaySec=900
-
-[Install]
-WantedBy=timers.target
-EOF
+# Restore drills now run on stopped staging through the monthly GitHub workflow.
+# Disable the historical production-host job while preserving all backup/monitor timers.
+if [[ -f /etc/systemd/system/herfree-db-restore-drill.timer ]]; then
+  systemctl disable --now herfree-db-restore-drill.timer
+  systemctl stop herfree-db-restore-drill.service
+fi
 
 install -m 0644 /dev/stdin /etc/systemd/system/herfree-db-monitor.service <<EOF
 [Unit]
@@ -135,7 +112,6 @@ systemctl daemon-reload
 systemctl enable --now \
   herfree-db-backup-frequent.timer \
   herfree-db-backup-daily.timer \
-  herfree-db-restore-drill.timer \
   herfree-db-monitor.timer
 
 systemctl list-timers --all 'herfree-db-*'

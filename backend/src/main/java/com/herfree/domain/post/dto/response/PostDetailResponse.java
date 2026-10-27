@@ -6,6 +6,7 @@ import com.herfree.domain.user.entity.UserRole;
 import com.herfree.global.util.AnonymousNicknamePolicy;
 import com.herfree.global.util.PrivateBoardPolicy;
 import com.herfree.global.util.AnonymousConcernPolicy;
+import com.herfree.global.util.PostVisibilityPolicy;
 import java.time.Instant;
 
 // 게시글 상세 응답 DTO — 목록 응답에 content, visibility, isMyPost 필드를 추가한다
@@ -21,10 +22,13 @@ public record PostDetailResponse(
         boolean isAnonymous,
         boolean isMyPost,
         boolean readable,
+        boolean shareable,
+        boolean shareTitlePublicly,
         String imageUrl,
         boolean staffReplied,
         Instant createdAt,
-        Instant updatedAt
+        Instant updatedAt,
+        String richContent
 ) {
     public static PostDetailResponse of(Post post, String authorNickname, boolean isMyPost, String imageUrl) {
         return of(post, authorNickname, isMyPost, imageUrl, false, null, null);
@@ -71,10 +75,13 @@ public record PostDetailResponse(
                 post.isAnonymous() || AnonymousConcernPolicy.isConcernBoard(post.getBoard().getBoardType()),
                 isMyPost,
                 readable,
+                readable && PostVisibilityPolicy.isShareable(post),
+                PostVisibilityPolicy.isTitleOnlyShareable(post),
                 mask ? null : imageUrl,
                 staffReplied,
                 post.getCreatedAt(),
-                post.getUpdatedAt()
+                post.getUpdatedAt(),
+                mask ? null : post.getRichContent()
         );
     }
 }

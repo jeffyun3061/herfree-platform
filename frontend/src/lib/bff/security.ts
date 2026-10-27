@@ -18,6 +18,10 @@ export function csrfCookieName(isProduction: boolean): string {
   return isProduction ? '__Host-herfree-csrf' : 'herfree-csrf';
 }
 
+export function adminMfaCookieName(isProduction: boolean): string {
+  return isProduction ? '__Host-herfree-admin-mfa' : 'herfree-admin-mfa';
+}
+
 export function isUnsafeMethod(method: string): boolean {
   return !SAFE_METHODS.has(method.toUpperCase());
 }

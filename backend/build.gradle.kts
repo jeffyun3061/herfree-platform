@@ -66,6 +66,9 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+    // A synthetic test-only key makes ORM integration exercise encrypted storage.
+    // This belongs only to the forked test worker, never bootRun or release JARs.
+    environment("HEALTH_DATA_ENCRYPTION_KEY", "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
     // Windows + 한글/OneDrive 경로에서 forked test worker ClassNotFound 방지
     maxParallelForks = 1
     jvmArgs(

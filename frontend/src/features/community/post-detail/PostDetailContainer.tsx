@@ -34,6 +34,8 @@ import {
   type PendingPostDetailConfirmation,
 } from '@/features/community/post-detail/types';
 import { usePostDetailActions } from '@/features/community/post-detail/usePostDetailActions';
+import { useCommunityHealthConsent } from '@/hooks/useCommunityHealthConsent';
+import { CommunityHealthConsentPanel } from '@/components/community/CommunityHealthConsentPanel';
 
 function normalizeBoardTagLabel(boardType: string | undefined, boardName: string) {
   const tabLabel = boardType ? getCommunityBoardTabLabel(boardType) : undefined;
@@ -47,7 +49,7 @@ export default function PostDetailContainer() {
   const postId = Number(params.postId);
   const { isLoggedIn, isReady, user } = useAuth();
   const { boards, isLoading: boardsLoading } = useBoards();
-  const { post, isLoading, error, refetch: refetchPost } = usePostDetail(postId);
+  const { post, isLoading, error, errorStatus, refetch: refetchPost } = usePostDetail(postId);
   const postBoard = boards.find((board) => board.id === post?.boardId);
   const bookmarkEnabled =
     isReady && isLoggedIn && post != null && postBoard != null && !isMaskedBoardType(postBoard.boardType);
@@ -73,6 +75,7 @@ export default function PostDetailContainer() {
 
   const [commentText, setCommentText] = useState('');
   const [commentIdentity, setCommentIdentity] = useState<{ postId: number; isAnonymous: boolean } | null>(null);
+  const [commentDisclosure, setCommentDisclosure] = useState<{ postId: number; accepted: boolean } | null>(null);
   const [replyParentId, setReplyParentId] = useState<number | null>(null);
   const [reportOpen, setReportOpen] = useState(false);
   const [reportCommentId, setReportCommentId] = useState<number | null>(null);
@@ -85,6 +88,8 @@ export default function PostDetailContainer() {
   const loginHref = `/login?from=${encodeURIComponent(`/community/posts/${postId}`)}`;
   const staffUser = isStaff(user?.role);
   const isConcernPost = isAnonymousConcernBoard(postBoard?.boardType);
+  const communityHealthConsent = useCommunityHealthConsent(isConcernPost && isLoggedIn);
+  const commentPublicAccepted = commentDisclosure?.postId === postId && commentDisclosure.accepted;
   const commentIsAnonymous = (isConcernPost && post?.isMyPost)
     || (commentIdentity?.postId === postId ? commentIdentity.isAnonymous : isConcernPost);
   const replyTarget = replyParentId === null
@@ -107,6 +112,14 @@ export default function PostDetailContainer() {
   };
 
   const handleComment = async () => {
+    if (isConcernPost && !communityHealthConsent.agreed) {
+      setCommentError('익명 고민 건강정보 처리에 별도로 동의한 뒤 답변해 주세요.');
+      return;
+    }
+    if (isConcernPost && !commentPublicAccepted) {
+      setCommentError('답변 내용이 비회원에게 공개되는 것을 확인해 주세요.');
+      return;
+    }
     const validation = validateCommentInput(commentText);
     if (validation) {
       setCommentError(validation);
@@ -123,6 +136,7 @@ export default function PostDetailContainer() {
       setCommentText('');
       setReplyParentId(null);
       setCommentIdentity(null);
+      setCommentDisclosure(null);
       await refetchPost();
     }
   };
@@ -160,11 +174,13 @@ export default function PostDetailContainer() {
   };
 
   const handleCopyLink = async () => {
+    if (post?.shareable !== true) return;
     try {
       const result = await shareCommunityPost({
         title: post?.title ?? '', content: post?.content ?? '',
         url: communityPostUrl(postId, window.location.origin),
-        publicPreview: post?.visibility === 'PUBLIC' && post.readable !== false && postBoard != null && !isMaskedBoardType(postBoard.boardType),
+        publicPreview: post.shareable,
+        titleOnly: post.visibility === 'MEMBERS_ONLY',
       });
       if (result === 'cancelled') return;
       setCopyMessage(result === 'shared' ? '공유 창이 열렸어요.' : '공유 내용을 복사했어요.');
@@ -176,21 +192,27 @@ export default function PostDetailContainer() {
 
   if (!isReady || isLoading || boardsLoading) {
     return (
-      <div className="mx-auto max-w-app px-5 py-12">
+      <div className="mx-auto max-w-[720px] px-4 py-12 sm:px-5">
         <LoadingSpinner label="글을 준비하는 중..." />
       </div>
     );
   }
   if (error || !post) {
+    if (!isLoggedIn && (errorStatus === 401 || errorStatus === 403 || errorStatus === 404)) {
+      return <div className="mx-auto max-w-[720px] px-4 py-10 sm:px-5"><CommunityGuestPostPanel loginFrom={encodeURIComponent(`/community/posts/${postId}`)} /></div>;
+    }
+    if (isLoggedIn && (errorStatus === 403 || errorStatus === 404)) {
+      return <div className="mx-auto max-w-[720px] px-4 py-10 sm:px-5"><ErrorMessage message="이 글에 접근할 수 없습니다." /><Link className="mt-4 inline-block font-bold text-primary underline" href="/">홈으로 이동</Link></div>;
+    }
     return (
-      <div className="mx-auto max-w-app px-5 py-10">
+      <div className="mx-auto max-w-[720px] px-4 py-10 sm:px-5">
         <ErrorMessage message={error ? getErrorMessage(error) : '글을 찾을 수 없습니다.'} />
       </div>
     );
   }
-  if (!isLoggedIn && !isConcernPost) {
+  if (!isLoggedIn && post.visibility !== 'PUBLIC') {
     return (
-      <div className="mx-auto max-w-app hf-scroll-pad-nav-tight">
+      <div className="mx-auto max-w-[720px] hf-scroll-pad-nav-tight">
         <PostDetailBackHeader backHref="/community" pathname={pathname} />
         <div className="px-5">
           <CommunityGuestPostPanel loginFrom={encodeURIComponent(`/community/posts/${postId}`)} />
@@ -199,13 +221,16 @@ export default function PostDetailContainer() {
     );
   }
 
+  if (post.readable === false) {
+    return <div className="mx-auto max-w-[720px] px-4 py-10 sm:px-5"><ErrorMessage message="이 글에 접근할 수 없습니다." /><Link className="mt-4 inline-block font-bold text-primary underline" href="/">홈으로 이동</Link></div>;
+  }
+
   const isStaffOnlyPost = postBoard != null && isStaffOnlyBoardType(postBoard.boardType);
   const isMaskedPost = postBoard != null && isMaskedBoardType(postBoard.boardType);
-  const isContentMasked = post.readable === false;
   const backHref = postBoard
     ? getMaskedBoardBackHref(postBoard.boardType, postBoard.id)
     : `/community/${post.boardId}`;
-  const showComments = (!isMaskedPost || post.isMyPost || staffUser) && !isContentMasked;
+  const showComments = !isMaskedPost || post.isMyPost || staffUser;
   const canWriteComments = isMaskedPost ? staffUser && isLoggedIn : isLoggedIn;
   const privateCommentHint = isMaskedPost && post.isMyPost && !staffUser;
   const boardTagLabel = normalizeBoardTagLabel(postBoard?.boardType, post.boardName);
@@ -214,7 +239,7 @@ export default function PostDetailContainer() {
 
   return (
     <>
-      <article className="mx-auto max-w-app hf-scroll-pad-nav-tight lg:pb-8">
+      <article className="mx-auto max-w-[720px] pb-10 lg:pb-12">
         <div className="flex items-center justify-between gap-3 px-4 pb-3.5 hf-subpage-top">
           <button
             type="button"
@@ -224,7 +249,7 @@ export default function PostDetailContainer() {
             <span className="text-[22px] font-normal leading-none text-[#6E7671]">‹</span>
             커뮤니티
           </button>
-          <button
+          {post.shareable === true && <button
             type="button"
             onClick={() => void handleCopyLink()}
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-[#65706B] shadow-[0_10px_22px_-18px_rgba(7,37,31,.45)]"
@@ -234,7 +259,7 @@ export default function PostDetailContainer() {
               <path d="M10 13a5 5 0 0 0 7.1 0l2.8-2.8a5 5 0 0 0-7.1-7.1l-1.3 1.3" />
               <path d="M14 11a5 5 0 0 0-7.1 0l-2.8 2.8a5 5 0 0 0 7.1 7.1l1.3-1.3" />
             </svg>
-          </button>
+          </button>}
         </div>
         {copyMessage && (
           <p className="mx-5 mb-3 rounded-[13px] bg-[#0B3B36] px-4 py-2 text-[12px] font-bold text-white">
@@ -285,6 +310,7 @@ export default function PostDetailContainer() {
 
             {canWriteComments ? (
               <>
+                {isConcernPost && <CommunityHealthConsentPanel state={communityHealthConsent} />}
                 {isConcernPost && post.isMyPost && (
                   <p className="mt-4 text-[12px] text-muted">글쓴이의 답변과 대댓글은 닉네임 비공개로 표시됩니다. 내용은 모두에게 공개됩니다.</p>
                 )}
@@ -311,13 +337,14 @@ export default function PostDetailContainer() {
                     <p className="mt-2 text-[12px] text-muted">답변 내용은 모두에게 공개됩니다.</p>
                   </fieldset>
                 )}
+                {isConcernPost && <label className="mt-4 flex items-start gap-2 text-[12px] leading-6 text-[#36453B]"><input type="checkbox" checked={Boolean(commentPublicAccepted)} onChange={(event) => setCommentDisclosure({ postId, accepted: event.target.checked })} className="mt-1 h-4 w-4 shrink-0 accent-[#0B3B36]" /><span>답변에 입력한 내용이 비회원에게 공개되는 것을 확인했습니다.</span></label>}
                 <CommentComposer
                   inputRef={commentInputRef}
                   replyTarget={replyTarget}
                   isMaskedPost={isMaskedPost}
                   isConcernPost={isConcernPost}
                   value={commentText}
-                  isSubmitting={isSubmitting}
+                  isSubmitting={isSubmitting || (isConcernPost && (!communityHealthConsent.agreed || !commentPublicAccepted))}
                   onChange={setCommentText}
                   onCancelReply={cancelReply}
                   onSubmit={() => void handleComment()}

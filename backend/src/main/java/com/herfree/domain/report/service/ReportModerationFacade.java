@@ -54,13 +54,15 @@ public class ReportModerationFacade {
     }
 
     private void mutatePost(Long targetId, ModerationAction action) {
-        Post post = postRepository.findById(targetId).orElseThrow(PostNotFoundException::new);
+        Post post = postRepository.findByIdForUpdate(targetId).orElseThrow(PostNotFoundException::new);
         if (action == ModerationAction.HIDE) post.hide();
         if (action == ModerationAction.DELETE) post.delete();
     }
 
     private void mutateComment(Long targetId, ModerationAction action) {
-        Comment comment = commentRepository.findById(targetId).orElseThrow(CommentNotFoundException::new);
+        Long postId=commentRepository.findPostIdById(targetId).orElseThrow(CommentNotFoundException::new);
+        postRepository.findByIdForUpdate(postId).orElseThrow(PostNotFoundException::new);
+        Comment comment = commentRepository.findByIdForUpdate(targetId).orElseThrow(CommentNotFoundException::new);
         if (action == ModerationAction.HIDE) comment.hide();
         if (action == ModerationAction.DELETE) comment.delete();
     }

@@ -17,6 +17,10 @@ const stagingApiURL = process.env.STAGING_API_URL?.trim().replace(/\/$/, '');
 const origin = new URL(baseURL).origin;
 const mutationEnabled = mutationEnvironmentEnabled(baseURL);
 const expectedBackendEnvironment = expectedMutationBackendEnvironment(baseURL);
+const expectedReadOnlyBackendEnvironment = new Set([
+  'https://www.herpfree.co.kr',
+  'https://herpfree.co.kr',
+]).has(origin) ? 'prod' : expectedBackendEnvironment;
 const basicAuthUsername = process.env.E2E_HTTP_USERNAME?.trim();
 const basicAuthPassword = process.env.E2E_HTTP_PASSWORD?.trim();
 const httpCredentials = basicAuthUsername && basicAuthPassword
@@ -196,7 +200,7 @@ test.describe('release smoke', () => {
     expect(health.headers()['x-request-id']).toBeTruthy();
     const healthData = await data<{ status: string; environment: string }>(health);
     expect(healthData.status).toBe('UP');
-    expect(healthData.environment).toBe(expectedBackendEnvironment);
+    expect(healthData.environment).toBe(expectedReadOnlyBackendEnvironment);
     const homeStats = await request.get('/api/journal/public/home-stats');
     const homeStatsData = await data<{ activeMemberCount: number; postsToday: number }>(homeStats);
     expect(Object.keys(homeStatsData).sort()).toEqual(['activeMemberCount', 'postsToday']);
@@ -226,12 +230,30 @@ test.describe('staging data flow', () => {
   test('anonymous concern creation, guest search, sharing and comments preserve privacy', async ({ page, request }, testInfo) => {
     const account = await signupAndLogin(`concern-${testInfo.project.name}`);
     let postId: number | undefined;
+    let controlPostId: number | undefined;
+    let withdrawn = false;
     try {
       const boards = await data<Array<{ id: number; boardType: string }>>(await account.api.get('/api/boards'));
       const board = boards.find(item => item.boardType === 'ANONYMOUS_QUESTION');
+      const freeBoard = boards.find(item => item.boardType === 'FREE');
       expect(board).toBeTruthy();
+      expect(freeBoard).toBeTruthy();
       const title = `E2E anonymous concern ${Date.now()}`;
       const payload = { boardId: board!.id, title, content: 'Temporary public experience for staging verification.', isAnonymous: false, visibility: 'PUBLIC' };
+      const before = await data<{ agreed: boolean; latestDecisionAgreed: boolean | null; requiredPolicyVersion: string; purpose: string }>(
+        await account.api.get('/api/users/me/consents/community-health'));
+      expect(before.agreed).toBe(false);
+      expect(before.latestDecisionAgreed).toBeNull();
+      expect(before.purpose).toBe('ANONYMOUS_CONCERN_PUBLICATION');
+      const withoutConsent = await account.api.post('/api/posts', { headers: csrf(account), data: { ...payload, publicDisclosureAccepted: true } });
+      expect(withoutConsent.status()).toBe(428);
+      const control = await data<{ id: number }>(await account.api.post('/api/posts', { headers: csrf(account),
+        data: { boardId: freeBoard!.id, title: 'E2E ordinary board consent isolation', content: 'Synthetic ordinary text.', visibility: 'PUBLIC', isAnonymous: true } }));
+      controlPostId = control.id;
+      const granted = await data<{ agreed: boolean }>(await account.api.patch('/api/users/me/consents/community-health', {
+        headers: csrf(account), data: { agreed: true, policyVersion: before.requiredPolicyVersion },
+      }));
+      expect(granted.agreed).toBe(true);
       const rejected = await account.api.post('/api/posts', { headers: csrf(account), data: payload });
       expect(rejected.status()).toBe(400);
       const created = await data<{ id: number; authorNickname: string; isAnonymous: boolean }>(await account.api.post('/api/posts', { headers: csrf(account), data: { ...payload, publicDisclosureAccepted: true } }));
@@ -246,7 +268,8 @@ test.describe('staging data flow', () => {
       expect(search.content.some(item => item.id === postId)).toBe(true);
       const preview = await data<Record<string, unknown>>(await request.get(`/api/posts/${postId}/share-preview`));
       expect(preview.title).toBe(title);
-      expect(Object.keys(preview).sort()).toEqual(['boardType', 'description', 'id', 'title']);
+      expect(preview.mode).toBe('FULL');
+      expect(Object.keys(preview).sort()).toEqual(['boardType', 'description', 'id', 'mode', 'title']);
       await data(await account.api.post(`/api/posts/${postId}/comments`, { headers: csrf(account), data: { content: 'Temporary anonymous experience.', isAnonymous: false } }));
       const comments = await data<{ content: Array<{ authorNickname: string; operatorReply: boolean }> }>(await request.get(`/api/posts/${postId}/comments`));
       expect(comments.content).toEqual(expect.arrayContaining([expect.objectContaining({ authorNickname: '익명', operatorReply: false })]));
@@ -256,6 +279,69 @@ test.describe('staging data flow', () => {
       await expect(page.getByText(account.user.nickname, { exact: true })).toHaveCount(0);
       const html = await request.get(`/community/posts/${postId}`, { headers: { 'User-Agent': 'kakaotalk-scrap/1.0' } });
       expect((await html.text()).match(/<head>[\s\S]*?<\/head>/)?.[0]).toContain(`property="og:title" content="${title}"`);
+
+      const receipt = await data<{ agreed: boolean; latestDecisionAgreed: boolean; deletionRequestId: number }>(await account.api.patch('/api/users/me/consents/community-health', {
+        headers: csrf(account), data: { agreed: false, policyVersion: before.requiredPolicyVersion },
+      }));
+      withdrawn = true;
+      expect(receipt.agreed).toBe(false);
+      expect(receipt.latestDecisionAgreed).toBe(false);
+      expect(receipt.deletionRequestId).toBeGreaterThan(0);
+      expect((await request.get(`/api/posts/${postId}`)).status()).toBe(404);
+      expect((await request.get(`/api/posts/${postId}/share-preview`)).status()).toBe(404);
+      const repeated = await data<{ deletionRequestId: number }>(await account.api.patch('/api/users/me/consents/community-health', {
+        headers: csrf(account), data: { agreed: false, policyVersion: before.requiredPolicyVersion },
+      }));
+      expect(repeated.deletionRequestId).toBe(receipt.deletionRequestId);
+      expect((await account.api.get(`/api/posts/${controlPostId}`)).status()).toBe(200);
+      expect((await data<{ agreed: boolean }>(await account.api.get('/api/users/me/consents/health-data'))).agreed).toBe(true);
+      expect((await account.api.post('/api/posts', { headers: csrf(account), data: { ...payload, publicDisclosureAccepted: true } })).status()).toBe(428);
+    } finally {
+      if (postId && !withdrawn) expect((await account.api.delete(`/api/posts/${postId}`, { headers: csrf(account) })).status()).toBe(204);
+      if (controlPostId) expect((await account.api.delete(`/api/posts/${controlPostId}`, { headers: csrf(account) })).status()).toBe(204);
+      await deleteAccount(account);
+    }
+  });
+
+  test('member-only title sharing reveals only the opted-in title to guests', async ({ page, request }, testInfo) => {
+    const account = await signupAndLogin(`title-${testInfo.project.name}`);
+    let postId: number | undefined;
+    try {
+      const boards = await data<Array<{ id: number; boardType: string }>>(await account.api.get('/api/boards'));
+      const board = boards.find(item => item.boardType === 'FREE');
+      expect(board).toBeTruthy();
+      const title = `E2E member title ${Date.now()}`;
+      const privateBody = `E2E member body ${Date.now()} should never appear in guest preview`;
+      const created = await data<{ id: number; shareTitlePublicly: boolean }>(await account.api.post('/api/posts', {
+        headers: csrf(account),
+        data: { boardId: board!.id, title, content: privateBody, isAnonymous: true,
+          visibility: 'MEMBERS_ONLY', shareTitlePublicly: true },
+      }));
+      postId = created.id;
+      expect(created.shareTitlePublicly).toBe(true);
+
+      const preview = await data<{ title: string; description: string; mode: string }>(
+        await request.get(`/api/posts/${postId}/share-preview`));
+      expect(preview).toMatchObject({ title, mode: 'TITLE_ONLY', description: '로그인하면 글을 볼 수 있어요.' });
+      expect(JSON.stringify(preview)).not.toContain(privateBody);
+
+      const guestDetail = await request.get(`/api/posts/${postId}`);
+      expect([401, 403, 404]).toContain(guestDetail.status());
+      expect(await guestDetail.text()).not.toContain(privateBody);
+
+      const html = await request.get(`/community/posts/${postId}`, {
+        headers: { 'User-Agent': 'kakaotalk-scrap/1.0' },
+      });
+      const head = (await html.text()).match(/<head>[\s\S]*?<\/head>/)?.[0] ?? '';
+      expect(head).toContain(`property="og:title" content="${title}"`);
+      expect(head).toContain('로그인하면 글을 볼 수 있어요.');
+      expect(head).not.toContain(privateBody);
+
+      await page.context().clearCookies();
+      await page.goto(`/community/posts/${postId}`);
+      await expect(page.getByRole('link', { name: '로그인하고 계속하기' }))
+        .toHaveAttribute('href', new RegExp(`from=%2Fcommunity%2Fposts%2F${postId}`));
+      await expect(page.getByText(privateBody)).toHaveCount(0);
     } finally {
       if (postId) expect((await account.api.delete(`/api/posts/${postId}`, { headers: csrf(account) })).status()).toBe(204);
       await deleteAccount(account);

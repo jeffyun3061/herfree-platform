@@ -51,6 +51,8 @@ public class PostImageAccessService {
         boolean privateScope = false;
 
         for (Post post : attachedPosts) {
+            if (post.getStatus() == PostStatus.CONSENT_WITHDRAWN) return new ImageObjectAccess(false, true);
+            if (post.getCommunityHealthConsent() != null) privateScope = true;
             boolean privateBoard = PrivateBoardPolicy.isAdminMaskedBoard(post.getBoard().getBoardType());
             boolean membersOnly = post.getVisibility() == PostVisibility.MEMBERS_ONLY;
             boolean inactive = post.getStatus() != PostStatus.ACTIVE;

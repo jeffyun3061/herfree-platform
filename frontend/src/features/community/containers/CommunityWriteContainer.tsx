@@ -31,7 +31,9 @@ import { isStaff } from '@/domain/user/types';
 import { getErrorMessage } from '@/lib/api/client';
 import * as adminApi from '@/lib/api/admin';
 import { CommunityWriteGuidelines } from '@/components/community/CommunityWriteGuidelines';
-import { ReadableContent } from '@/components/content/ReadableContent';
+import { CommunityContentEditor } from '@/components/community/CommunityContentEditor';
+import { CommunityHealthConsentPanel } from '@/components/community/CommunityHealthConsentPanel';
+import { useCommunityHealthConsent } from '@/hooks/useCommunityHealthConsent';
 import type { PostVisibility } from '@/domain/post/types';
 
 const TITLE_UI_MAX = 30;
@@ -58,9 +60,11 @@ function WritePostForm() {
   const [boardId, setBoardId] = useState(0);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [showContentPreview, setShowContentPreview] = useState(false);
+  const [richContent, setRichContent] = useState<string | null>(null);
+  const changeRichContent = (plain: string, document: string) => { setContent(plain); setRichContent(document); };
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [visibility, setVisibility] = useState<PostVisibility>('PUBLIC');
+  const [shareTitlePublicly, setShareTitlePublicly] = useState(false);
   const [publicDisclosureAccepted, setPublicDisclosureAccepted] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [isImageUploading, setIsImageUploading] = useState(false);
@@ -73,6 +77,10 @@ function WritePostForm() {
   const boardScrollerRef = useRef<HTMLDivElement>(null);
   const [canScrollBoardsLeft, setCanScrollBoardsLeft] = useState(false);
   const [canScrollBoardsRight, setCanScrollBoardsRight] = useState(false);
+  const selectedBoard = writableBoards.find((board) => board.id === boardId);
+  const isConcernWrite = isAnonymousConcernBoard(selectedBoard?.boardType);
+  const communityHealthConsent = useCommunityHealthConsent(isConcernWrite && !isStaffAdminEdit);
+  const concernConsentBlocked = isConcernWrite && !isStaffAdminEdit && !communityHealthConsent.agreed;
 
   const updateBoardScrollState = () => {
     const scroller = boardScrollerRef.current;
@@ -148,8 +156,10 @@ function WritePostForm() {
     setBoardId(existingPost.boardId);
     setTitle(existingPost.title);
     setContent(existingPost.content);
+    setRichContent(existingPost.richContent ?? null);
     setIsAnonymous(existingPost.isAnonymous);
     setVisibility(existingPost.visibility);
+    setShareTitlePublicly(existingPost.shareTitlePublicly === true);
     setImageUrl(existingPost.imageUrl ?? null);
     setInitialized(true);
   }, [isEditMode, existingPost, initialized]);
@@ -157,7 +167,7 @@ function WritePostForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting || isImageUploading) return;
-    const validation = validatePostInput({ title, content });
+    const validation = validatePostInput({ title, content, richContent });
     if (validation) {
       setValidationError(validation);
       return;
@@ -172,8 +182,12 @@ function WritePostForm() {
     }
     const selected = boards.find((board) => board.id === boardId);
     const concern = isAnonymousConcernBoard(selected?.boardType);
+    if (concern && !isStaffAdminEdit && !communityHealthConsent.agreed) {
+      setValidationError('익명 고민 건강정보 처리에 별도로 동의한 뒤 등록해 주세요.');
+      return;
+    }
     if (concern && !isEditMode && !publicDisclosureAccepted) {
-      setValidationError('본문이 공개되는 것을 확인해 주세요.');
+      setValidationError('제목과 본문이 공개되는 것을 확인해 주세요.');
       return;
     }
     if (selected && isStaffOnlyBoardType(selected.boardType)) {
@@ -193,7 +207,8 @@ function WritePostForm() {
         try {
           await adminApi.updateAdminPost(editPostId, {
             title: title.trim(),
-            content: content.trim(),
+            content: richContent ? content : content.trim(),
+            richContent,
           });
           router.replace(`/community/posts/${editPostId}`);
         } catch (err) {
@@ -207,8 +222,10 @@ function WritePostForm() {
       const result = await updatePost(editPostId, {
         title,
         content,
+        richContent,
         isAnonymous: concern || isAnonymous,
         imageUrl: imageUrl ?? '',
+        shareTitlePublicly: visibility === 'MEMBERS_ONLY' && shareTitlePublicly,
       });
       if (result) router.replace(`/community/posts/${result.id}`);
       return;
@@ -218,9 +235,11 @@ function WritePostForm() {
       boardId,
       title,
       content,
+      richContent,
       isAnonymous: concern || isAnonymous,
       visibility: concern ? 'PUBLIC' : visibility,
       publicDisclosureAccepted: concern && publicDisclosureAccepted,
+      shareTitlePublicly: Boolean(selected && !concern && !isMaskedBoardType(selected.boardType) && visibility === 'MEMBERS_ONLY' && shareTitlePublicly),
       imageUrl: pickPostImageUrlForCreate(imageUrl),
     });
     if (result) {
@@ -264,8 +283,6 @@ function WritePostForm() {
     );
   }
 
-  const selectedBoard = writableBoards.find((b) => b.id === boardId);
-  const isConcernWrite = isAnonymousConcernBoard(selectedBoard?.boardType);
   const isSymptomBoard = selectedBoard?.boardType === 'SYMPTOM';
   const privateMeta = selectedBoard ? getPrivateBoardMetaByType(selectedBoard.boardType) : null;
   const isSecretStoryWrite = selectedBoard != null && isSecretStoryBoardType(selectedBoard.boardType);
@@ -323,7 +340,7 @@ function WritePostForm() {
   const boardPickerDisabled = isEditMode || lockedPrivateBoard;
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#F3EDE3] pb-10 hf-subpage-top">
+    <div className="mx-auto flex min-h-screen w-full max-w-[720px] flex-col bg-[#F3EDE3] pb-10 hf-subpage-top">
       <header className="flex items-center justify-between border-b border-[#E4D8C7] bg-[#F3EDE3]/95 px-[18px] pb-3.5 pt-0.5">
         <Link
           href={backHref}
@@ -338,7 +355,7 @@ function WritePostForm() {
         <button
           type="submit"
           form="community-write-form"
-          disabled={isSubmitting || isAdminSubmitting || isImageUploading || boardId <= 0}
+          disabled={isSubmitting || isAdminSubmitting || isImageUploading || boardId <= 0 || concernConsentBlocked}
           className="min-h-11 shrink-0 text-[13.5px] font-bold text-[#0B3B36] disabled:opacity-40"
         >
           {submitLabel}
@@ -351,12 +368,12 @@ function WritePostForm() {
         className="flex flex-1 flex-col"
       >
         {isSymptomBoard && !isEditMode && (
-          <div className="px-5 pt-4">
+          <div className="px-4 sm:px-5 pt-4">
             <SymptomBoardRedirectBanner />
           </div>
         )}
 
-        <div className="px-5 pt-[18px]">
+        <div className="px-4 sm:px-5 pt-[18px]">
           <p className="mb-2.5 text-[12px] font-semibold text-[#9A9F94]">게시판 선택</p>
           <div className="-mx-2 flex items-center gap-1">
             <button
@@ -411,12 +428,12 @@ function WritePostForm() {
         </div>
 
         {isSecretStoryWrite && (
-          <div className="px-5 pt-4">
+          <div className="px-4 sm:px-5 pt-4">
             <SecretStoryBoardBanner />
           </div>
         )}
 
-        <div className="px-5 pt-[18px]">
+        <div className="px-4 sm:px-5 pt-[18px]">
           <div
             className={cn(
               'flex items-center gap-1.5 border-b-2 transition-colors',
@@ -427,7 +444,7 @@ function WritePostForm() {
               id="title"
               value={title}
               maxLength={POST_TITLE_MAX_LENGTH}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={(e) => { setTitle(e.target.value); setShareTitlePublicly(false); }}
               onFocus={() => setTitleFocused(true)}
               onBlur={() => setTitleFocused(false)}
               placeholder={titlePlaceholder}
@@ -451,7 +468,7 @@ function WritePostForm() {
         </div>
 
         {!isMaskedWrite && (
-          <div className="flex-1 px-5 pt-3.5">
+          <div className="flex-1 px-4 sm:px-5 pt-3.5">
             {!isEditMode && <CommunityWriteGuidelines />}
             {!isEditMode && !isConcernWrite && (
               <fieldset className="mt-3 rounded-[14px] border border-[#ECE5D8] bg-white p-3">
@@ -463,7 +480,7 @@ function WritePostForm() {
                       name="post-visibility"
                       value="PUBLIC"
                       checked={visibility === 'PUBLIC'}
-                      onChange={() => setVisibility('PUBLIC')}
+                      onChange={() => { setVisibility('PUBLIC'); setShareTitlePublicly(false); }}
                       className="mt-0.5 h-4 w-4 shrink-0 accent-[#0B3B36]"
                     />
                     <span className="min-w-0 break-keep"><span className="font-semibold">전체 공개</span><br /><span className="text-[#7A8178]">비회원도 볼 수 있어요.</span></span>
@@ -483,48 +500,32 @@ function WritePostForm() {
                 <p className="mt-3 break-keep border-t border-[#EEE5D7] pt-2.5 text-[11px] leading-[1.7] text-[#7A8178]">건강정보·실명·연락처처럼 민감한 내용은 공개 게시판 대신 개인일지에 기록해 주세요.</p>
               </fieldset>
             )}
+            {!isMaskedWrite && !isConcernWrite && visibility === 'MEMBERS_ONLY' && (
+              <label className="mt-3 flex items-start gap-2 rounded-[14px] border border-[#ECE5D8] bg-white p-3 text-[12px] leading-[1.7] text-[#263B32]">
+                <input type="checkbox" checked={shareTitlePublicly} onChange={(event) => setShareTitlePublicly(event.target.checked)} className="mt-1 h-4 w-4 shrink-0 accent-[#0B3B36]" />
+                <span><strong>로그인 전에도 글 제목만 공유 미리보기에 공개</strong><br />본문·작성자·댓글은 보이지 않습니다. 제목에 건강정보나 신상정보가 있다면 선택하지 마세요. 제목을 수정하면 다시 선택해야 합니다.</span>
+              </label>
+            )}
             {isConcernWrite && (
               <div className="mt-3 rounded-[14px] bg-[#EDF4F0] p-4 text-[12px] leading-[1.7] text-[#263B32]">
-                <p className="font-bold">닉네임은 항상 비공개예요</p>
-                <p>본문과 댓글은 비회원도 읽으며 검색·링크 공유 미리보기에 표시될 수 있어요. 본문·사진에 실명이나 연락처를 넣지 마세요.</p>
-                {!isEditMode && <label className="mt-3 flex items-start gap-2"><input type="checkbox" checked={publicDisclosureAccepted} onChange={(event) => setPublicDisclosureAccepted(event.target.checked)} className="mt-1 accent-[#0B3B36]" /><span>본문이 공개되는 것을 확인했습니다.</span></label>}
+                <p className="font-bold">공개 고민을 올리기 전에 확인해 주세요</p>
+                <p>제목·본문·첨부 사진과 댓글은 비회원도 읽을 수 있어요. 제목과 본문 일부는 검색·링크 미리보기에 표시될 수 있습니다.</p>
+                <p className="mt-2">다른 이용자에게 닉네임을 표시하지 않지만 서비스 내부에는 계정과 글의 연결이 남습니다. 병력·증상 등 건강정보나 본문·사진의 내용으로 본인을 알아볼 수 있으니 실명·연락처는 적지 마세요.</p>
+                <Link href="/journal" prefetch={false} className="mt-3 inline-flex min-h-11 items-center font-bold underline underline-offset-2">공개하지 않고 개인일지에 기록하기 · 본인만 열람</Link>
+                <p className="text-[11px] text-[#52695E]">개인일지로 이동해도 작성 중인 글은 자동으로 옮겨지지 않습니다.</p>
+                {!isEditMode && <label className="mt-3 flex items-start gap-2"><input type="checkbox" checked={publicDisclosureAccepted} onChange={(event) => setPublicDisclosureAccepted(event.target.checked)} className="mt-1 accent-[#0B3B36]" /><span>제목과 본문이 공개되는 것을 확인했습니다.</span></label>}
               </div>
             )}
-            <div className="mt-4 flex items-center justify-between gap-3">
-              <label htmlFor="content" className="text-[13px] font-bold text-[#36453B]">본문</label>
-              <button
-                type="button"
-                aria-pressed={showContentPreview}
-                onClick={() => setShowContentPreview((value) => !value)}
-                className="min-h-11 rounded-lg px-3 text-[13px] font-bold text-[#0B3B36] underline underline-offset-4"
-              >
-                {showContentPreview ? '계속 쓰기' : '미리보기'}
-              </button>
+            {isConcernWrite && !isStaffAdminEdit && <CommunityHealthConsentPanel state={communityHealthConsent} />}
+            <div className="mt-3">
+              <CommunityContentEditor value={content} onChange={setContent} richContent={richContent} onRichChange={changeRichContent} placeholder={contentPlaceholder} />
             </div>
-            {showContentPreview ? (
-              <div data-testid="community-post-preview" className="min-h-[240px] w-full border-b border-[#D9CDB8] py-3">
-                {content ? (
-                  <ReadableContent text={content} variant="community" />
-                ) : (
-                  <p className="hf-community-writing-content text-[#7C8279]">본문을 입력하면 게시될 모습이 여기에 보여요.</p>
-                )}
-              </div>
-            ) : (
-              <textarea
-                id="content"
-                required
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder={contentPlaceholder}
-                className="hf-community-writing-content min-h-[240px] w-full resize-y border-x-0 border-t-0 border-b border-[#D9CDB8] bg-transparent px-0 py-3 placeholder:text-[#8A9089] outline-none focus:border-[#0B3B36]"
-              />
-            )}
             <div className="mt-3">
               <CommunityPhotoAttach
                 imageUrl={imageUrl}
                 onChange={setImageUrl}
                 onUploadingChange={setIsImageUploading}
-                disabled={isSubmitting}
+                disabled={isSubmitting || concernConsentBlocked || (isConcernWrite && !isEditMode && !publicDisclosureAccepted)}
                 variant="compact"
                 emptyText="사진 추가"
               />
@@ -533,22 +534,12 @@ function WritePostForm() {
         )}
 
         {isMaskedWrite && (
-          <div className="flex-1 px-5 pt-3.5">
-            <label htmlFor="content" className="sr-only">
-              본문
-            </label>
-            <textarea
-              id="content"
-              required
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder={contentPlaceholder}
-              className="min-h-[200px] w-full resize-y rounded-[14px] border border-[#E2D5C2] bg-[#FFFCF7] p-[15px] text-[16px] leading-[1.7] text-[#1E2621] shadow-[0_10px_24px_-24px_rgba(7,37,31,.45)] placeholder:text-[#B4B2A6] outline-none focus:border-[#0B3B36]/35"
-            />
+          <div className="flex-1 px-4 sm:px-5 pt-3.5">
+            <CommunityContentEditor value={content} onChange={setContent} richContent={richContent} onRichChange={changeRichContent} placeholder={contentPlaceholder} />
           </div>
         )}
 
-        <div className="mt-auto flex items-center gap-2.5 px-5 pt-3">
+        <div className="mt-auto flex items-center gap-2.5 px-4 sm:px-5 pt-3">
           {isConcernWrite && <p className="text-[12px] font-semibold text-[#0B3B36]">닉네임 비공개로 작성됩니다.</p>}
           {!isMaskedWrite && !isConcernWrite && (
             <label className="flex cursor-pointer items-center gap-1.5 text-[12px] text-[#6E766F]">
@@ -570,19 +561,24 @@ function WritePostForm() {
                 <rect x="5" y="11" width="14" height="9" rx="2" />
                 <path d="M8 11V7a4 4 0 0 1 8 0v4" />
               </svg>
-              비밀글로 작성
+              익명으로 작성
             </label>
           )}
           <Button
             type="submit"
-            disabled={isSubmitting || isAdminSubmitting || isImageUploading || boardId <= 0}
+            disabled={isSubmitting || isAdminSubmitting || isImageUploading || boardId <= 0 || concernConsentBlocked}
             className="ml-auto rounded-xl px-[22px] py-[11px] text-[13.5px] font-bold shadow-none"
           >
             {bottomSubmitLabel}
           </Button>
         </div>
+        {!isMaskedWrite && !isConcernWrite && (
+          <p className="px-4 pt-1 text-[11px] leading-[1.6] text-[#6E766F] sm:px-5">
+            익명 선택은 닉네임만 가립니다. 글을 볼 수 있는 범위는 위의 공개 범위 설정을 따릅니다.
+          </p>
+        )}
 
-        <div className="space-y-3 px-5 pt-4">
+        <div className="space-y-3 px-4 sm:px-5 pt-4">
           {validationError && <ErrorMessage message={validationError} />}
           {adminSubmitError && <ErrorMessage message={adminSubmitError} />}
           {error && <ErrorMessage message={error} />}

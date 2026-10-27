@@ -57,6 +57,27 @@ export function updateHealthDataConsent(agreed: boolean): Promise<HealthDataCons
   });
 }
 
+export const COMMUNITY_HEALTH_PURPOSE = 'ANONYMOUS_CONCERN_PUBLICATION';
+export type CommunityHealthConsent = {
+  agreed: boolean;
+  latestDecisionAgreed: boolean | null;
+  requiredPolicyVersion: string;
+  policyVersion: string | null;
+  purpose: string;
+  decidedAt: string | null;
+  deletionRequestId: number | null;
+};
+
+export function fetchCommunityHealthConsent(): Promise<CommunityHealthConsent> {
+  return request<CommunityHealthConsent>('/api/users/me/consents/community-health');
+}
+
+export function updateCommunityHealthConsent(agreed: boolean, policyVersion: string): Promise<CommunityHealthConsent> {
+  return request<CommunityHealthConsent>('/api/users/me/consents/community-health', {
+    method: 'PATCH', body: { agreed, policyVersion },
+  });
+}
+
 // api-spec.md 기준 회원 탈퇴 엔드포인트 — 백엔드 구현이 추가되면 그대로 동작한다
 export function withdraw(): Promise<void> {
   return request<void>('/api/users/me', { method: 'DELETE' });

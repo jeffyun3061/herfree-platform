@@ -12,7 +12,11 @@ APP_DIR="${HERFREE_APP_DIR:-/opt/herfree}"
 CONFIG_DIR="${HERFREE_CONFIG_DIR:-${APP_DIR}/config}"
 APP_ENV_FILE="${CONFIG_DIR}/.env.${DEPLOY_ENV}"
 [[ "${DEPLOY_ENV}" == "production" ]] && APP_ENV_FILE="${CONFIG_DIR}/.env.prod"
-MYSQL_ENV_FILE="${CONFIG_DIR}/.env.mysql.${DEPLOY_ENV}"
+if [[ "${DEPLOY_ENV}" == "production" ]]; then
+  MYSQL_ENV_FILE="${CONFIG_DIR}/.env.mysql.prod"
+else
+  MYSQL_ENV_FILE="${CONFIG_DIR}/.env.mysql.staging"
+fi
 CERT_FILE="${APP_DIR}/infra/certs/rds-global-bundle.pem"
 for file in "${APP_ENV_FILE}" "${MYSQL_ENV_FILE}" "${CERT_FILE}"; do
   [[ -f "${file}" ]] || { echo "preflight prerequisite is missing: ${file}" >&2; exit 1; }

@@ -44,12 +44,13 @@ jobs:
           AMPLIFY_BRANCH: develop
         run: |
           set -euo pipefail
-          test "${GITHUB_REF}" = "refs/heads/main"
+          [[ "${GITHUB_REF}" == refs/heads/main || "${GITHUB_REF}" == refs/heads/develop ]]
+          test "${GITHUB_SHA}" = "$(git ls-remote origin "${GITHUB_REF}" | cut -f1)"
           : "${AMPLIFY_APP_ID:?STAGING_AMPLIFY_APP_ID is required}"
           git fetch --no-tags origin "${AMPLIFY_BRANCH}"
           frontend_sha="$(git rev-parse "origin/${AMPLIFY_BRANCH}")"
           if ! git diff --quiet "${GITHUB_SHA}" "${frontend_sha}" -- frontend amplify.yml; then
-            echo "main and ${AMPLIFY_BRANCH} do not contain the same frontend release."
+            echo "The selected candidate and ${AMPLIFY_BRANCH} do not contain the same frontend release."
             exit 1
           fi
           latest_job="$(aws amplify list-jobs \
@@ -57,14 +58,10 @@ jobs:
             --branch-name "${AMPLIFY_BRANCH}" \
             --max-results 2 \
             --output json)"
-          # A manual rebuild of the same branch reports HEAD; require its
-          # immediately preceding successful build to identify the exact SHA.
+          # Candidate validation on develop is allowed before main approval.
+          # HEAD alone is not reliable evidence of what was built.
           jq -e --arg commit "${frontend_sha}" \
-            '(.jobSummaries[0].status == "SUCCEED") and
-             ((.jobSummaries[0].commitId == $commit) or
-              (.jobSummaries[0].commitId == "HEAD" and
-               .jobSummaries[1].status == "SUCCEED" and
-               .jobSummaries[1].commitId == $commit))' \
+            '(.jobSummaries[0].status == "SUCCEED") and (.jobSummaries[0].commitId == $commit)' \
             <<<"${latest_job}" >/dev/null || {
               echo "Existing Amplify staging branch/build is missing or stale; refusing to create or start one automatically."
               echo "Restore the existing develop branch/build manually, then rerun this workflow."
@@ -133,6 +130,7 @@ jobs:
             infra/nginx/herfree-staging.conf \
             infra/nginx/herfree-staging-bootstrap.conf \
             infra/scripts/backup-db.sh \
+            infra/scripts/approve-admin-mfa-enrollment.sh \
             infra/scripts/deploy-release.sh \
             infra/scripts/install-local-db-ops.sh \
             infra/scripts/migrate-rds-to-local.sh \
@@ -193,7 +191,8 @@ jobs:
             done
           fi
           test "${terminal}" = "true"
-          aws ssm get-command-invocation --command-id "${command_id}" --instance-id "${INSTANCE_ID}"
+          aws ssm get-command-invocation --command-id "${command_id}" --instance-id "${INSTANCE_ID}" \
+            --query '{Status:Status,ResponseCode:ResponseCode}'
           test "${status}" = "Success"
       - name: Reconcile interrupted staging deployment state
         if: failure()
@@ -214,16 +213,20 @@ jobs:
           if ! aws ssm wait command-executed \
               --command-id "${command_id}" --instance-id "${INSTANCE_ID}"; then
             aws ssm get-command-invocation \
-              --command-id "${command_id}" --instance-id "${INSTANCE_ID}" || true
+              --command-id "${command_id}" --instance-id "${INSTANCE_ID}" \
+              --query '{Status:Status,ResponseCode:ResponseCode}' || true
             exit 1
           fi
           aws ssm get-command-invocation \
-            --command-id "${command_id}" --instance-id "${INSTANCE_ID}"
+            --command-id "${command_id}" --instance-id "${INSTANCE_ID}" \
+            --query '{Status:Status,ResponseCode:ResponseCode}'
 
   verify-staging:
     if: inputs.target == 'staging'
     needs: [build-staging, deploy-staging]
-    runs-on: ubuntu-latest
+    # Playwright 1.55 supports Noble; ubuntu-latest may move to Ubuntu 26.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
     environment: staging
     steps:
       - uses: actions/checkout@v4
@@ -240,7 +243,7 @@ jobs:
         working-directory: frontend
         run: |
           npm ci
-          npx playwright install --with-deps chromium
+          npx playwright install chromium
       - name: Run staging release smoke
         working-directory: frontend
         env:
@@ -254,7 +257,8 @@ jobs:
   staging-mutation-qa:
     if: inputs.target == 'staging'
     needs: verify-staging
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
     environment: staging
     steps:
       - uses: actions/checkout@v4
@@ -271,7 +275,7 @@ jobs:
         working-directory: frontend
         run: |
           npm ci
-          npx playwright install --with-deps chromium
+          npx playwright install chromium
       - name: Run staging mutation QA
         working-directory: frontend
         env:
@@ -317,6 +321,22 @@ jobs:
           test "${GITHUB_REF}" = "refs/heads/main"
           git fetch --no-tags origin main
           test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
+      - name: Verify production legal and privacy facts
+        shell: pwsh
+        env:
+          LEGAL_OPERATOR_CONFIRMED: ${{ secrets.LEGAL_OPERATOR_CONFIRMED }}
+          PRIVACY_CONTACT_CONFIRMED: ${{ secrets.PRIVACY_CONTACT_CONFIRMED }}
+          LEGAL_MAIL_PROVIDER: ${{ secrets.LEGAL_MAIL_PROVIDER }}
+          LEGAL_MAIL_PROVIDER_COUNTRY: ${{ secrets.LEGAL_MAIL_PROVIDER_COUNTRY }}
+          LEGAL_AWS_REGION: ${{ secrets.LEGAL_AWS_REGION }}
+          LEGAL_AWS_CROSS_BORDER_ACCESS_REVIEWED: ${{ secrets.LEGAL_AWS_CROSS_BORDER_ACCESS_REVIEWED }}
+          LEGAL_POLICY_REVIEWED_VERSION: ${{ secrets.LEGAL_POLICY_REVIEWED_VERSION }}
+          LEGAL_OPERATIONAL_REVIEW_REFERENCE: ${{ secrets.LEGAL_OPERATIONAL_REVIEW_REFERENCE }}
+          AWS_REGION: ${{ vars.AWS_REGION }}
+          NEXT_PUBLIC_POSTHOG_KEY: ${{ secrets.NEXT_PUBLIC_POSTHOG_KEY }}
+          NEXT_PUBLIC_POSTHOG_HOST: ${{ secrets.NEXT_PUBLIC_POSTHOG_HOST }}
+          POSTHOG_POLICY_APPROVED: ${{ secrets.POSTHOG_POLICY_APPROVED }}
+        run: ./scripts/verify-legal-policy-alignment.ps1 -StrictOperationalFacts
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
@@ -385,6 +405,7 @@ jobs:
             infra/nginx/herfree-production.conf \
             infra/nginx/herfree-production-bootstrap.conf \
             infra/scripts/backup-db.sh \
+            infra/scripts/approve-admin-mfa-enrollment.sh \
             infra/scripts/deploy-release.sh \
             infra/scripts/install-local-db-ops.sh \
             infra/scripts/migrate-rds-to-local.sh \
@@ -445,7 +466,8 @@ jobs:
             done
           fi
           test "${terminal}" = "true"
-          aws ssm get-command-invocation --command-id "${command_id}" --instance-id "${INSTANCE_ID}"
+          aws ssm get-command-invocation --command-id "${command_id}" --instance-id "${INSTANCE_ID}" \
+            --query '{Status:Status,ResponseCode:ResponseCode}'
           test "${status}" = "Success"
       - name: Reconcile interrupted production deployment state
         if: failure()
@@ -466,11 +488,13 @@ jobs:
           if ! aws ssm wait command-executed \
               --command-id "${command_id}" --instance-id "${INSTANCE_ID}"; then
             aws ssm get-command-invocation \
-              --command-id "${command_id}" --instance-id "${INSTANCE_ID}" || true
+              --command-id "${command_id}" --instance-id "${INSTANCE_ID}" \
+              --query '{Status:Status,ResponseCode:ResponseCode}' || true
             exit 1
           fi
           aws ssm get-command-invocation \
-            --command-id "${command_id}" --instance-id "${INSTANCE_ID}"
+            --command-id "${command_id}" --instance-id "${INSTANCE_ID}" \
+            --query '{Status:Status,ResponseCode:ResponseCode}'
 
   production-smoke:
     if: inputs.target == 'production'
@@ -564,7 +588,8 @@ jobs:
             done
           fi
           test "${terminal}" = "true"
-          aws ssm get-command-invocation --command-id "${command_id}" --instance-id "${INSTANCE_ID}"
+          aws ssm get-command-invocation --command-id "${command_id}" --instance-id "${INSTANCE_ID}" \
+            --query '{Status:Status,ResponseCode:ResponseCode}'
           test "${status}" = "Success"
       - name: Reconcile interrupted production rollback state
         if: failure() && steps.smoke.outcome == 'failure'
@@ -585,11 +610,13 @@ jobs:
           if ! aws ssm wait command-executed \
               --command-id "${command_id}" --instance-id "${INSTANCE_ID}"; then
             aws ssm get-command-invocation \
-              --command-id "${command_id}" --instance-id "${INSTANCE_ID}" || true
+              --command-id "${command_id}" --instance-id "${INSTANCE_ID}" \
+              --query '{Status:Status,ResponseCode:ResponseCode}' || true
             exit 1
           fi
           aws ssm get-command-invocation \
-            --command-id "${command_id}" --instance-id "${INSTANCE_ID}"
+            --command-id "${command_id}" --instance-id "${INSTANCE_ID}" \
+            --query '{Status:Status,ResponseCode:ResponseCode}'
       - name: Verify the rolled-back service externally
         if: steps.smoke.outcome == 'failure'
         env:

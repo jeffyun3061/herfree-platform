@@ -68,6 +68,7 @@ public class PostFulltextSearchRepository {
     public Page<Post> searchBoardPosts(
             Long boardId,
             String keyword,
+            Long viewerId,
             PostListSort sort,
             PostListPeriod period,
             Pageable pageable
@@ -83,6 +84,10 @@ public class PostFulltextSearchRepository {
         Map<String, Object> params = new HashMap<>();
         params.put("boardId", boardId);
         params.put("keyword", keyword);
+
+        if (viewerId == null) {
+            where.append(" AND p.visibility = 'PUBLIC'");
+        }
 
         applyWeeklySinceParam(sort, period, params);
 
