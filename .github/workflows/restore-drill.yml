@@ -27,6 +27,7 @@ jobs:
           role-to-assume: ${{ secrets.AWS_OPERATIONS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
       - name: Restore and verify on existing staging
+        timeout-minutes: 40
         run: |
           set -euo pipefail
           : "${STAGING_INSTANCE_ID:?}" "${RESTORE_PROFILE_ARN:?}" "${RESTORE_API_IMAGE:?}" "${BACKUP_BUCKET:?}"
@@ -36,6 +37,7 @@ jobs:
             --image "${RESTORE_API_IMAGE}" --bucket "${BACKUP_BUCKET}"
       - name: Reconcile cleanup after interruption
         if: always()
+        timeout-minutes: 10
         run: python3 infra/scripts/run-staging-restore-drill.py cleanup --state /tmp/herfree-drill-state.json
       - name: Retain resource cleanup evidence
         if: always()

@@ -24,6 +24,23 @@ jobs:
       AMPLIFY_RELEASE_ROLE_ARN: ${{ secrets.AWS_AMPLIFY_RELEASE_ROLE_ARN }}
     steps:
       - uses: actions/checkout@v4
+      - name: Verify production legal and privacy facts
+        if: github.ref_name == 'main'
+        shell: pwsh
+        env:
+          LEGAL_OPERATOR_CONFIRMED: ${{ secrets.LEGAL_OPERATOR_CONFIRMED }}
+          PRIVACY_CONTACT_CONFIRMED: ${{ secrets.PRIVACY_CONTACT_CONFIRMED }}
+          LEGAL_MAIL_PROVIDER: ${{ secrets.LEGAL_MAIL_PROVIDER }}
+          LEGAL_MAIL_PROVIDER_COUNTRY: ${{ secrets.LEGAL_MAIL_PROVIDER_COUNTRY }}
+          LEGAL_AWS_REGION: ${{ secrets.LEGAL_AWS_REGION }}
+          LEGAL_AWS_CROSS_BORDER_ACCESS_REVIEWED: ${{ secrets.LEGAL_AWS_CROSS_BORDER_ACCESS_REVIEWED }}
+          LEGAL_POLICY_REVIEWED_VERSION: ${{ secrets.LEGAL_POLICY_REVIEWED_VERSION }}
+          LEGAL_OPERATIONAL_REVIEW_REFERENCE: ${{ secrets.LEGAL_OPERATIONAL_REVIEW_REFERENCE }}
+          AWS_REGION: ${{ vars.AWS_REGION }}
+          NEXT_PUBLIC_POSTHOG_KEY: ${{ secrets.NEXT_PUBLIC_POSTHOG_KEY }}
+          NEXT_PUBLIC_POSTHOG_HOST: ${{ secrets.NEXT_PUBLIC_POSTHOG_HOST }}
+          POSTHOG_POLICY_APPROVED: ${{ secrets.POSTHOG_POLICY_APPROVED }}
+        run: ./scripts/verify-legal-policy-alignment.ps1 -StrictOperationalFacts
       - name: Check path release configuration
         id: configuration
         run: |

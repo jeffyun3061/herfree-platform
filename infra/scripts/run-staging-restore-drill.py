@@ -3,6 +3,7 @@
 import argparse
 import base64
 import json
+import os
 import re
 import shlex
 import subprocess
@@ -10,6 +11,35 @@ import tempfile
 import time
 import uuid
 from pathlib import Path
+
+
+class RestoreCommandError(RuntimeError):
+    def __init__(self, phase, category):
+        super().__init__("Restore command failed")
+        self.phase = phase
+        self.category = category
+
+
+def classify_ssm_failure(response):
+    # SSM output may contain health information. Return only fixed labels.
+    output = (response.get("StandardOutputContent") or "") + (response.get("StandardErrorContent") or "")
+    phases = {
+        "Temporary restore role not active": "role",
+        "New restore volume not found": "volume",
+        "Backup checksum mismatch": "backup-integrity",
+        "Backup exceeds the six-hour recovery target": "backup-age",
+        "Restore database startup failed": "database-startup",
+        "Backup import failed": "database-import",
+        "Restored application verification failed": "app-verification",
+    }
+    phase = next((label for marker, label in phases.items() if marker in output), "unknown")
+    allowed = {"OutOfMemoryError", "BeanCreationException", "BeanInstantiationException",
+               "SQLSyntaxErrorException", "SQLIntegrityConstraintViolationException",
+               "CommunicationsException", "JdbcSQLSyntaxErrorException", "HibernateException",
+               "IllegalStateException", "AccessDeniedException"}
+    match = re.search(r"category=([A-Za-z]+(?:Error|Exception)|unknown)", output)
+    category = match.group(1) if match and match.group(1) in allowed else "unknown"
+    return phase, category
 
 
 def aws(region, *args):
@@ -34,7 +64,20 @@ def require_staging(value, stopped=False):
 
 def save(path, state):
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(state, indent=2), encoding="utf-8")
+    # A cancelled process must leave either the previous complete intent or the
+    # next complete intent, so the always-cleanup step can still reconcile AWS.
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent,
+                                         prefix=f".{path.name}.", delete=False) as handle:
+            temporary = Path(handle.name)
+            json.dump(state, handle, indent=2)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, path)
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
 
 
 def report_failure(region, bucket):
@@ -68,7 +111,7 @@ def ssm(region, instance_id, source, timeout=1200):
             return
         if response["Status"] in {"Failed", "Cancelled", "TimedOut"}:
             # Never publish SSM standard output/errors: a restored database can contain personal information.
-            raise RuntimeError("Restore command failed; inspect protected diagnostics on staging")
+            raise RestoreCommandError(*classify_ssm_failure(response))
     aws(region, "ssm", "cancel-command", "--command-id", command_id)
     raise RuntimeError("Restore command timed out")
 
@@ -112,16 +155,39 @@ def cleanup(path):
                 aws(region, "ec2", "detach-volume", "--volume-id", volume_id, "--instance-id", target)
                 aws(region, "ec2", "wait", "volume-available", "--volume-ids", volume_id)
             aws(region, "ec2", "delete-volume", "--volume-id", volume_id)
+            aws(region, "ec2", "wait", "volume-deleted", "--volume-ids", volume_id)
     if state.get("profileChanged"):
-        associations = aws(region, "ec2", "describe-iam-instance-profile-associations",
-                           "--filters", f"Name=instance-id,Values={target}")["IamInstanceProfileAssociations"]
-        active = next(a for a in associations if a["State"] in {"associated", "associating"})
-        current = active["IamInstanceProfile"]["Arn"]
-        if current not in {state["restoreProfile"], state["originalProfile"]}:
-            raise ValueError("Unexpected profile change; refusing to overwrite it")
-        if current != state["originalProfile"]:
-            aws(region, "ec2", "replace-iam-instance-profile-association", "--association-id", active["AssociationId"],
-                "--iam-instance-profile", f"Arn={state['originalProfile']}")
+        # EC2 rejects replace-iam-instance-profile-association after the instance is
+        # stopped. Disassociate and then associate work on a stopped instance and
+        # keep interrupted cleanup safe to retry.
+        association_requested = False
+        for _ in range(30):
+            associations = aws(region, "ec2", "describe-iam-instance-profile-associations",
+                               "--filters", f"Name=instance-id,Values={target}")["IamInstanceProfileAssociations"]
+            attached = [a for a in associations if a["State"] in {"associated", "associating"}]
+            if len(attached) > 1:
+                raise ValueError("Multiple instance profiles require operator inspection")
+            if attached:
+                active = attached[0]
+                current = active["IamInstanceProfile"]["Arn"]
+                if current == state["originalProfile"]:
+                    # A profile associated while EC2 is stopped can remain in
+                    # "associating" until the next start. The restore profile is
+                    # already detached and the normal profile is the sole target.
+                    break
+                elif current == state["restoreProfile"]:
+                    if active["State"] == "associated":
+                        aws(region, "ec2", "disassociate-iam-instance-profile",
+                            "--association-id", active["AssociationId"])
+                else:
+                    raise ValueError("Unexpected profile change; refusing to overwrite it")
+            elif not association_requested and not any(a["State"] == "disassociating" for a in associations):
+                aws(region, "ec2", "associate-iam-instance-profile", "--instance-id", target,
+                    "--iam-instance-profile", f"Arn={state['originalProfile']}")
+                association_requested = True
+            time.sleep(2)
+        else:
+            raise RuntimeError("Original staging instance profile was not restored")
     state["cleaned"] = True
     save(path, state)
     print("Restore volume deleted, original staging profile restored, staging stopped.")
@@ -137,7 +203,7 @@ def run(args):
         raise ValueError("An immutable, staging-tested ECR image digest is required")
     associations = aws(args.region, "ec2", "describe-iam-instance-profile-associations",
                        "--filters", f"Name=instance-id,Values={args.instance}")["IamInstanceProfileAssociations"]
-    active = next(a for a in associations if a["State"] == "associated")
+    active = next(a for a in associations if a["State"] in {"associated", "associating"})
     original = active["IamInstanceProfile"]["Arn"]
     if args.profile == original:
         raise ValueError("Restore requires a dedicated temporary instance profile, distinct from normal staging")
@@ -157,6 +223,17 @@ def run(args):
         aws(args.region, "ec2", "start-instances", "--instance-ids", args.instance)
         aws(args.region, "ec2", "wait", "instance-running", "--instance-ids", args.instance)
         aws(args.region, "ec2", "wait", "instance-status-ok", "--instance-ids", args.instance)
+        # A normal profile restored during the previous stopped cleanup may only
+        # become active now. Never swap it for the temporary role until confirmed.
+        for _ in range(30):
+            current = aws(args.region, "ec2", "describe-iam-instance-profile-associations",
+                          "--filters", f"Name=instance-id,Values={args.instance}")["IamInstanceProfileAssociations"]
+            if any(a["AssociationId"] == active["AssociationId"] and a["State"] == "associated"
+                   and a["IamInstanceProfile"]["Arn"] == original for a in current):
+                break
+            time.sleep(2)
+        else:
+            raise RuntimeError("Normal staging instance profile did not become active")
         # Retry SSM registration after the stopped instance starts, without publishing command contents.
         ready = False
         for _ in range(60):
@@ -238,7 +315,7 @@ def main():
         parser.error("run requires --instance, --profile, --image and --bucket")
     try:
         cleanup(Path(args.state)) if args.command == "cleanup" else run(args)
-    except (ValueError, RuntimeError, subprocess.CalledProcessError, StopIteration, KeyError):
+    except (ValueError, RuntimeError, subprocess.CalledProcessError, StopIteration, KeyError) as error:
         bucket = args.bucket
         if not bucket and Path(args.state).exists():
             bucket = json.loads(Path(args.state).read_text(encoding="utf-8")).get("bucket")
@@ -246,7 +323,16 @@ def main():
             report_failure(args.region, bucket)
         except subprocess.CalledProcessError:
             print("Failure evidence upload unavailable; inspect GitHub job and restore-age/missing-metric alarms.")
-        print("Drill failed. Check AWS permissions/target and retained state; run cleanup if unfinished.")
+        # CLI stderr and SSM output may contain sensitive values. Emit only a
+        # bounded AWS error code or the known local exception class.
+        detail = type(error).__name__
+        if isinstance(error, RestoreCommandError):
+            detail += f"/{error.phase}/{error.category}"
+        if isinstance(error, subprocess.CalledProcessError):
+            code = re.search(r"\(([A-Za-z0-9.]+)\) when calling", error.stderr or "")
+            if code:
+                detail += f"/{code.group(1)}"
+        print(f"Drill failed ({detail}). Check retained state; run cleanup if unfinished.")
         return 1
     return 0
 

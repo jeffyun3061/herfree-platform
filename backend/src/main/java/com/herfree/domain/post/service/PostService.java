@@ -123,7 +123,7 @@ public class PostService {
                 .orElseThrow(UserNotFoundException::new);
 
         String imageUrl = resolveImageUrl(post.getId());
-        return PostDetailResponse.of(post, profile.getNickname(), true, imageUrl);
+        return PostDetailResponse.of(post, profile.getNickname(), true, imageUrl, false, userId, user.getRole());
     }
 
     @Transactional(readOnly = true)
@@ -204,7 +204,7 @@ public class PostService {
                 return postRepository.searchSecretStoryPosts(PostStatus.ACTIVE, boardId, staff ? keyword : null, paging);
             }
             if (keyword != null) {
-                return postFulltextSearchRepository.searchBoardPosts(boardId, keyword, sort, period, paging);
+                return postFulltextSearchRepository.searchBoardPosts(boardId, keyword, userId, sort, period, paging);
             }
             return searchCommunityPosts(PostStatus.ACTIVE, boardId, null, userId, sort, period, paging);
         }
@@ -305,7 +305,7 @@ public class PostService {
                 .orElse("(알 수 없음)");
 
         String imageUrl = resolveImageUrl(post.getId());
-        return PostDetailResponse.of(post, nickname, true, imageUrl, resolveStaffReplied(post));
+        return PostDetailResponse.of(post, nickname, true, imageUrl, resolveStaffReplied(post), userId, post.getUser().getRole());
     }
 
     @Transactional

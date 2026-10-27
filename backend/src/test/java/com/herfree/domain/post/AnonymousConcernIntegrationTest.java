@@ -125,6 +125,33 @@ class AnonymousConcernIntegrationTest {
         mvc.perform(get("/api/posts/" + id + "/share-preview")).andExpect(status().isNotFound());
     }
 
+    @Test void inquiryAndConsultationMutationResponsesRemainReadableOnlyToTheirOwner() throws Exception {
+        for (long boardId : java.util.List.of(94003L, 94004L)) {
+            var created = mvc.perform(post("/api/posts").header("Authorization", token(93001, "USER"))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"boardId\":" + boardId + ",\"title\":\"private request\",\"content\":\"private body\"}"))
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.data.title").value("private request"))
+                    .andExpect(jsonPath("$.data.content").value("private body"))
+                    .andExpect(jsonPath("$.data.readable").value(true))
+                    .andExpect(jsonPath("$.data.shareable").value(false))
+                    .andReturn();
+            long id = ((Number) com.jayway.jsonpath.JsonPath.read(created.getResponse().getContentAsString(), "$.data.id")).longValue();
+            mvc.perform(patch("/api/posts/" + id).header("Authorization", token(93001, "USER"))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"title\":\"updated private request\",\"content\":\"updated private body\",\"isAnonymous\":false}"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.title").value("updated private request"))
+                    .andExpect(jsonPath("$.data.content").value("updated private body"))
+                    .andExpect(jsonPath("$.data.readable").value(true))
+                    .andExpect(jsonPath("$.data.shareable").value(false));
+            mvc.perform(get("/api/posts/" + id)).andExpect(status().isNotFound());
+            mvc.perform(get("/api/posts/" + id).header("Authorization", token(93004, "USER")))
+                    .andExpect(status().isNotFound());
+            mvc.perform(get("/api/posts/" + id + "/share-preview")).andExpect(status().isNotFound());
+        }
+    }
+
     @Test void serverShareabilityNeverGrantsPrivateOrMemberOnlySharing() throws Exception {
         for (long id : java.util.List.of(95001L, 95002L)) {
             mvc.perform(get("/api/posts/" + id)).andExpect(status().isOk())

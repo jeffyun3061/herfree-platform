@@ -71,8 +71,9 @@ python3 infra/scripts/render-operations-iam.py --account "$AWS_ACCOUNT_ID" \
 
 검토 후 `production-operations-addition.json`을 기존 운영 EC2 role에 **추가**한다.
 기존 S3 백업/CloudWatch/SSM 정책을 덮어쓰지 않는다. 복구용 role·instance profile을
-생성해 `ec2-trust.json`, `restore-instance.json`과 `AmazonSSMManagedInstanceCore`를
-적용한다. 별도 GitHub OIDC 운영 role에는 `restore-workflow.json`을 적용하고 trust를
+생성해 `ec2-trust.json`, `restore-instance.json`과 Parameter Store 읽기를 제외한
+`restore-ssm-channel.json`을 적용한다. 별도 GitHub OIDC 운영 role에는
+스테이징 한 대의 역할 연결·분리 권한을 포함한 `restore-workflow.json`을 적용하고 trust를
 이 저장소의 `environment:production` subject에 제한한다. KMS customer key를 쓰는
 secret/bucket이라면 해당 키의 필요한 decrypt 권한만 별도로 추가한다.
 

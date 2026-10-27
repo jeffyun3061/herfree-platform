@@ -7,8 +7,13 @@ param(
     [string]$ProductionRdsId = "herfree-production-mysql",
     [string]$ProductionDomain = "api.herpfree.co.kr",
     [string]$FrontendOrigin = "https://herpfree.co.kr",
+    [switch]$ConfirmLegacyRdsProvisioning,
     [switch]$DryRun
 )
+
+if (-not $DryRun -and -not $ConfirmLegacyRdsProvisioning) {
+    throw "This legacy setup provisions RDS and is not the current EC2/local MySQL release path. Explicit -ConfirmLegacyRdsProvisioning is required for a separately approved provisioning operation."
+}
 
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot

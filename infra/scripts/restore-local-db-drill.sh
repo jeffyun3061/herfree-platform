@@ -95,6 +95,9 @@ if ! gzip -dc "${WORK_DIR}/backup.sql.gz" | docker exec -i -e "MYSQL_PWD=${ROOT_
   mysql --host=127.0.0.1 --ssl-mode=REQUIRED --user=root "${MYSQL_DATABASE}" > "${WORK_DIR}/import.log" 2>&1; then
   echo 'Backup import failed; sensitive diagnostic output was not published'; exit 1
 fi
+# The candidate migrates only the isolated copy of the current production
+# backup before Hibernate validates its schema. The container has no route to
+# production, and the restored database is destroyed after the drill.
 cat > "${WORK_DIR}/verify.env" <<EOF
 SPRING_PROFILES_ACTIVE=restore-drill
 SPRING_DATASOURCE_URL=jdbc:mysql://${MYSQL_CONTAINER}:3306/${MYSQL_DATABASE}?sslMode=REQUIRED
@@ -102,7 +105,7 @@ SPRING_DATASOURCE_USERNAME=root
 SPRING_DATASOURCE_PASSWORD=${ROOT_PASSWORD}
 SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE=1
 SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE=1
-SPRING_FLYWAY_ENABLED=false
+SPRING_FLYWAY_ENABLED=true
 SPRING_JPA_HIBERNATE_DDL_AUTO=validate
 HEALTH_DATA_ENCRYPTION_KEY=${HEALTH_KEY}
 JWT_SECRET=$(openssl rand -hex 32)
@@ -117,7 +120,21 @@ unset HEALTH_KEY MFA_KEY ROOT_PASSWORD
 docker run -d --name "${API_CONTAINER}" --network "${NETWORK}" --memory 768m --pids-limit 256 \
   --read-only --cap-drop ALL --security-opt no-new-privileges:true --log-driver none \
   --tmpfs /tmp:size=64m,mode=1777 --env-file "${WORK_DIR}/verify.env" \
-  --mount "type=bind,source=${WORK_DIR}/verification,target=/verification" "${RESTORE_API_IMAGE}" >/dev/null
-status="$(timeout 600 docker wait "${API_CONTAINER}")"
-[[ "${status}" == 0 && -f "${WORK_DIR}/verification/success" ]] || { echo 'Restored application verification failed'; exit 1; }
+  --mount "type=bind,source=${WORK_DIR}/verification,target=/verification" \
+  --entrypoint /bin/sh "${RESTORE_API_IMAGE}" \
+  -c 'exec java -Duser.timezone=UTC -jar /app/app.jar > /verification/app.log 2>&1' >/dev/null
+status="$(timeout 600 docker wait "${API_CONTAINER}")" || status=timeout
+if [[ "${status}" != 0 || ! -f "${WORK_DIR}/verification/success" ]]; then
+  # JVM logs exist only on the dedicated encrypted mount and are deleted during
+  # cleanup. Publish only fixed labels, never restored data or exception messages.
+  reason=unknown
+  for item in OutOfMemoryError BeanCreationException BeanInstantiationException \
+      SQLSyntaxErrorException SQLIntegrityConstraintViolationException CommunicationsException \
+      JdbcSQLSyntaxErrorException HibernateException IllegalStateException AccessDeniedException; do
+    if [[ -f "${WORK_DIR}/verification/app.log" ]] && \
+        grep -Fq "$item" "${WORK_DIR}/verification/app.log"; then reason="$item"; break; fi
+  done
+  echo "Restored application verification failed; exit=${status}; category=${reason}"
+  exit 1
+fi
 SUCCESS=true
