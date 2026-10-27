@@ -28,10 +28,11 @@ export function publicPostMetadata(postId: string, preview: PublicPreview | null
   const url = validId ? communityPostUrl(Number(postId)) : 'https://www.herpfree.co.kr/community';
   const title = preview?.title ?? '커뮤니티';
   const description = preview?.description || '헤르프리 커뮤니티에서 이야기를 나누세요.';
+  const image = { url: '/brand/logo-hfree-on-primary.png', width: 512, height: 512, alt: '헤르프리' };
   return {
     title, description, alternates: { canonical: url },
-    openGraph: { title, description, url, siteName: '헤르프리', locale: 'ko_KR', type: 'article' },
-    twitter: { card: 'summary', title, description },
+    openGraph: { title, description, url, siteName: '헤르프리', locale: 'ko_KR', type: preview ? 'article' : 'website', images: [image] },
+    twitter: { card: 'summary_large_image', title, description, images: [image.url] },
     robots: { index: preview?.boardType === 'ANONYMOUS_QUESTION', follow: true },
   };
 }
