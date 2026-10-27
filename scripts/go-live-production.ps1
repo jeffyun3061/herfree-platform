@@ -6,6 +6,8 @@ param(
     [string]$ProductionApiUrl = "https://api.herpfree.co.kr",
     [string]$ProductionFrontendUrl = "https://www.herpfree.co.kr",
     [string]$ProductionDeployRoleArn = "arn:aws:iam::439777528445:role/herfree-github-production-deploy",
+    [string]$ProductionInstanceId = $env:PRODUCTION_INSTANCE_ID,
+    [string]$DatabaseVolumeId = $env:DB_VOLUME_ID,
     [switch]$SkipStagingFix,
     [switch]$SkipProductionAws,
     [switch]$SkipRelease,
@@ -66,20 +68,27 @@ if ($LASTEXITCODE -ne 0) {
     throw "Staging has blocking checks; production setup is refused."
 }
 
-# 3. Production AWS
+# 3. Audit the existing EC2/local MySQL runtime. Provisioning is a separate,
+# explicitly approved operation and must never be a side effect of release.
 if (-not $SkipProductionAws) {
-    Write-Step "3. Production AWS"
-    $prodArgs = @("-File", (Join-Path $PSScriptRoot "setup-production-aws.ps1"), "-AwsProfile", $AwsProfile)
-    if ($DryRun) { $prodArgs += "-DryRun" }
-    powershell -ExecutionPolicy Bypass @prodArgs
+    Write-Step "3. Existing production AWS read-only audit"
+    if ($DryRun) {
+        Write-Host "[dry-run] check-production-ops.ps1 -DbRuntime local -Strict (no resource provisioning)" -ForegroundColor Yellow
+    } else {
+        $prodArgs = @("-File", (Join-Path $PSScriptRoot "check-production-ops.ps1"),
+            "-AwsProfile", $AwsProfile, "-Region", $Region, "-DbRuntime", "local", "-Strict",
+            "-ProductionInstanceId", $ProductionInstanceId, "-DatabaseVolumeId", $DatabaseVolumeId)
+        powershell -ExecutionPolicy Bypass @prodArgs
+        if ($LASTEXITCODE -ne 0) { throw "Existing production infrastructure audit failed; release is refused." }
+    }
 }
 
 # 4. GitHub production Environment
 Write-Step "4. GitHub production Environment"
 gh auth status | Out-Null
 
-$instanceId = $null
-if (-not $DryRun) {
+$instanceId = $ProductionInstanceId
+if (-not $DryRun -and -not $instanceId) {
     $instances = aws ec2 describe-instances `
         --profile $AwsProfile --region $Region `
         --filters "Name=tag:Name,Values=herfree-production-api" "Name=instance-state-name,Values=running,pending" `
@@ -102,8 +111,11 @@ if ($instanceId) {
         Write-Host "[OK] GitHub production variables set" -ForegroundColor Green
     }
 }
+elseif ($DryRun) {
+    Write-Host "[dry-run] require the verified existing production instance and local database volume IDs" -ForegroundColor Yellow
+}
 else {
-    Write-Host "[SKIP] Production EC2 not running yet — complete setup-production-aws.ps1 first" -ForegroundColor Yellow
+    throw "Existing production EC2 was not identified. Supply the verified ProductionInstanceId; provisioning is a separate operation."
 }
 
 # 5. develop -> main PR
@@ -135,11 +147,11 @@ if ($ahead) {
 # 6. Release
 if (-not $SkipRelease) {
     Write-Step "6. Release backend"
-    Write-Host "Staging release (if needed):"
-    Write-Host "  gh workflow run release-backend.yml -R $Repo -f target=staging"
+    Write-Host "Validate the exact current main SHA on staging after its approved merge:"
+    Write-Host "  gh workflow run release-backend.yml -R $Repo --ref main -f target=staging"
     Write-Host ""
-    Write-Host "After staging-passed-<SHA> exists and main is merged:"
-    Write-Host "  gh workflow run release-backend.yml -R $Repo -f target=production -f image_tag=staging-passed-<SHA>"
+    Write-Host "After that same SHA has staging-passed evidence:"
+    Write-Host "  gh workflow run release-backend.yml -R $Repo --ref main -f target=production"
     Write-Host ""
     Write-Host "Amplify production (console): connect main branch, no Basic Auth"
     Write-Host "  API_REWRITE_TARGET=$ProductionApiUrl"

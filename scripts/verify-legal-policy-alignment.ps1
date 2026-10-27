@@ -157,29 +157,53 @@ if ([string]::IsNullOrWhiteSpace($posthogKey)) {
 
 if ($StrictOperationalFacts) {
     $factNames = @(
-        "LEGAL_OPERATOR_NAME",
-        "LEGAL_OPERATOR_REPRESENTATIVE",
-        "LEGAL_OPERATOR_ADDRESS",
-        "LEGAL_OPERATOR_PHONE",
-        "PRIVACY_OFFICER_NAME",
-        "PRIVACY_OFFICER_TITLE",
-        "PRIVACY_OFFICER_PHONE",
-        "PRIVACY_OFFICER_ADDRESS",
+        "LEGAL_OPERATOR_CONFIRMED",
+        "PRIVACY_CONTACT_CONFIRMED",
         "LEGAL_MAIL_PROVIDER",
         "LEGAL_MAIL_PROVIDER_COUNTRY",
         "LEGAL_AWS_REGION",
-        "LEGAL_AWS_CROSS_BORDER_ACCESS_REVIEWED"
+        "LEGAL_AWS_CROSS_BORDER_ACCESS_REVIEWED",
+        "LEGAL_POLICY_REVIEWED_VERSION",
+        "LEGAL_OPERATIONAL_REVIEW_REFERENCE"
     )
+    $confirmedNames = @("LEGAL_OPERATOR_CONFIRMED", "PRIVACY_CONTACT_CONFIRMED", "LEGAL_AWS_CROSS_BORDER_ACCESS_REVIEWED")
     foreach ($name in $factNames) {
         $value = [Environment]::GetEnvironmentVariable($name)
         if ([string]::IsNullOrWhiteSpace($value) -or $value -match '<|CHANGE_ME|확인 필요') {
             Fail "operational legal fact: $name" "production value is missing or still a placeholder"
+        } elseif ($name -in $confirmedNames -and $value -cne "true") {
+            Fail "operational legal fact: $name" "document the review and set this approval to true"
+        } elseif ($name -eq "LEGAL_POLICY_REVIEWED_VERSION" -and $value -cne $privacyVersion) {
+            Fail "operational legal fact: $name" "the operational review must cover the current published privacy policy version"
+        } elseif ($name -eq "LEGAL_OPERATIONAL_REVIEW_REFERENCE" -and $value -notmatch '^(https://|record:[A-Za-z0-9._-]+$|[A-Za-z]:[\\/]|/)') {
+            Fail "operational legal fact: $name" "provide an existing HTTPS evidence link, private absolute path, or record: identifier"
         } else {
             Pass "operational legal fact: $name"
         }
     }
+    # Supplying facts in a private environment does not finalize the public
+    # notice. Keep production blocked while published text still says these
+    # concrete provider/transfer facts are awaiting pre-deployment confirmation.
+    $unresolvedPublishedFacts = '실제 사용 사업자.*배포 전 확정|배포 전 AWS·메일·분석 계약과 리전을 확인해야|글로벌 지원·재위탁[^|\r\n<]*계약 확인 필요|배포 전 AWS 계정의 리전·지원 범위와 실제 메일·분석 사업자를 확인하는 것이 필수'
+    if ($privacyPage -match $unresolvedPublishedFacts -or $privacyDoc -match $unresolvedPublishedFacts) {
+        Fail "published operational legal facts" "replace unresolved provider/transfer draft text with verified facts before production"
+    } else {
+        Pass "published operational legal facts"
+    }
+    foreach ($name in @("LEGAL_MAIL_PROVIDER", "LEGAL_MAIL_PROVIDER_COUNTRY")) {
+        $value = [Environment]::GetEnvironmentVariable($name)
+        if (-not [string]::IsNullOrWhiteSpace($value) -and
+            (-not $privacyPage.Contains($value) -or -not $privacyDoc.Contains($value))) {
+            Fail "published fact alignment: $name" "the verified provider and processing country must appear in both published policy sources"
+        }
+    }
+    $verifiedRegion = [Environment]::GetEnvironmentVariable("LEGAL_AWS_REGION")
+    $runtimeRegion = [Environment]::GetEnvironmentVariable("AWS_REGION")
+    if (-not [string]::IsNullOrWhiteSpace($runtimeRegion) -and $verifiedRegion -cne $runtimeRegion) {
+        Fail "AWS region alignment" "the reviewed region must match the release AWS_REGION"
+    }
 } else {
-    Warn "operational legal facts" "not evaluated; production requires -StrictOperationalFacts with verified operator, CPO, provider and transfer facts"
+    Warn "operational legal facts" "not evaluated; production requires -StrictOperationalFacts with the verified operator/contact, published provider/transfer facts and review record"
 }
 
 Write-Host ""
