@@ -32,7 +32,7 @@ public class Comment extends BaseTimeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Version @Column(name = "row_version", nullable = false)
+    @Version @Column(name = "row_version", nullable = false, columnDefinition = "BIGINT DEFAULT 0")
     private long rowVersion;
 
     @ManyToOne(fetch = FetchType.LAZY)

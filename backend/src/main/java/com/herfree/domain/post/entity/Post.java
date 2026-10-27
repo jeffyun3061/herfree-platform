@@ -33,7 +33,7 @@ public class Post extends BaseTimeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Version @Column(name = "row_version", nullable = false)
+    @Version @Column(name = "row_version", nullable = false, columnDefinition = "BIGINT DEFAULT 0")
     private long rowVersion;
 
     // LAZY 로딩: 게시글 조회 시 게시판 전체를 불필요하게 로딩하지 않기 위해 지연 로딩 사용

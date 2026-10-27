@@ -1,14 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import type { CommunityHealthConsentState } from '@/hooks/useCommunityHealthConsent';
 
 export function CommunityHealthConsentPanel({ state, showManageLink = true }: { state: CommunityHealthConsentState; showManageLink?: boolean }) {
-  const [accepted, setAccepted] = useState(false);
-  useEffect(() => setAccepted(false), [state.consent?.requiredPolicyVersion, state.agreed]);
+  const [acceptedVersion, setAcceptedVersion] = useState<string | null>(null);
+  const accepted = !state.agreed && !!state.consent && acceptedVersion === state.consent.requiredPolicyVersion;
 
   return <section aria-label="익명 고민 건강정보 처리 동의" className="mt-4 rounded-xl border border-[#D7E4DC] bg-white p-4 text-[12px] leading-[1.7] text-[#36453B]">
     <h3 className="font-bold text-[#0B3B36]">익명 고민 건강정보 처리 · 개인일지와 별도</h3>
@@ -27,8 +27,8 @@ export function CommunityHealthConsentPanel({ state, showManageLink = true }: { 
       <Link href="/privacy" className="mt-2 inline-block underline underline-offset-2">개인정보처리방침 확인</Link>
       {state.consent && <>
         <p className="mt-2 text-[11px] text-muted">검토 정책 버전: {state.consent.requiredPolicyVersion}</p>
-        <label className="mt-3 flex items-start gap-2"><input type="checkbox" checked={accepted} onChange={(event) => setAccepted(event.target.checked)} className="mt-1 h-4 w-4 shrink-0 accent-[#0B3B36]" /><span>위 익명 고민 건강정보 처리에 별도로 동의합니다.</span></label>
-        <Button type="button" size="sm" className="mt-3" disabled={!accepted || state.isUpdating} onClick={() => void state.update(true)}>{state.isUpdating ? '동의 처리 중…' : '익명 고민 건강정보 처리에 동의'}</Button>
+        <label className="mt-3 flex items-start gap-2"><input type="checkbox" checked={accepted} onChange={(event) => setAcceptedVersion(event.target.checked ? state.consent?.requiredPolicyVersion ?? null : null)} className="mt-1 h-4 w-4 shrink-0 accent-[#0B3B36]" /><span>위 익명 고민 건강정보 처리에 별도로 동의합니다.</span></label>
+        <Button type="button" size="sm" className="mt-3" disabled={!accepted || state.isUpdating} onClick={() => { setAcceptedVersion(null); void state.update(true); }}>{state.isUpdating ? '동의 처리 중…' : '익명 고민 건강정보 처리에 동의'}</Button>
       </>}
       <div><Link href="/journal" prefetch={false} className="mt-3 inline-block underline underline-offset-2">동의하지 않고 본인 전용 개인일지 이용하기</Link></div>
     </>}

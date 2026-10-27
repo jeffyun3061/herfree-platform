@@ -34,6 +34,8 @@ class AnonymousConcernIntegrationTest {
                     93000+i, "concern-"+i+"@example.invalid", "test-encoded", i==1||i==4?"USER":i==2?"ADMIN":"DOCTOR", now,now);
             db.update("INSERT INTO user_profiles (user_id,nickname,is_public,created_at,updated_at) VALUES (?, ?, true, ?, ?)",
                     93000+i, "private-real-nickname-"+i, now,now);
+            db.update("INSERT INTO community_health_consents (user_id,agreed,policy_version,purpose,decided_at,created_at,updated_at) VALUES (?,true,?,'ANONYMOUS_CONCERN_PUBLICATION',?,?,?)",
+                    93000+i, com.herfree.domain.user.service.CommunityHealthConsentService.POLICY_VERSION, now,now,now);
         }
         String[] types={"ANONYMOUS_QUESTION","FREE","INQUIRY","PRIVATE_CONSULT","SECRET_STORY"};
         for(int i=0;i<types.length;i++) db.update("INSERT INTO boards(id,name,description,board_type,sort_order,is_active,created_at,updated_at) VALUES (?,?,'',?,0,true,?,?)", 94001+i,types[i],types[i],now,now);
