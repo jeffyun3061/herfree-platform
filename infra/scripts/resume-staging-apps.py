@@ -11,6 +11,12 @@ import time
 import urllib.request
 
 
+# Renaming either resource requires code and runbook review. Caller-supplied
+# ARNs are expected identity assertions, not an allowlist of arbitrary roles.
+NORMAL_STAGING_ROLE_NAME = "herfree-staging-ec2"
+NORMAL_STAGING_PROFILE_NAME = "herfree-staging-ec2"
+
+
 class ResumeRefused(ValueError):
     """A fixed local guard message safe to show without host data."""
 
@@ -41,25 +47,30 @@ def metadata():
             "profile": json.loads(read("meta-data/iam/info"))["InstanceProfileArn"]}
 
 
+def approved_normal_account(args):
+    role = re.fullmatch(r"arn:aws:iam::(\d{12}):role/" + re.escape(NORMAL_STAGING_ROLE_NAME),
+                        args.normal_role_arn)
+    profile = re.fullmatch(r"arn:aws:iam::(\d{12}):instance-profile/" + re.escape(NORMAL_STAGING_PROFILE_NAME),
+                           args.normal_profile_arn)
+    if not role or not profile or role.group(1) != profile.group(1):
+        raise ResumeRefused("Approved normal staging role and profile in the same account required")
+    return role.group(1)
+
+
 def require_normal_identity(args, execute, identify):
+    account = approved_normal_account(args)
     identity = identify()
     if identity != {"instance": args.instance_id, "profile": args.normal_profile_arn}:
         raise ResumeRefused("Expected staging instance and normal profile required")
-    role = re.fullmatch(r"arn:aws:iam::(\d{12}):role/(?:[A-Za-z0-9_+=,.@-]+/)*([A-Za-z0-9_+=,.@-]+)",
-                        args.normal_role_arn)
-    if not role:
-        raise ResumeRefused("An explicit normal IAM role ARN is required")
     caller = json.loads(execute(["aws", "sts", "get-caller-identity", "--region", args.region,
                                  "--output", "json"]))["Arn"]
-    if not caller.startswith(f"arn:aws:sts::{role.group(1)}:assumed-role/{role.group(2)}/"):
+    if not caller.startswith(f"arn:aws:sts::{account}:assumed-role/{NORMAL_STAGING_ROLE_NAME}/"):
         raise ResumeRefused("Normal staging role is not active")
 
 
 def inspect_containers(args, execute, identify, mounted):
     if not re.fullmatch(r"i-[a-f0-9]{8,17}", args.instance_id):
         raise ResumeRefused("An explicit staging instance ID is required")
-    if not re.fullmatch(r"arn:aws:iam::\d{12}:instance-profile/[A-Za-z0-9_+=,.@/-]+", args.normal_profile_arn):
-        raise ResumeRefused("An explicit normal instance profile ARN is required")
     require_normal_identity(args, execute, identify)
     if (args.root / ".deploy/staging.pending-operation").exists():
         raise ResumeRefused("Pending staging deployment requires reconciliation")
