@@ -129,6 +129,38 @@ feature/* → develop (PR, CI)
 
 배포 후 smoke test는 `docs/release-runbook.md`와 `docs/ops-security-checklist.md`를 기준으로 확인한다.
 
+### 운영 정책 확인과 기존 인프라 보호
+
+운영 백엔드·프론트엔드의 GitHub 배포 경로는 AWS 변경 전에
+`verify-legal-policy-alignment.ps1 -StrictOperationalFacts`를 실행한다. `production`
+환경의 secret에 다음 운영 검토 기록을 준비한다. 값은 작업 로그에 출력하지 않는다.
+
+| 이름 | 확인 내용 |
+| --- | --- |
+| `LEGAL_OPERATOR_CONFIRMED` | 공개된 운영 주체 표기가 실제 운영자와 일치하면 `true` |
+| `PRIVACY_CONTACT_CONFIRMED` | 공개된 개인정보 담당 부서·이메일이 실제 요청을 처리하면 `true` |
+| `LEGAL_MAIL_PROVIDER`, `LEGAL_MAIL_PROVIDER_COUNTRY` | 실제 메일 수탁자와 처리 국가. 웹·문서 방침 두 곳에 같은 사실을 게시 |
+| `LEGAL_AWS_REGION` | 실제 배포 `AWS_REGION`과 일치하는 확인된 리전 |
+| `LEGAL_AWS_CROSS_BORDER_ACCESS_REVIEWED` | 계약·지원·재위탁·국외 접근 검토 기록이 있으면 `true` |
+| `LEGAL_POLICY_REVIEWED_VERSION` | 검토한 현재 개인정보처리방침 버전 |
+| `LEGAL_OPERATIONAL_REVIEW_REFERENCE` | 기존 비공개 문서의 절대 경로, HTTPS 링크 또는 `record:기록ID` |
+
+이 선언은 사실과 검토 기록을 연결하는 운영 통제이며 법률상 적합성 인증이 아니다.
+개인 주거지 주소나 개인정보 담당자 개인 성명을 일괄 수집하지 않는다. 담당 부서·연락처를
+사용하는 경우 그 부서가 실제 지정돼 요청을 처리하는지 확인한다. 게시될 방침에 수탁자·국외
+접근 사실이 아직 배포 전 확인 대상으로 남아 있으면 비밀값을 채워도 배포가 차단된다.
+실제 분석 설정과 AWS·메일 계약도 함께 검토해야 한다.
+
+Amplify `main` 자동 빌드는 GitHub 배포 게이트와 독립적으로 실행될 수 있다. 운영 적용 전
+중단점을 보장하려면 `main`을 병합하기 전에 기존 자동 빌드 상태를 확인하고, 승인된 경로별
+릴리스 역할을 검증한 뒤 자동 빌드를 끄는 전환 절차를 완료한다. 그 전에는 `main` 병합을
+운영 프론트엔드 적용으로 취급한다.
+
+`go-live-production.ps1`은 기본적으로 기존 EC2·로컬 MySQL을 읽기 전용 점검하며 RDS를
+만들지 않는다. 검증된 운영 인스턴스·DB 볼륨 ID를 전달한다. 과거
+`setup-production-aws.ps1`은 현재 릴리스 경로에서 분리됐으며, 별도 승인된 RDS 신규 구축에만
+`-ConfirmLegacyRdsProvisioning`을 명시해 사용한다.
+
 ## 커밋 메시지
 
 형식:
