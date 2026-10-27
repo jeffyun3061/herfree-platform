@@ -1,4 +1,4 @@
-# Staging blocker fix -> production AWS -> GitHub -> release orchestration.
+# Existing staging/production audits -> GitHub -> release orchestration.
 param(
     [string]$AwsProfile = "herfree-staging",
     [string]$Region = "ap-northeast-2",
@@ -8,6 +8,7 @@ param(
     [string]$ProductionDeployRoleArn = "arn:aws:iam::439777528445:role/herfree-github-production-deploy",
     [string]$ProductionInstanceId = $env:PRODUCTION_INSTANCE_ID,
     [string]$DatabaseVolumeId = $env:DB_VOLUME_ID,
+    [switch]$RepairStaging,
     [switch]$SkipStagingFix,
     [switch]$SkipProductionAws,
     [switch]$SkipRelease,
@@ -52,8 +53,9 @@ else {
     Write-Host "[OK] account $($identity.Account)" -ForegroundColor Green
 }
 
-# 1. Staging blockers
-if (-not $SkipStagingFix) {
+# 1. Staging repairs are a separate explicit operation. A release audit must
+# not silently rewrite secrets or send SES verification messages.
+if ($RepairStaging -and -not $SkipStagingFix) {
     Write-Step "1. Fix staging blockers"
     $fixArgs = @("-File", (Join-Path $PSScriptRoot "fix-staging-blockers.ps1"), "-AwsProfile", $AwsProfile)
     if ($DryRun) { $fixArgs += "-DryRun" }
