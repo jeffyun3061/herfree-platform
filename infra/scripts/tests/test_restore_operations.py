@@ -18,6 +18,19 @@ iam = module("iam", "render-operations-iam.py")
 
 
 class RestoreSafetyTests(unittest.TestCase):
+    def test_interrupted_state_save_preserves_previous_cleanup_intent(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "state.json"
+            original = {"run": "owned", "started": True, "profileChanged": False}
+            drill.save(path, original)
+            with patch.object(drill.os, "replace", side_effect=OSError("interrupted before replacement")):
+                with self.assertRaises(OSError):
+                    drill.save(path, {**original, "profileChanged": True})
+            self.assertEqual(json.loads(path.read_text(encoding="utf-8")), original)
+            self.assertEqual(list(Path(directory).iterdir()), [path])
+            drill.save(path, {**original, "profileChanged": True})
+            self.assertTrue(json.loads(path.read_text(encoding="utf-8"))["profileChanged"])
+
     def test_ssm_failure_classification_never_returns_restored_content(self):
         phase, category = drill.classify_ssm_failure({
             "StandardOutputContent": "private medical note: example\nRestored application verification failed; exit=1; category=BeanCreationException",
@@ -89,6 +102,25 @@ class RestoreSafetyTests(unittest.TestCase):
         self.assertNotIn("ssm:SendCommand", encoded)
         self.assertNotIn("ec2:StopInstances", encoded)
         self.assertIn("health-data-recovery-*", encoded)
+
+    def test_workflow_can_restore_stopped_profile_only_on_designated_staging(self):
+        policies = iam.policies("123456789012", "ap-northeast-2", "backups", "herfree", "i-stage", "normal-stage", "drill")
+        target = "arn:aws:ec2:ap-northeast-2:123456789012:instance/i-stage"
+        for action in ("ec2:AssociateIamInstanceProfile", "ec2:DisassociateIamInstanceProfile"):
+            grants = [item for item in policies["restore-workflow"] if action in item["Action"]]
+            self.assertEqual(len(grants), 1)
+            self.assertEqual(grants[0]["Resource"], target)
+
+    def test_restore_ssm_connectivity_grants_no_parameter_store_or_other_document_reads(self):
+        policies = iam.policies("123456789012", "ap-northeast-2", "backups", "herfree", "i-stage", "normal-stage", "drill")
+        statements = policies["restore-ssm-channel"]
+        actions = {action for item in statements for action in item["Action"]}
+        self.assertIn("ssmmessages:OpenControlChannel", actions)
+        self.assertIn("ssm:UpdateInstanceInformation", actions)
+        self.assertFalse(any("Parameter" in action for action in actions))
+        self.assertFalse(any(action.endswith("*") for action in actions))
+        documents = next(item for item in statements if "ssm:GetDocument" in item["Action"])
+        self.assertEqual(documents["Resource"], "arn:aws:ssm:ap-northeast-2::document/AWS-RunShellScript")
 
 
 if __name__ == "__main__":
