@@ -156,6 +156,11 @@ if ([string]::IsNullOrWhiteSpace($posthogKey)) {
 }
 
 if ($StrictOperationalFacts) {
+    # Public concern posts and comments can contain sensitive health data.
+    # The journal-only consent cannot authorize this separate purpose. Remove
+    # this release block only after the distinct consent, withdrawal/hide and
+    # deletion-request flows are implemented, tested and legally reviewed.
+    Fail "community health consent and withdrawal" "separate community consent, immediate hiding and deletion-request handling are not implemented"
     $factNames = @(
         "LEGAL_OPERATOR_CONFIRMED",
         "PRIVACY_CONTACT_CONFIRMED",

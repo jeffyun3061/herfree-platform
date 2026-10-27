@@ -38,6 +38,8 @@ class AdminMfaSecurityIntegrationTest {
     @Test void realSecurityChainBlocksBearerWithoutMfa() throws Exception {
         mvc.perform(get("/api/admin/users").header("Authorization", "Bearer " + token(UserRole.ADMIN)))
                 .andExpect(status().isForbidden()).andExpect(jsonPath("$.code").value("ADMIN_MFA_REQUIRED"));
+        mvc.perform(get("/api/admin/community-deletion-requests").header("Authorization", "Bearer " + token(UserRole.ADMIN)))
+                .andExpect(status().isForbidden()).andExpect(jsonPath("$.code").value("ADMIN_MFA_REQUIRED"));
     }
     @Test void mfaDoesNotGrantDoctorMemberManagementPrivileges() throws Exception {
         String access = token(UserRole.DOCTOR);
@@ -84,6 +86,8 @@ class AdminMfaSecurityIntegrationTest {
             mvc.perform(get(path).header("Authorization", "Bearer " + access).header("X-Herfree-Admin-MFA", "proof"))
                     .andExpect(status().isForbidden());
         }
+        mvc.perform(get("/api/admin/community-deletion-requests").header("Authorization", "Bearer " + access)
+                .header("X-Herfree-Admin-MFA", "proof")).andExpect(status().isForbidden());
     }
 
     @Test void operatorCannotReadDeveloperDiagnosticsAndAuditQueriesAreBounded() throws Exception {

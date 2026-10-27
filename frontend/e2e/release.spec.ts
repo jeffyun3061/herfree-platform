@@ -230,12 +230,30 @@ test.describe('staging data flow', () => {
   test('anonymous concern creation, guest search, sharing and comments preserve privacy', async ({ page, request }, testInfo) => {
     const account = await signupAndLogin(`concern-${testInfo.project.name}`);
     let postId: number | undefined;
+    let controlPostId: number | undefined;
+    let withdrawn = false;
     try {
       const boards = await data<Array<{ id: number; boardType: string }>>(await account.api.get('/api/boards'));
       const board = boards.find(item => item.boardType === 'ANONYMOUS_QUESTION');
+      const freeBoard = boards.find(item => item.boardType === 'FREE');
       expect(board).toBeTruthy();
+      expect(freeBoard).toBeTruthy();
       const title = `E2E anonymous concern ${Date.now()}`;
       const payload = { boardId: board!.id, title, content: 'Temporary public experience for staging verification.', isAnonymous: false, visibility: 'PUBLIC' };
+      const before = await data<{ agreed: boolean; latestDecisionAgreed: boolean | null; requiredPolicyVersion: string; purpose: string }>(
+        await account.api.get('/api/users/me/consents/community-health'));
+      expect(before.agreed).toBe(false);
+      expect(before.latestDecisionAgreed).toBeNull();
+      expect(before.purpose).toBe('ANONYMOUS_CONCERN_PUBLICATION');
+      const withoutConsent = await account.api.post('/api/posts', { headers: csrf(account), data: { ...payload, publicDisclosureAccepted: true } });
+      expect(withoutConsent.status()).toBe(428);
+      const control = await data<{ id: number }>(await account.api.post('/api/posts', { headers: csrf(account),
+        data: { boardId: freeBoard!.id, title: 'E2E ordinary board consent isolation', content: 'Synthetic ordinary text.', visibility: 'PUBLIC', isAnonymous: true } }));
+      controlPostId = control.id;
+      const granted = await data<{ agreed: boolean }>(await account.api.patch('/api/users/me/consents/community-health', {
+        headers: csrf(account), data: { agreed: true, policyVersion: before.requiredPolicyVersion },
+      }));
+      expect(granted.agreed).toBe(true);
       const rejected = await account.api.post('/api/posts', { headers: csrf(account), data: payload });
       expect(rejected.status()).toBe(400);
       const created = await data<{ id: number; authorNickname: string; isAnonymous: boolean }>(await account.api.post('/api/posts', { headers: csrf(account), data: { ...payload, publicDisclosureAccepted: true } }));
@@ -261,8 +279,26 @@ test.describe('staging data flow', () => {
       await expect(page.getByText(account.user.nickname, { exact: true })).toHaveCount(0);
       const html = await request.get(`/community/posts/${postId}`, { headers: { 'User-Agent': 'kakaotalk-scrap/1.0' } });
       expect((await html.text()).match(/<head>[\s\S]*?<\/head>/)?.[0]).toContain(`property="og:title" content="${title}"`);
+
+      const receipt = await data<{ agreed: boolean; latestDecisionAgreed: boolean; deletionRequestId: number }>(await account.api.patch('/api/users/me/consents/community-health', {
+        headers: csrf(account), data: { agreed: false, policyVersion: before.requiredPolicyVersion },
+      }));
+      withdrawn = true;
+      expect(receipt.agreed).toBe(false);
+      expect(receipt.latestDecisionAgreed).toBe(false);
+      expect(receipt.deletionRequestId).toBeGreaterThan(0);
+      expect((await request.get(`/api/posts/${postId}`)).status()).toBe(404);
+      expect((await request.get(`/api/posts/${postId}/share-preview`)).status()).toBe(404);
+      const repeated = await data<{ deletionRequestId: number }>(await account.api.patch('/api/users/me/consents/community-health', {
+        headers: csrf(account), data: { agreed: false, policyVersion: before.requiredPolicyVersion },
+      }));
+      expect(repeated.deletionRequestId).toBe(receipt.deletionRequestId);
+      expect((await account.api.get(`/api/posts/${controlPostId}`)).status()).toBe(200);
+      expect((await data<{ agreed: boolean }>(await account.api.get('/api/users/me/consents/health-data'))).agreed).toBe(true);
+      expect((await account.api.post('/api/posts', { headers: csrf(account), data: { ...payload, publicDisclosureAccepted: true } })).status()).toBe(428);
     } finally {
-      if (postId) expect((await account.api.delete(`/api/posts/${postId}`, { headers: csrf(account) })).status()).toBe(204);
+      if (postId && !withdrawn) expect((await account.api.delete(`/api/posts/${postId}`, { headers: csrf(account) })).status()).toBe(204);
+      if (controlPostId) expect((await account.api.delete(`/api/posts/${controlPostId}`, { headers: csrf(account) })).status()).toBe(204);
       await deleteAccount(account);
     }
   });

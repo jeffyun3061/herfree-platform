@@ -100,6 +100,13 @@ public class GlobalExceptionHandler {
                 ErrorResponse.of(ErrorCode.INTERNAL_ERROR.getMessage()));
     }
 
+    @ExceptionHandler({org.springframework.dao.OptimisticLockingFailureException.class,
+            org.springframework.dao.PessimisticLockingFailureException.class})
+    public ResponseEntity<ErrorResponse> handleConcurrentWrite() {
+        // Do not log SQL/parameters or stale content when withdrawal wins a race.
+        return jsonResponse(HttpStatus.CONFLICT, ErrorResponse.of(ErrorCode.CONFLICT));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleException(Exception ex) {
         log.error("Unhandled exception", ex);

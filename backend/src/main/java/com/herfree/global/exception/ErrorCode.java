@@ -113,6 +113,8 @@ public enum ErrorCode {
             HttpStatus.PRECONDITION_REQUIRED,
             "개인일지를 이용하려면 건강정보 처리 동의가 필요합니다."
     ),
+    COMMUNITY_HEALTH_CONSENT_REQUIRED(HttpStatus.PRECONDITION_REQUIRED, "익명 고민·질문을 작성하려면 별도 건강정보 처리 동의가 필요합니다."),
+    COMMUNITY_HEALTH_CONSENT_VERSION_CHANGED(HttpStatus.CONFLICT, "변경된 익명 고민·질문 건강정보 처리 안내를 확인해 주세요."),
 
     ADMIN_MFA_REQUIRED(HttpStatus.FORBIDDEN, "관리자 추가 인증이 필요합니다."),
     ADMIN_MFA_INVALID(HttpStatus.BAD_REQUEST, "인증번호가 올바르지 않거나 이미 사용되었습니다."),

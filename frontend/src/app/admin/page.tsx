@@ -19,14 +19,16 @@ import { AdminUsersSection } from '@/components/admin/AdminUsersSection';
 import { AdminConcernsSection } from '@/components/admin/AdminConcernsSection';
 import { DeveloperOperationsSection } from '@/components/admin/DeveloperOperationsSection';
 import { AdminAuditSection } from '@/components/admin/AdminAuditSection';
+import { AdminCommunityDeletionRequestsSection } from '@/components/admin/AdminCommunityDeletionRequestsSection';
 import { FEATURE_PRODUCTS_ENABLED } from '@/domain/featureFlags';
 import { isAdmin, isStaff, isSuperAdmin, canWriteContent, canViewDeveloperTools, USER_ROLE_LABELS, type UserRole } from '@/domain/user/types';
 
-type AdminTab = 'dashboard' | 'concerns' | 'reports' | 'moderation' | 'users' | 'notices' | 'contents' | 'videos' | 'products' | 'journal' | 'developer' | 'audit';
+type AdminTab = 'dashboard' | 'concerns' | 'deletion-requests' | 'reports' | 'moderation' | 'users' | 'notices' | 'contents' | 'videos' | 'products' | 'journal' | 'developer' | 'audit';
 
 const ALL_TABS: { id: AdminTab; label: string; minRole: 'moderator' | 'admin' | 'super' }[] = [
   { id: 'dashboard', label: '대시보드', minRole: 'admin' },
   { id: 'concerns', label: '고민·질문 답변', minRole: 'admin' },
+  { id: 'deletion-requests', label: '건강정보 삭제 요청', minRole: 'admin' },
   { id: 'developer', label: '개발자 진단', minRole: 'super' },
   { id: 'audit', label: '운영 이력', minRole: 'admin' },
   { id: 'reports', label: '신고', minRole: 'moderator' },
@@ -42,6 +44,7 @@ const ALL_TABS: { id: AdminTab; label: string; minRole: 'moderator' | 'admin' | 
 const TAB_HELP_TEXT: Record<AdminTab, string> = {
   dashboard: '오늘 확인할 지표',
   concerns: '익명 고민 답변 관리',
+  'deletion-requests': '철회 접수·검토 기록',
   developer: '서버·DB·요청 로그',
   audit: '조치와 회원 변경 기록',
   reports: '신고 접수 확인',
@@ -233,6 +236,7 @@ function AdminPageContent() {
           {tab === 'audit' && isAdmin(user?.role) && <AdminAuditSection />}
           {tab === 'dashboard' && <AdminDashboardSection />}
           {tab === 'concerns' && <AdminConcernsSection />}
+          {tab === 'deletion-requests' && <AdminCommunityDeletionRequestsSection />}
           {tab === 'reports' && <AdminReportsSection />}
           {tab === 'moderation' && <AdminModerationSection />}
           {tab === 'journal' && <AdminJournalStatsSection />}

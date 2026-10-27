@@ -65,8 +65,16 @@ class ProductionPolicyGateTests(unittest.TestCase):
             rejected = self.run_checker(path, reviewed="false")
             self.assertNotEqual(rejected.returncode, 0)
             self.assertIn("document the review", rejected.stdout)
-            accepted = self.run_checker(path)
-            self.assertEqual(accepted.returncode, 0, accepted.stdout + accepted.stderr)
+            reviewed = self.run_checker(path)
+            self.assertNotEqual(reviewed.returncode, 0)
+            self.assertIn("community health consent and withdrawal", reviewed.stdout)
+            self.assertNotIn("document the review", reviewed.stdout)
+
+    def test_complete_facts_cannot_override_unimplemented_community_consent(self):
+        with tempfile.TemporaryDirectory() as directory:
+            result = self.run_checker(self.fixture(directory, finalized=True))
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("separate community consent, immediate hiding and deletion-request handling are not implemented", result.stdout)
 
     def test_private_fact_values_do_not_finalize_a_public_draft(self):
         with tempfile.TemporaryDirectory() as directory:

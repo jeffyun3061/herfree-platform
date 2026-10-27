@@ -44,14 +44,16 @@ public class CommentService {
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final UserProfileRepository userProfileRepository;
+    private final com.herfree.domain.user.service.CommunityHealthConsentService communityHealthConsentService;
 
     @Transactional
     public CommentResponse createComment(Long postId, Long userId, CommentCreateRequest request) {
-        Post post = postRepository.findByIdAndStatus(postId, PostStatus.ACTIVE)
-                .orElseThrow(PostNotFoundException::new);
-
-        User user = userRepository.findById(userId)
+        User user = userRepository.findByIdAndStatusForUpdate(userId, com.herfree.domain.user.entity.UserStatus.ACTIVE)
                 .orElseThrow(UserNotFoundException::new);
+        Post post = postRepository.findByIdForUpdate(postId).filter(p -> p.getStatus() == PostStatus.ACTIVE)
+                .orElseThrow(PostNotFoundException::new);
+        var communityConsent = AnonymousConcernPolicy.isConcernBoard(post.getBoard().getBoardType())
+                ? communityHealthConsentService.requireGrantForWriting(userId) : null;
 
         PostVisibilityPolicy.assertReadable(post, userId, user.getRole());
 
@@ -80,6 +82,8 @@ public class CommentService {
                         || (AnonymousConcernPolicy.isConcernBoard(post.getBoard().getBoardType())
                         && post.getUser().getId().equals(userId)))
                 .build();
+
+        if (communityConsent != null) comment.linkCommunityHealthConsent(communityConsent);
 
         commentRepository.save(comment);
         postRepository.incrementCommentCount(postId);
@@ -118,7 +122,7 @@ public class CommentService {
     // soft delete — 물리 삭제 대신 DELETED 상태로 전환한다
     @Transactional
     public void deleteComment(Long commentId, Long userId) {
-        Comment comment = commentRepository.findByIdForUpdate(commentId)
+        Comment comment = lockCommentForMutation(commentId)
                 .filter(c -> c.getStatus() == CommentStatus.ACTIVE)
                 .orElseThrow(CommentNotFoundException::new);
 
@@ -142,7 +146,7 @@ public class CommentService {
     // 관리자 전용 숨김 처리 — AdminCommentController에서 호출한다
     @Transactional
     public void hideComment(Long commentId) {
-        Comment comment = commentRepository.findByIdForUpdate(commentId)
+        Comment comment = lockCommentForMutation(commentId)
                 .filter(c -> c.getStatus() == CommentStatus.ACTIVE)
                 .orElseThrow(CommentNotFoundException::new);
 
@@ -152,7 +156,7 @@ public class CommentService {
 
     @Transactional
     public void restoreComment(Long commentId) {
-        Comment comment = commentRepository.findByIdForUpdate(commentId)
+        Comment comment = lockCommentForMutation(commentId)
                 .filter(c -> c.getStatus() == CommentStatus.HIDDEN)
                 .orElseThrow(CommentNotFoundException::new);
 
@@ -162,7 +166,7 @@ public class CommentService {
 
     @Transactional
     public void adminDeleteComment(Long commentId) {
-        Comment comment = commentRepository.findByIdForUpdate(commentId)
+        Comment comment = lockCommentForMutation(commentId)
                 .filter(c -> c.getStatus() == CommentStatus.ACTIVE || c.getStatus() == CommentStatus.HIDDEN)
                 .orElseThrow(CommentNotFoundException::new);
         boolean wasActive = comment.getStatus() == CommentStatus.ACTIVE;
@@ -179,6 +183,8 @@ public class CommentService {
             CommentStatus statusFilter,
             Pageable pageable
     ) {
+        if (statusFilter == CommentStatus.CONSENT_WITHDRAWN)
+            throw new com.herfree.global.exception.BusinessException(com.herfree.global.exception.ErrorCode.FORBIDDEN);
         java.util.List<CommentStatus> statuses = statusFilter != null
                 ? java.util.List.of(statusFilter)
                 : java.util.List.of(CommentStatus.ACTIVE, CommentStatus.HIDDEN);
@@ -193,6 +199,12 @@ public class CommentService {
 
     private String normalizeKeyword(String keyword) {
         return StringUtils.hasText(keyword) ? keyword.trim() : null;
+    }
+
+    private java.util.Optional<Comment> lockCommentForMutation(Long id) {
+        Long postId = commentRepository.findPostIdById(id).orElseThrow(CommentNotFoundException::new);
+        postRepository.findByIdForUpdate(postId).orElseThrow(PostNotFoundException::new);
+        return commentRepository.findByIdForUpdate(id);
     }
 
     private Map<Long, UserProfile> resolveProfileMap(java.util.List<Comment> comments) {

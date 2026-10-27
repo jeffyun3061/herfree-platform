@@ -4,5 +4,6 @@ package com.herfree.domain.comment.entity;
 public enum CommentStatus {
     ACTIVE,
     HIDDEN,
+    CONSENT_WITHDRAWN,
     DELETED
 }

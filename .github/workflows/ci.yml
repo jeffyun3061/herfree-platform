@@ -102,9 +102,9 @@ jobs:
           python3 - <<'PY'
           import xml.etree.ElementTree as ET
           report = ET.parse('backend/build/test-results/test/TEST-com.herfree.schema.MySqlSchemaValidationIntegrationTest.xml').getroot()
-          required = {'flywaySchemaMatchesHibernateMappings', 'guestConcernSearchNeverReturnsLegacyMemberOnlyRows'}
+          required = {'flywaySchemaMatchesHibernateMappings', 'guestConcernSearchNeverReturnsLegacyMemberOnlyRows', 'communityConsentWriteWithdrawalRaceCannotRepublish'}
           executed = {case.attrib['name'].split('(')[0] for case in report.findall('testcase')}
-          assert required <= executed, 'Required MySQL schema/search regression tests did not run'
+          assert required <= executed, 'Required MySQL schema, search and consent race tests did not run'
           assert all(int(report.attrib.get(key, '0')) == 0 for key in ['skipped', 'failures', 'errors']), 'MySQL schema test must pass without skipping'
           print(f"MySQL 8.4.10 schema/search integration: {report.attrib['tests']} passed, 0 skipped")
           PY

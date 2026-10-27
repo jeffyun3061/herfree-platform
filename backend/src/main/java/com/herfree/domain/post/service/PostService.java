@@ -76,18 +76,21 @@ public class PostService {
     private final PostImageStorageService postImageStorageService;
     private final ReactionRepository reactionRepository;
     private final AnalyticsService analyticsService;
+    private final com.herfree.domain.user.service.CommunityHealthConsentService communityHealthConsentService;
 
     @Transactional
     public PostDetailResponse createPost(Long userId, PostCreateRequest request, HttpServletRequest httpRequest) {
         Board board = boardRepository.findById(request.boardId())
                 .orElseThrow(BoardNotFoundException::new);
 
+        boolean concern = AnonymousConcernPolicy.isConcernBoard(board.getBoardType());
+        var communityConsent = concern ? communityHealthConsentService.requireGrantForWriting(userId) : null;
+
         User user = userRepository.findById(userId)
                 .orElseThrow(UserNotFoundException::new);
 
         BoardWritePolicy.assertCommunityWritable(board, user.getRole());
 
-        boolean concern = AnonymousConcernPolicy.isConcernBoard(board.getBoardType());
         if (concern && (!request.publicDisclosureAccepted() || request.visibility() == PostVisibility.MEMBERS_ONLY)) {
             throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
@@ -111,6 +114,8 @@ public class PostService {
                 .visibility(visibility)
                 .isAnonymous(concern || request.isAnonymous())
                 .build();
+
+        if (communityConsent != null) post.linkCommunityHealthConsent(communityConsent);
 
         post.setShareTitlePublicly(request.shareTitlePublicly());
 
@@ -285,6 +290,10 @@ public class PostService {
             throw new PostAccessDeniedException();
         }
 
+        if (post.getCommunityHealthConsent() != null) communityHealthConsentService.requireGrantForWriting(userId);
+        post = postRepository.findByIdForUpdate(postId).filter(p -> p.getStatus() == PostStatus.ACTIVE)
+                .orElseThrow(PostNotFoundException::new);
+
         BoardWritePolicy.assertCommunityWritable(post.getBoard());
 
         if (Boolean.TRUE.equals(request.shareTitlePublicly()) &&
@@ -310,7 +319,7 @@ public class PostService {
 
     @Transactional
     public void deletePost(Long userId, Long postId) {
-        Post post = postRepository.findByIdAndStatus(postId, PostStatus.ACTIVE)
+        Post post = postRepository.findByIdForUpdate(postId).filter(p -> p.getStatus() == PostStatus.ACTIVE)
                 .orElseThrow(PostNotFoundException::new);
 
         if (!post.getUser().getId().equals(userId)) {
@@ -324,7 +333,7 @@ public class PostService {
 
     @Transactional
     public void hidePost(Long postId) {
-        Post post = postRepository.findByIdAndStatus(postId, PostStatus.ACTIVE)
+        Post post = postRepository.findByIdForUpdate(postId).filter(p -> p.getStatus() == PostStatus.ACTIVE)
                 .orElseThrow(PostNotFoundException::new);
 
         BoardWritePolicy.assertCommunityWritable(post.getBoard());
@@ -334,7 +343,7 @@ public class PostService {
 
     @Transactional
     public void restorePost(Long postId) {
-        Post post = postRepository.findByIdAndStatus(postId, PostStatus.HIDDEN)
+        Post post = postRepository.findByIdForUpdate(postId).filter(p -> p.getStatus() == PostStatus.HIDDEN)
                 .orElseThrow(PostNotFoundException::new);
 
         BoardWritePolicy.assertCommunityWritable(post.getBoard());
@@ -344,8 +353,7 @@ public class PostService {
 
     @Transactional
     public void adminDeletePost(Long postId) {
-        Post post = postRepository.findByIdAndStatusIn(
-                        postId, java.util.List.of(PostStatus.ACTIVE, PostStatus.HIDDEN))
+        Post post = postRepository.findByIdForUpdate(postId).filter(p -> p.getStatus() == PostStatus.ACTIVE || p.getStatus() == PostStatus.HIDDEN)
                 .orElseThrow(PostNotFoundException::new);
 
         postImageCleanupService.deleteImagesForPostIds(List.of(postId));
@@ -356,8 +364,7 @@ public class PostService {
 
     @Transactional
     public void adminUpdatePost(Long postId, AdminPostUpdateRequest request) {
-        Post post = postRepository.findByIdAndStatusIn(
-                        postId, java.util.List.of(PostStatus.ACTIVE, PostStatus.HIDDEN))
+        Post post = postRepository.findByIdForUpdate(postId).filter(p -> p.getStatus() == PostStatus.ACTIVE || p.getStatus() == PostStatus.HIDDEN)
                 .orElseThrow(PostNotFoundException::new);
 
         if ("NOTICE".equals(post.getBoard().getBoardType())) {
@@ -376,6 +383,7 @@ public class PostService {
             PostStatus statusFilter,
             Pageable pageable
     ) {
+        if (statusFilter == PostStatus.CONSENT_WITHDRAWN) throw new BusinessException(ErrorCode.FORBIDDEN);
         java.util.List<PostStatus> statuses = statusFilter != null
                 ? java.util.List.of(statusFilter)
                 : java.util.List.of(PostStatus.ACTIVE, PostStatus.HIDDEN);

@@ -32,6 +32,8 @@ import { getErrorMessage } from '@/lib/api/client';
 import * as adminApi from '@/lib/api/admin';
 import { CommunityWriteGuidelines } from '@/components/community/CommunityWriteGuidelines';
 import { CommunityContentEditor } from '@/components/community/CommunityContentEditor';
+import { CommunityHealthConsentPanel } from '@/components/community/CommunityHealthConsentPanel';
+import { useCommunityHealthConsent } from '@/hooks/useCommunityHealthConsent';
 import type { PostVisibility } from '@/domain/post/types';
 
 const TITLE_UI_MAX = 30;
@@ -75,6 +77,10 @@ function WritePostForm() {
   const boardScrollerRef = useRef<HTMLDivElement>(null);
   const [canScrollBoardsLeft, setCanScrollBoardsLeft] = useState(false);
   const [canScrollBoardsRight, setCanScrollBoardsRight] = useState(false);
+  const selectedBoard = writableBoards.find((board) => board.id === boardId);
+  const isConcernWrite = isAnonymousConcernBoard(selectedBoard?.boardType);
+  const communityHealthConsent = useCommunityHealthConsent(isConcernWrite && !isStaffAdminEdit);
+  const concernConsentBlocked = isConcernWrite && !isStaffAdminEdit && !communityHealthConsent.agreed;
 
   const updateBoardScrollState = () => {
     const scroller = boardScrollerRef.current;
@@ -176,8 +182,12 @@ function WritePostForm() {
     }
     const selected = boards.find((board) => board.id === boardId);
     const concern = isAnonymousConcernBoard(selected?.boardType);
+    if (concern && !isStaffAdminEdit && !communityHealthConsent.agreed) {
+      setValidationError('익명 고민 건강정보 처리에 별도로 동의한 뒤 등록해 주세요.');
+      return;
+    }
     if (concern && !isEditMode && !publicDisclosureAccepted) {
-      setValidationError('본문이 공개되는 것을 확인해 주세요.');
+      setValidationError('제목과 본문이 공개되는 것을 확인해 주세요.');
       return;
     }
     if (selected && isStaffOnlyBoardType(selected.boardType)) {
@@ -273,8 +283,6 @@ function WritePostForm() {
     );
   }
 
-  const selectedBoard = writableBoards.find((b) => b.id === boardId);
-  const isConcernWrite = isAnonymousConcernBoard(selectedBoard?.boardType);
   const isSymptomBoard = selectedBoard?.boardType === 'SYMPTOM';
   const privateMeta = selectedBoard ? getPrivateBoardMetaByType(selectedBoard.boardType) : null;
   const isSecretStoryWrite = selectedBoard != null && isSecretStoryBoardType(selectedBoard.boardType);
@@ -347,7 +355,7 @@ function WritePostForm() {
         <button
           type="submit"
           form="community-write-form"
-          disabled={isSubmitting || isAdminSubmitting || isImageUploading || boardId <= 0}
+          disabled={isSubmitting || isAdminSubmitting || isImageUploading || boardId <= 0 || concernConsentBlocked}
           className="min-h-11 shrink-0 text-[13.5px] font-bold text-[#0B3B36] disabled:opacity-40"
         >
           {submitLabel}
@@ -500,11 +508,15 @@ function WritePostForm() {
             )}
             {isConcernWrite && (
               <div className="mt-3 rounded-[14px] bg-[#EDF4F0] p-4 text-[12px] leading-[1.7] text-[#263B32]">
-                <p className="font-bold">닉네임은 항상 비공개예요</p>
-                <p>본문과 댓글은 비회원도 읽으며 검색·링크 공유 미리보기에 표시될 수 있어요. 본문·사진에 실명이나 연락처를 넣지 마세요.</p>
-                {!isEditMode && <label className="mt-3 flex items-start gap-2"><input type="checkbox" checked={publicDisclosureAccepted} onChange={(event) => setPublicDisclosureAccepted(event.target.checked)} className="mt-1 accent-[#0B3B36]" /><span>본문이 공개되는 것을 확인했습니다.</span></label>}
+                <p className="font-bold">공개 고민을 올리기 전에 확인해 주세요</p>
+                <p>제목·본문·첨부 사진과 댓글은 비회원도 읽을 수 있어요. 제목과 본문 일부는 검색·링크 미리보기에 표시될 수 있습니다.</p>
+                <p className="mt-2">다른 이용자에게 닉네임을 표시하지 않지만 서비스 내부에는 계정과 글의 연결이 남습니다. 병력·증상 등 건강정보나 본문·사진의 내용으로 본인을 알아볼 수 있으니 실명·연락처는 적지 마세요.</p>
+                <Link href="/journal" prefetch={false} className="mt-3 inline-flex min-h-11 items-center font-bold underline underline-offset-2">공개하지 않고 개인일지에 기록하기 · 본인만 열람</Link>
+                <p className="text-[11px] text-[#52695E]">개인일지로 이동해도 작성 중인 글은 자동으로 옮겨지지 않습니다.</p>
+                {!isEditMode && <label className="mt-3 flex items-start gap-2"><input type="checkbox" checked={publicDisclosureAccepted} onChange={(event) => setPublicDisclosureAccepted(event.target.checked)} className="mt-1 accent-[#0B3B36]" /><span>제목과 본문이 공개되는 것을 확인했습니다.</span></label>}
               </div>
             )}
+            {isConcernWrite && !isStaffAdminEdit && <CommunityHealthConsentPanel state={communityHealthConsent} />}
             <div className="mt-3">
               <CommunityContentEditor value={content} onChange={setContent} richContent={richContent} onRichChange={changeRichContent} placeholder={contentPlaceholder} />
             </div>
@@ -513,7 +525,7 @@ function WritePostForm() {
                 imageUrl={imageUrl}
                 onChange={setImageUrl}
                 onUploadingChange={setIsImageUploading}
-                disabled={isSubmitting}
+                disabled={isSubmitting || concernConsentBlocked || (isConcernWrite && !isEditMode && !publicDisclosureAccepted)}
                 variant="compact"
                 emptyText="사진 추가"
               />
@@ -554,7 +566,7 @@ function WritePostForm() {
           )}
           <Button
             type="submit"
-            disabled={isSubmitting || isAdminSubmitting || isImageUploading || boardId <= 0}
+            disabled={isSubmitting || isAdminSubmitting || isImageUploading || boardId <= 0 || concernConsentBlocked}
             className="ml-auto rounded-xl px-[22px] py-[11px] text-[13.5px] font-bold shadow-none"
           >
             {bottomSubmitLabel}

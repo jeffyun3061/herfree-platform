@@ -5,9 +5,10 @@ const detail={id:11,boardId:23,boardName:'익명 고민',title:'같은 고민을
 const post={...detail,boardType:'ANONYMOUS_QUESTION',contentPreview:'혼자 고민했던 이야기를 나눕니다.',commentCount:2,reactionCount:0};
 const paged=(content:unknown[])=>({content,totalElements:content.length,totalPages:content.length?1:0,number:0,size:20,first:true,last:true});
 
-async function fixtures(page:Page,role?:'USER'|'ADMIN') {
+async function fixtures(page:Page,role?:'USER'|'ADMIN', initialCommunityConsent = true) {
   let submitted:Record<string,unknown>|null=null;
   let currentDetail={...detail};
+  let communityAgreed = initialCommunityConsent;
   await page.addInitScript(()=>{
     Object.defineProperty(navigator,'share',{configurable:true,value:undefined});
     Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async(text:string)=>{(window as unknown as {sharedText:string}).sharedText=text;}}});
@@ -17,6 +18,10 @@ async function fixtures(page:Page,role?:'USER'|'ADMIN') {
     if(path==='/api/users/me'&&!role){await route.fulfill({status:401,contentType:'application/json',body:JSON.stringify({success:false,message:'인증이 필요합니다.'})});return;}
     let data:unknown={};
     if(path==='/api/users/me')data={id:1,nickname:'실제 닉네임',email:'fixture@example.invalid',role,status:'ACTIVE'};
+    else if(path==='/api/users/me/consents/community-health') {
+      if(route.request().method()==='PATCH') communityAgreed=route.request().postDataJSON().agreed===true;
+      data={agreed:communityAgreed,latestDecisionAgreed:communityAgreed,requiredPolicyVersion:'2026-10-27',policyVersion:communityAgreed?'2026-10-27':null,purpose:'ANONYMOUS_CONCERN_PUBLICATION',decidedAt:communityAgreed?'2026-10-27T00:00:00Z':null,deletionRequestId:null};
+    }
     else if(path==='/api/auth/admin-mfa/status')data={enrolled:true,verified:true,expiresIn:900};
     else if(path==='/api/boards')data=boards;
     else if(path==='/api/posts'&&route.request().method()==='POST'){
@@ -54,6 +59,9 @@ test('anonymous concerns are readable without login and show genuine operator ba
 test('writing preview keeps exact line breaks and wrapping on the published post',async({page})=>{
   await fixtures(page,'USER');
   await page.goto('/community/write?boardId=23');
+  await expect(page.getByText('서비스 내부에는 계정과 글의 연결이 남습니다.', { exact: false })).toBeVisible();
+  await expect(page.getByRole('link', { name: '공개하지 않고 개인일지에 기록하기 · 본인만 열람' })).toHaveAttribute('href', '/journal');
+  await expect(page.getByText('제목·본문·첨부 사진과 댓글은 비회원도 읽을 수 있어요.', { exact: false })).toBeVisible();
   const content='긴 고민을 아이폰에서 읽을 때도 입력한 줄과 문단이 그대로 보이길 바랍니다. '.repeat(3)+'\n\n\n마지막 문단도 그대로 보여야 합니다.';
   await page.locator('#title').fill('모바일 글 보기');
   await page.locator('#content').fill(content);
@@ -67,7 +75,7 @@ test('writing preview keeps exact line breaks and wrapping on the published post
   const preview=page.locator('section[aria-label="게시글 본문 미리보기"] .hf-community-body');
   await expect(preview).toHaveText(content);
   expect(await metrics('section[aria-label="게시글 본문 미리보기"] .hf-community-body')).toEqual(editorMetrics);
-  await page.getByLabel('본문이 공개되는 것을 확인했습니다.').check();
+  await page.getByLabel('제목과 본문이 공개되는 것을 확인했습니다.').check();
   await page.locator('button[type=submit]').last().click();
   await expect(page).toHaveURL(/\/community\/posts\/11$/);
   const published=page.locator('.hf-readable-content--community');
@@ -179,10 +187,10 @@ test('concern writing acknowledges public content and forces hidden nicknames',a
   await page.locator('#title').fill('나누고 싶은 고민');
   await page.locator('#content').fill('경험을 나누고 싶습니다.');
   await page.locator('button[type=submit]').last().click();
-  await expect(page.getByText('본문이 공개되는 것을 확인해 주세요.')).toBeVisible();
+  await expect(page.getByText('제목과 본문이 공개되는 것을 확인해 주세요.')).toBeVisible();
   expect(submitted()).toBeNull();
   await expect(page.getByText('닉네임 비공개로 작성됩니다.')).toBeVisible();
-  await page.getByLabel('본문이 공개되는 것을 확인했습니다.').check();
+  await page.getByLabel('제목과 본문이 공개되는 것을 확인했습니다.').check();
   await page.locator('button[type=submit]').last().click();
   await expect.poll(submitted).toMatchObject({isAnonymous:true,visibility:'PUBLIC',publicDisclosureAccepted:true});
 });
@@ -199,12 +207,14 @@ test('any signed-in member can choose anonymous or named answers',async({page})=
   await page.goto('/community/posts/11');
   await expect(page.getByRole('radio',{name:'익명'})).toBeChecked();
   await page.getByPlaceholder('답변을 남겨 주세요.').fill('익명 답변');
+  await page.getByLabel('답변에 입력한 내용이 비회원에게 공개되는 것을 확인했습니다.').check();
   await page.getByRole('button',{name:'답변 등록'}).click();
   await expect.poll(()=>answers.length).toBe(1);
   expect(answers[0]).toMatchObject({content:'익명 답변',isAnonymous:true});
   await page.getByText('닉네임 공개',{exact:true}).click();
   await expect(page.getByRole('radio',{name:'닉네임 공개'})).toBeChecked();
   await page.getByPlaceholder('답변을 남겨 주세요.').fill('공개 답변');
+  await page.getByLabel('답변에 입력한 내용이 비회원에게 공개되는 것을 확인했습니다.').check();
   await page.getByRole('button',{name:'답변 등록'}).click();
   await expect.poll(()=>answers.length).toBe(2);
   expect(answers[1]).toMatchObject({content:'공개 답변',isAnonymous:false});
@@ -212,9 +222,40 @@ test('any signed-in member can choose anonymous or named answers',async({page})=
   await expect(page.getByRole('radio',{name:'익명'})).toBeChecked();
   await page.getByText('닉네임 공개',{exact:true}).click();
   await page.getByPlaceholder(/답글을 남겨 주세요/).fill('공개 대댓글');
+  await page.getByLabel('답변에 입력한 내용이 비회원에게 공개되는 것을 확인했습니다.').check();
   await page.getByRole('button',{name:'답글 등록'}).click();
   await expect.poll(()=>answers.length).toBe(3);
   expect(answers[2]).toMatchObject({content:'공개 대댓글',isAnonymous:false,parentId:1});
+});
+
+test('separate community health consent gates new concern submission and photos',async({page})=>{
+  const submitted=await fixtures(page,'USER',false);
+  await page.goto('/community/write?boardId=23');
+  await page.locator('#title').fill('새 고민');
+  await page.locator('#content').fill('내가 입력한 공개 고민입니다.');
+  await page.getByLabel('제목과 본문이 공개되는 것을 확인했습니다.').check();
+  await expect(page.getByRole('button',{name:'등록하기',exact:true})).toBeDisabled();
+  await expect(page.getByRole('button',{name:'사진 추가',exact:true})).toBeDisabled();
+  expect(submitted()).toBeNull();
+  const agree=page.getByRole('button',{name:'익명 고민 건강정보 처리에 동의',exact:true});
+  await expect(agree).toBeDisabled();
+  await page.getByLabel('위 익명 고민 건강정보 처리에 별도로 동의합니다.').check();
+  await agree.click();
+  await expect(page.getByRole('button',{name:'사진 추가',exact:true})).toBeEnabled();
+  await page.getByRole('button',{name:'등록하기',exact:true}).click();
+  await expect.poll(submitted).toMatchObject({title:'새 고민',publicDisclosureAccepted:true});
+});
+
+test('concern answers require separate consent and their own public confirmation',async({page})=>{
+  await fixtures(page,'USER',false);
+  await page.goto('/community/posts/11');
+  await page.getByPlaceholder('답변을 남겨 주세요.').fill('내가 직접 적은 답변');
+  await expect(page.getByRole('button',{name:'답변 등록'})).toBeDisabled();
+  await page.getByLabel('위 익명 고민 건강정보 처리에 별도로 동의합니다.').check();
+  await page.getByRole('button',{name:'익명 고민 건강정보 처리에 동의',exact:true}).click();
+  await expect(page.getByRole('button',{name:'답변 등록'})).toBeDisabled();
+  await page.getByLabel('답변에 입력한 내용이 비회원에게 공개되는 것을 확인했습니다.').check();
+  await expect(page.getByRole('button',{name:'답변 등록'})).toBeEnabled();
 });
 
 test('question author cannot reveal their nickname in comments or nested replies',async({page})=>{

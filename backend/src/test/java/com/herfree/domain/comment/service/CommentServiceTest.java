@@ -60,6 +60,7 @@ class CommentServiceTest {
         given(post.getId()).willReturn(postId);
         given(post.getBoard()).willReturn(board);
         given(post.getVisibility()).willReturn(PostVisibility.PUBLIC);
+        given(post.getStatus()).willReturn(PostStatus.ACTIVE);
         User user = mock(User.class);
         given(user.getId()).willReturn(userId);
         given(user.getRole()).willReturn(UserRole.USER);
@@ -71,8 +72,8 @@ class CommentServiceTest {
         given(parent.getStatus()).willReturn(CommentStatus.ACTIVE);
         given(parent.getPost()).willReturn(post);
 
-        given(postRepository.findByIdAndStatus(postId, PostStatus.ACTIVE)).willReturn(Optional.of(post));
-        given(userRepository.findById(userId)).willReturn(Optional.of(user));
+        given(postRepository.findByIdForUpdate(postId)).willReturn(Optional.of(post));
+        given(userRepository.findByIdAndStatusForUpdate(userId,com.herfree.domain.user.entity.UserStatus.ACTIVE)).willReturn(Optional.of(user));
         given(commentRepository.findById(parentId)).willReturn(Optional.of(parent));
         given(commentRepository.save(any(Comment.class))).willAnswer(invocation -> invocation.getArgument(0));
         given(userProfileRepository.findByUserId(userId)).willReturn(Optional.of(profile));
@@ -97,6 +98,7 @@ class CommentServiceTest {
         Post post = mock(Post.class);
         given(post.getBoard()).willReturn(board);
         given(post.getVisibility()).willReturn(PostVisibility.PUBLIC);
+        given(post.getStatus()).willReturn(PostStatus.ACTIVE);
         User user = mock(User.class);
         given(user.getRole()).willReturn(UserRole.USER);
 
@@ -106,8 +108,8 @@ class CommentServiceTest {
         given(parent.getStatus()).willReturn(CommentStatus.ACTIVE);
         given(parent.getPost()).willReturn(otherPost);
 
-        given(postRepository.findByIdAndStatus(postId, PostStatus.ACTIVE)).willReturn(Optional.of(post));
-        given(userRepository.findById(userId)).willReturn(Optional.of(user));
+        given(postRepository.findByIdForUpdate(postId)).willReturn(Optional.of(post));
+        given(userRepository.findByIdAndStatusForUpdate(userId,com.herfree.domain.user.entity.UserStatus.ACTIVE)).willReturn(Optional.of(user));
         given(commentRepository.findById(10L)).willReturn(Optional.of(parent));
 
         assertThatThrownBy(() -> commentService.createComment(

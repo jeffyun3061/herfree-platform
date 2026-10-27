@@ -21,6 +21,7 @@ import { getErrorMessage } from '@/lib/api/client';
 import { InlineTopActions } from '@/components/layout/InlineTopActions';
 import { HealthStatisticsConsentCard } from '@/components/mypage/HealthStatisticsConsentCard';
 import { HealthDataConsentCard } from '@/components/mypage/HealthDataConsentCard';
+import { CommunityHealthConsentCard } from '@/components/mypage/CommunityHealthConsentCard';
 
 function MenuRow({
   href,
@@ -238,6 +239,11 @@ export default function MyPage() {
         </div>
 
         <div className="hf-page-mx mt-4">
+          <p className="mb-2 px-0.5 text-[11px] font-semibold text-[#9A9F94]">익명 고민 건강정보 동의</p>
+          <CommunityHealthConsentCard />
+        </div>
+
+        <div className="hf-page-mx mt-4">
           <p className="mb-2 px-0.5 text-[11px] font-semibold text-[#9A9F94]">개인정보 선택 동의</p>
           <HealthStatisticsConsentCard />
         </div>
@@ -252,6 +258,7 @@ export default function MyPage() {
               <MenuRow icon="🛡️" label="회원 제재 관리" sub="닉네임·이용 제한" href="/admin?tab=users" />
               {isAdmin(user?.role) && (
                 <>
+                  <MenuRow icon="🔒" label="건강정보 삭제 요청" sub="철회 접수·검토 기록" href="/admin?tab=deletion-requests" />
                   <MenuRow icon="📢" label="공지사항 관리" sub="공지 등록" href="/admin?tab=notices" />
                   <MenuRow icon="📝" label="칼럼 관리" sub="칼럼 등록·수정" href="/admin?tab=contents" />
                   <MenuRow icon="🎬" label="영상 관리" sub="영상 링크 관리" href="/admin?tab=videos" />

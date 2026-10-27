@@ -34,6 +34,8 @@ import {
   type PendingPostDetailConfirmation,
 } from '@/features/community/post-detail/types';
 import { usePostDetailActions } from '@/features/community/post-detail/usePostDetailActions';
+import { useCommunityHealthConsent } from '@/hooks/useCommunityHealthConsent';
+import { CommunityHealthConsentPanel } from '@/components/community/CommunityHealthConsentPanel';
 
 function normalizeBoardTagLabel(boardType: string | undefined, boardName: string) {
   const tabLabel = boardType ? getCommunityBoardTabLabel(boardType) : undefined;
@@ -73,6 +75,7 @@ export default function PostDetailContainer() {
 
   const [commentText, setCommentText] = useState('');
   const [commentIdentity, setCommentIdentity] = useState<{ postId: number; isAnonymous: boolean } | null>(null);
+  const [commentDisclosure, setCommentDisclosure] = useState<{ postId: number; accepted: boolean } | null>(null);
   const [replyParentId, setReplyParentId] = useState<number | null>(null);
   const [reportOpen, setReportOpen] = useState(false);
   const [reportCommentId, setReportCommentId] = useState<number | null>(null);
@@ -85,6 +88,8 @@ export default function PostDetailContainer() {
   const loginHref = `/login?from=${encodeURIComponent(`/community/posts/${postId}`)}`;
   const staffUser = isStaff(user?.role);
   const isConcernPost = isAnonymousConcernBoard(postBoard?.boardType);
+  const communityHealthConsent = useCommunityHealthConsent(isConcernPost && isLoggedIn);
+  const commentPublicAccepted = commentDisclosure?.postId === postId && commentDisclosure.accepted;
   const commentIsAnonymous = (isConcernPost && post?.isMyPost)
     || (commentIdentity?.postId === postId ? commentIdentity.isAnonymous : isConcernPost);
   const replyTarget = replyParentId === null
@@ -107,6 +112,14 @@ export default function PostDetailContainer() {
   };
 
   const handleComment = async () => {
+    if (isConcernPost && !communityHealthConsent.agreed) {
+      setCommentError('익명 고민 건강정보 처리에 별도로 동의한 뒤 답변해 주세요.');
+      return;
+    }
+    if (isConcernPost && !commentPublicAccepted) {
+      setCommentError('답변 내용이 비회원에게 공개되는 것을 확인해 주세요.');
+      return;
+    }
     const validation = validateCommentInput(commentText);
     if (validation) {
       setCommentError(validation);
@@ -123,6 +136,7 @@ export default function PostDetailContainer() {
       setCommentText('');
       setReplyParentId(null);
       setCommentIdentity(null);
+      setCommentDisclosure(null);
       await refetchPost();
     }
   };
@@ -296,6 +310,7 @@ export default function PostDetailContainer() {
 
             {canWriteComments ? (
               <>
+                {isConcernPost && <CommunityHealthConsentPanel state={communityHealthConsent} />}
                 {isConcernPost && post.isMyPost && (
                   <p className="mt-4 text-[12px] text-muted">글쓴이의 답변과 대댓글은 닉네임 비공개로 표시됩니다. 내용은 모두에게 공개됩니다.</p>
                 )}
@@ -322,13 +337,14 @@ export default function PostDetailContainer() {
                     <p className="mt-2 text-[12px] text-muted">답변 내용은 모두에게 공개됩니다.</p>
                   </fieldset>
                 )}
+                {isConcernPost && <label className="mt-4 flex items-start gap-2 text-[12px] leading-6 text-[#36453B]"><input type="checkbox" checked={Boolean(commentPublicAccepted)} onChange={(event) => setCommentDisclosure({ postId, accepted: event.target.checked })} className="mt-1 h-4 w-4 shrink-0 accent-[#0B3B36]" /><span>답변에 입력한 내용이 비회원에게 공개되는 것을 확인했습니다.</span></label>}
                 <CommentComposer
                   inputRef={commentInputRef}
                   replyTarget={replyTarget}
                   isMaskedPost={isMaskedPost}
                   isConcernPost={isConcernPost}
                   value={commentText}
-                  isSubmitting={isSubmitting}
+                  isSubmitting={isSubmitting || (isConcernPost && (!communityHealthConsent.agreed || !commentPublicAccepted))}
                   onChange={setCommentText}
                   onCancelReply={cancelReply}
                   onSubmit={() => void handleComment()}

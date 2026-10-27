@@ -5,5 +5,6 @@ package com.herfree.domain.post.entity;
 public enum PostStatus {
     ACTIVE,
     HIDDEN,
+    CONSENT_WITHDRAWN,
     DELETED
 }
