@@ -62,6 +62,7 @@ export type AdminCommunityComment = {
   id: number;
   postId: number;
   postTitle: string;
+  postStatus: 'ACTIVE' | 'HIDDEN' | 'DELETED';
   contentPreview: string;
   status: 'ACTIVE' | 'HIDDEN';
   authorNickname: string;

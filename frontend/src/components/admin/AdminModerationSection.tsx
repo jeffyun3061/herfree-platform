@@ -235,12 +235,17 @@ export function AdminModerationSection() {
                 <p className="line-clamp-1 text-[11.5px] text-[#8B9590]">원글: {item.postTitle}</p>
                 <p className="line-clamp-3 text-[13px] leading-[1.5] text-[#1E2621]">{item.contentPreview}</p>
                 <div className="grid grid-cols-2 gap-2">
-                  <Link href={`/community/posts/${item.postId}`} className="min-w-0">
-                    <Button size="sm" variant="secondary" fullWidth>원글 열기</Button>
-                  </Link>
-                  <Button size="sm" variant="secondary" fullWidth disabled={reviewLoading} onClick={() => void openReview(item.postId)}>
-                    원글 확인
-                  </Button>
+                  {item.postStatus === 'ACTIVE' ? (
+                    <Link href={`/community/posts/${item.postId}`} className="min-w-0 col-span-2">
+                      <Button size="sm" variant="secondary" fullWidth>원글 보기</Button>
+                    </Link>
+                  ) : item.postStatus === 'HIDDEN' ? (
+                    <Button size="sm" variant="secondary" fullWidth className="col-span-2" disabled={reviewLoading} onClick={() => void openReview(item.postId)}>
+                      원글 확인
+                    </Button>
+                  ) : (
+                    <p className="col-span-2 text-xs text-muted">삭제되었거나 상태를 확인할 수 없는 게시글입니다.</p>
+                  )}
                   {item.status === 'ACTIVE' ? (
                     <Button
                       size="sm"
