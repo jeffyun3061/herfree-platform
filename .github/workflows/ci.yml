@@ -88,14 +88,6 @@ jobs:
         run: |
           chmod +x ./gradlew
           ./gradlew test --no-daemon
-          python3 - <<'PY'
-          import pathlib, xml.etree.ElementTree as ET
-          report = pathlib.Path('build/test-results/test/TEST-com.herfree.schema.MySqlSchemaValidationIntegrationTest.xml')
-          suite = ET.parse(report).getroot()
-          assert int(suite.get('tests', '0')) == 1, 'MySQL schema validation did not run'
-          assert all(int(suite.get(key, '0')) == 0 for key in ['failures', 'errors', 'skipped']), 'Real MySQL schema validation must pass without skipping'
-          print('MySQL 8.4.10 Flyway/ORM integration: 1 passed, 0 skipped')
-          PY
         env:
           JWT_SECRET: ci-test-jwt-secret-minimum-32-characters-long
       - name: Backend build
@@ -110,8 +102,11 @@ jobs:
           python3 - <<'PY'
           import xml.etree.ElementTree as ET
           report = ET.parse('backend/build/test-results/test/TEST-com.herfree.schema.MySqlSchemaValidationIntegrationTest.xml').getroot()
-          assert int(report.attrib['tests']) > 0, 'MySQL schema test did not run'
+          required = {'flywaySchemaMatchesHibernateMappings', 'guestConcernSearchNeverReturnsLegacyMemberOnlyRows'}
+          executed = {case.attrib['name'].split('(')[0] for case in report.findall('testcase')}
+          assert required <= executed, 'Required MySQL schema/search regression tests did not run'
           assert all(int(report.attrib.get(key, '0')) == 0 for key in ['skipped', 'failures', 'errors']), 'MySQL schema test must pass without skipping'
+          print(f"MySQL 8.4.10 schema/search integration: {report.attrib['tests']} passed, 0 skipped")
           PY
       - name: Security hygiene check
         shell: bash
