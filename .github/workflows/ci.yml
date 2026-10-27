@@ -207,4 +207,4 @@ jobs:
           node e2e/support/preview-backend.mjs &
           preview_pid=$!
           trap 'kill "$preview_pid"' EXIT
-          npx playwright test e2e/signup-validation.spec.ts e2e/anonymous-concerns.spec.ts e2e/post-share-metadata.spec.ts e2e/phase-one-readability.spec.ts --project=chromium --project=mobile-chromium --project=iphone-webkit
+          npx playwright test e2e/signup-validation.spec.ts e2e/anonymous-concerns.spec.ts e2e/post-share-metadata.spec.ts e2e/phase-one-readability.spec.ts e2e/guest-post-access.spec.ts --project=chromium --project=mobile-chromium --project=iphone-webkit
