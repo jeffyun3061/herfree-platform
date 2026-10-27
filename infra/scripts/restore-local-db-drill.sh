@@ -117,7 +117,21 @@ unset HEALTH_KEY MFA_KEY ROOT_PASSWORD
 docker run -d --name "${API_CONTAINER}" --network "${NETWORK}" --memory 768m --pids-limit 256 \
   --read-only --cap-drop ALL --security-opt no-new-privileges:true --log-driver none \
   --tmpfs /tmp:size=64m,mode=1777 --env-file "${WORK_DIR}/verify.env" \
-  --mount "type=bind,source=${WORK_DIR}/verification,target=/verification" "${RESTORE_API_IMAGE}" >/dev/null
-status="$(timeout 600 docker wait "${API_CONTAINER}")"
-[[ "${status}" == 0 && -f "${WORK_DIR}/verification/success" ]] || { echo 'Restored application verification failed'; exit 1; }
+  --mount "type=bind,source=${WORK_DIR}/verification,target=/verification" \
+  --entrypoint /bin/sh "${RESTORE_API_IMAGE}" \
+  -c 'exec java -Duser.timezone=UTC -jar /app/app.jar > /verification/app.log 2>&1' >/dev/null
+status="$(timeout 600 docker wait "${API_CONTAINER}")" || status=timeout
+if [[ "${status}" != 0 || ! -f "${WORK_DIR}/verification/success" ]]; then
+  # JVM logs exist only on the dedicated encrypted mount and are deleted during
+  # cleanup. Publish only fixed labels, never restored data or exception messages.
+  reason=unknown
+  for item in OutOfMemoryError BeanCreationException BeanInstantiationException \
+      SQLSyntaxErrorException SQLIntegrityConstraintViolationException CommunicationsException \
+      JdbcSQLSyntaxErrorException HibernateException IllegalStateException AccessDeniedException; do
+    if [[ -f "${WORK_DIR}/verification/app.log" ]] && \
+        grep -Fq "$item" "${WORK_DIR}/verification/app.log"; then reason="$item"; break; fi
+  done
+  echo "Restored application verification failed; exit=${status}; category=${reason}"
+  exit 1
+fi
 SUCCESS=true

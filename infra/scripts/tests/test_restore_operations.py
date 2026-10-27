@@ -18,6 +18,16 @@ iam = module("iam", "render-operations-iam.py")
 
 
 class RestoreSafetyTests(unittest.TestCase):
+    def test_ssm_failure_classification_never_returns_restored_content(self):
+        phase, category = drill.classify_ssm_failure({
+            "StandardOutputContent": "private medical note: example\nRestored application verification failed; exit=1; category=BeanCreationException",
+            "StandardErrorContent": "patient@example.invalid",
+        })
+        self.assertEqual((phase, category), ("app-verification", "BeanCreationException"))
+        self.assertNotIn("private medical note", phase + category)
+        self.assertEqual(drill.classify_ssm_failure({"StandardErrorContent": "category=SensitiveRecordError"}),
+                         ("unknown", "unknown"))
+
     def test_refuses_production_unidentified_or_already_running_staging(self):
         for tags, state in [({"Environment": "production"}, "stopped"), ({}, "stopped"),
                             ({"Environment": "staging"}, "running")]:
@@ -37,6 +47,39 @@ class RestoreSafetyTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     drill.cleanup(state)
                 self.assertFalse(any("delete-volume" in args.args for args in call.call_args_list))
+
+    def test_cleanup_restores_profile_on_stopped_instance_and_can_resume(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "state.json"
+            path.write_text(json.dumps({"region": "ap-northeast-2", "instance": "i-staging", "run": "owned",
+                                        "started": True, "profileChanged": True, "restoreProfile": "restore",
+                                        "originalProfile": "normal"}))
+            target = {"Tags": [{"Key": "Environment", "Value": "staging"}], "State": {"Name": "stopped"}}
+            association_states = [
+                [{"State": "associated", "AssociationId": "assoc-restore", "IamInstanceProfile": {"Arn": "restore"}}],
+                [{"State": "disassociating", "AssociationId": "assoc-restore", "IamInstanceProfile": {"Arn": "restore"}}],
+                [],
+                [{"State": "associating", "AssociationId": "assoc-normal", "IamInstanceProfile": {"Arn": "normal"}}],
+                [{"State": "associated", "AssociationId": "assoc-normal", "IamInstanceProfile": {"Arn": "normal"}}],
+            ]
+            calls = []
+
+            def fake_aws(region, *args):
+                calls.append(args)
+                if args[:2] == ("ec2", "describe-volumes"):
+                    return {"Volumes": []}
+                if args[:2] == ("ec2", "describe-iam-instance-profile-associations"):
+                    return {"IamInstanceProfileAssociations": association_states.pop(0)}
+                return {}
+
+            with patch.object(drill, "instance", return_value=target), patch.object(drill, "aws", side_effect=fake_aws), \
+                    patch.object(drill.time, "sleep"):
+                drill.cleanup(path)
+                drill.cleanup(path)
+            self.assertTrue(json.loads(path.read_text())["cleaned"])
+            self.assertEqual(sum("disassociate-iam-instance-profile" in call for call in calls), 1)
+            self.assertEqual(sum("associate-iam-instance-profile" in call for call in calls), 1)
+            self.assertFalse(any("replace-iam-instance-profile-association" in call for call in calls))
 
     def test_restore_role_has_no_live_production_database_secrets_or_external_resource_control(self):
         policies = iam.policies("123456789012", "ap-northeast-2", "backups", "herfree", "i-stage", "normal-stage", "drill")
