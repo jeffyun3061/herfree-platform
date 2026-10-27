@@ -11,6 +11,14 @@ import time
 import urllib.request
 
 
+class ResumeRefused(ValueError):
+    """A fixed local guard message safe to show without host data."""
+
+
+class ResumeUnhealthy(RuntimeError):
+    """A fixed health failure message safe to show without application logs."""
+
+
 def run(command):
     return subprocess.check_output(command, text=True, stderr=subprocess.DEVNULL, timeout=30)
 
@@ -36,64 +44,64 @@ def metadata():
 def require_normal_identity(args, execute, identify):
     identity = identify()
     if identity != {"instance": args.instance_id, "profile": args.normal_profile_arn}:
-        raise ValueError("Expected staging instance and normal profile required")
+        raise ResumeRefused("Expected staging instance and normal profile required")
     role = re.fullmatch(r"arn:aws:iam::(\d{12}):role/(?:[A-Za-z0-9_+=,.@-]+/)*([A-Za-z0-9_+=,.@-]+)",
                         args.normal_role_arn)
     if not role:
-        raise ValueError("An explicit normal IAM role ARN is required")
+        raise ResumeRefused("An explicit normal IAM role ARN is required")
     caller = json.loads(execute(["aws", "sts", "get-caller-identity", "--region", args.region,
                                  "--output", "json"]))["Arn"]
     if not caller.startswith(f"arn:aws:sts::{role.group(1)}:assumed-role/{role.group(2)}/"):
-        raise ValueError("Normal staging role is not active")
+        raise ResumeRefused("Normal staging role is not active")
 
 
 def inspect_containers(args, execute, identify, mounted):
     if not re.fullmatch(r"i-[a-f0-9]{8,17}", args.instance_id):
-        raise ValueError("An explicit staging instance ID is required")
+        raise ResumeRefused("An explicit staging instance ID is required")
     if not re.fullmatch(r"arn:aws:iam::\d{12}:instance-profile/[A-Za-z0-9_+=,.@/-]+", args.normal_profile_arn):
-        raise ValueError("An explicit normal instance profile ARN is required")
+        raise ResumeRefused("An explicit normal instance profile ARN is required")
     require_normal_identity(args, execute, identify)
     if (args.root / ".deploy/staging.pending-operation").exists():
-        raise ValueError("Pending staging deployment requires reconciliation")
+        raise ResumeRefused("Pending staging deployment requires reconciliation")
     if mounted("/mnt/herfree-restore-drill"):
-        raise ValueError("Restore mount is still present")
+        raise ResumeRefused("Restore mount is still present")
     if execute(["docker", "ps", "-aq", "--filter", "name=herfree-restore-drill-"]).strip():
-        raise ValueError("Restore containers are still present")
+        raise ResumeRefused("Restore containers are still present")
 
     ids = []
     for service in ("mysql", "api"):
         values = execute(["docker", "ps", "-aq", "--filter", "label=com.docker.compose.project=herfree-staging",
                           "--filter", f"label=com.docker.compose.service={service}"]).split()
         if len(values) != 1 or not re.fullmatch(r"[a-f0-9]{12,64}", values[0]):
-            raise ValueError("Exactly one existing staging MySQL and API container required")
+            raise ResumeRefused("Exactly one existing staging MySQL and API container required")
         ids.append(values[0])
     containers = json.loads(execute(["docker", "inspect", *ids]))
     if len(containers) != 2:
-        raise ValueError("Unexpected staging container inspection")
+        raise ResumeRefused("Unexpected staging container inspection")
     by_id = {item["Id"]: item for item in containers}
     verified = []
     for service, container_id in zip(("mysql", "api"), ids):
         item = next((value for key, value in by_id.items() if key.startswith(container_id)), None)
         if item is None or item["Config"]["Labels"].get("com.docker.compose.project") != "herfree-staging" \
                 or item["Config"]["Labels"].get("com.docker.compose.service") != service:
-            raise ValueError("Unexpected staging container labels")
+            raise ResumeRefused("Unexpected staging container labels")
         if item["State"]["Status"] not in {"created", "exited", "running"}:
-            raise ValueError("Staging container requires operator inspection")
+            raise ResumeRefused("Staging container requires operator inspection")
         if any(str(mount.get("Source", "")).startswith("/mnt/herfree-restore-drill")
                or mount.get("Destination") == "/verification" for mount in item.get("Mounts", [])):
-            raise ValueError("Staging container references restored data")
+            raise ResumeRefused("Staging container references restored data")
         if service == "mysql":
             if any((item["HostConfig"].get("PortBindings") or {}).values()):
-                raise ValueError("Staging MySQL must have no published port")
+                raise ResumeRefused("Staging MySQL must have no published port")
             data_mounts = [mount for mount in item.get("Mounts", []) if mount.get("Destination") == "/var/lib/mysql"]
             if len(data_mounts) != 1 or data_mounts[0].get("Type") != "bind" \
                     or data_mounts[0].get("Source") != "/var/lib/herfree/mysql-staging":
-                raise ValueError("Existing staging database mount required")
+                raise ResumeRefused("Existing staging database mount required")
         if service == "api":
             env = dict(value.split("=", 1) for value in item["Config"].get("Env", []) if "=" in value)
             if env.get("SPRING_PROFILES_ACTIVE") != "staging" or env.get("DB_RUNTIME") != "local" \
                     or not env.get("SPRING_DATASOURCE_URL", "").startswith("jdbc:mysql://mysql:3306/"):
-                raise ValueError("Existing API must use the staging profile and local MySQL")
+                raise ResumeRefused("Existing API must use the staging profile and local MySQL")
         verified.append(item["Id"])
     return verified
 
@@ -118,7 +126,7 @@ def resume(args, execute=run, identify=metadata, mounted=os.path.ismount, sleep=
             break
         sleep(3)
     else:
-        raise RuntimeError("Existing staging database did not become healthy")
+        raise ResumeUnhealthy("Existing staging database did not become healthy")
     try:
         require_normal_identity(args, execute, identify)
     except Exception:
@@ -132,7 +140,7 @@ def resume(args, execute=run, identify=metadata, mounted=os.path.ismount, sleep=
             print("Existing staging database and API are healthy.")
             return
         sleep(3)
-    raise RuntimeError("Existing staging API did not become healthy")
+    raise ResumeUnhealthy("Existing staging API did not become healthy")
 
 
 @contextmanager
@@ -154,6 +162,9 @@ def main():
     try:
         with deployment_lock(args.root):
             resume(args)
+    except (ResumeRefused, ResumeUnhealthy) as error:
+        print(str(error))
+        return 1
     except Exception:
         # Never echo environment values, credentials, container details or raw logs.
         print("Staging resume refused or unavailable; inspect identity, restore cleanup and deployment state.")
