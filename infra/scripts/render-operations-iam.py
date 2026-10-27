@@ -28,6 +28,18 @@ def policies(account, region, bucket, repository, staging_id, staging_role, rest
         statement(["s3:GetObject", "s3:PutObject"], operations),
         statement("secretsmanager:GetSecretValue", recovery),
     ]
+    # RunCommand connectivity only; unlike AmazonSSMManagedInstanceCore this
+    # does not grant Parameter Store reads to the temporary recovery host.
+    channel = [
+        statement(["ssm:UpdateInstanceInformation", "ssm:DescribeAssociation", "ssm:ListAssociations",
+                   "ssm:ListInstanceAssociations", "ssm:UpdateInstanceAssociationStatus"], "*"),
+        statement(["ssm:GetDocument", "ssm:DescribeDocument"],
+                  f"arn:aws:ssm:{region}::document/AWS-RunShellScript"),
+        statement(["ssmmessages:CreateControlChannel", "ssmmessages:CreateDataChannel",
+                   "ssmmessages:OpenControlChannel", "ssmmessages:OpenDataChannel",
+                   "ec2messages:AcknowledgeMessage", "ec2messages:DeleteMessage", "ec2messages:FailMessage",
+                   "ec2messages:GetEndpoint", "ec2messages:GetMessages", "ec2messages:SendReply"], "*"),
+    ]
     # Attach this narrowly scoped addition to the existing production instance role.
     production = [statement("secretsmanager:GetSecretValue", recovery),
                   statement("s3:GetObject", operations), statement("cloudwatch:PutMetricData", "*", namespace)]
@@ -37,7 +49,8 @@ def policies(account, region, bucket, repository, staging_id, staging_role, rest
         statement(["ec2:DescribeInstances", "ec2:DescribeInstanceStatus", "ec2:DescribeVolumes",
                    "ec2:DescribeIamInstanceProfileAssociations", "ssm:DescribeInstanceInformation",
                    "ssm:GetCommandInvocation", "ssm:CancelCommand"], "*"),
-        statement(["ec2:StartInstances", "ec2:StopInstances", "ec2:ReplaceIamInstanceProfileAssociation"], target),
+        statement(["ec2:StartInstances", "ec2:StopInstances", "ec2:ReplaceIamInstanceProfileAssociation",
+                   "ec2:AssociateIamInstanceProfile", "ec2:DisassociateIamInstanceProfile"], target),
         statement("iam:PassRole", [f"arn:aws:iam::{account}:role/{staging_role}",
                                   f"arn:aws:iam::{account}:role/{restore_role}"],
                   {"StringEquals": {"iam:PassedToService": "ec2.amazonaws.com"}}),
@@ -53,7 +66,8 @@ def policies(account, region, bucket, repository, staging_id, staging_role, rest
             "Null": {"ec2:ResourceTag/HerfreeRestoreDrill": "false"}}),
         statement("s3:PutObject", f"{backup}/operations/production/restore-drill/last-attempt.json"),
     ]
-    return {"restore-instance": restore, "production-operations-addition": production, "restore-workflow": runner}
+    return {"restore-instance": restore, "restore-ssm-channel": channel,
+            "production-operations-addition": production, "restore-workflow": runner}
 
 
 def main():
@@ -73,7 +87,7 @@ def main():
         (folder / (name + ".json")).write_text(json.dumps({"Version": "2012-10-17", "Statement": statements}, indent=2), encoding="utf-8")
     (folder / "ec2-trust.json").write_text(json.dumps({"Version": "2012-10-17", "Statement": [
         {"Effect": "Allow", "Principal": {"Service": "ec2.amazonaws.com"}, "Action": "sts:AssumeRole"}]}), encoding="utf-8")
-    print("Review IAM policy files before applying. Attach AmazonSSMManagedInstanceCore to the temporary restore role.")
+    print("Review IAM policy files before applying. Attach restore-instance.json and restore-ssm-channel.json to the temporary restore role.")
 
 
 if __name__ == "__main__":

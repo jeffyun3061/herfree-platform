@@ -3,6 +3,7 @@
 import argparse
 import base64
 import json
+import os
 import re
 import shlex
 import subprocess
@@ -63,7 +64,20 @@ def require_staging(value, stopped=False):
 
 def save(path, state):
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(state, indent=2), encoding="utf-8")
+    # A cancelled process must leave either the previous complete intent or the
+    # next complete intent, so the always-cleanup step can still reconcile AWS.
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent,
+                                         prefix=f".{path.name}.", delete=False) as handle:
+            temporary = Path(handle.name)
+            json.dump(state, handle, indent=2)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, path)
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
 
 
 def report_failure(region, bucket):
