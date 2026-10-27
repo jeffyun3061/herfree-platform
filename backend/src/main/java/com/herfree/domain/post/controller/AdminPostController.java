@@ -1,6 +1,7 @@
 package com.herfree.domain.post.controller;
 
 import com.herfree.domain.post.dto.response.AdminCommunityPostResponse;
+import com.herfree.domain.post.dto.response.AdminPostReviewResponse;
 import com.herfree.domain.post.dto.request.AdminPostUpdateRequest;
 import com.herfree.domain.post.entity.PostStatus;
 import com.herfree.domain.post.service.PostService;
@@ -10,6 +11,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.CacheControl;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -35,6 +38,12 @@ public class AdminPostController {
     ) {
         return ResponseEntity.ok(
                 ApiResponse.success(postService.getAdminCommunityPosts(keyword, status, pageable)));
+    }
+
+    @GetMapping("/{postId}/review")
+    public ResponseEntity<ApiResponse<AdminPostReviewResponse>> reviewPost(@PathVariable Long postId, @AuthenticationPrincipal Long viewerId) {
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore().cachePrivate())
+                .body(ApiResponse.success(postService.getAdminReviewPost(postId, viewerId)));
     }
 
     @PatchMapping("/{postId}/hide")
