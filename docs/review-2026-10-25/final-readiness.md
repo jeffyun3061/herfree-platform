@@ -25,7 +25,7 @@
 * 프론트 ESLint 통과. 합성 OAuth 설정을 사용한 Next.js **Webpack** 운영 빌드 통과. 기본 Turbopack 빌드는 Windows 샌드박스의 하위 프로세스 생성 오류였고, 일반 샌드박스의 Webpack 정적 페이지 생성도 파일 권한 오류였다. 이 환경 제약을 우회한 빌드 결과와 GitHub Linux CI는 구분해서 기록한다.
 * 합성 계정·글로 PC Chromium, 모바일 Chromium, iPhone WebKit에서 제목 공유 선택·제목 수정 재선택·비회원 로그인 화면·익명 선택과 실제 공개 범위 **12/12 통과**. 설치형 앱 WebView와 실제 메신저는 아직 미검증이다.
 * `verify-legal-policy-alignment.ps1`의 코드·문안 정합성 검사 통과, 운영 사실 미평가 경고 1개. `-StrictOperationalFacts`와 `go-live-production.ps1 -DryRun`은 운영 주체·개인정보 담당자·메일 사업자·AWS 리전·국외 접근 관련 **12개 사실 미확인으로 차단**된다. 환경변수 입력만으로 법률상 적합성이 증명되는 것은 아니다.
-* 스테이징 `develop` 커밋 `cef7263be423ec83eaa01ad74bb05849d7d928f1`의 [배포·보안 스캔·스모크·변경 기능 8개 검증](https://github.com/jeffyun3061/herfree-platform/actions/runs/40325055682)과 [호스트 사전 점검](https://github.com/jeffyun3061/herfree-platform/actions/runs/40326110043)은 통과했다. 복원 스크립트 수정 커밋 `f28e05c`의 CI는 아직 확인 전이다.
+* 스테이징 `develop` 커밋 `cef7263be423ec83eaa01ad74bb05849d7d928f1`의 [배포·보안 스캔·스모크·변경 기능 8개 검증](https://github.com/jeffyun3061/herfree-platform/actions/runs/40325055682)과 [호스트 사전 점검](https://github.com/jeffyun3061/herfree-platform/actions/runs/40326110043)은 통과했다. 이후 복원 스크립트 수정 커밋의 CI는 아직 확인 전이다.
 * 6시간 백업 실물·암호화·보관기간은 AWS에서 확인했다. 실제 격리 복원은 두 차례 모두 앱 검증 단계에서 실패했다. 두 번 모두 운영 DB는 변경하지 않았고, 두 번째는 스테이징 중지·원래 권한 복구·임시 디스크 삭제까지 자동 완료했다. 실패 원인 분류와 복원 성공 확인이 남아 있다.
 
 ## 운영 전 차단 항목과 담당
