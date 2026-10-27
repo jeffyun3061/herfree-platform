@@ -120,8 +120,10 @@ jobs:
           ! git grep -n "change_me_jwt_secret" -- backend/src/main
 
   frontend:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # Playwright 1.55's WebKit dependencies target Noble. A slow apt mirror
+    # consumed 11m38s even though all tests passed; retain time for post-job cleanup.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -130,6 +132,7 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - name: Frontend build
+        timeout-minutes: 22
         working-directory: frontend
         env:
           NEXT_PUBLIC_OAUTH_REDIRECT_ORIGIN: http://localhost:3000
