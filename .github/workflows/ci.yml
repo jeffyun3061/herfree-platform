@@ -116,6 +116,10 @@ jobs:
 
   frontend:
     runs-on: ubuntu-24.04
+    # Match the lockfile's Playwright version; browsers and OS libraries are
+    # preinstalled so a slow Ubuntu package mirror cannot stall the test run.
+    container:
+      image: mcr.microsoft.com/playwright:v1.55.1-noble
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
@@ -199,7 +203,7 @@ jobs:
           npm run lint
           npm run test
           npm run build
-          npx playwright install --with-deps chromium webkit
+          npx playwright --version
           node e2e/support/preview-backend.mjs &
           preview_pid=$!
           trap 'kill "$preview_pid"' EXIT
