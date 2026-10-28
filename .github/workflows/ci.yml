@@ -57,6 +57,11 @@ jobs:
           grep -q 'AdminAccessGateFilter' backend/src/main/java/com/herfree/global/security/SecurityConfig.java
       - name: Verify immutable staging promotion
         run: python3 -m unittest discover -s infra/scripts/tests -p 'test_staging_promotion.py'
+      - name: Verify deployment failure and rollback log privacy
+        run: |
+          command -v bash
+          command -v flock
+          python3 -m unittest discover -s infra/scripts/tests -p 'test_release_log_privacy.py' -v
 
   secret-scan:
     runs-on: ubuntu-latest

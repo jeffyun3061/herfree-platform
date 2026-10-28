@@ -2,12 +2,14 @@ package com.herfree.domain.comment.dto.response;
 
 import com.herfree.domain.comment.entity.Comment;
 import com.herfree.domain.comment.entity.CommentStatus;
+import com.herfree.domain.post.entity.PostStatus;
 import java.time.Instant;
 
 public record AdminCommunityCommentResponse(
         Long id,
         Long postId,
         String postTitle,
+        PostStatus postStatus,
         String contentPreview,
         CommentStatus status,
         String authorNickname,
@@ -23,7 +25,8 @@ public record AdminCommunityCommentResponse(
         return new AdminCommunityCommentResponse(
                 comment.getId(),
                 comment.getPost().getId(),
-                comment.getPost().getTitle(),
+                comment.getPost().getStatus() == PostStatus.DELETED ? "삭제된 게시글" : comment.getPost().getTitle(),
+                comment.getPost().getStatus(),
                 preview,
                 comment.getStatus(),
                 com.herfree.global.util.AnonymousConcernPolicy.isConcernBoard(comment.getPost().getBoard().getBoardType())

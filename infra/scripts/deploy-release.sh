@@ -151,12 +151,8 @@ deploy_image() {
 }
 
 show_logs() {
-  local image="$1"
-  API_IMAGE="${image}" APP_ENV_FILE="${ENV_FILE}" API_BIND_PORT="${PORT}" API_BIND_HOST="${BIND_HOST}" DEPLOY_ENV="${DEPLOY_ENV}" \
-    MYSQL_ENV_FILE="${MYSQL_ENV_FILE}" MYSQL_DATA_DIR="${MYSQL_DATA_DIR}" \
-    API_MEMORY_LIMIT="${API_MEMORY_LIMIT}" MYSQL_MEMORY_LIMIT="${MYSQL_MEMORY_LIMIT}" \
-    docker compose --env-file "${ENV_FILE}" -p "${PROJECT}" "${compose_files[@]}" \
-      logs --tail=120 api || true
+  # SSM command output is copied to CI; API logs may contain health information.
+  echo "API logs withheld from deployment output; inspect the restricted server or CloudWatch logs."
 }
 
 stop_service() {
