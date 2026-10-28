@@ -235,7 +235,7 @@ export default function PostDetailContainer() {
             <span className="text-[22px] font-normal leading-none text-[#6E7671]">‹</span>
             커뮤니티
           </button>
-          <button
+          {postBoard && !isMaskedPost && <button
             type="button"
             onClick={() => void handleCopyLink()}
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-[#65706B] shadow-[0_10px_22px_-18px_rgba(7,37,31,.45)]"
@@ -245,7 +245,7 @@ export default function PostDetailContainer() {
               <path d="M10 13a5 5 0 0 0 7.1 0l2.8-2.8a5 5 0 0 0-7.1-7.1l-1.3 1.3" />
               <path d="M14 11a5 5 0 0 0-7.1 0l-2.8 2.8a5 5 0 0 0 7.1 7.1l1.3-1.3" />
             </svg>
-          </button>
+          </button>}
         </div>
         {copyMessage && (
           <p className="mx-5 mb-3 rounded-[13px] bg-[#0B3B36] px-4 py-2 text-[12px] font-bold text-white">
