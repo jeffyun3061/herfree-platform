@@ -8,6 +8,7 @@ type CommunityGuestPostPanelProps = {
   boardLabel?: string;
   loginFrom?: string;
   className?: string;
+  unavailable?: boolean;
 };
 
 function LockIcon() {
@@ -32,6 +33,7 @@ export function CommunityGuestPostPanel({
   boardLabel,
   loginFrom: loginFromProp,
   className,
+  unavailable = false,
 }: CommunityGuestPostPanelProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -58,12 +60,14 @@ export function CommunityGuestPostPanel({
           id="community-guest-post-lock-title"
           className="mt-4 text-[15px] font-bold leading-snug text-[#15201D] break-keep"
         >
-          {boardPhrase} 로그인한 회원만 볼 수 있어요
+          {unavailable ? '로그인이 필요하거나 글을 볼 수 없습니다' : `${boardPhrase} 로그인한 회원만 볼 수 있어요`}
         </h2>
 
         <div className="mt-3 space-y-1.5 break-keep text-[13px] leading-relaxed text-[#65706B]">
-          <p>익명으로 안전하게 이야기를 나눌 수 있어요.</p>
-          <p>로그인 후 게시판을 둘러보세요.</p>
+          {unavailable ? <p>로그인 후 다시 확인해 주세요. 삭제되었거나 권한이 없는 글은 볼 수 없습니다.</p> : <>
+            <p>익명으로 안전하게 이야기를 나눌 수 있어요.</p>
+            <p>로그인 후 게시판을 둘러보세요.</p>
+          </>}
         </div>
 
         <ButtonLink

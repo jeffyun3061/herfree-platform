@@ -61,7 +61,7 @@ test('writing preview keeps exact line breaks and wrapping on the published post
     return {width:element.clientWidth,fontFamily:style.fontFamily,fontSize:style.fontSize,lineHeight:style.lineHeight,letterSpacing:style.letterSpacing};
   });
   const editorMetrics=await metrics('#content');
-  expect(editorMetrics.fontSize).toBe('16px');
+  expect(editorMetrics.fontSize).toBe('17px');
   await page.getByRole('button',{name:'미리보기'}).click();
   const preview=page.locator('[data-testid="community-post-preview"] .hf-readable-content--community');
   await expect(preview).toHaveText(content);

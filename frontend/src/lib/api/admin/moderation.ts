@@ -5,7 +5,12 @@ import type {
   AdminCommunityPost,
   AdminListQuery,
   AdminPostUpdateInput,
+  AdminPostReview,
 } from './types';
+
+export function fetchAdminPostReview(postId: number): Promise<AdminPostReview> {
+  return request<AdminPostReview>(`/api/admin/posts/${postId}/review`);
+}
 
 export function hidePost(postId: number): Promise<void> {
   return request<void>(`/api/admin/posts/${postId}/hide`, { method: 'PATCH' });
