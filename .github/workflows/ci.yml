@@ -115,8 +115,12 @@ jobs:
           ! git grep -n "change_me_jwt_secret" -- backend/src/main
 
   frontend:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
+    runs-on: ubuntu-24.04
+    # Match the lockfile's Playwright version; browsers and OS libraries are
+    # preinstalled so a slow Ubuntu package mirror cannot stall the test run.
+    container:
+      image: mcr.microsoft.com/playwright:v1.55.1-noble
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -125,6 +129,7 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - name: Frontend build
+        timeout-minutes: 22
         working-directory: frontend
         env:
           NEXT_PUBLIC_OAUTH_REDIRECT_ORIGIN: http://localhost:3000
@@ -198,8 +203,8 @@ jobs:
           npm run lint
           npm run test
           npm run build
-          npx playwright install --with-deps chromium webkit
+          npx playwright --version
           node e2e/support/preview-backend.mjs &
           preview_pid=$!
           trap 'kill "$preview_pid"' EXIT
-          npx playwright test e2e/signup-validation.spec.ts e2e/anonymous-concerns.spec.ts e2e/post-share-metadata.spec.ts --project=chromium --project=mobile-chromium --project=iphone-webkit
+          npx playwright test e2e/signup-validation.spec.ts e2e/anonymous-concerns.spec.ts e2e/post-share-metadata.spec.ts e2e/phase-one-readability.spec.ts e2e/guest-post-access.spec.ts --project=chromium --project=mobile-chromium --project=iphone-webkit
