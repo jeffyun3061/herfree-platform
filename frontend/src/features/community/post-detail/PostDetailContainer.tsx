@@ -47,7 +47,7 @@ export default function PostDetailContainer() {
   const postId = Number(params.postId);
   const { isLoggedIn, isReady, user } = useAuth();
   const { boards, isLoading: boardsLoading } = useBoards();
-  const { post, isLoading, error, refetch: refetchPost } = usePostDetail(postId);
+  const { post, isLoading, error, errorStatus, refetch: refetchPost } = usePostDetail(postId);
   const postBoard = boards.find((board) => board.id === post?.boardId);
   const bookmarkEnabled =
     isReady && isLoggedIn && post != null && postBoard != null && !isMaskedBoardType(postBoard.boardType);
@@ -181,6 +181,17 @@ export default function PostDetailContainer() {
       </div>
     );
   }
+  if (!isLoggedIn && error && errorStatus !== null && [401, 403, 404].includes(errorStatus)) {
+    const returnPath = Number.isSafeInteger(postId) && postId > 0 ? `/community/posts/${postId}` : '/community';
+    return (
+      <div className="mx-auto max-w-app hf-scroll-pad-nav-tight">
+        <PostDetailBackHeader backHref="/community" pathname={pathname} />
+        <div className="px-5">
+          <CommunityGuestPostPanel unavailable loginFrom={encodeURIComponent(returnPath)} />
+        </div>
+      </div>
+    );
+  }
   if (error || !post) {
     return (
       <div className="mx-auto max-w-app px-5 py-10">
@@ -214,7 +225,7 @@ export default function PostDetailContainer() {
 
   return (
     <>
-      <article className="mx-auto max-w-app hf-scroll-pad-nav-tight lg:pb-8">
+      <article className="mx-auto max-w-[720px] pb-10 lg:pb-12">
         <div className="flex items-center justify-between gap-3 px-4 pb-3.5 hf-subpage-top">
           <button
             type="button"
