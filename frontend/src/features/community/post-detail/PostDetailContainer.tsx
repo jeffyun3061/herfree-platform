@@ -47,7 +47,7 @@ export default function PostDetailContainer() {
   const postId = Number(params.postId);
   const { isLoggedIn, isReady, user } = useAuth();
   const { boards, isLoading: boardsLoading } = useBoards();
-  const { post, isLoading, error, refetch: refetchPost } = usePostDetail(postId);
+  const { post, isLoading, error, errorStatus, refetch: refetchPost } = usePostDetail(postId);
   const postBoard = boards.find((board) => board.id === post?.boardId);
   const bookmarkEnabled =
     isReady && isLoggedIn && post != null && postBoard != null && !isMaskedBoardType(postBoard.boardType);
@@ -181,6 +181,17 @@ export default function PostDetailContainer() {
       </div>
     );
   }
+  if (!isLoggedIn && error && errorStatus !== null && [401, 403, 404].includes(errorStatus)) {
+    const returnPath = Number.isSafeInteger(postId) && postId > 0 ? `/community/posts/${postId}` : '/community';
+    return (
+      <div className="mx-auto max-w-app hf-scroll-pad-nav-tight">
+        <PostDetailBackHeader backHref="/community" pathname={pathname} />
+        <div className="px-5">
+          <CommunityGuestPostPanel unavailable loginFrom={encodeURIComponent(returnPath)} />
+        </div>
+      </div>
+    );
+  }
   if (error || !post) {
     return (
       <div className="mx-auto max-w-app px-5 py-10">
@@ -214,7 +225,7 @@ export default function PostDetailContainer() {
 
   return (
     <>
-      <article className="mx-auto max-w-app hf-scroll-pad-nav-tight lg:pb-8">
+      <article className="mx-auto max-w-[720px] pb-10 lg:pb-12">
         <div className="flex items-center justify-between gap-3 px-4 pb-3.5 hf-subpage-top">
           <button
             type="button"
@@ -224,7 +235,7 @@ export default function PostDetailContainer() {
             <span className="text-[22px] font-normal leading-none text-[#6E7671]">‹</span>
             커뮤니티
           </button>
-          <button
+          {postBoard && !isMaskedPost && <button
             type="button"
             onClick={() => void handleCopyLink()}
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-[#65706B] shadow-[0_10px_22px_-18px_rgba(7,37,31,.45)]"
@@ -234,7 +245,7 @@ export default function PostDetailContainer() {
               <path d="M10 13a5 5 0 0 0 7.1 0l2.8-2.8a5 5 0 0 0-7.1-7.1l-1.3 1.3" />
               <path d="M14 11a5 5 0 0 0-7.1 0l-2.8 2.8a5 5 0 0 0 7.1 7.1l1.3-1.3" />
             </svg>
-          </button>
+          </button>}
         </div>
         {copyMessage && (
           <p className="mx-5 mb-3 rounded-[13px] bg-[#0B3B36] px-4 py-2 text-[12px] font-bold text-white">

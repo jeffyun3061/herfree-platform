@@ -20,6 +20,7 @@ export function AppShell({ children }: AppShellProps) {
   const { isLoggedIn } = useAuth();
   useBackNavigationGuard();
   const isAdminPage = pathname.startsWith('/admin');
+  const isCommunityReader = pathname === '/community/write' || pathname.startsWith('/community/write/') || pathname.startsWith('/community/posts/');
   const showNav = shouldShowBottomNav(pathname);
   const showHeader = shouldShowShellHeader(pathname) && (pathname !== '/' || isLoggedIn);
 
@@ -27,11 +28,12 @@ export function AppShell({ children }: AppShellProps) {
     <PageHeaderProvider>
       <div className="app-canvas">
         <AppHeader visible={showHeader} desktopOnly />
-        <div className={cn('app-phone-shell', isAdminPage && 'admin-shell')}>
+        <div className={cn('app-phone-shell', isAdminPage && 'admin-shell', isCommunityReader && 'community-reader-shell')}>
           <AppHeader visible={showHeader} mobileOnly />
           <main
             className={cn(
-              'min-h-[100dvh] bg-[#F3EDE3] lg:min-h-[min(844px,calc(100vh-4rem))]',
+              'min-h-[100dvh] bg-[#F3EDE3]',
+              !isCommunityReader && 'lg:min-h-[min(844px,calc(100vh-4rem))]',
               showNav && 'hf-main-with-bottom-nav',
             )}
           >
