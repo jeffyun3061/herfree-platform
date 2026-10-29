@@ -164,7 +164,8 @@ export default function PostDetailContainer() {
       const result = await shareCommunityPost({
         title: post?.title ?? '', content: post?.content ?? '',
         url: communityPostUrl(postId, window.location.origin),
-        publicPreview: post?.visibility === 'PUBLIC' && post.readable !== false && postBoard != null && !isMaskedBoardType(postBoard.boardType),
+        publicPreview: post?.shareable === true,
+        titleOnly: post?.visibility === 'MEMBERS_ONLY',
       });
       if (result === 'cancelled') return;
       setCopyMessage(result === 'shared' ? '공유 창이 열렸어요.' : '공유 내용을 복사했어요.');
