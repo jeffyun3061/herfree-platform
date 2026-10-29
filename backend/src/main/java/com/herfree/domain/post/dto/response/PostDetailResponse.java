@@ -1,4 +1,5 @@
 package com.herfree.domain.post.dto.response;
+import com.herfree.global.util.PostVisibilityPolicy;
 
 import com.herfree.domain.post.entity.Post;
 import com.herfree.domain.post.entity.PostVisibility;
@@ -21,6 +22,8 @@ public record PostDetailResponse(
         boolean isAnonymous,
         boolean isMyPost,
         boolean readable,
+        boolean shareable,
+        boolean shareTitlePublicly,
         String imageUrl,
         boolean staffReplied,
         Instant createdAt,
@@ -71,6 +74,8 @@ public record PostDetailResponse(
                 post.isAnonymous() || AnonymousConcernPolicy.isConcernBoard(post.getBoard().getBoardType()),
                 isMyPost,
                 readable,
+                readable && PostVisibilityPolicy.isShareable(post),
+                PostVisibilityPolicy.isTitleOnlyShareable(post),
                 mask ? null : imageUrl,
                 staffReplied,
                 post.getCreatedAt(),
