@@ -24,11 +24,16 @@ public record PostCreateRequest(
 
         // S3 presigned 업로드 후 공개 URL (선택)
         String imageUrl,
-
-        boolean publicDisclosureAccepted
+        boolean publicDisclosureAccepted,
+        boolean shareTitlePublicly
 ) {
     public PostCreateRequest(Long boardId, String title, String content, boolean isAnonymous,
             PostVisibility visibility, String imageUrl) {
-        this(boardId, title, content, isAnonymous, visibility, imageUrl, false);
+        this(boardId, title, content, isAnonymous, visibility, imageUrl, false, false);
+    }
+
+    public PostCreateRequest(Long boardId, String title, String content, boolean isAnonymous,
+            PostVisibility visibility, String imageUrl, boolean publicDisclosureAccepted) {
+        this(boardId, title, content, isAnonymous, visibility, imageUrl, publicDisclosureAccepted, false);
     }
 }
