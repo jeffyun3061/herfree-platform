@@ -164,7 +164,8 @@ export default function PostDetailContainer() {
       const result = await shareCommunityPost({
         title: post?.title ?? '', content: post?.content ?? '',
         url: communityPostUrl(postId, window.location.origin),
-        publicPreview: post?.shareable === true,
+        publicPreview: post?.shareable === true || (post?.shareable == null && post?.visibility === 'PUBLIC'
+          && post.readable !== false && postBoard != null && !isMaskedBoardType(postBoard.boardType)),
         titleOnly: post?.visibility === 'MEMBERS_ONLY',
       });
       if (result === 'cancelled') return;

@@ -31,8 +31,8 @@ export type PostDetail = {
   isAnonymous: boolean;
   isMyPost: boolean;
   readable: boolean;
-  shareable: boolean;
-  shareTitlePublicly: boolean;
+  shareable?: boolean;
+  shareTitlePublicly?: boolean;
   imageUrl: string | null;
   staffReplied: boolean;
   createdAt: string;
