@@ -34,7 +34,7 @@ exec 9>"${state_root}/staging.lock"
 flock -n 9 || { echo 'staging release operation in progress' >&2; exit 1; }
 [[ ! -e "${pending}" ]] || { echo 'unfinished staging deployment requires reconciliation' >&2; exit 1; }
 
-mysql="$(docker ps --filter label=com.docker.compose.service=mysql --format '{{.ID}}')"
+mysql="$(docker ps --filter label=com.docker.compose.project=herfree-staging --filter label=com.docker.compose.service=mysql --format '{{.ID}}')"
 [[ -n "${mysql}" && "$(printf '%s\n' "${mysql}" | wc -l)" -eq 1 ]] || { echo 'staging MySQL identity unconfirmed' >&2; exit 1; }
 ports="$(docker inspect --format '{{json .HostConfig.PortBindings}}' "${mysql}")"
 [[ "${ports}" == '{}' || "${ports}" == null ]] || { echo 'staging MySQL must not publish ports' >&2; exit 1; }
@@ -44,7 +44,7 @@ if [[ "${mode}" == prepare ]]; then
   shopt -s nullglob
   active=("${state_root}"/isolated-????????)
   (( ${#active[@]} == 0 )) || { echo 'another isolated staging run requires reconciliation' >&2; exit 1; }
-  api="$(docker ps --filter label=com.docker.compose.service=api --format '{{.ID}}')"
+  api="$(docker ps --filter label=com.docker.compose.project=herfree-staging --filter label=com.docker.compose.service=api --format '{{.ID}}')"
   [[ -n "${api}" && "$(printf '%s\n' "${api}" | wc -l)" -eq 1 ]] || { echo 'staging API identity unconfirmed' >&2; exit 1; }
   api_env="$(docker inspect --format '{{range .Config.Env}}{{println .}}{{end}}' "${api}")"
   printf '%s\n' "${api_env}" | grep -qx 'SPRING_PROFILES_ACTIVE=staging' || { echo 'running API is not staging' >&2; exit 1; }
@@ -100,7 +100,7 @@ fi
 
 [[ -f "${state}/config-restored" ]] && cmp -s "${config}" "${state}/original-env" || { echo 'restore original staging configuration first' >&2; exit 1; }
 [[ -s "${current_image}" && "$(tr -d '\r\n' < "${current_image}")" == "$(tr -d '\r\n' < "${state}/original-image")" ]] || { echo 'original staging image has not been restored' >&2; exit 1; }
-api="$(docker ps --filter label=com.docker.compose.service=api --format '{{.ID}}')"
+api="$(docker ps --filter label=com.docker.compose.project=herfree-staging --filter label=com.docker.compose.service=api --format '{{.ID}}')"
 [[ -n "${api}" && "$(printf '%s\n' "${api}" | wc -l)" -eq 1 ]] || { echo 'restored staging API identity unconfirmed' >&2; exit 1; }
 [[ "$(docker inspect --format '{{.Config.Image}}' "${api}")" == "$(tr -d '\r\n' < "${state}/original-image")" ]] || { echo 'running API is not the recorded image' >&2; exit 1; }
 original_url="$(value_of "${state}/original-env" SPRING_DATASOURCE_URL)"
