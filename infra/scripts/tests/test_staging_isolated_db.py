@@ -36,6 +36,8 @@ class StagingIsolatedDbTest(unittest.TestCase):
 import os, pathlib, sys
 args=sys.argv[1:]; state=pathlib.Path(os.environ['MOCK_STATE'])
 if args[0]=='ps':
+    if not any('project=herfree-staging' in x for x in args): sys.exit(5)
+    if os.getenv('MOCK_WRONG_PROJECT') == '1': sys.exit(0)
     print('mysql-id' if any('service=mysql' in x for x in args) else 'api-id')
 elif args[0]=='inspect':
     fmt=args[args.index('--format')+1]
@@ -115,6 +117,12 @@ else: sys.exit(3)
     def test_invalid_run_name_never_targets_a_database(self):
         self.assertNotEqual(self.run_script('prepare', '../../prod').returncode, 0)
         self.assertFalse((self.mock/'database').exists())
+
+    def test_refuses_containers_from_another_compose_project(self):
+        env = {**self.env, 'MOCK_WRONG_PROJECT': '1'}
+        self.assertNotEqual(self.run_script('prepare', env=env).returncode, 0)
+        self.assertFalse((self.mock/'database').exists())
+        self.assertFalse((self.mock/'queries').exists())
 
 
 if __name__ == '__main__':
