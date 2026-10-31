@@ -2,7 +2,7 @@
 
 `infra/scripts/staging-isolated-db.sh` prepares a new disposable database on the existing staging-only MySQL host without changing the existing staging database. It is not wired into a workflow, is not a promotion gate, and must not be used as production-release evidence on its own.
 
-The caller must ensure the staging EC2 host is the intended isolated host, the external staging test route is protected, the candidate is pinned, and the last known staging image is recoverable. The script checks the staging configuration and running API, private MySQL networking, one active isolation at a time, a successful staging predeployment backup, and a newly absent `hfqa_<8 hex>` database before changing anything. It journals the original environment and image in a permission-restricted directory. Passwords are not printed.
+The caller must ensure the staging EC2 host is the intended isolated host, the external staging test route is protected, the candidate is pinned, and the last known staging image is recoverable. The script restricts container selection to the staging compose project and checks that the running API is healthy and matches the recorded current image, private MySQL networking, one active isolation at a time, a successful staging predeployment backup, and a newly absent `hfqa_<8 hex>` database before changing anything. It journals the original environment and image in a permission-restricted directory. Passwords are not printed.
 
 Three explicit phases are needed:
 

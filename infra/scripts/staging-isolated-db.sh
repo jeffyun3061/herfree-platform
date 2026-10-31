@@ -55,6 +55,8 @@ if [[ "${mode}" == prepare ]]; then
   mysql_net="$(docker inspect --format '{{range $k,$v := .NetworkSettings.Networks}}{{println $k}}{{end}}' "${mysql}" | sort)"
   [[ -n "${mysql_net}" ]] && printf '%s\n' "${api_net}" | grep -Fx "${mysql_net}" >/dev/null || { echo 'staging API and MySQL networks differ' >&2; exit 1; }
   [[ ! -e "${state}" && -s "${current_image}" ]] || { echo 'run exists or current staging image is missing' >&2; exit 1; }
+  [[ "$(docker inspect --format '{{.Config.Image}}' "${api}")" == "$(tr -d '\r\n' < "${current_image}")" ]] || { echo 'running staging image differs from recorded image' >&2; exit 1; }
+  curl --fail --silent --max-time 3 http://127.0.0.1:8080/actuator/health | grep -q '"status":"UP"' || { echo 'staging service is not healthy before isolation' >&2; exit 1; }
   user="$(value_of "${mysql_env}" MYSQL_USER)"
   [[ "${user}" =~ ^[A-Za-z0-9_.-]+$ ]] || { echo 'invalid staging DB user' >&2; exit 1; }
   url="$(value_of "${config}" SPRING_DATASOURCE_URL)"
