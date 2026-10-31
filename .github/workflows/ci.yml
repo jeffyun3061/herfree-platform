@@ -57,6 +57,12 @@ jobs:
           grep -q 'AdminAccessGateFilter' backend/src/main/java/com/herfree/global/security/SecurityConfig.java
       - name: Verify immutable staging promotion
         run: python3 -m unittest discover -s infra/scripts/tests -p 'test_staging_promotion.py'
+      - name: Verify isolated staging DB safety
+        run: python3 -m unittest discover -s infra/scripts/tests -p 'test_staging_isolated_db.py'
+      - name: Verify isolated frontend preflight
+        run: python3 -m unittest discover -s infra/scripts/tests -p 'test_isolated_frontend_preflight.py'
+      - name: Verify isolated smoke runner safety
+        run: python3 -m unittest discover -s infra/scripts/tests -p 'test_isolated_smoke_runner.py'
 
   secret-scan:
     runs-on: ubuntu-latest
