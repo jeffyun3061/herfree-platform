@@ -42,7 +42,7 @@ if args[0]=='ps':
 elif args[0]=='inspect':
     fmt=args[args.index('--format')+1]
     if 'PortBindings' in fmt: print('null')
-    elif fmt=='{{.Config.Image}}': print(pathlib.Path(os.environ['MOCK_IMAGE']).read_text())
+    elif fmt=='{{.Config.Image}}': print(os.getenv('MOCK_RUNNING_IMAGE') or pathlib.Path(os.environ['MOCK_IMAGE']).read_text())
     elif 'Config.Env' in fmt:
         print('SPRING_PROFILES_ACTIVE=' + os.getenv('MOCK_PROFILE','staging'))
         print('DB_RUNTIME=local')
@@ -61,7 +61,7 @@ else: sys.exit(3)
 ''')
         docker.chmod(0o755)
         curl = self.bin / 'curl'
-        curl.write_text('#!/bin/sh\nprintf \'{"status":"UP"}\\n\'\n')
+        curl.write_text('#!/bin/sh\n[ "${MOCK_HEALTH_FAILURE:-0}" = 0 ] || exit 1\nprintf \'{"status":"UP"}\\n\'\n')
         curl.chmod(0o755)
         self.env = {**os.environ, 'PATH': str(self.bin) + os.pathsep + os.environ['PATH'],
                     'HERFREE_APP_DIR': str(self.app), 'MOCK_STATE': str(self.mock), 'MOCK_IMAGE': str(self.image)}
@@ -123,6 +123,15 @@ else: sys.exit(3)
         self.assertNotEqual(self.run_script('prepare', env=env).returncode, 0)
         self.assertFalse((self.mock/'database').exists())
         self.assertFalse((self.mock/'queries').exists())
+
+    def test_refuses_unhealthy_or_unrecorded_running_image_before_mutation(self):
+        for env in ({**self.env, 'MOCK_RUNNING_IMAGE': 'unexpected-image'},
+                    {**self.env, 'MOCK_HEALTH_FAILURE': '1'}):
+            with self.subTest(env=env):
+                self.assertNotEqual(self.run_script('prepare', env=env).returncode, 0)
+                self.assertFalse((self.mock/'database').exists())
+                self.assertFalse((self.mock/'queries').exists())
+                self.assertEqual(self.config.read_text(), self.original)
 
 
 if __name__ == '__main__':
