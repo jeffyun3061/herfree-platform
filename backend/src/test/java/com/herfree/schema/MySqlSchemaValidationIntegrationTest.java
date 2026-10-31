@@ -60,8 +60,9 @@ class MySqlSchemaValidationIntegrationTest {
     void rollbackTitleEditRevokesExistingTitleSharingConsent() {
         Timestamp now = Timestamp.from(Instant.now());
         jdbc.update("INSERT INTO users (id,email,password,role,status,credential_version,created_at,updated_at) VALUES (96001,'rollback-test@example.invalid','test','USER','ACTIVE',0,?,?)", now, now);
-        jdbc.update("INSERT INTO boards (id,name,description,board_type,sort_order,is_active,created_at,updated_at) VALUES (96001,'rollback-test','','FREE',0,true,?,?)", now, now);
-        jdbc.update("INSERT INTO posts (id,board_id,user_id,title,content,view_count,comment_count,status,visibility,is_anonymous,sort_order,is_pinned,share_title_publicly,created_at,updated_at) VALUES (96001,96001,96001,'previous title','test body',0,0,'ACTIVE','MEMBERS_ONLY',false,0,false,true,?,?)", now, now);
+        Long boardId = jdbc.queryForObject("SELECT id FROM boards WHERE board_type='FREE' LIMIT 1", Long.class);
+        assertThat(boardId).isNotNull();
+        jdbc.update("INSERT INTO posts (id,board_id,user_id,title,content,view_count,comment_count,status,visibility,is_anonymous,sort_order,is_pinned,share_title_publicly,created_at,updated_at) VALUES (96001,?,96001,'previous title','test body',0,0,'ACTIVE','MEMBERS_ONLY',false,0,false,true,?,?)", boardId, now, now);
 
         var post = posts.findById(96001L).orElseThrow();
         post.update("changed title", "test body", false);
