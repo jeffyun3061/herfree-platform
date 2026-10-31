@@ -18,6 +18,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.ColumnDefault;
 import java.util.Objects;
 
 // 게시글 엔티티 — 상태 변경은 반드시 도메인 메서드를 통해야 한다.
@@ -82,6 +83,7 @@ public class Post extends BaseTimeEntity {
 
     // Keep the opt-in consistent if the rollback version edits a shared title.
     @Column(name = "share_title_publicly", nullable = false)
+    @ColumnDefault("false")
     private boolean shareTitlePublicly;
 
     @Builder
