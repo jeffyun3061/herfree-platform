@@ -38,23 +38,26 @@ def validate_inputs(account: str, app: str, branch: str, sha: str, api: str) -> 
     return f'https://{branch}.{app}.amplifyapp.com'
 
 
-def check_remote(sha: str, branch: str, root: Path, run) -> None:
+def check_remote(sha: str, branch: str, root: Path, run, candidate_pr: str | None = None) -> None:
+    require(candidate_pr is None or re.fullmatch(r'[1-9][0-9]{0,8}', candidate_pr) is not None,
+            'INVALID_PR')
     remote = run(['git', 'remote', 'get-url', 'origin'], root).strip()
     require(remote in ('https://github.com/jeffyun3061/herfree-platform.git',
                        'https://github.com/jeffyun3061/herfree-platform',
                        'git@github.com:jeffyun3061/herfree-platform.git'), 'REMOTE_REFUSED')
     require(run(['git', 'rev-parse', 'HEAD'], root).strip() == sha, 'LOCAL_COMMIT_MISMATCH')
-    for ref in ('refs/heads/main', 'refs/heads/' + branch):
+    candidate_ref = 'refs/pull/' + candidate_pr + '/head' if candidate_pr else 'refs/heads/main'
+    for ref in (candidate_ref, 'refs/heads/' + branch):
         result = run(['git', 'ls-remote', '--exit-code', 'origin', ref], root).strip()
         require(result == sha + '\t' + ref, 'REMOTE_COMMIT_MISMATCH')
 
 
 def verify(account: str, app: str, branch: str, sha: str, api: str,
-           credentials: tuple[str, str], root: Path, lookup, run, fetch) -> dict:
+           credentials: tuple[str, str], root: Path, lookup, run, fetch, candidate_pr: str | None = None) -> dict:
     origin = validate_inputs(account, app, branch, sha, api)
     require(len(credentials) == 2 and all(isinstance(x, str) and x for x in credentials)
             and ':' not in credentials[0], 'BASIC_CREDENTIALS_REQUIRED')
-    check_remote(sha, branch, root, run)
+    check_remote(sha, branch, root, run, candidate_pr)
     require(lookup('sts', 'get-caller-identity', '--query', 'Account') == account, 'ACCOUNT_MISMATCH')
     info = lookup('amplify', 'get-branch', '--app-id', app, '--branch-name', branch,
                   '--query', 'branch.{name:branchName,basic:enableBasicAuth,api:environmentVariables.API_REWRITE_TARGET,origin:environmentVariables.NEXT_PUBLIC_OAUTH_REDIRECT_ORIGIN}')
@@ -128,11 +131,12 @@ def main() -> int:
     parser.add_argument('--api', required=True)
     parser.add_argument('--repo', type=Path, default=Path.cwd())
     parser.add_argument('--profile')
+    parser.add_argument('--candidate-pr', help='Verify the exact PR head instead of current main; never authorizes promotion')
     args = parser.parse_args()
     try:
         result = verify(args.account, args.app, args.branch, args.sha, args.api,
                         (os.getenv('ISOLATED_QA_BASIC_USERNAME', ''), os.getenv('ISOLATED_QA_BASIC_PASSWORD', '')),
-                        args.repo, lambda *items: aws_lookup(args.profile, *items), command, fetch_url)
+                        args.repo, lambda *items: aws_lookup(args.profile, *items), command, fetch_url, args.candidate_pr)
         print(json.dumps(result))
         return 0
     except Refused as error:
