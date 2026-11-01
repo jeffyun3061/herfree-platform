@@ -20,11 +20,11 @@ class IsolationGuardTest(unittest.TestCase):
         self.env = dict(os.environ)
         self.env.pop('HERFREE_ISOLATED_QA_RUN', None)
 
-    def check(self, mode='deploy', run=None):
+    def check(self, mode='deploy', run=None, image='original-image'):
         env = dict(self.env)
         if run is not None:
             env['HERFREE_ISOLATED_QA_RUN'] = run
-        return subprocess.run(['bash', str(SCRIPT), str(self.root), str(self.config), mode],
+        return subprocess.run(['bash', str(SCRIPT), str(self.root), str(self.config), mode, image],
                               env=env, capture_output=True, text=True).returncode
 
     def test_normal_deploy_allowed_without_isolation(self):
@@ -45,9 +45,12 @@ class IsolationGuardTest(unittest.TestCase):
         self.config.write_text('unexpected config\n')
         self.assertNotEqual(self.check(run='a1b2c3d4'), 0)
         (self.state / 'original-env').write_text('original settings\n')
+        (self.state / 'original-image').write_text('original-image')
         (self.state / 'config-restored').touch()
         self.config.write_text('original settings\n')
-        self.assertEqual(self.check(run='a1b2c3d4'), 0)
+        self.assertNotEqual(self.check(run='a1b2c3d4'), 0)
+        self.assertNotEqual(self.check(mode='rollback', run='a1b2c3d4', image='candidate-image'), 0)
+        self.assertEqual(self.check(mode='rollback', run='a1b2c3d4'), 0)
         (self.root / 'isolated-b1b2c3d4').mkdir()
         self.assertNotEqual(self.check(run='a1b2c3d4'), 0)
 
