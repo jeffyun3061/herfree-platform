@@ -118,7 +118,7 @@ elif ! flock -n 9; then
 fi
 
 if [[ "${DEPLOY_ENV}" == "staging" ]]; then
-  "${APP_DIR}/infra/scripts/guard-staging-isolation.sh" "${STATE_DIR}" "${ENV_FILE}" "${DEPLOY_MODE}"
+  "${APP_DIR}/infra/scripts/guard-staging-isolation.sh" "${STATE_DIR}" "${ENV_FILE}" "${DEPLOY_MODE}" "${NEW_IMAGE}"
 fi
 
 read_state() {
