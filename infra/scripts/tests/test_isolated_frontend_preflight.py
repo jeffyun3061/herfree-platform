@@ -20,6 +20,8 @@ class IsolatedFrontendPreflightTest(unittest.TestCase):
         self.branch_info = {'name':self.branch, 'basic':True, 'api':self.api, 'origin':self.origin}
         self.jobs = [{'status':'SUCCEED', 'commit':self.sha}]
         self.main_sha = self.sha
+        self.pr_sha = self.sha
+        self.candidate_pr = None
         self.qa_sha = self.sha
         self.guest_status = 401
         self.health_environment = 'staging'
@@ -31,7 +33,7 @@ class IsolatedFrontendPreflightTest(unittest.TestCase):
         if args[:3] == ['git', 'rev-parse', 'HEAD']:
             return self.sha + '\n'
         ref = args[-1]
-        value = self.main_sha if ref == 'refs/heads/main' else self.qa_sha
+        value = self.main_sha if ref == 'refs/heads/main' else self.pr_sha if ref.startswith('refs/pull/') else self.qa_sha
         return value + '\t' + ref + '\n'
 
     def lookup(self, *args):
@@ -49,7 +51,7 @@ class IsolatedFrontendPreflightTest(unittest.TestCase):
     def verify(self):
         return module.verify(self.account, self.app, self.branch, self.sha, self.api,
                              ('synthetic-user', 'synthetic-password'), Path('.'),
-                             self.lookup, self.run_command, self.fetch)
+                             self.lookup, self.run_command, self.fetch, self.candidate_pr)
 
     def refused(self, code):
         with self.assertRaisesRegex(module.Refused, '^' + code + '$'):
@@ -79,6 +81,18 @@ class IsolatedFrontendPreflightTest(unittest.TestCase):
         self.main_sha = self.sha
         self.qa_sha = 'c' * 40
         self.refused('REMOTE_COMMIT_MISMATCH')
+
+    def test_pr_candidate_can_be_tested_before_main_but_stale_pr_is_refused(self):
+        self.candidate_pr = '189'
+        self.main_sha = 'b' * 40
+        self.assertTrue(self.verify()['frontendPreflightPassed'])
+        self.pr_sha = 'b' * 40
+        self.refused('REMOTE_COMMIT_MISMATCH')
+
+    def test_invalid_pr_does_not_contact_remote(self):
+        self.candidate_pr = '../heads/main'
+        self.refused('INVALID_PR')
+        self.assertEqual(self.requests, [])
 
     def test_branch_must_be_protected_and_build_must_match(self):
         self.branch_info['basic'] = False

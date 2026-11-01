@@ -20,7 +20,7 @@ class IsolatedSmokeRunnerTest(unittest.TestCase):
         self.bin.mkdir()
         for name, contents in {
             'git': '#!/bin/sh\nprintf "%s\\n" "$MOCK_REPO"\n',
-            'python3': '#!/bin/sh\n[ "${MOCK_PREFLIGHT_FAIL:-0}" = 0 ] || exit 1\n',
+            'python3': '#!/bin/sh\nprintf "%s\\n" "$@" > "$MOCK_PREFLIGHT_LOG"\n[ "${MOCK_PREFLIGHT_FAIL:-0}" = 0 ] || exit 1\n',
             'npm': '#!/bin/sh\nprintf "%s\\n" "$*" > "$MOCK_NPM_LOG"\n',
         }.items():
             path = self.bin / name
@@ -30,6 +30,7 @@ class IsolatedSmokeRunnerTest(unittest.TestCase):
         branch = 'qa-' + 'a' * 12 + '-' + 'b' * 8
         self.env = {**os.environ, 'PATH': str(self.bin) + os.pathsep + os.environ['PATH'],
                     'MOCK_REPO': str(self.root), 'MOCK_NPM_LOG': str(self.log),
+                    'MOCK_PREFLIGHT_LOG': str(root / 'preflight.log'),
                     'ISOLATED_QA_BRANCH': branch, 'ISOLATED_QA_COMMIT': 'a' * 40,
                     'ISOLATED_QA_BASIC_USERNAME': 'qa-user', 'ISOLATED_QA_BASIC_PASSWORD': 'qa-password',
                     'PLAYWRIGHT_BASE_URL': f'https://{branch}.d2bcg3vnlv5hkh.amplifyapp.com'}
@@ -43,6 +44,11 @@ class IsolatedSmokeRunnerTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(self.log.read_text().strip(), 'run e2e:staging:smoke')
         self.assertNotIn('qa-password', result.stdout + result.stderr)
+
+    def test_pr_number_reaches_preflight(self):
+        result = self.run_script({**self.env, 'ISOLATED_QA_PR': '189'})
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('--candidate-pr\n189\n', Path(self.env['MOCK_PREFLIGHT_LOG']).read_text())
 
     def test_preflight_failure_or_unsafe_target_never_runs_browser(self):
         for changes in ({'MOCK_PREFLIGHT_FAIL': '1'}, {'E2E_ALLOW_MUTATION': 'true'},

@@ -12,9 +12,13 @@ set -euo pipefail
 root="$(git rev-parse --show-toplevel)"
 expected="https://${ISOLATED_QA_BRANCH}.d2bcg3vnlv5hkh.amplifyapp.com"
 [[ "${PLAYWRIGHT_BASE_URL:-}" == "${expected}" ]] || { echo 'isolated frontend URL mismatch' >&2; exit 1; }
+candidate_args=()
+if [[ -n "${ISOLATED_QA_PR:-}" ]]; then
+  candidate_args=(--candidate-pr "${ISOLATED_QA_PR}")
+fi
 python3 "${root}/infra/scripts/verify-isolated-frontend.py" \
   --account 439777528445 --app d2bcg3vnlv5hkh --branch "${ISOLATED_QA_BRANCH}" \
-  --sha "${ISOLATED_QA_COMMIT}" --api https://api-staging.herpfree.co.kr --repo "${root}" >/dev/null
+  --sha "${ISOLATED_QA_COMMIT}" --api https://api-staging.herpfree.co.kr --repo "${root}" "${candidate_args[@]}" >/dev/null
 
 export E2E_HTTP_USERNAME="${ISOLATED_QA_BASIC_USERNAME}"
 export E2E_HTTP_PASSWORD="${ISOLATED_QA_BASIC_PASSWORD}"
