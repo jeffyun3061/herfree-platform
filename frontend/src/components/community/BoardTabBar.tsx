@@ -72,7 +72,7 @@ export function BoardTabBar({ boards, selectedBoardId, onSelect, showAllTab = fa
         id="community-board-tabs"
         ref={scrollerRef}
         onScroll={updateScrollButtons}
-        className="community-tabs-scroll flex gap-2 overflow-x-auto px-4 pb-1"
+        className="community-tabs-scroll mx-11 flex gap-2 overflow-x-auto pb-1"
         role="tablist"
         aria-label="게시판 카테고리"
       >
