@@ -10,9 +10,10 @@ describe('anonymous server share metadata', () => {
     const preview = await loadPublicPostPreview('11');
     expect(fetchMock).toHaveBeenCalledWith('https://api.example.test/api/posts/11/share-preview', expect.objectContaining({cache:'no-store',headers:{Accept:'application/json'},redirect:'error'}));
     const metadata = publicPostMetadata('11', preview);
-    expect(metadata.openGraph).toMatchObject({title:'고민 제목',description:'본문 첫 부분',url:'https://www.herpfree.co.kr/community/posts/11',images:[{url:'/brand/logo-hfree-on-primary.png',alt:'헤르프리'}]});
+    expect(metadata.openGraph).toMatchObject({title:'고민 제목',description:'로그인 후 게시글을 확인해 주세요.',url:'https://www.herpfree.co.kr/community/posts/11',images:[{url:'/brand/logo-hfree-on-primary.png',alt:'헤르프리'}]});
     expect(metadata.twitter).toMatchObject({card:'summary_large_image',images:['/brand/logo-hfree-on-primary.png']});
     expect(JSON.stringify(metadata)).not.toContain('must-not-be-exported');
+    expect(JSON.stringify(metadata)).not.toContain('본문 첫 부분');
   });
   it.each(['INQUIRY','PRIVATE_CONSULT','SECRET_STORY'])('refuses private %s data even from a malformed upstream response', async boardType => {
     vi.stubEnv('API_REWRITE_TARGET', 'https://api.example.test');

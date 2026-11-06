@@ -11,7 +11,8 @@ public final class PostVisibilityPolicy {
     }
 
     public static void assertReadable(Post post, Long viewerId, UserRole viewerRole) {
-        if (post.getVisibility() == PostVisibility.MEMBERS_ONLY && viewerId == null) {
+        if (viewerId == null && (!"NOTICE".equals(post.getBoard().getBoardType())
+                || post.getVisibility() == PostVisibility.MEMBERS_ONLY)) {
             throw new PostNotFoundException();
         }
 

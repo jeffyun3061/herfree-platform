@@ -466,7 +466,7 @@ function WritePostForm() {
                       onChange={() => setVisibility('PUBLIC')}
                       className="mt-0.5 h-4 w-4 shrink-0 accent-[#0B3B36]"
                     />
-                    <span className="min-w-0 break-keep"><span className="font-semibold">전체 공개</span><br /><span className="text-[#7A8178]">비회원도 볼 수 있어요.</span></span>
+                    <span className="min-w-0 break-keep"><span className="font-semibold">전체 공개</span><br /><span className="text-[#7A8178]">제목은 공개되며 본문은 로그인 후 볼 수 있어요.</span></span>
                   </label>
                   <label className="flex cursor-pointer items-start gap-2 text-[12px] leading-relaxed text-[#1E2621]">
                     <input
@@ -483,10 +483,11 @@ function WritePostForm() {
                 <p className="mt-3 break-keep border-t border-[#EEE5D7] pt-2.5 text-[11px] leading-[1.7] text-[#7A8178]">건강정보·실명·연락처처럼 민감한 내용은 공개 게시판 대신 개인일지에 기록해 주세요.</p>
               </fieldset>
             )}
+            <p className="mt-3 text-[12px] leading-relaxed text-[#5C645A]">제목은 링크를 공유하면 누구에게나 보입니다. 제목에 건강정보나 실명 등 민감한 내용을 넣지 마세요.</p>
             {isConcernWrite && (
               <div className="mt-3 rounded-[14px] bg-[#EDF4F0] p-4 text-[12px] leading-[1.7] text-[#263B32]">
                 <p className="font-bold">닉네임은 항상 비공개예요</p>
-                <p>본문과 댓글은 비회원도 읽으며 검색·링크 공유 미리보기에 표시될 수 있어요. 본문·사진에 실명이나 연락처를 넣지 마세요.</p>
+                <p>본문과 댓글은 로그인한 회원이 읽을 수 있고, 제목은 링크 공유 시 누구나 볼 수 있어요. 본문·사진에 실명이나 연락처를 넣지 마세요.</p>
                 {!isEditMode && <label className="mt-3 flex items-start gap-2"><input type="checkbox" checked={publicDisclosureAccepted} onChange={(event) => setPublicDisclosureAccepted(event.target.checked)} className="mt-1 accent-[#0B3B36]" /><span>본문이 공개되는 것을 확인했습니다.</span></label>}
               </div>
             )}
