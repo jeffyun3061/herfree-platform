@@ -54,9 +54,14 @@ public class PostImageAccessService {
             boolean privateBoard = PrivateBoardPolicy.isAdminMaskedBoard(post.getBoard().getBoardType());
             boolean membersOnly = post.getVisibility() == PostVisibility.MEMBERS_ONLY;
             boolean inactive = post.getStatus() != PostStatus.ACTIVE;
+            boolean memberContent = !"NOTICE".equals(post.getBoard().getBoardType());
 
-            if (privateBoard || membersOnly || inactive) {
+            if (privateBoard || membersOnly || inactive || memberContent) {
                 privateScope = true;
+            }
+
+            if (memberContent && viewerId == null) {
+                return new ImageObjectAccess(false, true);
             }
 
             if (privateBoard && !PrivateBoardPolicy.canViewerReadPost(post, viewerId, viewerRole)) {
