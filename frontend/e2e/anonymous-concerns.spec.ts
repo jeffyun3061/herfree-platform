@@ -47,14 +47,13 @@ test('guest sees a title and login guidance without the concern body',async({pag
   await expect(page.getByText('혼자 고민했던 이야기를 나눕니다.',{exact:false})).toHaveCount(0);
 });
 
-test('signed-in members see operator replies and share only the title',async({page})=>{
+test('signed-in members see operator replies and share only the link',async({page})=>{
   await fixtures(page,'USER');
   await page.goto('/community/posts/11');
   await expect(page.getByText('혼자 고민했던 이야기를 나눕니다.',{exact:false})).toBeVisible();
   await expect(page.getByText('운영자 답변',{exact:true})).toBeVisible();
   await page.getByRole('button',{name:'게시글 공유'}).click();
-  await expect.poll(()=>page.evaluate(()=>(window as unknown as {sharedText:string}).sharedText)).toContain('같은 고민을 나눠요');
-  expect(await page.evaluate(()=>(window as unknown as {sharedText:string}).sharedText)).not.toContain('혼자 고민했던 이야기를');
+  await expect.poll(()=>page.evaluate(()=>(window as unknown as {sharedText:string}).sharedText)).toBe(`${new URL(page.url()).origin}/community/posts/11`);
 });
 
 test('writing preview keeps exact line breaks and wrapping on the published post',async({page})=>{
