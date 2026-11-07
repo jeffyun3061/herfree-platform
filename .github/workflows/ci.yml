@@ -67,6 +67,8 @@ jobs:
         run: python3 -m unittest discover -s infra/scripts/tests -p 'test_isolated_smoke_runner.py'
       - name: Verify staging isolation deployment guard
         run: python3 -m unittest discover -s infra/scripts/tests -p 'test_staging_isolation_guard.py'
+      - name: Verify isolated staging coordinator safety
+        run: python3 -m unittest discover -s infra/scripts/tests -p 'test_isolated_staging_coordinator.py'
 
   secret-scan:
     runs-on: ubuntu-latest
