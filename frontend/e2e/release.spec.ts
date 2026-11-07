@@ -258,7 +258,11 @@ test.describe('staging data flow', () => {
       await expect(page.getByRole('link', { name: '로그인하고 보기' })).toBeVisible();
       await expect(page.getByText(account.user.nickname, { exact: true })).toHaveCount(0);
       const html = await request.get(`/community/posts/${postId}`, { headers: { 'User-Agent': 'kakaotalk-scrap/1.0' } });
-      expect((await html.text()).match(/<head>[\s\S]*?<\/head>/)?.[0]).toContain(`property="og:title" content="${title}"`);
+      const head = (await html.text()).match(/<head>[\s\S]*?<\/head>/)?.[0] || '';
+      const shareTitle = `${Array.from(title).slice(0, 17).join('')}…`;
+      expect(head).toContain(`property="og:title" content="${shareTitle}"`);
+      expect(head).toContain('property="og:description" content="로그인 후 게시글을 확인해 주세요."');
+      expect(head).not.toContain(payload.content);
     } finally {
       if (postId) expect((await account.api.delete(`/api/posts/${postId}`, { headers: csrf(account) })).status()).toBe(204);
       await deleteAccount(account);
