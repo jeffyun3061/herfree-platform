@@ -17,6 +17,7 @@ run="${HERFREE_ISOLATED_QA_RUN:-}"
 state="${state_root}/isolated-${run}"
 [[ "${records[0]}" == "${state}" && -d "${state}" && ! -L "${state}" ]] || { echo 'isolated staging state mismatch' >&2; exit 1; }
 if [[ -f "${state}/prepared" && -f "${state}/qa-env" ]] && cmp -s "${config}" "${state}/qa-env"; then
+  [[ "${mode}" == deploy && -s "${state}/candidate-image" && "${image}" == "$(tr -d '\r\n' < "${state}/candidate-image")" ]] || { echo 'isolated staging permits only its pinned candidate image' >&2; exit 1; }
   exit 0
 fi
 if [[ -f "${state}/config-restored" && -f "${state}/original-env" ]] && cmp -s "${config}" "${state}/original-env"; then

@@ -66,9 +66,26 @@ else: sys.exit(3)
         self.env = {**os.environ, 'PATH': str(self.bin) + os.pathsep + os.environ['PATH'],
                     'HERFREE_APP_DIR': str(self.app), 'MOCK_STATE': str(self.mock), 'MOCK_IMAGE': str(self.image)}
 
-    def run_script(self, mode, run='a1b2c3d4', env=None):
-        return subprocess.run(['bash', str(SCRIPT), mode, run], env=env or self.env,
+    def run_script(self, mode, run='a1b2c3d4', env=None, candidate=None):
+        args = ['bash', str(SCRIPT), mode, run]
+        if candidate is not None: args.append(candidate)
+        return subprocess.run(args, env=env or self.env,
                               capture_output=True, text=True, timeout=20)
+
+    def test_candidate_must_be_pinned_and_actual_api_must_use_qa_db(self):
+        image = '439777528445.dkr.ecr.ap-northeast-2.amazonaws.com/herfree-api@sha256:' + 'a' * 64
+        self.assertEqual(self.run_script('prepare').returncode, 0)
+        self.assertNotEqual(self.run_script('pin', candidate='untrusted-image').returncode, 0)
+        self.assertEqual(self.run_script('pin', candidate=image).returncode, 0)
+        self.assertNotEqual(self.run_script('pin', candidate=image[:-1] + 'b').returncode, 0)
+        self.assertNotEqual(self.run_script('verify').returncode, 0)
+        self.image.write_text(image)
+        self.assertNotEqual(self.run_script('verify').returncode, 0)
+        qa = {**self.env, 'MOCK_URL':'jdbc:mysql://mysql:3306/hfqa_a1b2c3d4?sslMode=REQUIRED'}
+        self.assertEqual(self.run_script('verify', env=qa).returncode, 0)
+        self.assertEqual(self.run_script('restore-config').returncode, 0)
+        self.image.write_text('existing-image')
+        self.assertEqual(self.run_script('finalize').returncode, 0)
 
     def test_prepare_restore_and_cleanup_are_scoped(self):
         self.assertEqual(self.run_script('prepare').returncode, 0)

@@ -6,8 +6,8 @@ umask 077
 
 mode="${1:-}"
 run="${2:-}"
-if [[ ! "${mode}" =~ ^(prepare|restore-config|finalize)$ || ! "${run}" =~ ^[a-f0-9]{8}$ ]]; then
-  echo 'usage: staging-isolated-db.sh <prepare|restore-config|finalize> <8 lowercase hex characters>' >&2
+if [[ ! "${mode}" =~ ^(prepare|pin|verify|restore-config|finalize)$ || ! "${run}" =~ ^[a-f0-9]{8}$ ]]; then
+  echo 'usage: staging-isolated-db.sh <prepare|pin|verify|restore-config|finalize> <8 lowercase hex characters> [candidate-image]' >&2
   exit 2
 fi
 
@@ -90,6 +90,34 @@ if [[ "${mode}" == prepare ]]; then
 fi
 
 [[ -d "${state}" && -f "${state}/original-env" && -s "${state}/original-image" ]] || { echo 'matching staging isolation record missing' >&2; exit 1; }
+if [[ "${mode}" == pin ]]; then
+  candidate="${3:-}"
+  [[ "${candidate}" =~ ^439777528445\.dkr\.ecr\.ap-northeast-2\.amazonaws\.com/herfree-api@sha256:[a-f0-9]{64}$ ]] || { echo 'pinned staging ECR digest required' >&2; exit 1; }
+  [[ -f "${state}/prepared" && -f "${state}/qa-env" ]] && cmp -s "${config}" "${state}/qa-env" || { echo 'isolated config not prepared' >&2; exit 1; }
+  if [[ -e "${state}/candidate-image" ]]; then
+    [[ "$(tr -d '\r\n' < "${state}/candidate-image")" == "${candidate}" ]] || { echo 'candidate image already pinned' >&2; exit 1; }
+  else
+    printf '%s\n' "${candidate}" > "${state}/candidate-image"
+    chmod 600 "${state}/candidate-image"
+  fi
+  echo 'candidate image pinned; promotion is not authorized'
+  exit 0
+fi
+if [[ "${mode}" == verify ]]; then
+  [[ -f "${state}/prepared" && -s "${state}/candidate-image" && -f "${state}/qa-env" ]] && cmp -s "${config}" "${state}/qa-env" || { echo 'isolated config or image not pinned' >&2; exit 1; }
+  api="$(docker ps --filter label=com.docker.compose.project=herfree-staging --filter label=com.docker.compose.service=api --format '{{.ID}}')"
+  [[ -n "${api}" && "$(printf '%s\n' "${api}" | wc -l)" -eq 1 ]] || { echo 'isolated staging API identity unconfirmed' >&2; exit 1; }
+  candidate="$(tr -d '\r\n' < "${state}/candidate-image")"
+  [[ -s "${current_image}" && "$(tr -d '\r\n' < "${current_image}")" == "${candidate}" && "$(docker inspect --format '{{.Config.Image}}' "${api}")" == "${candidate}" ]] || { echo 'candidate image not running' >&2; exit 1; }
+  qa_url="$(value_of "${state}/qa-env" SPRING_DATASOURCE_URL)"
+  api_env="$(docker inspect --format '{{range .Config.Env}}{{println .}}{{end}}' "${api}")"
+  printf '%s\n' "${api_env}" | grep -Fx -- "SPRING_DATASOURCE_URL=${qa_url}" >/dev/null || { echo 'running API is not using isolated datasource' >&2; exit 1; }
+  printf '%s\n' "${api_env}" | grep -qx 'SPRING_PROFILES_ACTIVE=staging' || { echo 'running API is not staging' >&2; exit 1; }
+  unset api_env
+  curl --fail --silent --max-time 3 http://127.0.0.1:8080/actuator/health | grep -q '"status":"UP"' || { echo 'isolated staging service is not healthy' >&2; exit 1; }
+  echo 'isolated candidate and datasource verified; promotion is not authorized'
+  exit 0
+fi
 if [[ "${mode}" == restore-config ]]; then
   if ! cmp -s "${config}" "${state}/original-env"; then
     [[ -f "${state}/qa-env" ]] && cmp -s "${config}" "${state}/qa-env" || { echo 'staging configuration changed; refusing overwrite' >&2; exit 1; }
@@ -127,6 +155,6 @@ if [[ -f "${state}/db-created" ]]; then
   fi
   printf 'DROP DATABASE IF EXISTS `%s`;\n' "${database}" | mysql_root
 fi
-rm -f "${state}/original-env" "${state}/original-image" "${state}/db-user" "${state}/create-intent" "${state}/db-created" "${state}/grant-created" "${state}/qa-env" "${state}/prepared" "${state}/config-restored"
+rm -f "${state}/original-env" "${state}/original-image" "${state}/db-user" "${state}/create-intent" "${state}/db-created" "${state}/grant-created" "${state}/qa-env" "${state}/prepared" "${state}/config-restored" "${state}/candidate-image"
 rmdir "${state}"
 echo 'isolated staging DB and grant removed; promotion is not authorized'
