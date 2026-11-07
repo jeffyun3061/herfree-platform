@@ -1,0 +1,39 @@
+name: Prepare protected QA frontend
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: backend-staging
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    if: github.repository == 'jeffyun3061/herfree-platform' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          ref: 4160aee7de7a7e7a8b8333813580332fe2ba7785
+          path: candidate
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ap-northeast-2
+      - name: Create protected branch with automatic builds disabled
+        env:
+          ISOLATED_QA_BASIC_USERNAME: ${{ secrets.E2E_HTTP_USERNAME }}
+          ISOLATED_QA_BASIC_PASSWORD: ${{ secrets.E2E_HTTP_PASSWORD }}
+        run: >-
+          python3 infra/scripts/create-isolated-frontend.py
+          --repo candidate
+          --candidate-pr 195
+          --sha 4160aee7de7a7e7a8b8333813580332fe2ba7785
+          --branch qa-4160aee7de7a-4160aee7
