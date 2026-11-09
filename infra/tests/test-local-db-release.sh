@@ -63,7 +63,7 @@ HERFREE_MYSQL_ENV_FILE="${MYSQL_ENV}" \
 # Separate credentials are accepted only for a recorded, matching staging run.
 write_common_env
 sed -i 's/SPRING_PROFILES_ACTIVE=prod/SPRING_PROFILES_ACTIVE=staging/' "${APP_ENV}"
-printf '\nSPRING_DATASOURCE_USERNAME=hfqa_a1b2c3d4\nSPRING_DATASOURCE_PASSWORD=qa-only-password-0123456789\n' >> "${APP_ENV}"
+printf '\nSPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/hfqaa1b2c3d4?sslMode=REQUIRED\nSPRING_DATASOURCE_USERNAME=hfqaa1b2c3d4\nSPRING_DATASOURCE_PASSWORD=0123456789abcdef0123456789abcdef0123456789abcdef\n' >> "${APP_ENV}"
 QA_STATE="${WORK_DIR}/app/.deploy/isolated-a1b2c3d4"
 mkdir -p "${QA_STATE}"
 cp "${APP_ENV}" "${QA_STATE}/qa-env"

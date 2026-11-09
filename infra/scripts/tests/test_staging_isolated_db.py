@@ -88,8 +88,8 @@ else: sys.exit(3)
         self.assertNotEqual(self.run_script('verify').returncode, 0)
         password = [line.split('=', 1)[1] for line in self.config.read_text().splitlines()
                     if line.startswith('SPRING_DATASOURCE_PASSWORD=')][-1]
-        qa = {**self.env, 'MOCK_URL':'jdbc:mysql://mysql:3306/hfqa_a1b2c3d4?sslMode=REQUIRED',
-              'MOCK_USER':'hfqa_a1b2c3d4', 'MOCK_PASSWORD':password}
+        qa = {**self.env, 'MOCK_URL':'jdbc:mysql://mysql:3306/hfqaa1b2c3d4?sslMode=REQUIRED',
+              'MOCK_USER':'hfqaa1b2c3d4', 'MOCK_PASSWORD':password}
         self.assertNotEqual(self.run_script('verify', env={**qa, 'MOCK_PASSWORD':'incorrect'}).returncode, 0)
         self.assertEqual(self.run_script('verify', env=qa).returncode, 0)
         self.assertEqual(self.run_script('restore-config').returncode, 0)
@@ -101,8 +101,8 @@ else: sys.exit(3)
         self.assertTrue((self.mock/'database').exists())
         self.assertTrue((self.mock/'grant').exists())
         self.assertTrue((self.mock/'user').exists())
-        self.assertIn('SPRING_DATASOURCE_USERNAME=hfqa_a1b2c3d4', self.config.read_text())
-        self.assertIn('/hfqa_a1b2c3d4?sslMode=REQUIRED', self.config.read_text())
+        self.assertIn('SPRING_DATASOURCE_USERNAME=hfqaa1b2c3d4', self.config.read_text())
+        self.assertIn('/hfqaa1b2c3d4?sslMode=REQUIRED', self.config.read_text())
         self.assertNotEqual(self.run_script('prepare', 'b1b2c3d4').returncode, 0)
         self.image.write_text('candidate-image')
         self.assertEqual(self.run_script('restore-config').returncode, 0)
@@ -125,6 +125,21 @@ else: sys.exit(3)
         self.assertTrue((self.mock/'database').exists())
         self.assertTrue((self.mock/'user').exists())
 
+    def test_existing_account_is_never_reused(self):
+        (self.mock/'user').touch()
+        result = self.run_script('prepare')
+        self.assertNotEqual(result.returncode, 0)
+        self.assertTrue((self.mock/'user').exists())
+        self.assertFalse((self.mock/'database').exists())
+        self.assertEqual(self.config.read_text(), self.original)
+
+    def test_prepare_does_not_print_generated_credential(self):
+        result = self.run_script('prepare')
+        self.assertEqual(result.returncode, 0)
+        password = [line.split('=', 1)[1] for line in self.config.read_text().splitlines()
+                    if line.startswith('SPRING_DATASOURCE_PASSWORD=')][-1]
+        self.assertNotIn(password, result.stdout + result.stderr)
+
     def test_unknown_creation_outcome_never_drops_database(self):
         self.assertEqual(self.run_script('prepare').returncode, 0)
         (self.app/'.deploy/isolated-a1b2c3d4/db-created').unlink()
@@ -135,7 +150,7 @@ else: sys.exit(3)
     def test_database_is_not_dropped_while_running_api_still_uses_it(self):
         self.assertEqual(self.run_script('prepare').returncode, 0)
         self.assertEqual(self.run_script('restore-config').returncode, 0)
-        qa = {**self.env, 'MOCK_URL':'jdbc:mysql://mysql:3306/hfqa_a1b2c3d4?sslMode=REQUIRED'}
+        qa = {**self.env, 'MOCK_URL':'jdbc:mysql://mysql:3306/hfqaa1b2c3d4?sslMode=REQUIRED'}
         self.assertNotEqual(self.run_script('finalize', env=qa).returncode, 0)
         self.assertTrue((self.mock/'database').exists())
 
