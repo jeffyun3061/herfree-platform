@@ -16,7 +16,8 @@ config="${app}/config/.env.staging"
 mysql_env="${app}/config/.env.mysql.staging"
 state_root="${app}/.deploy"
 state="${state_root}/isolated-${run}"
-database="hfqa_${run}"
+# Avoid '_' and '%' in a MySQL schema grant: both can be pattern characters.
+database="hfqa${run}"
 current_image="${state_root}/staging.current-image"
 pending="${state_root}/staging.pending-operation"
 [[ -f "${config}" && -f "${mysql_env}" ]] || { echo 'staging configuration missing' >&2; exit 1; }
@@ -57,8 +58,15 @@ if [[ "${mode}" == prepare ]]; then
   [[ ! -e "${state}" && -s "${current_image}" ]] || { echo 'run exists or current staging image is missing' >&2; exit 1; }
   [[ "$(docker inspect --format '{{.Config.Image}}' "${api}")" == "$(tr -d '\r\n' < "${current_image}")" ]] || { echo 'running staging image differs from recorded image' >&2; exit 1; }
   curl --fail --silent --max-time 3 http://127.0.0.1:8080/actuator/health | grep -q '"status":"UP"' || { echo 'staging service is not healthy before isolation' >&2; exit 1; }
-  user="$(value_of "${mysql_env}" MYSQL_USER)"
-  [[ "${user}" =~ ^[A-Za-z0-9_.-]+$ ]] || { echo 'invalid staging DB user' >&2; exit 1; }
+  # Never reuse the staging application's account: its existing grants would
+  # allow the QA application to access the original staging database.
+  user="hfqa${run}"
+  # Refuse the name on every host, not just '%': a more specific MySQL host
+  # entry can otherwise take precedence over the intended restricted account.
+  existing_user="$(printf "SELECT COUNT(*) FROM mysql.user WHERE user='%s';\n" "${user}" | mysql_root)"
+  [[ "${existing_user}" == 0 ]] || { echo 'isolated database account already exists' >&2; exit 1; }
+  password="$(openssl rand -hex 24)"
+  [[ "${password}" =~ ^[0-9a-f]{48}$ ]] || { echo 'unable to generate isolated credential' >&2; exit 1; }
   url="$(value_of "${config}" SPRING_DATASOURCE_URL)"
   [[ "${url}" == jdbc:mysql://mysql:3306/*sslMode=REQUIRED* ]] || { echo 'unsafe staging datasource' >&2; exit 1; }
   qa_url="$(printf '%s' "${url}" | sed "s@^\(jdbc:mysql://mysql:3306/\)[^?]*@\1${database}@")"
@@ -76,10 +84,14 @@ if [[ "${mode}" == prepare ]]; then
   : > "${state}/create-intent"
   printf 'CREATE DATABASE `%s` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;\n' "${database}" | mysql_root
   : > "${state}/db-created"
+  : > "${state}/user-create-intent"
+  printf "CREATE USER '%s'@'%%' IDENTIFIED BY '%s';\n" "${user}" "${password}" | mysql_root
+  : > "${state}/user-created"
   printf "GRANT ALL PRIVILEGES ON \`%s\`.* TO '%s'@'%%';\n" "${database}" "${user}" | mysql_root
   : > "${state}/grant-created"
   cp "${state}/original-env" "${state}/qa-env"
-  printf '\nSPRING_DATASOURCE_URL=%s\nADMIN_ACCESS_ALLOWED_CIDRS=127.0.0.1/32\n' "${qa_url}" >> "${state}/qa-env"
+  printf '\nSPRING_DATASOURCE_URL=%s\nSPRING_DATASOURCE_USERNAME=%s\nSPRING_DATASOURCE_PASSWORD=%s\nADMIN_ACCESS_ALLOWED_CIDRS=127.0.0.1/32\n' "${qa_url}" "${user}" "${password}" >> "${state}/qa-env"
+  unset password
   chmod 600 "${state}/qa-env"
   # Refuse to overwrite a config edited concurrently after the initial copy.
   cmp -s "${config}" "${state}/original-env" || { echo 'staging configuration changed; reconciliation required' >&2; exit 1; }
@@ -112,6 +124,10 @@ if [[ "${mode}" == verify ]]; then
   qa_url="$(value_of "${state}/qa-env" SPRING_DATASOURCE_URL)"
   api_env="$(docker inspect --format '{{range .Config.Env}}{{println .}}{{end}}' "${api}")"
   printf '%s\n' "${api_env}" | grep -Fx -- "SPRING_DATASOURCE_URL=${qa_url}" >/dev/null || { echo 'running API is not using isolated datasource' >&2; exit 1; }
+  printf '%s\n' "${api_env}" | grep -Fx -- "SPRING_DATASOURCE_USERNAME=hfqa${run}" >/dev/null || { echo 'running API is not using isolated account' >&2; exit 1; }
+  qa_password="$(value_of "${state}/qa-env" SPRING_DATASOURCE_PASSWORD)"
+  [[ -n "${qa_password}" && $'\n'"${api_env}"$'\n' == *$'\n'"SPRING_DATASOURCE_PASSWORD=${qa_password}"$'\n'* ]] || { echo 'running API credential does not match isolated account' >&2; exit 1; }
+  unset qa_password
   printf '%s\n' "${api_env}" | grep -qx 'SPRING_PROFILES_ACTIVE=staging' || { echo 'running API is not staging' >&2; exit 1; }
   unset api_env
   curl --fail --silent --max-time 3 http://127.0.0.1:8080/actuator/health | grep -q '"status":"UP"' || { echo 'isolated staging service is not healthy' >&2; exit 1; }
@@ -143,9 +159,13 @@ if [[ -f "${state}/create-intent" && ! -f "${state}/db-created" ]]; then
   echo 'database creation outcome unknown; manual reconciliation required' >&2
   exit 1
 fi
+if [[ -f "${state}/user-create-intent" && ! -f "${state}/user-created" ]]; then
+  echo 'database account creation outcome unknown; manual reconciliation required' >&2
+  exit 1
+fi
 if [[ -f "${state}/db-created" ]]; then
   user="$(tr -d '\r\n' < "${state}/db-user")"
-  [[ "${user}" =~ ^[A-Za-z0-9_.-]+$ ]] || { echo 'recorded DB user invalid' >&2; exit 1; }
+  [[ "${user}" == "hfqa${run}" ]] || { echo 'recorded DB user invalid' >&2; exit 1; }
   # The name was checked absent immediately before creation; never target any
   # other database or global privilege. A partial revoke is safe to retry.
   grants="$(printf "SELECT COUNT(*) FROM information_schema.schema_privileges WHERE table_schema='%s' AND grantee=CONCAT(CHAR(39),'%s',CHAR(39),'@',CHAR(39),'%%',CHAR(39));\n" "${database}" "${user}" | mysql_root)"
@@ -155,6 +175,9 @@ if [[ -f "${state}/db-created" ]]; then
   fi
   printf 'DROP DATABASE IF EXISTS `%s`;\n' "${database}" | mysql_root
 fi
-rm -f "${state}/original-env" "${state}/original-image" "${state}/db-user" "${state}/create-intent" "${state}/db-created" "${state}/grant-created" "${state}/qa-env" "${state}/prepared" "${state}/config-restored" "${state}/candidate-image"
+if [[ -f "${state}/user-created" ]]; then
+  printf "DROP USER IF EXISTS '%s'@'%%';\n" "hfqa${run}" | mysql_root
+fi
+rm -f "${state}/original-env" "${state}/original-image" "${state}/db-user" "${state}/create-intent" "${state}/db-created" "${state}/user-create-intent" "${state}/user-created" "${state}/grant-created" "${state}/qa-env" "${state}/prepared" "${state}/config-restored" "${state}/candidate-image"
 rmdir "${state}"
 echo 'isolated staging DB and grant removed; promotion is not authorized'
