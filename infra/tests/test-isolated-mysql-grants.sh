@@ -13,14 +13,14 @@ for ((attempt=0; attempt<60; attempt++)); do
   sleep 2
 done
 [[ "${ready}" == true ]] || { echo 'temporary MySQL did not start' >&2; exit 1; }
-docker exec -i "${cid}" mysql -uroot --password=test-root-password-for-ci <<'SQL' 2>/dev/null
+docker exec -i "${cid}" mysql -uroot --password=test-root-password-for-ci <<'SQL'
 CREATE DATABASE hfqaa1b2c3d4;
 CREATE DATABASE hfqaXa1b2c3d4;
 CREATE USER 'hfqaa1b2c3d4'@'%' IDENTIFIED BY 'test-qa-only-password';
 GRANT ALL PRIVILEGES ON `hfqaa1b2c3d4`.* TO 'hfqaa1b2c3d4'@'%';
 SQL
 docker exec "${cid}" mysql -h127.0.0.1 -uhfqaa1b2c3d4 --password=test-qa-only-password \
-  -e 'CREATE TABLE hfqaa1b2c3d4.allowed (id INT)' 2>/dev/null
+  -e 'CREATE TABLE hfqaa1b2c3d4.allowed (id INT)'
 if docker exec "${cid}" mysql -h127.0.0.1 -uhfqaa1b2c3d4 --password=test-qa-only-password \
     -e 'CREATE TABLE hfqaXa1b2c3d4.forbidden (id INT)' >/dev/null 2>&1; then
   echo 'QA account unexpectedly accessed another schema' >&2

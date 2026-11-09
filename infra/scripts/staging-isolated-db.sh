@@ -61,7 +61,9 @@ if [[ "${mode}" == prepare ]]; then
   # Never reuse the staging application's account: its existing grants would
   # allow the QA application to access the original staging database.
   user="hfqa${run}"
-  existing_user="$(printf "SELECT COUNT(*) FROM mysql.user WHERE user='%s' AND host='%%';\n" "${user}" | mysql_root)"
+  # Refuse the name on every host, not just '%': a more specific MySQL host
+  # entry can otherwise take precedence over the intended restricted account.
+  existing_user="$(printf "SELECT COUNT(*) FROM mysql.user WHERE user='%s';\n" "${user}" | mysql_root)"
   [[ "${existing_user}" == 0 ]] || { echo 'isolated database account already exists' >&2; exit 1; }
   password="$(openssl rand -hex 24)"
   [[ "${password}" =~ ^[0-9a-f]{48}$ ]] || { echo 'unable to generate isolated credential' >&2; exit 1; }
