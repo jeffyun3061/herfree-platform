@@ -226,6 +226,15 @@ jobs:
           npm run test
           npm run build
           npx playwright --version
+          # Prove the isolated mutation suite refuses an unverified local target
+          # before it attempts any signup or post creation.
+          npx playwright test e2e/isolated-share-qa.spec.ts --project=chromium --list
+          if ISOLATED_SHARE_QA=true PLAYWRIGHT_NO_WEBSERVER=true PLAYWRIGHT_BASE_URL=http://127.0.0.1:3100 \
+              npx playwright test e2e/isolated-share-qa.spec.ts --project=chromium --reporter=line > /tmp/isolated-qa-refusal.log 2>&1; then
+            echo 'isolated QA unexpectedly accepted an unverified target' >&2
+            exit 1
+          fi
+          grep -q 'Isolated QA target or credentials are not the pinned candidate' /tmp/isolated-qa-refusal.log
           node e2e/support/preview-backend.mjs &
           preview_pid=$!
           trap 'kill "$preview_pid"' EXIT
