@@ -128,8 +128,17 @@ case "${db_runtime}" in
       fi
     done
     if [[ "$(mysql_value_of MYSQL_PASSWORD)" != "$(value_of SPRING_DATASOURCE_PASSWORD)" ]]; then
-      echo "application and MySQL application passwords must match"
-      exit 1
+      # Only the recorded isolated staging run may use separate credentials.
+      # Production and ordinary staging retain the original password check.
+      qa_run="${HERFREE_ISOLATED_QA_RUN:-}"
+      qa_state="${HERFREE_APP_DIR:-/opt/herfree}/.deploy/isolated-${qa_run}"
+      if [[ "${DEPLOY_ENV}" != staging || ! "${qa_run}" =~ ^[a-f0-9]{8}$ || -L "${qa_state}" \
+         || ! -f "${qa_state}/prepared" || ! -f "${qa_state}/user-created" \
+         || ! -f "${qa_state}/qa-env" || "$(value_of SPRING_DATASOURCE_USERNAME)" != "hfqa_${qa_run}" ]] \
+         || ! cmp -s "${ENV_FILE}" "${qa_state}/qa-env"; then
+        echo "application and MySQL application passwords must match"
+        exit 1
+      fi
     fi
     mysql_root_password="$(mysql_value_of MYSQL_ROOT_PASSWORD)"
     if [[ "${mysql_root_password}" == "$(mysql_value_of MYSQL_PASSWORD)" \

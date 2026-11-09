@@ -60,6 +60,29 @@ write_common_env
 HERFREE_MYSQL_ENV_FILE="${MYSQL_ENV}" \
   "${ROOT}/infra/scripts/validate-release-env.sh" production "${APP_ENV}" >/dev/null
 
+# Separate credentials are accepted only for a recorded, matching staging run.
+write_common_env
+sed -i 's/SPRING_PROFILES_ACTIVE=prod/SPRING_PROFILES_ACTIVE=staging/' "${APP_ENV}"
+printf '\nSPRING_DATASOURCE_USERNAME=hfqa_a1b2c3d4\nSPRING_DATASOURCE_PASSWORD=qa-only-password-0123456789\n' >> "${APP_ENV}"
+QA_STATE="${WORK_DIR}/app/.deploy/isolated-a1b2c3d4"
+mkdir -p "${QA_STATE}"
+cp "${APP_ENV}" "${QA_STATE}/qa-env"
+touch "${QA_STATE}/prepared" "${QA_STATE}/user-created"
+HERFREE_APP_DIR="${WORK_DIR}/app" HERFREE_ISOLATED_QA_RUN=a1b2c3d4 HERFREE_MYSQL_ENV_FILE="${MYSQL_ENV}" \
+  "${ROOT}/infra/scripts/validate-release-env.sh" staging "${APP_ENV}" >/dev/null
+if HERFREE_APP_DIR="${WORK_DIR}/app" HERFREE_ISOLATED_QA_RUN=b1b2c3d4 HERFREE_MYSQL_ENV_FILE="${MYSQL_ENV}" \
+    "${ROOT}/infra/scripts/validate-release-env.sh" staging "${APP_ENV}" >/dev/null 2>&1; then
+  echo 'validator accepted credentials for an unrelated isolated run' >&2
+  exit 1
+fi
+printf '\nUNEXPECTED_CHANGE=1\n' >> "${APP_ENV}"
+if HERFREE_APP_DIR="${WORK_DIR}/app" HERFREE_ISOLATED_QA_RUN=a1b2c3d4 HERFREE_MYSQL_ENV_FILE="${MYSQL_ENV}" \
+    "${ROOT}/infra/scripts/validate-release-env.sh" staging "${APP_ENV}" >/dev/null 2>&1; then
+  echo 'validator accepted an altered isolated configuration' >&2
+  exit 1
+fi
+
+write_common_env
 sed -i 's/sslMode=REQUIRED/sslMode=DISABLED/' "${APP_ENV}"
 if HERFREE_MYSQL_ENV_FILE="${MYSQL_ENV}" \
     "${ROOT}/infra/scripts/validate-release-env.sh" production "${APP_ENV}" >/dev/null 2>&1; then
