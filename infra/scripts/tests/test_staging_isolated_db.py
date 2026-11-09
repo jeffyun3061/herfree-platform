@@ -48,6 +48,7 @@ elif args[0]=='inspect':
         print('DB_RUNTIME=local')
         print('SPRING_DATASOURCE_URL=' + os.getenv('MOCK_URL','jdbc:mysql://mysql:3306/actual_stage?sslMode=REQUIRED'))
         print('SPRING_DATASOURCE_USERNAME=' + os.getenv('MOCK_USER','stage_app'))
+        print('SPRING_DATASOURCE_PASSWORD=' + os.getenv('MOCK_PASSWORD','original-password'))
     else: print('staging-network')
 elif args[0]=='exec':
     sql=sys.stdin.read(); (state/'queries').open('a').write(sql+'\\n')
@@ -85,7 +86,11 @@ else: sys.exit(3)
         self.assertNotEqual(self.run_script('verify').returncode, 0)
         self.image.write_text(image)
         self.assertNotEqual(self.run_script('verify').returncode, 0)
-        qa = {**self.env, 'MOCK_URL':'jdbc:mysql://mysql:3306/hfqa_a1b2c3d4?sslMode=REQUIRED', 'MOCK_USER':'hfqa_a1b2c3d4'}
+        password = [line.split('=', 1)[1] for line in self.config.read_text().splitlines()
+                    if line.startswith('SPRING_DATASOURCE_PASSWORD=')][-1]
+        qa = {**self.env, 'MOCK_URL':'jdbc:mysql://mysql:3306/hfqa_a1b2c3d4?sslMode=REQUIRED',
+              'MOCK_USER':'hfqa_a1b2c3d4', 'MOCK_PASSWORD':password}
+        self.assertNotEqual(self.run_script('verify', env={**qa, 'MOCK_PASSWORD':'incorrect'}).returncode, 0)
         self.assertEqual(self.run_script('verify', env=qa).returncode, 0)
         self.assertEqual(self.run_script('restore-config').returncode, 0)
         self.image.write_text('existing-image')

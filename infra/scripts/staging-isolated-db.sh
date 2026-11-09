@@ -122,6 +122,9 @@ if [[ "${mode}" == verify ]]; then
   api_env="$(docker inspect --format '{{range .Config.Env}}{{println .}}{{end}}' "${api}")"
   printf '%s\n' "${api_env}" | grep -Fx -- "SPRING_DATASOURCE_URL=${qa_url}" >/dev/null || { echo 'running API is not using isolated datasource' >&2; exit 1; }
   printf '%s\n' "${api_env}" | grep -Fx -- "SPRING_DATASOURCE_USERNAME=hfqa_${run}" >/dev/null || { echo 'running API is not using isolated account' >&2; exit 1; }
+  qa_password="$(value_of "${state}/qa-env" SPRING_DATASOURCE_PASSWORD)"
+  [[ -n "${qa_password}" && $'\n'"${api_env}"$'\n' == *$'\n'"SPRING_DATASOURCE_PASSWORD=${qa_password}"$'\n'* ]] || { echo 'running API credential does not match isolated account' >&2; exit 1; }
+  unset qa_password
   printf '%s\n' "${api_env}" | grep -qx 'SPRING_PROFILES_ACTIVE=staging' || { echo 'running API is not staging' >&2; exit 1; }
   unset api_env
   curl --fail --silent --max-time 3 http://127.0.0.1:8080/actuator/health | grep -q '"status":"UP"' || { echo 'isolated staging service is not healthy' >&2; exit 1; }
