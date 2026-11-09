@@ -6,7 +6,9 @@ cleanup() { docker rm -f "${cid}" >/dev/null 2>&1 || true; }
 trap cleanup EXIT
 ready=false
 for ((attempt=0; attempt<60; attempt++)); do
-  if docker exec "${cid}" mysqladmin ping -uroot --password=test-root-password-for-ci --silent >/dev/null 2>&1; then
+  # The image briefly runs a socket-only initialization server. Wait for the
+  # final TCP listener so it cannot disappear between readiness and setup.
+  if docker exec "${cid}" mysqladmin --protocol=TCP -h127.0.0.1 ping -uroot --password=test-root-password-for-ci --silent >/dev/null 2>&1; then
     ready=true
     break
   fi
