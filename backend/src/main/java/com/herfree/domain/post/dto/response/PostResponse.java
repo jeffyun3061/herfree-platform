@@ -55,8 +55,7 @@ public record PostResponse(
                 : AnonymousNicknamePolicy.displayNickname(post.isAnonymous()
                         || AnonymousConcernPolicy.isConcernBoard(post.getBoard().getBoardType()), isMyPost, authorNickname);
         String title = mask ? PrivateBoardPolicy.MASKED_TITLE : post.getTitle();
-        String preview = mask || (currentUserId == null && !"NOTICE".equals(post.getBoard().getBoardType()))
-                ? "" : toPreview(post.getContent());
+        String preview = mask || currentUserId == null ? "" : toPreview(post.getContent());
 
         return new PostResponse(
                 post.getId(),
