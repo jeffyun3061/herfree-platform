@@ -43,10 +43,11 @@ async function payload<T>(response: Awaited<ReturnType<APIRequestContext['get']>
   return body.data;
 }
 
+// Avoid retaining authenticated requests, cookies or screenshots as CI artifacts.
+test.use({ trace: 'off', screenshot: 'off', video: 'off' });
+
 test.describe('isolated share QA', () => {
   test.skip(!enabled, 'Only the isolated staging QA coordinator may enable this suite.');
-  // Avoid retaining authenticated requests, cookies or screenshots as CI artifacts.
-  test.use({ trace: 'off', screenshot: 'off', video: 'off' });
 
   test('community previews hide bodies and require login for public and member posts', async ({ page, request }) => {
     test.setTimeout(240_000);
