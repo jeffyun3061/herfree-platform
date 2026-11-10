@@ -85,6 +85,19 @@ class BuildIsolatedFrontendTest(unittest.TestCase):
             self.assertFalse(result['buildVerified'])
             self.assertFalse(result['promotionAllowed'])
 
+    def test_ref_change_after_submit_is_not_reported_as_verified(self):
+        def submit_then_change_ref():
+            self.submitted += 1
+            self.remote_sha = 'b' * 40
+            return {'id':'42'}
+        with self.assertRaisesRegex(module.preflight.Refused, 'REMOTE_COMMIT_MISMATCH'):
+            module.start(Path('.'), self.git, self.lookup, submit_then_change_ref)
+        self.assertEqual(self.submitted, 1)
+
+    def test_ambiguous_start_result_is_not_automatically_retried(self):
+        with self.assertRaisesRegex(module.preflight.Refused, 'START_RESULT_UNKNOWN'):
+            module.start(Path('.'), self.git, self.lookup, lambda: {'id':42})
+
     def test_invalid_job_id_never_queries_aws(self):
         with self.assertRaisesRegex(module.preflight.Refused, 'INVALID_JOB_ID'):
             module.inspect('../other', Path('.'), self.git, lambda *args: self.fail('AWS was contacted'))
