@@ -3,6 +3,11 @@ import { loadPublicPostPreview, publicPostMetadata } from './postMetadata';
 
 afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
 describe('anonymous server share metadata', () => {
+  it('prompts login for a notice without sharing its body', () => {
+    const metadata = publicPostMetadata('11', { id: 11, title: '공지', description: '본문 비밀', boardType: 'NOTICE' });
+    expect(metadata.openGraph).toMatchObject({ title: '공지', description: '로그인 후 게시글을 확인해 주세요.' });
+    expect(JSON.stringify(metadata)).not.toContain('본문 비밀');
+  });
   it('shortens long preview titles without changing the page title', () => {
     const title = '아주 긴 제목을 작성했을 때 공유 미리보기에서는 짧게 보입니다';
     const metadata = publicPostMetadata('11', { id: 11, title, description: '', boardType: 'FREE' });

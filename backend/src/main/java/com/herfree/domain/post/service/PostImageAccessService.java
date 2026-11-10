@@ -5,7 +5,6 @@ import com.herfree.domain.content.entity.ContentStatus;
 import com.herfree.domain.content.repository.ContentRepository;
 import com.herfree.domain.post.entity.Post;
 import com.herfree.domain.post.entity.PostStatus;
-import com.herfree.domain.post.entity.PostVisibility;
 import com.herfree.domain.post.repository.PostImageRepository;
 import com.herfree.domain.user.entity.User;
 import com.herfree.domain.user.entity.UserRole;
@@ -52,22 +51,13 @@ public class PostImageAccessService {
 
         for (Post post : attachedPosts) {
             boolean privateBoard = PrivateBoardPolicy.isAdminMaskedBoard(post.getBoard().getBoardType());
-            boolean membersOnly = post.getVisibility() == PostVisibility.MEMBERS_ONLY;
             boolean inactive = post.getStatus() != PostStatus.ACTIVE;
-            boolean memberContent = !"NOTICE".equals(post.getBoard().getBoardType());
-
-            if (privateBoard || membersOnly || inactive || memberContent) {
-                privateScope = true;
-            }
-
-            if (memberContent && viewerId == null) {
+            privateScope = true;
+            if (viewerId == null) {
                 return new ImageObjectAccess(false, true);
             }
 
             if (privateBoard && !PrivateBoardPolicy.canViewerReadPost(post, viewerId, viewerRole)) {
-                return new ImageObjectAccess(false, true);
-            }
-            if (membersOnly && viewerId == null) {
                 return new ImageObjectAccess(false, true);
             }
             if (inactive && !canReadInactivePost(post, viewerId, viewerRole)) {

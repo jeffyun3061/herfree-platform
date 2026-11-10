@@ -55,12 +55,12 @@ class PostImageAccessServiceTest {
     }
 
     @Test
-    @DisplayName("Public notice image remains accessible to guests")
-    void check_noticeImage_guestAllowed() {
+    @DisplayName("Notice image requires login and private caching")
+    void check_noticeImage_guestDenied() {
         givenAttachedPost("NOTICE", 10L, PostVisibility.PUBLIC);
         var access = postImageAccessService.check(OBJECT_KEY, null);
-        assertThat(access.allowed()).isTrue();
-        assertThat(access.privateScope()).isFalse();
+        assertThat(access.allowed()).isFalse();
+        assertThat(access.privateScope()).isTrue();
     }
 
     @Test

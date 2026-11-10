@@ -29,8 +29,7 @@ export function publicPostMetadata(postId: string, preview: PublicPreview | null
   const title = preview?.title ?? '커뮤니티';
   const titleCharacters = Array.from(title.replace(/\s+/g, ' ').trim());
   const shareTitle = titleCharacters.length > 18 ? `${titleCharacters.slice(0, 17).join('')}…` : titleCharacters.join('');
-  const description = !preview ? '헤르프리 커뮤니티에서 이야기를 나누세요.'
-    : preview.boardType === 'NOTICE' ? '헤르프리 공지사항을 확인해 주세요.' : '로그인 후 게시글을 확인해 주세요.';
+  const description = !preview ? '헤르프리 커뮤니티에서 이야기를 나누세요.' : '로그인 후 게시글을 확인해 주세요.';
   const image = { url: '/brand/logo-hfree-on-primary.png', width: 512, height: 512, alt: '헤르프리' };
   return {
     title, description, alternates: { canonical: url },
