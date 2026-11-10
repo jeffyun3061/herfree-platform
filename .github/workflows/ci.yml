@@ -69,6 +69,8 @@ jobs:
         run: python3 -m unittest discover -s infra/scripts/tests -p 'test_isolated_frontend_preflight.py'
       - name: Verify protected QA branch creation
         run: python3 -m unittest discover -s infra/scripts/tests -p 'test_create_isolated_frontend.py'
+      - name: Verify protected QA frontend build safety
+        run: python3 -m unittest discover -s infra/scripts/tests -p 'test_build_isolated_frontend.py'
       - name: Verify isolated smoke runner safety
         run: python3 -m unittest discover -s infra/scripts/tests -p 'test_isolated_smoke_runner.py'
       - name: Verify staging isolation deployment guard
@@ -83,6 +85,10 @@ jobs:
         run: python3 -m unittest discover -s infra/scripts/tests -p 'test_isolated_share_runner.py'
       - name: Verify staging QA tool installation and recovery
         run: python3 -m unittest discover -s infra/scripts/tests -p 'test_staging_qa_tools.py'
+      - name: Verify staging QA bundle provenance
+        run: python3 -m unittest discover -s infra/scripts/tests -p 'test_package_staging_qa_tools.py'
+      - name: Test staging QA tool sender
+        run: python3 -m unittest discover -s infra/scripts/tests -p 'test_send_staging_qa_tools.py'
 
   secret-scan:
     runs-on: ubuntu-latest
