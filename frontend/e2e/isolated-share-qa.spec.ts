@@ -92,6 +92,16 @@ test.describe('isolated share QA', () => {
         }));
         postIds.push(created.id);
         expect((await request.get(`/api/posts/${created.id}`)).status()).toBe(404);
+        const guestListResponse = await request.get(`/api/posts?boardId=${board!.id}&period=all&size=100`);
+        const guestList = await payload<{ content: Array<{ id: number; contentPreview: string }> }>(guestListResponse);
+        const guestItem = guestList.content.find(item => item.id === created.id);
+        if (visibility === 'PUBLIC') {
+          expect(guestItem).toBeTruthy();
+          expect(guestItem!.contentPreview).toBe('');
+        } else {
+          expect(guestItem).toBeUndefined();
+        }
+        expect(JSON.stringify(guestList)).not.toContain(content);
         const preview = await payload<{ title: string; description: string }>(
           await request.get(`/api/posts/${created.id}/share-preview`));
         expect(preview.title).toBe(title);
