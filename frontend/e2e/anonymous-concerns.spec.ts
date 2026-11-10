@@ -15,6 +15,7 @@ async function fixtures(page:Page,role?:'USER'|'ADMIN') {
   await page.route('**/api/**',async route=>{
     const path=new URL(route.request().url()).pathname;
     if(path==='/api/users/me'&&!role){await route.fulfill({status:401,contentType:'application/json',body:JSON.stringify({success:false,message:'인증이 필요합니다.'})});return;}
+    if(!role&&(path==='/api/posts/11'||path==='/api/posts/11/comments')){await route.fulfill({status:404,contentType:'application/json',body:JSON.stringify({success:false,message:'글을 찾을 수 없습니다.'})});return;}
     let data:unknown={};
     if(path==='/api/users/me')data={id:1,nickname:'실제 닉네임',email:'fixture@example.invalid',role,status:'ACTIVE'};
     else if(path==='/api/boards')data=boards;
@@ -23,7 +24,7 @@ async function fixtures(page:Page,role?:'USER'|'ADMIN') {
       currentDetail={...detail,title:String(submitted?.title),content:String(submitted?.content),isMyPost:true};
       data=currentDetail;
     }
-    else if(path==='/api/posts')data=paged([post]);
+    else if(path==='/api/posts')data=paged([{...post,contentPreview:role?post.contentPreview:''}]);
     else if(path==='/api/posts/11')data=currentDetail;
     else if(path==='/api/posts/11/comments')data=paged([{id:1,postId:11,authorNickname:'익명',content:'저도 비슷한 고민을 했어요.',isAnonymous:true,isMyComment:false,parentId:null,operatorReply:false,createdAt:detail.createdAt},{id:2,postId:11,authorNickname:'운영팀',content:'함께 경험을 나눠 주세요.',isAnonymous:true,isMyComment:false,parentId:null,operatorReply:true,createdAt:detail.createdAt}]);
     else if(path==='/api/admin/concerns')data=paged([post]);
@@ -35,19 +36,24 @@ async function fixtures(page:Page,role?:'USER'|'ADMIN') {
   return ()=>submitted;
 }
 
-test('anonymous concerns are readable without login and show genuine operator badges',async({page})=>{
+test('guest sees a title and login guidance without the concern body',async({page})=>{
   await fixtures(page);
   await page.goto('/community/23');
   await expect(page.getByRole('heading',{name:'익명 고민'})).toBeVisible();
   await expect(page.getByLabel('고민 검색')).toBeVisible();
   await expect(page.locator('.community-feed-row__title')).toHaveText('같은 고민을 나눠요');
   await page.getByRole('link',{name:/같은 고민을 나눠요/}).click();
+  await expect(page.getByRole('link',{name:'로그인하고 보기'})).toBeVisible();
+  await expect(page.getByText('혼자 고민했던 이야기를 나눕니다.',{exact:false})).toHaveCount(0);
+});
+
+test('signed-in members see operator replies and share only the link',async({page})=>{
+  await fixtures(page,'USER');
+  await page.goto('/community/posts/11');
   await expect(page.getByText('혼자 고민했던 이야기를 나눕니다.',{exact:false})).toBeVisible();
   await expect(page.getByText('운영자 답변',{exact:true})).toBeVisible();
-  await expect(page.getByText('실제 닉네임')).toHaveCount(0);
-  await expect(page.getByText('댓글을 남기려면 로그인이 필요합니다.')).toBeVisible();
   await page.getByRole('button',{name:'게시글 공유'}).click();
-  await expect.poll(()=>page.evaluate(()=>(window as unknown as {sharedText:string}).sharedText)).toContain('같은 고민을 나눠요\n혼자 고민했던 이야기를 나눕니다. 경험을 듣고 싶어요.');
+  await expect.poll(()=>page.evaluate(()=>(window as unknown as {sharedText:string}).sharedText)).toBe(`${new URL(page.url()).origin}/community/posts/11`);
 });
 
 test('writing preview keeps exact line breaks and wrapping on the published post',async({page})=>{
@@ -84,7 +90,7 @@ test('narrow phones can read the thread without horizontal scrolling',async({pag
   await expect(page.getByRole('link',{name:'같은 고민을 나눠요'})).toBeVisible();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
   await page.getByRole('link',{name:'같은 고민을 나눠요'}).click();
-  await expect(page.getByRole('button',{name:'게시글 공유'})).toBeVisible();
+  await expect(page.getByRole('link',{name:'로그인하고 보기'})).toBeVisible();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
 });
 

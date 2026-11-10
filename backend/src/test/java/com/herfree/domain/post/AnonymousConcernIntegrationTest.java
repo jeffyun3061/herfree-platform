@@ -47,7 +47,7 @@ class AnonymousConcernIntegrationTest {
         mvc.perform(get("/api/posts/95002/share-preview"))
                 .andExpect(status().isOk()).andExpect(header().string("Cache-Control","no-store"))
                 .andExpect(jsonPath("$.data.title").value("title-2"))
-                .andExpect(jsonPath("$.data.description").value("body-2"))
+                .andExpect(jsonPath("$.data.description").value("로그인 후 게시글을 확인해 주세요."))
                 .andExpect(jsonPath("$.data.authorNickname").doesNotExist())
                 .andExpect(jsonPath("$.data.authorIpMasked").doesNotExist());
         assertThat(db.queryForObject("SELECT view_count FROM posts WHERE id=95002",Integer.class)).isZero();
@@ -58,13 +58,28 @@ class AnonymousConcernIntegrationTest {
         mvc.perform(get("/api/posts").param("boardId", "94002").param("period", "all"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.content[0].authorIpMasked").doesNotExist());
-        mvc.perform(get("/api/posts/95002"))
+        mvc.perform(get("/api/posts/95002").header("Authorization",token(93004,"USER")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.authorIpMasked").doesNotExist());
     }
 
-    @Test void privateMemberOnlyHiddenAndDeletedPreviewsStayUnavailableToEveryone() throws Exception {
-        for(long id=95003;id<=95007;id++) {
+    @Test void communityPreviewsExposeOnlyTitlesAndGuestBodyAccessIsBlocked() throws Exception {
+        for (long id : new long[] {95001, 95002, 95006}) {
+            mvc.perform(get("/api/posts/" + id + "/share-preview"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.title").value("title-" + (id - 95000)))
+                    .andExpect(jsonPath("$.data.description").value("로그인 후 게시글을 확인해 주세요."));
+            mvc.perform(get("/api/posts/" + id)).andExpect(status().isNotFound());
+            mvc.perform(get("/api/posts/" + id + "/comments")).andExpect(status().isNotFound());
+            mvc.perform(get("/api/posts/" + id).header("Authorization", token(93004, "USER")))
+                    .andExpect(status().isOk()).andExpect(jsonPath("$.data.content").value("body-" + (id - 95000)));
+        }
+        mvc.perform(get("/api/posts").param("boardId", "94002").param("period", "all"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.content[0].contentPreview").value(""));
+    }
+
+    @Test void privateHiddenAndDeletedPreviewsStayUnavailableToEveryone() throws Exception {
+        for(long id : new long[] {95003,95004,95005,95007}) {
             mvc.perform(get("/api/posts/"+id+"/share-preview")).andExpect(status().isNotFound());
             mvc.perform(get("/api/posts/"+id+"/share-preview").header("Authorization",token(93002,"ADMIN"))).andExpect(status().isNotFound());
         }
@@ -82,14 +97,14 @@ class AnonymousConcernIntegrationTest {
     }
 
     @Test void questionAnonymitySurvivesGuestReadEditWhileAnAnswerCanShowItsNickname() throws Exception {
-        mvc.perform(get("/api/posts/95001")).andExpect(status().isOk()).andExpect(jsonPath("$.data.authorNickname").value("익명"));
+        mvc.perform(get("/api/posts/95001").header("Authorization",token(93004,"USER"))).andExpect(status().isOk()).andExpect(jsonPath("$.data.authorNickname").value("익명"));
         mvc.perform(patch("/api/posts/95001").header("Authorization",token(93001,"USER")).contentType(MediaType.APPLICATION_JSON).content("{\"title\":\"edited\",\"content\":\"edited content\",\"isAnonymous\":false}"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.data.isAnonymous").value(true));
         mvc.perform(post("/api/posts/95001/comments").header("Authorization",token(93004,"USER")).contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"experience\",\"isAnonymous\":false}"))
                 .andExpect(status().isCreated()).andExpect(jsonPath("$.data.isAnonymous").value(false))
                 .andExpect(jsonPath("$.data.authorNickname").value("private-real-nickname-4"))
                 .andExpect(jsonPath("$.data.operatorReply").value(false));
-        mvc.perform(get("/api/posts/95001/comments")).andExpect(status().isOk())
+        mvc.perform(get("/api/posts/95001/comments").header("Authorization",token(93004,"USER"))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.content[0].authorNickname").value("private-real-nickname-4"));
     }
 
@@ -99,7 +114,7 @@ class AnonymousConcernIntegrationTest {
                         .content("{\"content\":\"anonymous answer\",\"isAnonymous\":true}"))
                 .andExpect(status().isCreated()).andExpect(jsonPath("$.data.isAnonymous").value(true))
                 .andExpect(jsonPath("$.data.authorNickname").value("익명(나)"));
-        mvc.perform(get("/api/posts/95001/comments")).andExpect(status().isOk())
+        mvc.perform(get("/api/posts/95001/comments").header("Authorization",token(93001,"USER"))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.content[0].authorNickname").value("익명"));
     }
 
@@ -120,7 +135,7 @@ class AnonymousConcernIntegrationTest {
                         .content("{\"content\":\"named follow-up\",\"isAnonymous\":false,\"parentId\":"+followUpId+"}"))
                 .andExpect(status().isCreated()).andExpect(jsonPath("$.data.isAnonymous").value(false))
                 .andExpect(jsonPath("$.data.authorNickname").value("private-real-nickname-4"));
-        mvc.perform(get("/api/posts/95001/comments")).andExpect(status().isOk())
+        mvc.perform(get("/api/posts/95001/comments").header("Authorization",token(93004,"USER"))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.content[0].authorNickname").value("private-real-nickname-4"))
                 .andExpect(jsonPath("$.data.content[1].authorNickname").value("익명"))
                 .andExpect(jsonPath("$.data.content[1].parentId").value(parentId))
@@ -138,7 +153,7 @@ class AnonymousConcernIntegrationTest {
                 .andExpect(status().isCreated()).andExpect(jsonPath("$.data.operatorReply").value(true))
                 .andExpect(jsonPath("$.data.authorNickname").value("private-real-nickname-2"));
         mvc.perform(get("/api/admin/concerns").header("Authorization",token(93002,"ADMIN"))).andExpect(status().isOk()).andExpect(jsonPath("$.data.totalElements").value(0));
-        mvc.perform(get("/api/posts/95001")).andExpect(status().isOk()).andExpect(jsonPath("$.data.staffReplied").value(true));
+        mvc.perform(get("/api/posts/95001").header("Authorization",token(93004,"USER"))).andExpect(status().isOk()).andExpect(jsonPath("$.data.staffReplied").value(true));
         db.update("UPDATE comments SET status='HIDDEN' WHERE post_id=95001 AND user_id=93002");
         mvc.perform(get("/api/admin/concerns").header("Authorization",token(93002,"ADMIN"))).andExpect(status().isOk()).andExpect(jsonPath("$.data.totalElements").value(1));
     }
@@ -150,7 +165,7 @@ class AnonymousConcernIntegrationTest {
                 .andExpect(status().isCreated()).andExpect(jsonPath("$.data.isAnonymous").value(true))
                 .andExpect(jsonPath("$.data.authorNickname").value("익명(나)"))
                 .andExpect(jsonPath("$.data.operatorReply").value(true));
-        mvc.perform(get("/api/posts/95001/comments")).andExpect(status().isOk())
+        mvc.perform(get("/api/posts/95001/comments").header("Authorization",token(93004,"USER"))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.content[0].authorNickname").value("익명"))
                 .andExpect(jsonPath("$.data.content[0].operatorReply").value(true));
     }
@@ -164,9 +179,9 @@ class AnonymousConcernIntegrationTest {
                 .andExpect(status().isOk()).andExpect(jsonPath("$.data.totalElements").value(1));
         db.update("UPDATE posts SET user_id=93001 WHERE id=95001");
         db.update("UPDATE users SET status='SUSPENDED' WHERE id=93002");
-        mvc.perform(get("/api/posts/95001"))
+        mvc.perform(get("/api/posts/95001").header("Authorization",token(93004,"USER")))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.data.staffReplied").value(false));
-        mvc.perform(get("/api/posts/95001/comments"))
+        mvc.perform(get("/api/posts/95001/comments").header("Authorization",token(93004,"USER")))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.data.content[0].operatorReply").value(false))
                 .andExpect(jsonPath("$.data.content[0].authorNickname").value("익명"));
     }

@@ -151,7 +151,7 @@ public class PostController {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
     }
 
-    // 비로그인 사용자도 공개 게시글을 조회할 수 있으므로 @AuthenticationPrincipal이 null일 수 있다
+    // 비로그인 사용자의 본문 접근 여부는 게시판 종류에 따라 서비스에서 확인한다.
     @GetMapping("/{postId}")
     public ResponseEntity<ApiResponse<PostDetailResponse>> getPost(
             @PathVariable Long postId,
