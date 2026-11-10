@@ -100,6 +100,14 @@ class BuildIsolatedFrontendTest(unittest.TestCase):
         self.assertEqual(set(statements[1]['Action']), {'amplify:StartJob', 'amplify:GetJob'})
         self.assertEqual(statements[1]['Resource'], branch_arn + '/jobs/*')
 
+    def test_proposed_git_branch_lock_does_not_enable_pushes(self):
+        policy_path = path.parents[1] / 'aws' / 'isolated-qa-git-protection.proposed.json'
+        policy = json.loads(policy_path.read_text())
+        self.assertTrue(policy['lock_branch'])
+        self.assertTrue(policy['enforce_admins'])
+        self.assertFalse(policy['allow_force_pushes'])
+        self.assertFalse(policy['allow_deletions'])
+
 
 if __name__ == '__main__':
     unittest.main()
