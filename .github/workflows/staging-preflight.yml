@@ -1,0 +1,23 @@
+name: Temporary isolated staging lease
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: backend-staging
+  cancel-in-progress: false
+
+jobs:
+  lease:
+    if: github.repository == 'jeffyun3061/herfree-platform' && github.ref == 'refs/heads/codex/staging-qa-lease'
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - name: Hold staging deployment concurrency
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo 'Holding staging concurrency for isolated QA. No AWS credentials or deployment access are used.'
+          sleep 2700
