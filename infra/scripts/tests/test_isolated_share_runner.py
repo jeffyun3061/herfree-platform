@@ -38,7 +38,7 @@ printf 'npm:%s\\n' "$*" >> "$MOCK_LOG"
                     'MOCK_REPO':str(self.repo), 'MOCK_LOG':str(self.log),
                     'ISOLATED_QA_RUN':'a1b2c3d4', 'ISOLATED_QA_CANDIDATE_DIR':str(self.candidate),
                     'ISOLATED_QA_BASIC_USERNAME':'qa-user', 'ISOLATED_QA_BASIC_PASSWORD':'qa-password',
-                    'PLAYWRIGHT_BASE_URL':'https://qa-4160aee7de7a-4160aee7.d2bcg3vnlv5hkh.amplifyapp.com'}
+                    'PLAYWRIGHT_BASE_URL':'https://qa-aaad889901ab-aaad8899.d2bcg3vnlv5hkh.amplifyapp.com'}
 
     def run_script(self, changes=None):
         return subprocess.run(['bash', str(SCRIPT)], env={**self.env, **(changes or {})},
