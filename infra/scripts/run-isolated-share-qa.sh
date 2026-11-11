@@ -3,9 +3,9 @@
 # create the isolated run and protected frontend, and verify cleanup.
 set -euo pipefail
 [[ $# -eq 0 ]] || { echo 'arguments are not accepted' >&2; exit 2; }
-branch=qa-4160aee7de7a-4160aee7
-sha=4160aee7de7a7e7a8b8333813580332fe2ba7785
-image=439777528445.dkr.ecr.ap-northeast-2.amazonaws.com/herfree-api@sha256:e54f5b149fc128e521fadebb98ca3d80ede98161ff9cab7c4e9c6b57de428f23
+branch=qa-aaad889901ab-aaad8899
+sha=aaad889901ab1a085c2d5dbd10d58b47f8edc38f
+image=439777528445.dkr.ecr.ap-northeast-2.amazonaws.com/herfree-api@sha256:3f876060daf7d065f6279087b8d181ef3135485f467893f83daa10548d0d054c
 origin="https://${branch}.d2bcg3vnlv5hkh.amplifyapp.com"
 : "${ISOLATED_QA_RUN:?}"
 : "${ISOLATED_QA_CANDIDATE_DIR:?}"

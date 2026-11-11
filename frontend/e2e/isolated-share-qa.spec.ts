@@ -5,9 +5,9 @@ import { expect, request as playwrightRequest, test, type APIRequestContext } fr
 // This suite is deliberately bound to the exact pre-merge candidate frontend.
 // It must only be run by the isolated QA coordinator; it cannot approve release.
 const enabled = process.env.ISOLATED_SHARE_QA === 'true';
-const origin = 'https://qa-4160aee7de7a-4160aee7.d2bcg3vnlv5hkh.amplifyapp.com';
-const candidate = '4160aee7de7a7e7a8b8333813580332fe2ba7785';
-const image = '439777528445.dkr.ecr.ap-northeast-2.amazonaws.com/herfree-api@sha256:e54f5b149fc128e521fadebb98ca3d80ede98161ff9cab7c4e9c6b57de428f23';
+const origin = 'https://qa-aaad889901ab-aaad8899.d2bcg3vnlv5hkh.amplifyapp.com';
+const candidate = 'aaad889901ab1a085c2d5dbd10d58b47f8edc38f';
+const image = '439777528445.dkr.ecr.ap-northeast-2.amazonaws.com/herfree-api@sha256:3f876060daf7d065f6279087b8d181ef3135485f467893f83daa10548d0d054c';
 const username = process.env.E2E_HTTP_USERNAME?.trim();
 const password = process.env.E2E_HTTP_PASSWORD;
 
@@ -26,7 +26,7 @@ function verifyTarget(): void {
       '--run', run, '--image', image], { stdio: 'pipe', timeout: 120_000 });
     execFileSync('python3', [join(process.cwd(), '../infra/scripts/verify-isolated-frontend.py'),
       '--account', '439777528445', '--app', 'd2bcg3vnlv5hkh',
-      '--branch', 'qa-4160aee7de7a-4160aee7', '--sha', candidate,
+      '--branch', 'qa-aaad889901ab-aaad8899', '--sha', candidate,
       '--api', 'https://api-staging.herpfree.co.kr', '--repo', candidateDir, '--candidate-pr', '195'], {
       stdio: 'pipe', timeout: 120_000,
       env: { ...process.env, ISOLATED_QA_BASIC_USERNAME: username, ISOLATED_QA_BASIC_PASSWORD: password },

@@ -21,7 +21,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/checkout@v4
         with:
-          ref: 4160aee7de7a7e7a8b8333813580332fe2ba7785
+          ref: aaad889901ab1a085c2d5dbd10d58b47f8edc38f
           path: candidate
       - uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -35,5 +35,5 @@ jobs:
           python3 infra/scripts/create-isolated-frontend.py
           --repo candidate
           --candidate-pr 195
-          --sha 4160aee7de7a7e7a8b8333813580332fe2ba7785
-          --branch qa-4160aee7de7a-4160aee7
+          --sha aaad889901ab1a085c2d5dbd10d58b47f8edc38f
+          --branch qa-aaad889901ab-aaad8899

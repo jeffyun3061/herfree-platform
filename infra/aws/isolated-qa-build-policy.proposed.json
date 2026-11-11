@@ -5,13 +5,13 @@
       "Sid": "ReadOnlyThisQaBranchAndJobs",
       "Effect": "Allow",
       "Action": ["amplify:GetBranch", "amplify:ListJobs"],
-      "Resource": "arn:aws:amplify:ap-northeast-2:439777528445:apps/d2bcg3vnlv5hkh/branches/qa-4160aee7de7a-4160aee7"
+      "Resource": "arn:aws:amplify:ap-northeast-2:439777528445:apps/d2bcg3vnlv5hkh/branches/qa-aaad889901ab-aaad8899"
     },
     {
       "Sid": "StartAndInspectJobsOnlyForThisQaBranch",
       "Effect": "Allow",
       "Action": ["amplify:StartJob", "amplify:GetJob"],
-      "Resource": "arn:aws:amplify:ap-northeast-2:439777528445:apps/d2bcg3vnlv5hkh/branches/qa-4160aee7de7a-4160aee7/jobs/*"
+      "Resource": "arn:aws:amplify:ap-northeast-2:439777528445:apps/d2bcg3vnlv5hkh/branches/qa-aaad889901ab-aaad8899/jobs/*"
     }
   ]
 }

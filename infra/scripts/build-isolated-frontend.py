@@ -18,8 +18,8 @@ spec.loader.exec_module(preflight)
 
 ACCOUNT = '439777528445'
 APP = 'd2bcg3vnlv5hkh'
-BRANCH = 'qa-4160aee7de7a-4160aee7'
-SHA = '4160aee7de7a7e7a8b8333813580332fe2ba7785'
+BRANCH = 'qa-aaad889901ab-aaad8899'
+SHA = 'aaad889901ab1a085c2d5dbd10d58b47f8edc38f'
 API = 'https://api-staging.herpfree.co.kr'
 PR = '195'
 
