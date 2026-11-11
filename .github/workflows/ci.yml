@@ -57,6 +57,38 @@ jobs:
           grep -q 'AdminAccessGateFilter' backend/src/main/java/com/herfree/global/security/SecurityConfig.java
       - name: Verify immutable staging promotion
         run: python3 -m unittest discover -s infra/scripts/tests -p 'test_staging_promotion.py'
+      - name: Verify isolated staging DB safety
+        run: python3 -m unittest discover -s infra/scripts/tests -p 'test_staging_isolated_db.py'
+      - name: Verify local database release credentials
+        run: |
+          chmod +x infra/scripts/validate-release-env.sh infra/scripts/preflight-rds-local-restore.sh
+          bash infra/tests/test-local-db-release.sh
+      - name: Verify isolated grant against MySQL
+        run: bash infra/tests/test-isolated-mysql-grants.sh
+      - name: Verify isolated frontend preflight
+        run: python3 -m unittest discover -s infra/scripts/tests -p 'test_isolated_frontend_preflight.py'
+      - name: Verify protected QA branch creation
+        run: python3 -m unittest discover -s infra/scripts/tests -p 'test_create_isolated_frontend.py'
+      - name: Verify protected QA frontend build safety
+        run: python3 -m unittest discover -s infra/scripts/tests -p 'test_build_isolated_frontend.py'
+      - name: Verify isolated smoke runner safety
+        run: python3 -m unittest discover -s infra/scripts/tests -p 'test_isolated_smoke_runner.py'
+      - name: Verify staging isolation deployment guard
+        run: python3 -m unittest discover -s infra/scripts/tests -p 'test_staging_isolation_guard.py'
+      - name: Verify isolated staging coordinator safety
+        run: python3 -m unittest discover -s infra/scripts/tests -p 'test_isolated_staging_coordinator.py'
+      - name: Verify staging DNS and server identity checks
+        run: python3 -m unittest discover -s infra/scripts/tests -p 'test_verify_staging_route.py'
+      - name: Verify isolated staging evidence checks
+        run: python3 -m unittest discover -s infra/scripts/tests -p 'test_verify_isolated_staging.py'
+      - name: Verify isolated share runner safety
+        run: python3 -m unittest discover -s infra/scripts/tests -p 'test_isolated_share_runner.py'
+      - name: Verify staging QA tool installation and recovery
+        run: python3 -m unittest discover -s infra/scripts/tests -p 'test_staging_qa_tools.py'
+      - name: Verify staging QA bundle provenance
+        run: python3 -m unittest discover -s infra/scripts/tests -p 'test_package_staging_qa_tools.py'
+      - name: Test staging QA tool sender
+        run: python3 -m unittest discover -s infra/scripts/tests -p 'test_send_staging_qa_tools.py'
 
   secret-scan:
     runs-on: ubuntu-latest
@@ -204,6 +236,15 @@ jobs:
           npm run test
           npm run build
           npx playwright --version
+          # Prove the isolated mutation suite refuses an unverified local target
+          # before it attempts any signup or post creation.
+          npx playwright test e2e/isolated-share-qa.spec.ts --project=chromium --list
+          if ISOLATED_SHARE_QA=true PLAYWRIGHT_NO_WEBSERVER=true PLAYWRIGHT_BASE_URL=http://127.0.0.1:3100 \
+              npx playwright test e2e/isolated-share-qa.spec.ts --project=chromium --reporter=line > /tmp/isolated-qa-refusal.log 2>&1; then
+            echo 'isolated QA unexpectedly accepted an unverified target' >&2
+            exit 1
+          fi
+          grep -q 'Isolated QA target or credentials are not the pinned candidate' /tmp/isolated-qa-refusal.log
           node e2e/support/preview-backend.mjs &
           preview_pid=$!
           trap 'kill "$preview_pid"' EXIT
