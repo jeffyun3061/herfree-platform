@@ -31,6 +31,40 @@ exec 8>"${state_root}/isolated-qa-coordinator.lock"
 flock -n 8 || { echo 'another QA operation is active' >&2; exit 1; }
 state="${state_root}/isolated-${run}"
 export HERFREE_ISOLATED_QA_RUN="${run}"
+# Prove both the existing configuration and registry access before modifying
+# the datasource. A rollback uses the same validator and image registry.
+if [[ "${mode}" == start || "${mode}" == cleanup ]]; then
+  registry='439777528445.dkr.ecr.ap-northeast-2.amazonaws.com'
+  validator="${app}/infra/scripts/validate-release-env.sh"
+  config="${app}/config/.env.staging"
+  mysql_config="${app}/config/.env.mysql.staging"
+  if [[ "${mode}" == cleanup ]]; then
+    config="${state}/original-env"
+  fi
+  [[ -x "${validator}" && -f "${config}" && -f "${mysql_config}" ]] || { echo 'staging rollback preflight unavailable' >&2; exit 1; }
+  HERFREE_MYSQL_ENV_FILE="${mysql_config}" "${validator}" staging "${config}" || { echo 'original staging configuration cannot pass rollback validation' >&2; exit 1; }
+  if [[ "${mode}" == start ]]; then
+    original_file="${state_root}/staging.current-image"
+  else
+    original_file="${state}/original-image"
+  fi
+  [[ -s "${original_file}" && ! -L "${original_file}" ]] || { echo 'recorded staging image missing' >&2; exit 1; }
+  original="$(tr -d '\r\n' < "${original_file}")"
+  [[ "${original}" =~ ^439777528445\.dkr\.ecr\.ap-northeast-2\.amazonaws\.com/herfree-api(@sha256:[0-9a-f]{64}|:[0-9a-f]{40})$ ]] || { echo 'recorded staging image invalid' >&2; exit 1; }
+  qa_docker_config="$(mktemp -d /tmp/herfree-qa-docker.XXXXXXXX)"
+  export DOCKER_CONFIG="${qa_docker_config}"
+  cleanup_registry_credentials() {
+    docker logout "${registry}" >/dev/null 2>&1 || true
+    rm -f -- "${qa_docker_config}/config.json"
+    rmdir -- "${qa_docker_config}" 2>/dev/null || true
+  }
+  trap cleanup_registry_credentials EXIT
+  aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin "${registry}" >/dev/null || { echo 'staging registry authentication failed' >&2; exit 1; }
+  docker pull "${original}" >/dev/null || { echo 'recorded staging image unavailable' >&2; exit 1; }
+  if [[ "${mode}" == start ]]; then
+    docker pull "${image}" >/dev/null || { echo 'candidate staging image unavailable' >&2; exit 1; }
+  fi
+fi
 case "${mode}" in
   start)
     "${helper}" prepare "${run}"

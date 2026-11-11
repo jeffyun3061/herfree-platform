@@ -7,6 +7,7 @@ import unittest
 
 SCRIPT = Path(__file__).resolve().parents[1] / 'orchestrate-isolated-staging.sh'
 IMAGE = '439777528445.dkr.ecr.ap-northeast-2.amazonaws.com/herfree-api@sha256:' + 'a' * 64
+ORIGINAL = '439777528445.dkr.ecr.ap-northeast-2.amazonaws.com/herfree-api:' + 'b' * 40
 
 
 @unittest.skipIf(os.name == 'nt' or not shutil.which('flock'), 'requires Linux bash and flock')
@@ -15,11 +16,15 @@ class IsolatedCoordinatorTest(unittest.TestCase):
         tmp = tempfile.TemporaryDirectory(); self.addCleanup(tmp.cleanup)
         self.root = Path(tmp.name); self.app = self.root / 'app'; self.bin = self.root / 'bin'
         self.scripts = self.app / 'infra/scripts'; self.state = self.app / '.deploy'; self.trace = self.root / 'trace'
-        for directory in (self.scripts, self.state, self.bin): directory.mkdir(parents=True)
+        for directory in (self.scripts, self.state, self.bin, self.app / 'config'): directory.mkdir(parents=True)
+        (self.app / 'config/.env.staging').write_text('staging config\n')
+        (self.app / 'config/.env.mysql.staging').write_text('mysql config\n')
+        (self.state / 'staging.current-image').write_text(ORIGINAL)
+        self.write('validate-release-env.sh', '#!/bin/sh\n[ "${MOCK_VALIDATE_FAIL:-0}" = 0 ]\n')
         self.write('staging-isolated-db.sh', '''#!/bin/sh
 echo "helper:$1" >> "$TRACE"
 case "$1" in
-  prepare) mkdir "$HERFREE_APP_DIR/.deploy/isolated-$2"; echo original-image > "$HERFREE_APP_DIR/.deploy/isolated-$2/original-image" ;;
+  prepare) mkdir "$HERFREE_APP_DIR/.deploy/isolated-$2"; cp "$HERFREE_APP_DIR/.deploy/staging.current-image" "$HERFREE_APP_DIR/.deploy/isolated-$2/original-image"; cp "$HERFREE_APP_DIR/config/.env.staging" "$HERFREE_APP_DIR/.deploy/isolated-$2/original-env" ;;
   pin|verify|restore-config|finalize) [ "${MOCK_HELPER_FAIL:-}" != "$1" ] ;;
 esac
 ''')
@@ -30,6 +35,11 @@ echo sensitive-test-log
 [ "${MOCK_DEPLOY_FAIL:-0}" = 0 ]
 ''')
         self.write('guard-staging-isolation.sh', '#!/bin/sh\nexit 0\n')
+        for name, body in {
+            'aws': '#!/bin/sh\n[ "${MOCK_AUTH_FAIL:-0}" = 0 ] || exit 1\nprintf token\n',
+            'docker': '#!/bin/sh\n[ "${MOCK_PULL_FAIL:-0}" = 0 ] || [ "$1" != pull ]\n',
+        }.items():
+            path = self.bin / name; path.write_text(body); path.chmod(0o755)
         curl = self.bin / 'curl'
         curl.write_text('''#!/bin/sh
 case "$*" in
@@ -70,6 +80,14 @@ esac
         self.assertEqual(self.invoke('start', IMAGE).returncode, 0)
         self.assertNotEqual(self.invoke('cleanup', env={**self.env, 'MOCK_DEPLOY_FAIL':'1'}).returncode, 0)
         self.assertNotIn('helper:finalize', self.trace.read_text())
+
+    def test_preflight_failures_never_mutate_database(self):
+        for failure in ('MOCK_VALIDATE_FAIL', 'MOCK_AUTH_FAIL', 'MOCK_PULL_FAIL'):
+            with self.subTest(failure=failure):
+                result = self.invoke('start', IMAGE, {**self.env, failure:'1'})
+                self.assertNotEqual(result.returncode, 0)
+                self.assertFalse(self.trace.exists())
+                self.assertFalse((self.state / 'isolated-a1b2c3d4').exists())
 
 
 if __name__ == '__main__':
