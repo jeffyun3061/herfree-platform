@@ -37,7 +37,7 @@ echo sensitive-test-log
         self.write('guard-staging-isolation.sh', '#!/bin/sh\nexit 0\n')
         for name, body in {
             'aws': '#!/bin/sh\n[ "${MOCK_AUTH_FAIL:-0}" = 0 ] || exit 1\nprintf token\n',
-            'docker': '#!/bin/sh\n[ "${MOCK_PULL_FAIL:-0}" = 0 ] || [ "$1" != pull ]\n',
+            'docker': '#!/bin/sh\n[ "$1" != login ] || cat >/dev/null\n[ "${MOCK_PULL_FAIL:-0}" = 0 ] || [ "$1" != pull ]\n',
         }.items():
             path = self.bin / name; path.write_text(body); path.chmod(0o755)
         curl = self.bin / 'curl'
