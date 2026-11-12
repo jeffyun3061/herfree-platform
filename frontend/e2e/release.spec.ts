@@ -7,6 +7,7 @@ import {
 } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { verifyIfIsolatedRelease } from './support/isolated-release-target';
 import {
   expectedMutationBackendEnvironment,
   mutationEnvironmentEnabled,
@@ -132,12 +133,18 @@ async function useAccountOnPage(page: Page, account: TestAccount): Promise<void>
 
 async function deleteAccount(account: TestAccount): Promise<void> {
   try {
+    verifyIfIsolatedRelease();
     const response = await account.api.delete('/api/users/me', { headers: csrf(account) });
     expect([204, 401, 404], await response.text()).toContain(response.status());
   } finally {
     await account.api.dispose();
   }
 }
+
+test.beforeEach(() => {
+  if (process.env.ISOLATED_RELEASE_SHARE_QA === 'true') test.setTimeout(180_000);
+  verifyIfIsolatedRelease();
+});
 
 test.describe('release smoke', () => {
   for (const path of [
@@ -264,6 +271,7 @@ test.describe('staging data flow', () => {
       expect(head).toContain('property="og:description" content="로그인 후 게시글을 확인해 주세요."');
       expect(head).not.toContain(payload.content);
     } finally {
+      verifyIfIsolatedRelease();
       if (postId) expect((await account.api.delete(`/api/posts/${postId}`, { headers: csrf(account) })).status()).toBe(204);
       await deleteAccount(account);
     }
@@ -379,6 +387,7 @@ test.describe('staging data flow', () => {
       await expect(page.getByRole('heading', { name: '스크랩한 글' })).toBeVisible();
       await expect(page.getByText(title)).toBeVisible();
     } finally {
+      verifyIfIsolatedRelease();
       if (reader && bookmarkAdded && postId) {
         await reader.api.delete(`/api/posts/${postId}/bookmark`, { headers: csrf(reader) });
       }
@@ -525,6 +534,7 @@ test.describe('staging data flow', () => {
       const normalUserAdmin = await first.api.get('/api/admin/reports');
       expect([401, 403]).toContain(normalUserAdmin.status());
     } finally {
+      verifyIfIsolatedRelease();
       if (first && journalId) {
         await first.api.delete(`/api/journal/records/${journalId}`, { headers: csrf(first) });
       }

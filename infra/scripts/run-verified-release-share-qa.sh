@@ -18,8 +18,11 @@ origin="https://${RELEASE_QA_BRANCH}.d2bcg3vnlv5hkh.amplifyapp.com"
 root="$(git rev-parse --show-toplevel)"
 [[ "$(git -C "${root}" rev-parse HEAD)" == "${RELEASE_SHA}" ]] || { echo 'checkout does not match release' >&2; exit 1; }
 # The test must be from this checkout, not a modified local replacement.
-test_path='frontend/e2e/isolated-release-share-qa.spec.ts'
-[[ "$(git -C "${root}" hash-object "${test_path}")" == "$(git -C "${root}" rev-parse "${RELEASE_SHA}:${test_path}")" ]] || { echo 'browser test differs from release' >&2; exit 1; }
+for test_path in frontend/e2e/isolated-release-share-qa.spec.ts frontend/e2e/release.spec.ts \
+  frontend/e2e/bff-session.spec.ts frontend/e2e/support/isolated-release-target.ts \
+  frontend/e2e/support/mutation-environment.ts; do
+  [[ "$(git -C "${root}" hash-object "${test_path}")" == "$(git -C "${root}" rev-parse "${RELEASE_SHA}:${test_path}")" ]] || { echo 'browser test differs from release' >&2; exit 1; }
+done
 export ISOLATED_QA_BRANCH="${RELEASE_QA_BRANCH}" ISOLATED_QA_COMMIT="${RELEASE_SHA}" ISOLATED_QA_IMAGE="${RELEASE_IMAGE}"
 export E2E_HTTP_USERNAME="${ISOLATED_QA_BASIC_USERNAME}" E2E_HTTP_PASSWORD="${ISOLATED_QA_BASIC_PASSWORD}"
 export ISOLATED_RELEASE_SHARE_QA=true ISOLATED_QA_CANDIDATE_DIR="${root}"
@@ -33,6 +36,11 @@ verify
 cd "${root}/frontend"
 status=0
 npm exec -- playwright test e2e/isolated-release-share-qa.spec.ts --project=chromium --project=mobile-chromium --project=iphone-webkit --workers=1 || status=$?
+if (( status == 0 )); then
+  E2E_ALLOW_MUTATION=true E2E_EXPECTED_BASE_URL="${origin}" STAGING_API_URL=https://api-staging.herpfree.co.kr \
+    npm exec -- playwright test e2e/release.spec.ts e2e/bff-session.spec.ts --project=chromium \
+      --grep 'release smoke|staging data flow' --workers=1 || status=$?
+fi
 verify || { echo 'post-test verification failed; reconcile staging' >&2; exit 1; }
 (( status == 0 )) || exit "${status}"
 echo 'isolated release browser checks passed; cleanup and promotion remain unverified'

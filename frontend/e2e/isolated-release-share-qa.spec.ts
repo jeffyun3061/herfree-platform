@@ -1,45 +1,13 @@
-import { execFileSync } from 'node:child_process';
-import { join } from 'node:path';
 import { expect, request as playwrightRequest, test, type APIRequestContext } from '@playwright/test';
+import { verifyIsolatedReleaseTarget } from './support/isolated-release-target';
 
 // Release QA checks main, the locked branch and the immutable image before
 // test writes and cleanup; a successful test never approves promotion.
 const enabled = process.env.ISOLATED_RELEASE_SHARE_QA === 'true';
 const branch = process.env.RELEASE_QA_BRANCH || '';
-const candidate = process.env.RELEASE_SHA || '';
-const image = process.env.RELEASE_IMAGE || '';
 const origin = `https://${branch}.d2bcg3vnlv5hkh.amplifyapp.com`;
 const username = process.env.E2E_HTTP_USERNAME?.trim();
 const password = process.env.E2E_HTTP_PASSWORD;
-
-function verifyTarget(): void {
-  const run = process.env.ISOLATED_QA_RUN || '';
-  const candidateDir = process.env.ISOLATED_QA_CANDIDATE_DIR;
-  if (process.env.PLAYWRIGHT_BASE_URL !== origin || process.env.ISOLATED_QA_COMMIT !== candidate
-      || process.env.ISOLATED_QA_IMAGE !== image || !/^[a-f0-9]{8}$/.test(run)
-      || !/^[a-f0-9]{40}$/.test(candidate) || !/^qa-[a-f0-9]{12}-[a-f0-9]{8}$/.test(branch)
-      || branch.slice(3, 15) !== candidate.slice(0, 12)
-      || !username || !password || !candidateDir) {
-    throw new Error('Isolated QA target or credentials are not the verified release.');
-  }
-  // Recheck the fixed instance, DNS, installed tools, image and datasource.
-  // Do not print SSM output, credentials or database data in test logs.
-  try {
-    execFileSync('python3', [join(process.cwd(), '../infra/scripts/verify-live-release-qa.py'),
-      '--sha', candidate, '--branch', branch, '--image', image], { stdio: 'pipe', timeout: 120_000 });
-    execFileSync('python3', [join(process.cwd(), '../infra/scripts/verify-isolated-staging.py'),
-      '--run', run, '--image', image], { stdio: 'pipe', timeout: 120_000 });
-    execFileSync('python3', [join(process.cwd(), '../infra/scripts/verify-isolated-frontend.py'),
-      '--account', '439777528445', '--app', 'd2bcg3vnlv5hkh',
-      '--branch', branch, '--sha', candidate,
-      '--api', 'https://api-staging.herpfree.co.kr', '--repo', candidateDir], {
-      stdio: 'pipe', timeout: 120_000,
-      env: { ...process.env, ISOLATED_QA_BASIC_USERNAME: username, ISOLATED_QA_BASIC_PASSWORD: password },
-    });
-  } catch {
-    throw new Error('Isolated staging verification failed; no test write was attempted.');
-  }
-}
 
 async function payload<T>(response: Awaited<ReturnType<APIRequestContext['get']>>): Promise<T> {
   expect(response.ok()).toBeTruthy();
@@ -56,7 +24,7 @@ test.describe('isolated share QA', () => {
 
   test('community previews hide bodies and require login for public and member posts', async ({ page, request }) => {
     test.setTimeout(240_000);
-    verifyTarget();
+    verifyIsolatedReleaseTarget();
     const api = await playwrightRequest.newContext({
       baseURL: origin,
       httpCredentials: { username: username!, password: password! },
@@ -156,12 +124,12 @@ test.describe('isolated share QA', () => {
       journalId = undefined;
       // Reconfirm the environment after writes; this remains point-in-time
       // evidence and is not a replacement for workflow serialization.
-      verifyTarget();
+      verifyIsolatedReleaseTarget();
     } finally {
       try {
         // Never send cleanup requests if the target can no longer be proven.
         if (csrf) {
-          verifyTarget();
+          verifyIsolatedReleaseTarget();
           const headers = { 'X-Herfree-CSRF': csrf };
           if (journalId) expect((await api.delete(`/api/journal/records/${journalId}`, { headers })).status()).toBe(204);
           for (const id of postIds) expect((await api.delete(`/api/posts/${id}`, { headers })).status()).toBe(204);

@@ -39,6 +39,9 @@ if [ "${MOCK_FAIL_POST_TOOL:-}" = "${1##*/}" ] && grep -q '^npm:' "$MOCK_LOG"; t
             'npm': '''#!/bin/sh
 printf 'npm:%s\\n' "$*" >> "$MOCK_LOG"
 [ "$ISOLATED_RELEASE_SHARE_QA" = true ] || exit 2
+case "$*" in *e2e/release.spec.ts*)
+  [ "$E2E_ALLOW_MUTATION" = true ] && [ "$E2E_EXPECTED_BASE_URL" = "$PLAYWRIGHT_BASE_URL" ] || exit 2;;
+esac
 [ "${MOCK_NPM_FAIL:-0}" = 0 ]
 ''',
         }
@@ -69,7 +72,9 @@ printf 'npm:%s\\n' "$*" >> "$MOCK_LOG"
                     'verify:verify-isolated-frontend.py']
         self.assertEqual(calls[:3], expected)
         self.assertIn('--project=iphone-webkit', calls[3])
-        self.assertEqual(calls[4:], expected)
+        self.assertIn('e2e/release.spec.ts', calls[4])
+        self.assertIn('e2e/bff-session.spec.ts', calls[4])
+        self.assertEqual(calls[5:], expected)
         self.assertNotIn('qa-password', result.stdout + result.stderr)
         self.assertIn('cleanup and promotion remain unverified', result.stdout)
 
