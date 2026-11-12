@@ -55,12 +55,13 @@ jobs:
       - name: Create protected current-main QA frontend
         if: inputs.source == 'main'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.QA_PROTECTION_READ_TOKEN }}
           QA_BRANCH: ${{ inputs.qa_branch }}
           ISOLATED_QA_BASIC_USERNAME: ${{ secrets.E2E_HTTP_USERNAME }}
           ISOLATED_QA_BASIC_PASSWORD: ${{ secrets.E2E_HTTP_PASSWORD }}
         run: |
           set -euo pipefail
           : "${QA_BRANCH:?A locked QA branch is required}"
+          : "${GH_TOKEN:?A branch-protection read credential is required}"
           python3 infra/scripts/create-isolated-frontend.py \
             --repo . --current-main --sha "${GITHUB_SHA}" --branch "${QA_BRANCH}"

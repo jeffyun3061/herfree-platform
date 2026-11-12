@@ -30,11 +30,12 @@ jobs:
           aws-region: ap-northeast-2
       - name: Start and verify the protected QA build
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.QA_PROTECTION_READ_TOKEN }}
           QA_BRANCH: ${{ inputs.qa_branch }}
         run: |
           set -euo pipefail
           : "${QA_BRANCH:?A locked QA branch is required}"
+          : "${GH_TOKEN:?A branch-protection read credential is required}"
           output="$(python3 infra/scripts/build-isolated-frontend.py start \
             --repo . --current-main --sha "${GITHUB_SHA}" --branch "${QA_BRANCH}")"
           job_id="$(jq -er '.jobId // .existingJobId' <<<"${output}")"
