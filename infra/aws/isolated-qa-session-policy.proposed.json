@@ -8,11 +8,10 @@
       "Resource": "arn:aws:ec2:ap-northeast-2:439777528445:instance/i-02cf5b8f3a7aa32da"
     },
     {
-      "Sid": "ReadRegionalStagingAndCommandStatus",
+      "Sid": "InspectOnlyHerfreeImageRepository",
       "Effect": "Allow",
-      "Action": ["ec2:DescribeInstances", "ssm:DescribeInstanceInformation", "ssm:ListCommands"],
-      "Resource": "*",
-      "Condition": {"StringEquals": {"aws:RequestedRegion": "ap-northeast-2"}}
+      "Action": "ecr:DescribeRepositories",
+      "Resource": "arn:aws:ecr:ap-northeast-2:439777528445:repository/herfree-api"
     }
   ]
 }

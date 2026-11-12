@@ -20,15 +20,6 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-      - name: Diagnose built-in QA branch protection read access
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          if gh api repos/jeffyun3061/herfree-platform/branches/qa-aaad889901ab-aaad8899/protection >/dev/null 2>&1; then
-            echo 'BUILTIN_QA_PROTECTION_READ=available'
-          else
-            echo 'BUILTIN_QA_PROTECTION_READ=unavailable'
-          fi
       - name: Validate release shell scripts
         run: |
           set -euo pipefail
