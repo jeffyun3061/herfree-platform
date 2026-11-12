@@ -81,6 +81,17 @@ class PackageStagingQAToolsTest(unittest.TestCase):
         with self.assertRaisesRegex(module.Refused, 'REMOTE_COMMIT_MISMATCH'):
             module.build(COMMIT, self.git, 'main')
 
+    def test_pr_206_bundle_is_pinned_to_its_exact_remote_head(self):
+        seen = []
+        def capture(*args):
+            if args[0] == 'ls-remote': seen.append(args[-1])
+            return self.git(*args)
+        module.build(COMMIT, capture, 'pr206')
+        self.assertEqual(seen, ['refs/pull/206/head', 'refs/pull/206/head'])
+        self.ref = 'c' * 40
+        with self.assertRaisesRegex(module.Refused, 'REMOTE_COMMIT_MISMATCH'):
+            module.build(COMMIT, capture, 'pr206')
+
     def test_oversized_bundle_is_not_produced(self):
         self.contents[module.FILES[0]] = os.urandom(60_000)
         with self.assertRaisesRegex(module.Refused, 'BUNDLE_TOO_LARGE'):

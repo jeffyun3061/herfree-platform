@@ -26,6 +26,7 @@ def load(name, filename):
 sender = load('qa_sender', 'send-staging-qa-tools.py')
 manager = load('qa_manager', 'manage-isolated-release-run.py')
 live = load('qa_live', 'verify-live-release-qa.py')
+candidate = load('qa_candidate', 'verify-candidate-release-qa.py')
 
 
 class Failed(Exception):
@@ -95,22 +96,32 @@ def main():
     parser.add_argument('--image', required=True)
     parser.add_argument('--run', required=True)
     parser.add_argument('--repo', required=True, type=Path)
+    parser.add_argument('--candidate-pr', choices=('206',), help='Run PR-only QA without release promotion')
     args = parser.parse_args()
     try:
-        sender.route.require(os.getenv('GITHUB_ACTIONS') == 'true'
-                             and os.getenv('GITHUB_REPOSITORY') == 'jeffyun3061/herfree-platform'
-                             and os.getenv('GITHUB_REF') == 'refs/heads/main'
+        base_context = (os.getenv('GITHUB_ACTIONS') == 'true'
+                        and os.getenv('GITHUB_REPOSITORY') == 'jeffyun3061/herfree-platform')
+        if args.candidate_pr:
+            valid_context = (os.getenv('GITHUB_REF') == 'refs/heads/codex/verified-qa-staging'
+                             and os.getenv('GITHUB_WORKFLOW') == 'Staging preflight'
+                             and os.getenv('GITHUB_SHA') == args.sha)
+        else:
+            valid_context = (os.getenv('GITHUB_REF') == 'refs/heads/main'
                              and os.getenv('GITHUB_WORKFLOW') == 'Run isolated current-main sharing QA'
-                             and os.getenv('GITHUB_SHA') == args.sha, 'WORKFLOW_CONTEXT_REQUIRED')
+                             and os.getenv('GITHUB_SHA') == args.sha)
+        sender.route.require(base_context and valid_context, 'WORKFLOW_CONTEXT_REQUIRED')
         manager.command_for('start', args.run, args.image)
-        live.check(args.sha, args.branch, args.image, live.request)
+        if args.candidate_pr:
+            candidate.check(int(args.candidate_pr), args.sha, args.branch, args.image, live.request)
+        else:
+            live.check(args.sha, args.branch, args.image, live.request)
         def git(*items):
             try:
                 return subprocess.run(['git', *items], cwd=args.repo, check=True, capture_output=True,
                                       timeout=30, env={**os.environ, 'GIT_TERMINAL_PROMPT': '0'}).stdout
             except (OSError, subprocess.SubprocessError):
                 raise sender.package.Refused('GIT_COMMAND_FAILED') from None
-        bundle = sender.package.build(args.sha, git, 'main')
+        bundle = sender.package.build(args.sha, git, 'pr206' if args.candidate_pr else 'main')
         account = lambda: sender.route.lookup('sts', 'get-caller-identity', '--query', 'Account')
         def tool_phase(mode):
             check = (lambda: sender.route.verify(sender.route.lookup, sender.route.resolve, sender.route.health)) \
@@ -140,6 +151,10 @@ def main():
             env = {**os.environ, 'RELEASE_SHA': args.sha, 'RELEASE_QA_BRANCH': args.branch,
                    'RELEASE_IMAGE': args.image, 'ISOLATED_QA_RUN': args.run,
                    'PLAYWRIGHT_BASE_URL': f'https://{args.branch}.d2bcg3vnlv5hkh.amplifyapp.com'}
+            if args.candidate_pr:
+                env['RELEASE_CANDIDATE_PR'] = args.candidate_pr
+            else:
+                env.pop('RELEASE_CANDIDATE_PR', None)
             # Do not pass workflow output and environment files to test subprocesses.
             for key in ('GITHUB_OUTPUT', 'GITHUB_ENV', 'GITHUB_PATH', 'GITHUB_STEP_SUMMARY'):
                 env.pop(key, None)
