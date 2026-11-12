@@ -33,11 +33,12 @@ esac
 ''',
             'python3': '''#!/bin/sh
 printf 'verify:%s\\n' "${1##*/}" >> "$MOCK_LOG"
+if [ "${MOCK_FAIL_POST_TOOL:-}" = "${1##*/}" ] && grep -q '^npm:' "$MOCK_LOG"; then exit 1; fi
 [ "${MOCK_VERIFY_FAIL:-0}" = 0 ]
 ''',
             'npm': '''#!/bin/sh
 printf 'npm:%s\\n' "$*" >> "$MOCK_LOG"
-[ "$ISOLATED_SHARE_QA" = true ] || exit 2
+[ "$ISOLATED_RELEASE_SHARE_QA" = true ] || exit 2
 [ "${MOCK_NPM_FAIL:-0}" = 0 ]
 ''',
         }
@@ -84,6 +85,14 @@ printf 'npm:%s\\n' "$*" >> "$MOCK_LOG"
         result = self.run_script({'MOCK_NPM_FAIL': '1'})
         self.assertNotEqual(result.returncode, 0)
         self.assertEqual(len([x for x in self.log.read_text().splitlines() if x.startswith('verify:')]), 6)
+
+    def test_each_postflight_failure_refuses_success(self):
+        for name in ('verify-live-release-qa.py', 'verify-isolated-staging.py', 'verify-isolated-frontend.py'):
+            if self.log.exists(): self.log.unlink()
+            with self.subTest(tool=name):
+                result = self.run_script({'MOCK_FAIL_POST_TOOL': name})
+                self.assertNotEqual(result.returncode, 0)
+                self.assertNotIn('checks passed', result.stdout)
 
 
 if __name__ == '__main__':

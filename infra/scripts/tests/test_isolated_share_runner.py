@@ -22,6 +22,7 @@ class IsolatedShareRunnerTest(unittest.TestCase):
             'git': '#!/bin/sh\nprintf "%s\\n" "$MOCK_REPO"\n',
             'python3': '''#!/bin/sh
 printf 'verify:%s\\n' "${1##*/}" >> "$MOCK_LOG"
+if [ "${MOCK_FAIL_POST_TOOL:-}" = "${1##*/}" ] && grep -q '^npm:' "$MOCK_LOG"; then exit 1; fi
 [ "${MOCK_VERIFY_FAIL:-0}" = 0 ]
 ''',
             'npm': '''#!/bin/sh
@@ -72,6 +73,14 @@ printf 'npm:%s\\n' "$*" >> "$MOCK_LOG"
         self.assertEqual(self.log.read_text().splitlines()[-2:],
                          ['verify:verify-isolated-staging.py', 'verify:verify-isolated-frontend.py'])
         self.assertNotIn('checks passed', result.stdout)
+
+    def test_each_postflight_failure_refuses_success(self):
+        for name in ('verify-isolated-staging.py', 'verify-isolated-frontend.py'):
+            if self.log.exists(): self.log.unlink()
+            with self.subTest(tool=name):
+                result = self.run_script({'MOCK_FAIL_POST_TOOL': name})
+                self.assertNotEqual(result.returncode, 0)
+                self.assertNotIn('checks passed', result.stdout)
 
 
 if __name__ == '__main__':

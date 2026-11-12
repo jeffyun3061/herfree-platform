@@ -18,21 +18,21 @@ origin="https://${RELEASE_QA_BRANCH}.d2bcg3vnlv5hkh.amplifyapp.com"
 root="$(git rev-parse --show-toplevel)"
 [[ "$(git -C "${root}" rev-parse HEAD)" == "${RELEASE_SHA}" ]] || { echo 'checkout does not match release' >&2; exit 1; }
 # The test must be from this checkout, not a modified local replacement.
-test_path='frontend/e2e/isolated-share-qa.spec.ts'
+test_path='frontend/e2e/isolated-release-share-qa.spec.ts'
 [[ "$(git -C "${root}" hash-object "${test_path}")" == "$(git -C "${root}" rev-parse "${RELEASE_SHA}:${test_path}")" ]] || { echo 'browser test differs from release' >&2; exit 1; }
 export ISOLATED_QA_BRANCH="${RELEASE_QA_BRANCH}" ISOLATED_QA_COMMIT="${RELEASE_SHA}" ISOLATED_QA_IMAGE="${RELEASE_IMAGE}"
 export E2E_HTTP_USERNAME="${ISOLATED_QA_BASIC_USERNAME}" E2E_HTTP_PASSWORD="${ISOLATED_QA_BASIC_PASSWORD}"
-export ISOLATED_SHARE_QA=true
+export ISOLATED_RELEASE_SHARE_QA=true ISOLATED_QA_CANDIDATE_DIR="${root}"
 verify() {
-  python3 "${root}/infra/scripts/verify-live-release-qa.py" --sha "${RELEASE_SHA}" --branch "${RELEASE_QA_BRANCH}" --image "${RELEASE_IMAGE}" >/dev/null
-  python3 "${root}/infra/scripts/verify-isolated-staging.py" --run "${ISOLATED_QA_RUN}" --image "${RELEASE_IMAGE}" >/dev/null
+  python3 "${root}/infra/scripts/verify-live-release-qa.py" --sha "${RELEASE_SHA}" --branch "${RELEASE_QA_BRANCH}" --image "${RELEASE_IMAGE}" >/dev/null || return 1
+  python3 "${root}/infra/scripts/verify-isolated-staging.py" --run "${ISOLATED_QA_RUN}" --image "${RELEASE_IMAGE}" >/dev/null || return 1
   python3 "${root}/infra/scripts/verify-isolated-frontend.py" --account 439777528445 --app d2bcg3vnlv5hkh \
-    --branch "${RELEASE_QA_BRANCH}" --sha "${RELEASE_SHA}" --api https://api-staging.herpfree.co.kr --repo "${root}" >/dev/null
+    --branch "${RELEASE_QA_BRANCH}" --sha "${RELEASE_SHA}" --api https://api-staging.herpfree.co.kr --repo "${root}" >/dev/null || return 1
 }
 verify
 cd "${root}/frontend"
 status=0
-npm exec -- playwright test e2e/isolated-share-qa.spec.ts --project=chromium --project=mobile-chromium --project=iphone-webkit --workers=1 || status=$?
+npm exec -- playwright test e2e/isolated-release-share-qa.spec.ts --project=chromium --project=mobile-chromium --project=iphone-webkit --workers=1 || status=$?
 verify || { echo 'post-test verification failed; reconcile staging' >&2; exit 1; }
 (( status == 0 )) || exit "${status}"
 echo 'isolated release browser checks passed; cleanup and promotion remain unverified'

@@ -18,10 +18,10 @@ export ISOLATED_QA_BRANCH="${branch}" ISOLATED_QA_COMMIT="${sha}" ISOLATED_QA_IM
 export E2E_HTTP_USERNAME="${ISOLATED_QA_BASIC_USERNAME}" E2E_HTTP_PASSWORD="${ISOLATED_QA_BASIC_PASSWORD}"
 export ISOLATED_SHARE_QA=true
 verify() {
-  python3 "${root}/infra/scripts/verify-isolated-staging.py" --run "${ISOLATED_QA_RUN}" --image "${image}" >/dev/null
+  python3 "${root}/infra/scripts/verify-isolated-staging.py" --run "${ISOLATED_QA_RUN}" --image "${image}" >/dev/null || return 1
   python3 "${root}/infra/scripts/verify-isolated-frontend.py" \
     --account 439777528445 --app d2bcg3vnlv5hkh --branch "${branch}" --sha "${sha}" \
-    --api https://api-staging.herpfree.co.kr --repo "${ISOLATED_QA_CANDIDATE_DIR}" --candidate-pr 195 >/dev/null
+    --api https://api-staging.herpfree.co.kr --repo "${ISOLATED_QA_CANDIDATE_DIR}" --candidate-pr 195 >/dev/null || return 1
 }
 verify
 cd "${root}/frontend"

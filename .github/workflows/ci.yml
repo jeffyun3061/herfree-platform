@@ -83,6 +83,11 @@ jobs:
         run: python3 -m unittest discover -s infra/scripts/tests -p 'test_verify_isolated_staging.py'
       - name: Verify isolated share runner safety
         run: python3 -m unittest discover -s infra/scripts/tests -p 'test_isolated_share_runner.py'
+      - name: Verify exact release QA identity and browser runner
+        run: |
+          python3 -m unittest discover -s infra/scripts/tests -p 'test_verify_release_qa_branch.py'
+          python3 -m unittest discover -s infra/scripts/tests -p 'test_verify_live_release_qa.py'
+          python3 -m unittest discover -s infra/scripts/tests -p 'test_verified_release_share_runner.py'
       - name: Verify staging QA tool installation and recovery
         run: python3 -m unittest discover -s infra/scripts/tests -p 'test_staging_qa_tools.py'
       - name: Verify staging QA bundle provenance
@@ -245,6 +250,13 @@ jobs:
             exit 1
           fi
           grep -q 'Isolated QA target or credentials are not the pinned candidate' /tmp/isolated-qa-refusal.log
+          npx playwright test e2e/isolated-release-share-qa.spec.ts --project=chromium --list
+          if ISOLATED_RELEASE_SHARE_QA=true PLAYWRIGHT_NO_WEBSERVER=true PLAYWRIGHT_BASE_URL=http://127.0.0.1:3100 \
+              npx playwright test e2e/isolated-release-share-qa.spec.ts --project=chromium --reporter=line > /tmp/isolated-release-refusal.log 2>&1; then
+            echo 'isolated release QA unexpectedly accepted an unverified target' >&2
+            exit 1
+          fi
+          grep -q 'Isolated QA target or credentials are not the verified release' /tmp/isolated-release-refusal.log
           node e2e/support/preview-backend.mjs &
           preview_pid=$!
           trap 'kill "$preview_pid"' EXIT
