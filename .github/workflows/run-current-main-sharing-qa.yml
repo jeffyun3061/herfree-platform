@@ -21,7 +21,8 @@ jobs:
     if: github.repository == 'jeffyun3061/herfree-platform' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment: staging
-    timeout-minutes: 90
+    # Leave time for dependency setup, a timed QA session and instance stop.
+    timeout-minutes: 120
     env:
       AWS_REGION: ap-northeast-2
       STAGING_INSTANCE: i-02cf5b8f3a7aa32da
