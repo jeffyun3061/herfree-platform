@@ -3,6 +3,17 @@ import { loadPublicPostPreview, publicPostMetadata } from './postMetadata';
 
 afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
 describe('anonymous server share metadata', () => {
+  it('prompts login for a notice without sharing its body', () => {
+    const metadata = publicPostMetadata('11', { id: 11, title: '공지', description: '본문 비밀', boardType: 'NOTICE' });
+    expect(metadata.openGraph).toMatchObject({ title: '공지', description: '로그인 후 게시글을 확인해 주세요.' });
+    expect(JSON.stringify(metadata)).not.toContain('본문 비밀');
+  });
+  it('shortens long preview titles without changing the page title', () => {
+    const title = '아주 긴 제목을 작성했을 때 공유 미리보기에서는 짧게 보입니다';
+    const metadata = publicPostMetadata('11', { id: 11, title, description: '', boardType: 'FREE' });
+    expect(metadata.title).toBe(title);
+    expect((metadata.openGraph as { title: string }).title).toBe(`${Array.from(title).slice(0, 17).join('')}…`);
+  });
   it('fetches only the public preview without visitor credentials or caching', async () => {
     vi.stubEnv('API_REWRITE_TARGET', 'https://api.example.test');
     const fetchMock = vi.fn().mockResolvedValue({ok: true, json: async () => ({success: true, data: {id:11,title:'고민 제목',description:'본문 첫 부분',boardType:'FREE',authorNickname:'must-not-be-exported'}})});
@@ -10,9 +21,10 @@ describe('anonymous server share metadata', () => {
     const preview = await loadPublicPostPreview('11');
     expect(fetchMock).toHaveBeenCalledWith('https://api.example.test/api/posts/11/share-preview', expect.objectContaining({cache:'no-store',headers:{Accept:'application/json'},redirect:'error'}));
     const metadata = publicPostMetadata('11', preview);
-    expect(metadata.openGraph).toMatchObject({title:'고민 제목',description:'본문 첫 부분',url:'https://www.herpfree.co.kr/community/posts/11',images:[{url:'/brand/logo-hfree-on-primary.png',alt:'헤르프리'}]});
+    expect(metadata.openGraph).toMatchObject({title:'고민 제목',description:'로그인 후 게시글을 확인해 주세요.',url:'https://www.herpfree.co.kr/community/posts/11',images:[{url:'/brand/logo-hfree-on-primary.png',alt:'헤르프리'}]});
     expect(metadata.twitter).toMatchObject({card:'summary_large_image',images:['/brand/logo-hfree-on-primary.png']});
     expect(JSON.stringify(metadata)).not.toContain('must-not-be-exported');
+    expect(JSON.stringify(metadata)).not.toContain('본문 첫 부분');
   });
   it.each(['INQUIRY','PRIVATE_CONSULT','SECRET_STORY'])('refuses private %s data even from a malformed upstream response', async boardType => {
     vi.stubEnv('API_REWRITE_TARGET', 'https://api.example.test');

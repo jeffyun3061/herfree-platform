@@ -59,7 +59,6 @@ class CommentServiceTest {
         Post post = mock(Post.class);
         given(post.getId()).willReturn(postId);
         given(post.getBoard()).willReturn(board);
-        given(post.getVisibility()).willReturn(PostVisibility.PUBLIC);
         User user = mock(User.class);
         given(user.getId()).willReturn(userId);
         given(user.getRole()).willReturn(UserRole.USER);
@@ -96,7 +95,6 @@ class CommentServiceTest {
         given(board.getBoardType()).willReturn("FREE");
         Post post = mock(Post.class);
         given(post.getBoard()).willReturn(board);
-        given(post.getVisibility()).willReturn(PostVisibility.PUBLIC);
         User user = mock(User.class);
         given(user.getRole()).willReturn(UserRole.USER);
 

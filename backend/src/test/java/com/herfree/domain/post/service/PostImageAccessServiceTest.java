@@ -41,14 +41,26 @@ class PostImageAccessServiceTest {
     private PostImageAccessService postImageAccessService;
 
     @Test
-    @DisplayName("Public post image is public-cacheable for guests")
-    void check_publicBoardImage_guestAllowed() {
+    @DisplayName("Community post image requires login and is privately cached")
+    void check_publicBoardImage_guestDenied() {
         givenAttachedPost("FREE", 10L, PostVisibility.PUBLIC);
 
         var access = postImageAccessService.check(OBJECT_KEY, null);
 
-        assertThat(access.allowed()).isTrue();
-        assertThat(access.privateScope()).isFalse();
+        assertThat(access.allowed()).isFalse();
+        assertThat(access.privateScope()).isTrue();
+        var memberAccess = postImageAccessService.check(OBJECT_KEY, 99L);
+        assertThat(memberAccess.allowed()).isTrue();
+        assertThat(memberAccess.privateScope()).isTrue();
+    }
+
+    @Test
+    @DisplayName("Notice image requires login and private caching")
+    void check_noticeImage_guestDenied() {
+        givenAttachedPost("NOTICE", 10L, PostVisibility.PUBLIC);
+        var access = postImageAccessService.check(OBJECT_KEY, null);
+        assertThat(access.allowed()).isFalse();
+        assertThat(access.privateScope()).isTrue();
     }
 
     @Test
