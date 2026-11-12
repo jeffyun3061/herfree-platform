@@ -88,6 +88,7 @@ jobs:
           python3 -m unittest discover -s infra/scripts/tests -p 'test_verify_release_qa_branch.py'
           python3 -m unittest discover -s infra/scripts/tests -p 'test_verify_live_release_qa.py'
           python3 -m unittest discover -s infra/scripts/tests -p 'test_verified_release_share_runner.py'
+          python3 -m unittest discover -s infra/scripts/tests -p 'test_propose_current_main_qa_policy.py'
       - name: Verify staging QA tool installation and recovery
         run: python3 -m unittest discover -s infra/scripts/tests -p 'test_staging_qa_tools.py'
       - name: Verify staging QA bundle provenance
