@@ -63,7 +63,9 @@ if [[ "${mode}" == prepare ]]; then
   health_attempts="${HERFREE_QA_HEALTH_ATTEMPTS:-96}"
   [[ "${health_attempts}" =~ ^[0-9]+$ ]] && (( health_attempts >= 1 && health_attempts <= 96 )) || { echo 'invalid health wait limit' >&2; exit 1; }
   healthy=false
+  deadline=$((SECONDS + 480))
   for ((attempt=1; attempt<=health_attempts; attempt++)); do
+    (( SECONDS < deadline )) || break
     if curl --fail --silent --max-time 3 http://127.0.0.1:8080/actuator/health | grep -q '"status":"UP"'; then
       healthy=true
       break
