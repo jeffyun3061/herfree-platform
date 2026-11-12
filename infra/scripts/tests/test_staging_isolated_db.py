@@ -59,8 +59,10 @@ elif args[0]=='exec':
     elif sql.startswith('CREATE USER'): (state/'user').touch()
     elif sql.startswith('GRANT ALL'): (state/'grant').touch()
     elif sql.startswith('REVOKE ALL'): (state/'grant').unlink(missing_ok=True)
-    elif sql.startswith('DROP DATABASE'): (state/'database').unlink(missing_ok=True)
-    elif sql.startswith('DROP USER'): (state/'user').unlink(missing_ok=True)
+    elif sql.startswith('DROP DATABASE'):
+        if os.getenv('MOCK_DROP_NOOP') != 'database': (state/'database').unlink(missing_ok=True)
+    elif sql.startswith('DROP USER'):
+        if os.getenv('MOCK_DROP_NOOP') != 'user': (state/'user').unlink(missing_ok=True)
     else: sys.exit(3)
 else: sys.exit(3)
 ''')
@@ -124,6 +126,17 @@ else: sys.exit(3)
         self.assertNotEqual(self.run_script('finalize').returncode, 0)
         self.assertTrue((self.mock/'database').exists())
         self.assertTrue((self.mock/'user').exists())
+
+    def test_cleanup_keeps_recovery_record_until_database_and_user_are_absent(self):
+        for missing in ('database', 'user'):
+            with self.subTest(missing=missing):
+                self.assertEqual(self.run_script('prepare').returncode, 0)
+                self.assertEqual(self.run_script('restore-config').returncode, 0)
+                result = self.run_script('finalize', env={**self.env, 'MOCK_DROP_NOOP': missing})
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn('cleanup could not be verified', result.stderr)
+                self.assertTrue((self.app/'.deploy/isolated-a1b2c3d4').exists())
+                self.assertEqual(self.run_script('finalize').returncode, 0)
 
     def test_existing_account_is_never_reused(self):
         (self.mock/'user').touch()

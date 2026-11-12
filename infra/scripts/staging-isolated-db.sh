@@ -178,6 +178,12 @@ fi
 if [[ -f "${state}/user-created" ]]; then
   printf "DROP USER IF EXISTS '%s'@'%%';\n" "hfqa${run}" | mysql_root
 fi
+# Do not erase the recovery record until MySQL confirms all QA artifacts are
+# absent. A successful DROP response alone is not durable cleanup evidence.
+remaining_db="$(printf "SELECT COUNT(*) FROM information_schema.schemata WHERE schema_name='%s';\n" "${database}" | mysql_root)"
+remaining_user="$(printf "SELECT COUNT(*) FROM mysql.user WHERE user='%s';\n" "hfqa${run}" | mysql_root)"
+remaining_grants="$(printf "SELECT COUNT(*) FROM information_schema.schema_privileges WHERE table_schema='%s' AND grantee=CONCAT(CHAR(39),'%s',CHAR(39),'@',CHAR(39),'%%',CHAR(39));\n" "${database}" "hfqa${run}" | mysql_root)"
+[[ "${remaining_db}" == 0 && "${remaining_user}" == 0 && "${remaining_grants}" == 0 ]] || { echo 'isolated database cleanup could not be verified' >&2; exit 1; }
 rm -f "${state}/original-env" "${state}/original-image" "${state}/db-user" "${state}/create-intent" "${state}/db-created" "${state}/user-create-intent" "${state}/user-created" "${state}/grant-created" "${state}/qa-env" "${state}/prepared" "${state}/config-restored" "${state}/candidate-image"
 rmdir "${state}"
 echo 'isolated staging DB and grant removed; promotion is not authorized'
