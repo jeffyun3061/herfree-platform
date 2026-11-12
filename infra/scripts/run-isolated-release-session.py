@@ -140,8 +140,9 @@ def main():
             env = {**os.environ, 'RELEASE_SHA': args.sha, 'RELEASE_QA_BRANCH': args.branch,
                    'RELEASE_IMAGE': args.image, 'ISOLATED_QA_RUN': args.run,
                    'PLAYWRIGHT_BASE_URL': f'https://{args.branch}.d2bcg3vnlv5hkh.amplifyapp.com'}
-            # Test subprocesses must not be able to forge workflow step outputs.
-            env.pop('GITHUB_OUTPUT', None)
+            # Do not pass workflow output and environment files to test subprocesses.
+            for key in ('GITHUB_OUTPUT', 'GITHUB_ENV', 'GITHUB_PATH', 'GITHUB_STEP_SUMMARY'):
+                env.pop(key, None)
             subprocess.run(['bash', str(ROOT / 'run-verified-release-share-qa.sh')], cwd=args.repo,
                            env=env, check=True)
         result = orchestrate(lambda: tool_phase('install'), lambda: run_phase('start'), browser,
