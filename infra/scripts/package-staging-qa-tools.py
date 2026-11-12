@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build a deterministic QA-tools bundle from the exact reviewed PR commit.
+"""Build a deterministic QA-tools bundle from a reviewed PR or current main.
 
 This does not upload, install or execute the bundle and cannot approve a
 release. SSM commands must never contain passwords or other secrets.
@@ -31,14 +31,15 @@ def require(condition, code):
         raise Refused(code)
 
 
-def build(commit, git):
+def build(commit, git, source='candidate'):
     require(re.fullmatch(r'[a-f0-9]{40}', commit or '') is not None, 'INVALID_COMMIT')
+    require(source in ('candidate', 'main'), 'INVALID_SOURCE')
     require(git('remote', 'get-url', 'origin').strip() in (
         b'https://github.com/jeffyun3061/herfree-platform.git',
         b'https://github.com/jeffyun3061/herfree-platform',
         b'git@github.com:jeffyun3061/herfree-platform.git'), 'REMOTE_REFUSED')
     require(git('rev-parse', 'HEAD').strip() == commit.encode(), 'LOCAL_COMMIT_MISMATCH')
-    ref = b'refs/pull/196/head'
+    ref = b'refs/pull/196/head' if source == 'candidate' else b'refs/heads/main'
     require(git('ls-remote', '--exit-code', 'origin', ref.decode()).strip() == commit.encode() + b'\t' + ref,
             'REMOTE_COMMIT_MISMATCH')
     contents = {}
@@ -75,6 +76,7 @@ def main():
     parser.add_argument('--commit', required=True)
     parser.add_argument('--repo', required=True, type=Path)
     parser.add_argument('--output', required=True, type=Path)
+    parser.add_argument('--source', choices=('candidate', 'main'), default='candidate')
     args = parser.parse_args()
     def git(*items):
         try:
@@ -84,7 +86,7 @@ def main():
         except (OSError, subprocess.SubprocessError):
             raise Refused('GIT_COMMAND_FAILED') from None
     try:
-        bundle = build(args.commit, git)
+        bundle = build(args.commit, git, args.source)
         fd = os.open(args.output, os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, 'O_NOFOLLOW', 0), 0o600)
         with os.fdopen(fd, 'wb') as stream:
             stream.write(bundle)

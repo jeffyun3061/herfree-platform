@@ -118,10 +118,11 @@ def main():
     parser.add_argument('--commit')
     parser.add_argument('--repo', type=Path)
     parser.add_argument('--command-id')
+    parser.add_argument('--source', choices=('candidate', 'main'), default='candidate')
     args = parser.parse_args()
     try:
         if args.mode.startswith('inspect-'):
-            route.require(args.run is None and args.commit is None and args.repo is None, 'INVALID_INPUT')
+            route.require(args.run is None and args.commit is None and args.repo is None and args.source == 'candidate', 'INVALID_INPUT')
             result = inspect(args.mode.removeprefix('inspect-'), args.command_id,
                              lambda: route.lookup('sts', 'get-caller-identity', '--query', 'Account'), get)
         else:
@@ -133,7 +134,7 @@ def main():
                     return result.stdout
                 except (OSError, subprocess.SubprocessError):
                     raise package.Refused('GIT_COMMAND_FAILED') from None
-            bundle = package.build(args.commit, git)
+            bundle = package.build(args.commit, git, args.source)
             check = (lambda: route.verify(route.lookup, route.resolve, route.health)) if args.mode == 'install' \
                 else (lambda: verify_restore_target(route.lookup))
             result = submit(args.mode, args.run, bundle, check, send)

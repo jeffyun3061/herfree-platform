@@ -66,6 +66,21 @@ class PackageStagingQAToolsTest(unittest.TestCase):
         with self.assertRaisesRegex(module.Refused, 'REMOTE_COMMIT_MISMATCH'):
             module.build(COMMIT, changed)
 
+    def test_current_main_can_be_used_but_other_refs_are_refused(self):
+        seen = []
+        def capture(*args):
+            if args[0] == 'ls-remote': seen.append(args[-1])
+            return self.git(*args)
+        module.build(COMMIT, capture, 'main')
+        self.assertEqual(seen, ['refs/heads/main', 'refs/heads/main'])
+        with self.assertRaisesRegex(module.Refused, 'INVALID_SOURCE'):
+            module.build(COMMIT, capture, 'refs/heads/develop')
+
+    def test_stale_main_is_never_packaged(self):
+        self.ref = 'c' * 40
+        with self.assertRaisesRegex(module.Refused, 'REMOTE_COMMIT_MISMATCH'):
+            module.build(COMMIT, self.git, 'main')
+
     def test_oversized_bundle_is_not_produced(self):
         self.contents[module.FILES[0]] = os.urandom(60_000)
         with self.assertRaisesRegex(module.Refused, 'BUNDLE_TOO_LARGE'):
