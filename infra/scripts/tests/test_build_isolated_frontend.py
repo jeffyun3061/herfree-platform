@@ -117,6 +117,12 @@ class BuildIsolatedFrontendTest(unittest.TestCase):
                          module.BRANCH, module.SHA, None, locked)
         self.assertEqual(self.submitted, 0)
 
+    def test_pr_206_cannot_build_without_locked_branch(self):
+        with self.assertRaisesRegex(module.preflight.Refused, 'BRANCH_PROTECTION_REQUIRED'):
+            module.start(Path('.'), self.git, self.lookup, self.submit,
+                         module.BRANCH, module.SHA, '206', None)
+        self.assertEqual(self.submitted, 0)
+
     def test_main_build_checks_protection_again_after_ambiguous_change(self):
         protection = {key: {'enabled': value} for key, value in {
             'lock_branch': True, 'enforce_admins': True,

@@ -30,7 +30,7 @@ PR = '195'
 def check_branch(root, run, lookup, branch=BRANCH, sha=SHA, pr=PR, protection_lookup=None):
     origin = preflight.validate_inputs(ACCOUNT, APP, branch, sha, API)
     preflight.check_remote(sha, branch, root, run, pr)
-    if pr is None:
+    if pr is None or pr == '206':
         preflight.require(protection_lookup is not None, 'BRANCH_PROTECTION_REQUIRED')
         try:
             release_lock.verify_branch_lock(protection_lookup(branch))
@@ -96,15 +96,17 @@ def main():
     parser.add_argument('mode', choices=('start', 'inspect'))
     parser.add_argument('--repo', type=Path, required=True)
     parser.add_argument('--job-id')
-    parser.add_argument('--current-main', action='store_true')
+    source = parser.add_mutually_exclusive_group()
+    source.add_argument('--current-main', action='store_true')
+    source.add_argument('--candidate-pr', choices=('206',))
     parser.add_argument('--branch')
     parser.add_argument('--sha')
     args = parser.parse_args()
     try:
         lookup = lambda *items: preflight.aws_lookup(None, *items)
-        if args.current_main:
+        if args.current_main or args.candidate_pr:
             preflight.require(args.branch is not None and args.sha is not None, 'INVALID_INPUT')
-            branch, sha, pr = args.branch, args.sha, None
+            branch, sha, pr = args.branch, args.sha, args.candidate_pr
             def protection_lookup(name):
                 try:
                     return json.loads(preflight.command(['gh', 'api', 'repos/jeffyun3061/herfree-platform/branches/' + name + '/protection'], args.repo))
