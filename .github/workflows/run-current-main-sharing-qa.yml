@@ -1,0 +1,119 @@
+name: Run isolated current-main sharing QA
+
+on:
+  workflow_dispatch:
+    inputs:
+      qa_branch:
+        description: Locked QA frontend branch built from current main
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: backend-staging
+  cancel-in-progress: false
+
+jobs:
+  qa:
+    if: github.repository == 'jeffyun3061/herfree-platform' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 90
+    env:
+      AWS_REGION: ap-northeast-2
+      STAGING_INSTANCE: i-02cf5b8f3a7aa32da
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install browser test dependencies
+        working-directory: frontend
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium webkit
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - id: target
+        name: Resolve the exact immutable QA image
+        run: |
+          set -euo pipefail
+          test "$(aws sts get-caller-identity --query Account --output text)" = 439777528445
+          test "${GITHUB_SHA}" = "$(git ls-remote origin refs/heads/main | cut -f1)"
+          test "$(aws ecr describe-repositories --repository-names herfree-api \
+            --query 'repositories[0].imageTagMutability' --output text)" = IMMUTABLE
+          digest="$(aws ecr describe-images --repository-name herfree-api --image-ids imageTag="${GITHUB_SHA}" \
+            --query 'imageDetails[0].imageDigest' --output text)"
+          [[ "${digest}" =~ ^sha256:[a-f0-9]{64}$ ]]
+          run_id="$(printf '%s:%s' "${GITHUB_RUN_ID}" "${GITHUB_RUN_ATTEMPT}" | sha256sum | cut -c1-8)"
+          echo "image=439777528445.dkr.ecr.ap-northeast-2.amazonaws.com/herfree-api@${digest}" >> "${GITHUB_OUTPUT}"
+          echo "run=${run_id}" >> "${GITHUB_OUTPUT}"
+      - name: Verify QA branch, image and credentials before starting staging
+        env:
+          GH_TOKEN: ${{ secrets.QA_PROTECTION_READ_TOKEN }}
+          QA_BRANCH: ${{ inputs.qa_branch }}
+          QA_IMAGE: ${{ steps.target.outputs.image }}
+          ISOLATED_QA_BASIC_USERNAME: ${{ secrets.E2E_HTTP_USERNAME }}
+          ISOLATED_QA_BASIC_PASSWORD: ${{ secrets.E2E_HTTP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          : "${GH_TOKEN:?A branch-protection read credential is required}"
+          : "${ISOLATED_QA_BASIC_USERNAME:?QA Basic username is required}"
+          : "${ISOLATED_QA_BASIC_PASSWORD:?QA Basic password is required}"
+          python3 infra/scripts/verify-live-release-qa.py \
+            --sha "${GITHUB_SHA}" --branch "${QA_BRANCH}" --image "${QA_IMAGE}" >/dev/null
+      - id: instance
+        name: Start only a stopped staging instance
+        run: |
+          set -euo pipefail
+          state="$(aws ec2 describe-instances --instance-ids "${STAGING_INSTANCE}" \
+            --query 'Reservations[0].Instances[0].State.Name' --output text)"
+          test "${state}" = stopped || { echo 'Staging is not stopped; refusing to take ownership.' >&2; exit 1; }
+          aws ec2 start-instances --instance-ids "${STAGING_INSTANCE}" --output json >/dev/null
+          echo 'started=true' >> "${GITHUB_OUTPUT}"
+          aws ec2 wait instance-running --instance-ids "${STAGING_INSTANCE}"
+          for attempt in $(seq 1 60); do
+            status="$(aws ssm describe-instance-information --filters "Key=InstanceIds,Values=${STAGING_INSTANCE}" \
+              --query 'InstanceInformationList[0].PingStatus' --output text)"
+            if [[ "${status}" == Online ]] && python3 infra/scripts/verify_staging_route.py | jq -e '.stagingRouteVerified == true' >/dev/null; then
+              exit 0
+            fi
+            sleep 10
+          done
+          echo 'Staging SSM did not become ready; inspect the instance before stopping it.' >&2
+          exit 1
+      - id: session
+        name: Test and restore the isolated staging session
+        timeout-minutes: 65
+        env:
+          GH_TOKEN: ${{ secrets.QA_PROTECTION_READ_TOKEN }}
+          QA_BRANCH: ${{ inputs.qa_branch }}
+          QA_IMAGE: ${{ steps.target.outputs.image }}
+          QA_RUN: ${{ steps.target.outputs.run }}
+          ISOLATED_QA_BASIC_USERNAME: ${{ secrets.E2E_HTTP_USERNAME }}
+          ISOLATED_QA_BASIC_PASSWORD: ${{ secrets.E2E_HTTP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          : "${GH_TOKEN:?A branch-protection read credential is required}"
+          : "${QA_BRANCH:?A locked QA branch is required}"
+          python3 infra/scripts/run-isolated-release-session.py \
+            --sha "${GITHUB_SHA}" --branch "${QA_BRANCH}" --image "${QA_IMAGE}" --run "${QA_RUN}" --repo .
+      - name: Stop the staging instance after verified restoration
+        if: success() && steps.instance.outputs.started == 'true' && steps.session.outcome == 'success'
+        run: |
+          set -euo pipefail
+          test "$(aws sts get-caller-identity --query Account --output text)" = 439777528445
+          aws ec2 stop-instances --instance-ids "${STAGING_INSTANCE}" --output json >/dev/null
+          aws ec2 wait instance-stopped --instance-ids "${STAGING_INSTANCE}"
+      - name: Flag staging for manual reconciliation after an unsuccessful run
+        if: failure() && steps.instance.outcome != 'skipped'
+        run: |
+          echo 'The staging instance may still be running. Inspect the logged SSM command IDs and reconcile before stopping or retrying.' >&2
+          exit 1

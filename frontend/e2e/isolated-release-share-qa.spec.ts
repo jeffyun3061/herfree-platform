@@ -66,6 +66,7 @@ test.describe('isolated share QA', () => {
     const email = `qa-${unique}@example.invalid`;
     const accountPassword = 'E2e-Test-Password!4829';
     const postIds: number[] = [];
+    let journalId: number | undefined;
     let csrf = '';
     try {
       const signup = await api.post('/api/auth/signup', { data: {
@@ -76,7 +77,9 @@ test.describe('isolated share QA', () => {
       expect(signup.status()).toBe(201);
       const login = await api.post('/api/auth/login', { data: { email, password: accountPassword } });
       expect(login.ok()).toBeTruthy();
-      csrf = (await api.storageState()).cookies.find(c => c.name.endsWith('herfree-csrf'))?.value || '';
+      const cookies = (await api.storageState()).cookies;
+      expect(cookies.find(c => c.name.endsWith('herfree-access'))?.httpOnly).toBe(true);
+      csrf = cookies.find(c => c.name.endsWith('herfree-csrf'))?.value || '';
       expect(csrf).not.toBe('');
       const headers = { 'X-Herfree-CSRF': csrf };
       const boards = await payload<Array<{ id: number; boardType: string }>>(await api.get('/api/boards'));
@@ -134,6 +137,23 @@ test.describe('isolated share QA', () => {
         const shared = await page.evaluate(() => (window as Window & { qaShared?: ShareData }).qaShared);
         expect(shared).toEqual({ url: `${origin}/community/posts/${created.id}` });
       }
+      // Exercise only synthetic journal data in the verified isolated DB.
+      const journal = await api.post('/api/journal/records', { headers, data: {
+        recordDate: new Date().toISOString().slice(0, 10), medicationStatus: 'NORMAL',
+        avgSleep: 'H6_7', stressLevel: 'MEDIUM', hadSymptoms: false,
+        prodromalSymptoms: [], triggers: [], memo: `qa-journal-${unique}`, mood: 'NORMAL',
+        supplementTaken: false, exerciseDone: false,
+      } });
+      expect(journal.status()).toBe(200);
+      journalId = (await payload<{ id: number }>(journal)).id;
+      const savedJournal = await api.get(`/api/journal/records/${journalId}`);
+      expect(savedJournal.status()).toBe(200);
+      expect(savedJournal.headers()['cache-control']).toContain('no-store');
+      expect([401, 403, 404]).toContain((await request.get(`/api/journal/records/${journalId}`)).status());
+      await page.goto('/journal', { waitUntil: 'domcontentloaded' });
+      await expect(page.locator('input[type="date"]')).toBeVisible({ timeout: 8_000 });
+      expect((await api.delete(`/api/journal/records/${journalId}`, { headers })).status()).toBe(204);
+      journalId = undefined;
       // Reconfirm the environment after writes; this remains point-in-time
       // evidence and is not a replacement for workflow serialization.
       verifyTarget();
@@ -143,6 +163,7 @@ test.describe('isolated share QA', () => {
         if (csrf) {
           verifyTarget();
           const headers = { 'X-Herfree-CSRF': csrf };
+          if (journalId) expect((await api.delete(`/api/journal/records/${journalId}`, { headers })).status()).toBe(204);
           for (const id of postIds) expect((await api.delete(`/api/posts/${id}`, { headers })).status()).toBe(204);
           expect((await api.delete('/api/users/me', { headers })).status()).toBe(204);
         }
