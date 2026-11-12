@@ -9,8 +9,9 @@ import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
+import { AuthImage } from '@/components/common/AuthImage';
 import { AdminListSummary, AdminListToolbar } from '@/components/admin/AdminPublishUi';
-import type { AdminModerationStatus } from '@/lib/api/admin';
+import { fetchAdminPostReview, type AdminModerationStatus, type AdminPostReview } from '@/lib/api/admin';
 import { getErrorMessage } from '@/lib/api/client';
 import { cn } from '@/lib/cn';
 
@@ -40,6 +41,9 @@ export function AdminModerationSection() {
   const [searchInput, setSearchInput] = useState('');
   const [keyword, setKeyword] = useState('');
   const [pendingAction, setPendingAction] = useState<PendingModerationAction | null>(null);
+  const [review, setReview] = useState<AdminPostReview | null>(null);
+  const [reviewError, setReviewError] = useState<string | null>(null);
+  const [reviewLoading, setReviewLoading] = useState(false);
 
   const {
     postPage,
@@ -65,6 +69,20 @@ export function AdminModerationSection() {
   const handleSearch = () => {
     setKeyword(searchInput.trim());
     setPage(0);
+  };
+
+  const openReview = async (postId: number) => {
+    if (reviewLoading) return;
+    setReviewLoading(true);
+    setReview(null);
+    setReviewError(null);
+    try {
+      setReview(await fetchAdminPostReview(postId));
+    } catch (error) {
+      setReviewError(getErrorMessage(error));
+    } finally {
+      setReviewLoading(false);
+    }
   };
 
   const confirmPendingAction = async () => {
@@ -122,6 +140,17 @@ export function AdminModerationSection() {
       {isLoading && <LoadingSpinner label="운영 목록을 불러오는 중..." />}
       {error && <ErrorMessage message={getErrorMessage(error)} />}
       {actionError && <ErrorMessage message={actionError} className="mb-2" />}
+      {reviewLoading && <LoadingSpinner label="게시글을 확인하는 중..." />}
+      {reviewError && <ErrorMessage message={reviewError} />}
+      {review && (
+        <section aria-label="관리자 게시글 확인" className="rounded-[16px] border border-[#E7DFD2] bg-white p-4">
+          <p className="text-xs text-[#65706B]">관리자 전용 · {review.boardName} · {statusLabel(review.status)}</p>
+          <h3 className="mt-2 break-words text-base font-bold">{review.title}</h3>
+          <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-7">{review.content}</p>
+          {review.imageUrl && <AuthImage src={review.imageUrl} alt="게시글 첨부 이미지" className="mt-3 max-h-96 max-w-full object-contain" />}
+          <Button type="button" size="sm" variant="secondary" className="mt-3" onClick={() => setReview(null)}>닫기</Button>
+        </section>
+      )}
 
       {!isLoading && !error && (
         <AdminListSummary
@@ -156,11 +185,15 @@ export function AdminModerationSection() {
                   {item.title}
                 </p>
                 <div className="grid grid-cols-2 gap-2">
-                  <Link href={`/community/posts/${item.id}`} className="min-w-0">
-                    <Button size="sm" variant="secondary" fullWidth>
-                      글 보기
+                  {item.status === 'ACTIVE' ? (
+                    <Link href={`/community/posts/${item.id}`} className="min-w-0">
+                      <Button size="sm" variant="secondary" fullWidth>글 보기</Button>
+                    </Link>
+                  ) : (
+                    <Button size="sm" variant="secondary" fullWidth disabled={reviewLoading} onClick={() => void openReview(item.id)}>
+                      글 확인
                     </Button>
-                  </Link>
+                  )}
                   {item.status === 'ACTIVE' ? (
                     <Button
                       size="sm"
@@ -202,15 +235,22 @@ export function AdminModerationSection() {
                 <p className="line-clamp-1 text-[11.5px] text-[#8B9590]">원글: {item.postTitle}</p>
                 <p className="line-clamp-3 text-[13px] leading-[1.5] text-[#1E2621]">{item.contentPreview}</p>
                 <div className="grid grid-cols-2 gap-2">
-                  <Link href={`/community/posts/${item.postId}`} className="min-w-0">
-                    <Button size="sm" variant="secondary" fullWidth>
-                      원글 보기
+                  {item.postStatus === 'ACTIVE' ? (
+                    <Link href={`/community/posts/${item.postId}`} className="min-w-0 col-span-2">
+                      <Button size="sm" variant="secondary" fullWidth>원글 보기</Button>
+                    </Link>
+                  ) : item.postStatus === 'HIDDEN' ? (
+                    <Button size="sm" variant="secondary" fullWidth className="col-span-2" disabled={reviewLoading} onClick={() => void openReview(item.postId)}>
+                      원글 확인
                     </Button>
-                  </Link>
+                  ) : (
+                    <p className="col-span-2 text-xs text-muted">삭제되었거나 상태를 확인할 수 없는 게시글입니다.</p>
+                  )}
                   {item.status === 'ACTIVE' ? (
                     <Button
                       size="sm"
                       variant="danger"
+                      className="col-span-2"
                       disabled={isProcessing}
                       onClick={() => setPendingAction({ target: '댓글', id: item.id, action: 'hide' })}
                     >
@@ -219,6 +259,7 @@ export function AdminModerationSection() {
                   ) : (
                     <Button
                       size="sm"
+                      className="col-span-2"
                       disabled={isProcessing}
                       onClick={() => setPendingAction({ target: '댓글', id: item.id, action: 'restore' })}
                     >

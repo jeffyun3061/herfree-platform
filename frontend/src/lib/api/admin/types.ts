@@ -49,10 +49,20 @@ export type AdminCommunityPost = {
   createdAt: string;
 };
 
+export type AdminPostReview = {
+  id: number;
+  boardName: string;
+  status: 'ACTIVE' | 'HIDDEN';
+  title: string;
+  content: string;
+  imageUrl: string | null;
+};
+
 export type AdminCommunityComment = {
   id: number;
   postId: number;
   postTitle: string;
+  postStatus: 'ACTIVE' | 'HIDDEN' | 'DELETED';
   contentPreview: string;
   status: 'ACTIVE' | 'HIDDEN';
   authorNickname: string;

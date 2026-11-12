@@ -113,6 +113,21 @@ class PostImageAccessServiceTest {
     }
 
     @Test
+    @DisplayName("Hidden private inquiry images remain private to the owner and staff")
+    void check_hiddenPrivateInquiryImage_deniesOtherMembersAndGuests() {
+        Post post = givenAttachedPost("INQUIRY", 10L, PostVisibility.MEMBERS_ONLY);
+        post.hide();
+        User adminUser = userWithRole(UserRole.ADMIN);
+        given(userRepository.findById(2L)).willReturn(Optional.of(adminUser));
+        given(userRepository.findById(99L)).willReturn(Optional.empty());
+        assertThat(postImageAccessService.check(OBJECT_KEY, null).allowed()).isFalse();
+        assertThat(postImageAccessService.check(OBJECT_KEY, 99L).allowed()).isFalse();
+        var adminAccess = postImageAccessService.check(OBJECT_KEY, 2L);
+        assertThat(adminAccess.allowed()).isTrue();
+        assertThat(adminAccess.privateScope()).isTrue();
+    }
+
+    @Test
     @DisplayName("Active content image is public")
     void check_contentImage_publiclyVisible() {
         given(postImageRepository.findAllByImageUrlEndingWith(anyString())).willReturn(List.of());

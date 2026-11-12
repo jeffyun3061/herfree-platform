@@ -370,6 +370,23 @@ public class PostService {
                 });
     }
 
+    /** Called only via the authenticated, audited /api/admin/posts security boundary. */
+    @Transactional(readOnly = true)
+    public com.herfree.domain.post.dto.response.AdminPostReviewResponse getAdminReviewPost(Long postId, Long viewerId) {
+        if (viewerId == null || !userRepository.findById(viewerId)
+                .filter(user -> user.getStatus() == com.herfree.domain.user.entity.UserStatus.ACTIVE)
+                .map(user -> com.herfree.global.util.StaffRolePolicy.isStaff(user.getRole())).orElse(false)) {
+            throw new PostAccessDeniedException();
+        }
+        Post post = postRepository.findByIdAndStatusIn(postId,
+                        java.util.List.of(PostStatus.ACTIVE, PostStatus.HIDDEN))
+                .orElseThrow(PostNotFoundException::new);
+        if ("NOTICE".equals(post.getBoard().getBoardType())) {
+            throw new PostNotFoundException();
+        }
+        return com.herfree.domain.post.dto.response.AdminPostReviewResponse.of(post, resolveImageUrl(postId));
+    }
+
     private String normalizeKeyword(String keyword) {
         return PostSearchKeywordPolicy.normalizeForSearch(keyword);
     }
