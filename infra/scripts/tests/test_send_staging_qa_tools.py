@@ -40,6 +40,7 @@ class SenderTests(unittest.TestCase):
         success = sender.inspect('install', cid, account, lambda _: {
             'Status':'Success', 'ResponseCode':0, 'StandardOutputContent':json.dumps(output)})
         self.assertTrue(success['installed'])
+        self.assertTrue(success['completed'])
         with self.assertRaises(sender.route.Refused):
             sender.inspect('install', cid, account, lambda _: {
                 'Status':'Success', 'ResponseCode':0, 'StandardOutputContent':'{}'})

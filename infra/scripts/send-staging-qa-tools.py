@@ -83,7 +83,7 @@ def inspect(mode, command_id, account, get):
         raise route.Refused('SSM_OUTPUT_INVALID') from None
     key = 'installed' if mode == 'install' else 'toolsRestored'
     route.require(output == {key:True, 'cleanupVerified':False, 'promotionAllowed':False}, 'SSM_OUTPUT_INVALID')
-    return {'status':'Success', key:True, 'cleanupVerified':False, 'promotionAllowed':False}
+    return {'status':'Success', 'completed':True, key:True, 'cleanupVerified':False, 'promotionAllowed':False}
 
 
 def aws(*args, pending_ok=False):

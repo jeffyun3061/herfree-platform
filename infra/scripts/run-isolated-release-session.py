@@ -80,7 +80,14 @@ def wait_for(label, command_id, inspect, *, wait=time.sleep, attempts=400):
         except (sender.route.Refused, manager.route.Refused) as error:
             if str(error) == 'SSM_COMMAND_FAILED':
                 raise Failed(label + ' failed') from None
-            raise Unknown(label + ' outcome requires inspection') from None
+            # These fixed codes are safe to log and distinguish an AWS read
+            # failure from an unexpected command response without exposing data.
+            code = str(error)
+            diagnostic = code if code in {
+                'ACCOUNT_MISMATCH', 'AWS_READ_FAILED', 'AWS_COMMAND_FAILED',
+                'SSM_OUTPUT_INVALID', 'SSM_RESPONSE_INVALID', 'SSM_COMMAND_MISMATCH',
+            } else 'UNCLASSIFIED'
+            raise Unknown(label + ' outcome requires inspection (' + diagnostic + ')') from None
         if result.get('completed') is True:
             return
         if result.get('status') not in ('Pending', 'InProgress', 'Delayed'):

@@ -76,6 +76,26 @@ class SessionTest(unittest.TestCase):
             module.wait_for('cleanup', 'command', lambda _: {'status': 'Pending'},
                             wait=lambda _: None, attempts=2)
 
+    def test_wait_accepts_real_successful_install_inspection(self):
+        import json
+        cid = '12345678-1234-1234-1234-123456789abc'
+        output = {'installed': True, 'cleanupVerified': False, 'promotionAllowed': False}
+        inspect = lambda command_id: module.sender.inspect(
+            'install', command_id, lambda: module.sender.route.ACCOUNT,
+            lambda _: {'Status': 'Success', 'ResponseCode': 0,
+                       'StandardOutputContent': json.dumps(output)})
+        module.wait_for('install', cid, inspect, wait=lambda _: None)
+
+    def test_unknown_outcome_reports_only_safe_reason(self):
+        for reason, expected in [('SSM_OUTPUT_INVALID', 'SSM_OUTPUT_INVALID'),
+                                 ('sensitive detail', 'UNCLASSIFIED')]:
+            def inspect(_):
+                raise module.sender.route.Refused(reason)
+            with self.subTest(reason=reason), self.assertRaises(module.Unknown) as result:
+                module.wait_for('install', 'command', inspect, wait=lambda _: None)
+            self.assertIn(expected, str(result.exception))
+            self.assertNotIn('sensitive detail', str(result.exception))
+
 
 if __name__ == '__main__':
     unittest.main()
