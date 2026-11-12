@@ -1,0 +1,1 @@
+ALTER TABLE posts ADD COLUMN share_title_publicly BOOLEAN NOT NULL DEFAULT FALSE;

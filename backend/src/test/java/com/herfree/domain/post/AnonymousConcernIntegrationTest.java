@@ -48,6 +48,7 @@ class AnonymousConcernIntegrationTest {
                 .andExpect(status().isOk()).andExpect(header().string("Cache-Control","no-store"))
                 .andExpect(jsonPath("$.data.title").value("title-2"))
                 .andExpect(jsonPath("$.data.description").value("body-2"))
+                .andExpect(jsonPath("$.data.mode").value("FULL"))
                 .andExpect(jsonPath("$.data.authorNickname").doesNotExist())
                 .andExpect(jsonPath("$.data.authorIpMasked").doesNotExist());
         assertThat(db.queryForObject("SELECT view_count FROM posts WHERE id=95002",Integer.class)).isZero();
@@ -69,6 +70,32 @@ class AnonymousConcernIntegrationTest {
             mvc.perform(get("/api/posts/"+id+"/share-preview").header("Authorization",token(93002,"ADMIN"))).andExpect(status().isNotFound());
         }
         mvc.perform(get("/api/posts/999999/share-preview")).andExpect(status().isNotFound());
+    }
+
+    @Test void memberTitleRequiresExplicitChoiceAndDoesNotRevealTheBody() throws Exception {
+        String request="{\"boardId\":94002,\"title\":\"chosen title\",\"content\":\"sensitive body\",\"visibility\":\"MEMBERS_ONLY\",\"shareTitlePublicly\":true}";
+        var created = mvc.perform(post("/api/posts").header("Authorization",token(93001,"USER"))
+                .contentType(MediaType.APPLICATION_JSON).content(request)).andExpect(status().isCreated()).andReturn();
+        long id=((Number)com.jayway.jsonpath.JsonPath.read(created.getResponse().getContentAsString(),"$.data.id")).longValue();
+        mvc.perform(get("/api/posts/"+id)).andExpect(status().isNotFound());
+        mvc.perform(get("/api/posts/"+id+"/share-preview")).andExpect(status().isOk())
+                .andExpect(header().string("Cache-Control","no-store"))
+                .andExpect(jsonPath("$.data.title").value("chosen title"))
+                .andExpect(jsonPath("$.data.description").value("로그인하면 글을 볼 수 있어요."))
+                .andExpect(jsonPath("$.data.boardType").value("MEMBER"))
+                .andExpect(jsonPath("$.data.content").doesNotExist())
+                .andExpect(jsonPath("$.data.authorNickname").doesNotExist());
+        mvc.perform(patch("/api/posts/"+id).header("Authorization",token(93001,"USER"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"title\":\"changed title\",\"content\":\"sensitive body\",\"isAnonymous\":false}"))
+                .andExpect(status().isOk());
+        mvc.perform(get("/api/posts/"+id+"/share-preview")).andExpect(status().isNotFound());
+    }
+
+    @Test void titleSharingCannotBeEnabledForPrivateConsult() throws Exception {
+        String request="{\"boardId\":94004,\"title\":\"private\",\"content\":\"secret\",\"visibility\":\"MEMBERS_ONLY\",\"shareTitlePublicly\":true}";
+        mvc.perform(post("/api/posts").header("Authorization",token(93001,"USER"))
+                .contentType(MediaType.APPLICATION_JSON).content(request)).andExpect(status().isBadRequest());
     }
 
     @Test void concernCreationRequiresPublicAcknowledgementAndCannotExposeNickname() throws Exception {

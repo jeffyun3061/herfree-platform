@@ -98,6 +98,11 @@ public class PostService {
                 ? PostVisibility.MEMBERS_ONLY
                 : concern ? PostVisibility.PUBLIC : request.visibility();
 
+        if (request.shareTitlePublicly() && (visibility != PostVisibility.MEMBERS_ONLY
+                || PrivateBoardPolicy.isAdminMaskedBoard(board.getBoardType()))) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
+        }
+
         Post post = Post.builder()
                 .board(board)
                 .user(user)
@@ -106,6 +111,8 @@ public class PostService {
                 .visibility(visibility)
                 .isAnonymous(concern || request.isAnonymous())
                 .build();
+
+        post.setShareTitlePublicly(request.shareTitlePublicly());
 
         postRepository.save(post);
         savePostImageIfPresent(post, request.imageUrl());
@@ -279,8 +286,15 @@ public class PostService {
 
         BoardWritePolicy.assertCommunityWritable(post.getBoard());
 
+        if (Boolean.TRUE.equals(request.shareTitlePublicly()) &&
+                (post.getVisibility() != PostVisibility.MEMBERS_ONLY
+                || PrivateBoardPolicy.isAdminMaskedBoard(post.getBoard().getBoardType()))) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
+        }
+
         post.update(request.title(), request.content(),
                 AnonymousConcernPolicy.isConcernBoard(post.getBoard().getBoardType()) || request.isAnonymous());
+        post.setShareTitlePublicly(Boolean.TRUE.equals(request.shareTitlePublicly()));
         postImageStorageService.assertImageUrlAllowed(userId, request.imageUrl());
         updatePostImage(post, request.imageUrl());
 
