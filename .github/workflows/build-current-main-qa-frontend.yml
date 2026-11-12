@@ -1,0 +1,54 @@
+name: Build locked current-main QA frontend
+
+on:
+  workflow_dispatch:
+    inputs:
+      qa_branch:
+        description: Existing locked QA branch for the current main commit
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: backend-staging
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.repository == 'jeffyun3061/herfree-platform' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ap-northeast-2
+      - name: Start and verify the protected QA build
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          QA_BRANCH: ${{ inputs.qa_branch }}
+        run: |
+          set -euo pipefail
+          : "${QA_BRANCH:?A locked QA branch is required}"
+          output="$(python3 infra/scripts/build-isolated-frontend.py start \
+            --repo . --current-main --sha "${GITHUB_SHA}" --branch "${QA_BRANCH}")"
+          job_id="$(jq -er '.jobId // .existingJobId' <<<"${output}")"
+          [[ "${job_id}" =~ ^[0-9]+$ ]]
+          for attempt in $(seq 1 120); do
+            result="$(python3 infra/scripts/build-isolated-frontend.py inspect \
+              --repo . --current-main --sha "${GITHUB_SHA}" --branch "${QA_BRANCH}" --job-id "${job_id}")"
+            status="$(jq -er '.status' <<<"${result}")"
+            case "${status}" in
+              SUCCEED) jq -e '.buildVerified == true and .promotionAllowed == false' <<<"${result}" >/dev/null; exit 0 ;;
+              FAILED|CANCELLED) echo 'QA build failed; inspect the existing job before retrying.' >&2; exit 1 ;;
+              PENDING|PROVISIONING|RUNNING|CANCELLING) sleep 10 ;;
+              *) echo 'Unexpected QA build status.' >&2; exit 1 ;;
+            esac
+          done
+          echo 'QA build still running; inspect the existing job before retrying.' >&2
+          exit 1
