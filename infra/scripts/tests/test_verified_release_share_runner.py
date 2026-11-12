@@ -72,9 +72,11 @@ esac
                     'verify:verify-isolated-frontend.py']
         self.assertEqual(calls[:3], expected)
         self.assertIn('--project=iphone-webkit', calls[3])
-        self.assertIn('e2e/release.spec.ts', calls[4])
-        self.assertIn('e2e/bff-session.spec.ts', calls[4])
-        self.assertEqual(calls[5:], expected)
+        self.assertEqual(calls[4], 'verify:verify-release-playwright-results.py')
+        self.assertIn('e2e/release.spec.ts', calls[5])
+        self.assertIn('e2e/bff-session.spec.ts', calls[5])
+        self.assertEqual(calls[6], 'verify:verify-release-playwright-results.py')
+        self.assertEqual(calls[7:], expected)
         self.assertNotIn('qa-password', result.stdout + result.stderr)
         self.assertIn('cleanup and promotion remain unverified', result.stdout)
 

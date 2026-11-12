@@ -149,6 +149,7 @@ def main():
                              lambda: run_phase('cleanup'), lambda: tool_phase('restore'))
         with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as output:
             output.write('safe_to_stop=true\n')
+            output.write('qa_passed=true\n')
         print(json.dumps(result))
         return 0
     except RestoredFailure as error:
