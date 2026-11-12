@@ -1,4 +1,5 @@
 package com.herfree.domain.post.service;
+import com.herfree.global.util.PostVisibilityPolicy;
 
 import com.herfree.domain.post.dto.response.PostSharePreviewResponse;
 import com.herfree.domain.post.entity.PostStatus;
@@ -21,10 +22,8 @@ public class PostSharePreviewService {
     public PostSharePreviewResponse getPreview(Long postId) {
         var post = postRepository.findByIdAndStatus(postId, PostStatus.ACTIVE)
                 .orElseThrow(PostNotFoundException::new);
-        if (post.getVisibility() != PostVisibility.PUBLIC
-                || PrivateBoardPolicy.isAdminMaskedBoard(post.getBoard().getBoardType())) {
-            throw new PostNotFoundException();
-        }
-        return PostSharePreviewResponse.from(post);
+        if (PostVisibilityPolicy.isPublicShareable(post)) return PostSharePreviewResponse.full(post);
+        if (PostVisibilityPolicy.isTitleOnlyShareable(post)) return PostSharePreviewResponse.titleOnly(post);
+        throw new PostNotFoundException();
     }
 }

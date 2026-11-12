@@ -61,6 +61,7 @@ function WritePostForm() {
   const [showContentPreview, setShowContentPreview] = useState(false);
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [visibility, setVisibility] = useState<PostVisibility>('PUBLIC');
+  const [shareTitlePublicly, setShareTitlePublicly] = useState(false);
   const [publicDisclosureAccepted, setPublicDisclosureAccepted] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [isImageUploading, setIsImageUploading] = useState(false);
@@ -150,6 +151,7 @@ function WritePostForm() {
     setContent(existingPost.content);
     setIsAnonymous(existingPost.isAnonymous);
     setVisibility(existingPost.visibility);
+    setShareTitlePublicly(existingPost.shareTitlePublicly === true);
     setImageUrl(existingPost.imageUrl ?? null);
     setInitialized(true);
   }, [isEditMode, existingPost, initialized]);
@@ -209,6 +211,7 @@ function WritePostForm() {
         content,
         isAnonymous: concern || isAnonymous,
         imageUrl: imageUrl ?? '',
+        shareTitlePublicly: visibility === 'MEMBERS_ONLY' && shareTitlePublicly,
       });
       if (result) router.replace(`/community/posts/${result.id}`);
       return;
@@ -221,6 +224,7 @@ function WritePostForm() {
       isAnonymous: concern || isAnonymous,
       visibility: concern ? 'PUBLIC' : visibility,
       publicDisclosureAccepted: concern && publicDisclosureAccepted,
+      shareTitlePublicly: Boolean(selected && !concern && !isMaskedBoardType(selected.boardType) && visibility === 'MEMBERS_ONLY' && shareTitlePublicly),
       imageUrl: pickPostImageUrlForCreate(imageUrl),
     });
     if (result) {
@@ -427,7 +431,7 @@ function WritePostForm() {
               id="title"
               value={title}
               maxLength={POST_TITLE_MAX_LENGTH}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={(e) => { setTitle(e.target.value); setShareTitlePublicly(false); }}
               onFocus={() => setTitleFocused(true)}
               onBlur={() => setTitleFocused(false)}
               placeholder={titlePlaceholder}
@@ -463,7 +467,7 @@ function WritePostForm() {
                       name="post-visibility"
                       value="PUBLIC"
                       checked={visibility === 'PUBLIC'}
-                      onChange={() => setVisibility('PUBLIC')}
+                      onChange={() => { setVisibility('PUBLIC'); setShareTitlePublicly(false); }}
                       className="mt-0.5 h-4 w-4 shrink-0 accent-[#0B3B36]"
                     />
                     <span className="min-w-0 break-keep"><span className="font-semibold">전체 공개</span><br /><span className="text-[#7A8178]">비회원도 볼 수 있어요.</span></span>
@@ -482,6 +486,12 @@ function WritePostForm() {
                 </div>
                 <p className="mt-3 break-keep border-t border-[#EEE5D7] pt-2.5 text-[11px] leading-[1.7] text-[#7A8178]">건강정보·실명·연락처처럼 민감한 내용은 공개 게시판 대신 개인일지에 기록해 주세요.</p>
               </fieldset>
+            )}
+            {!isMaskedWrite && !isConcernWrite && visibility === 'MEMBERS_ONLY' && (
+              <label className="mt-3 flex items-start gap-2 rounded-[14px] border border-[#ECE5D8] bg-white p-3 text-[12px] leading-[1.7] text-[#263B32]">
+                <input type="checkbox" checked={shareTitlePublicly} onChange={(event) => setShareTitlePublicly(event.target.checked)} className="mt-1 h-4 w-4 shrink-0 accent-[#0B3B36]" />
+                <span><strong>로그인 전에도 글 제목만 공유 미리보기에 공개</strong><br />본문·작성자·댓글은 보이지 않습니다. 제목에 건강정보나 신상정보가 있다면 선택하지 마세요. 제목을 수정하면 다시 선택해야 합니다. 공개를 끄더라도 메신저에 저장된 미리보기는 한동안 남을 수 있습니다.</span>
+              </label>
             )}
             {isConcernWrite && (
               <div className="mt-3 rounded-[14px] bg-[#EDF4F0] p-4 text-[12px] leading-[1.7] text-[#263B32]">
