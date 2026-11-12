@@ -38,17 +38,31 @@ class ManageRunTest(unittest.TestCase):
 
     def test_only_exact_successful_cleanup_can_be_reported(self):
         account = lambda: module.route.ACCOUNT
-        pending = module.inspect('cleanup', self.command_id, account, lambda _: {'Status': 'Pending'})
+        expected = module.command_for('cleanup', 'a1b2c3d4')
+        describe = lambda _: {'document': 'AWS-RunShellScript', 'instances': [module.route.INSTANCE],
+                              'commands': [expected]}
+        pending = module.inspect('cleanup', self.command_id, 'a1b2c3d4', None, account,
+                                 lambda _: {'Status': 'Pending'}, describe)
         self.assertFalse(pending['completed'])
         good = {'Status': 'Success', 'ResponseCode': 0,
                 'StandardOutputContent': 'isolated staging DB and grant removed; promotion is not authorized\n'}
-        result = module.inspect('cleanup', self.command_id, account, lambda _: good)
+        result = module.inspect('cleanup', self.command_id, 'a1b2c3d4', None, account, lambda _: good, describe)
         self.assertTrue(result['completed'])
         self.assertFalse(result['promotionAllowed'])
         for response in ({**good, 'ResponseCode': 1}, {**good, 'Status': 'Failed'},
                          {**good, 'StandardOutputContent': 'missing marker'}):
             with self.subTest(response=response), self.assertRaises(module.route.Refused):
-                module.inspect('cleanup', self.command_id, account, lambda _: response)
+                module.inspect('cleanup', self.command_id, 'a1b2c3d4', None, account, lambda _: response, describe)
+
+    def test_inspection_rejects_a_different_instance_or_command(self):
+        account = lambda: module.route.ACCOUNT
+        good = {'Status': 'Success', 'ResponseCode': 0,
+                'StandardOutputContent': 'isolated staging DB and grant removed; promotion is not authorized\n'}
+        for command in ({'document': 'AWS-RunShellScript', 'instances': ['other'], 'commands': ['wrong']},
+                        {'document': 'other', 'instances': [module.route.INSTANCE], 'commands': ['wrong']}):
+            with self.subTest(command=command), self.assertRaisesRegex(module.route.Refused, 'SSM_COMMAND_MISMATCH'):
+                module.inspect('cleanup', self.command_id, 'a1b2c3d4', None, account,
+                               lambda _: good, lambda _: command)
 
     def test_ambiguous_submission_is_not_retried(self):
         calls = []

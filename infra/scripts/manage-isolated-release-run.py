@@ -38,9 +38,13 @@ def submit(mode, run, image, preflight, send):
     return {'commandId': command_id, 'mode': mode, 'completed': False, 'promotionAllowed': False}
 
 
-def inspect(mode, command_id, account, get):
+def inspect(mode, command_id, run, image, account, get, describe):
     route.require(mode in ('start', 'cleanup') and COMMAND.fullmatch(command_id or '') is not None, 'INVALID_INPUT')
+    expected = command_for(mode, run, image)
     route.require(account() == route.ACCOUNT, 'ACCOUNT_MISMATCH')
+    command = describe(command_id)
+    route.require(command == {'document': 'AWS-RunShellScript', 'instances': [route.INSTANCE],
+                              'commands': [expected]}, 'SSM_COMMAND_MISMATCH')
     result = get(command_id)
     route.require(isinstance(result, dict), 'SSM_RESPONSE_INVALID')
     status = result.get('Status')
@@ -61,6 +65,11 @@ def send(command):
                       '--query', 'Command.CommandId')
 
 
+def describe(command_id):
+    return sender.aws('ssm', 'list-commands', '--command-id', command_id,
+                      '--query', 'Commands[0].{document:DocumentName,instances:InstanceIds,commands:Parameters.commands}')
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('mode', choices=('start', 'cleanup', 'inspect-start', 'inspect-cleanup'))
@@ -70,9 +79,8 @@ def main():
     args = parser.parse_args()
     try:
         if args.mode.startswith('inspect-'):
-            route.require(args.run is None and args.image is None, 'INVALID_INPUT')
-            result = inspect(args.mode.removeprefix('inspect-'), args.command_id,
-                             lambda: route.lookup('sts', 'get-caller-identity', '--query', 'Account'), sender.get)
+            result = inspect(args.mode.removeprefix('inspect-'), args.command_id, args.run, args.image,
+                             lambda: route.lookup('sts', 'get-caller-identity', '--query', 'Account'), sender.get, describe)
         else:
             route.require(args.command_id is None, 'INVALID_INPUT')
             check = (lambda: route.verify(route.lookup, route.resolve, route.health)) if args.mode == 'start' \
