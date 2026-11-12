@@ -26,6 +26,7 @@ class AnonymousConcernIntegrationTest {
     @Autowired MockMvc mvc;
     @Autowired JdbcTemplate db;
     @Autowired JwtTokenProvider jwt;
+    @Autowired jakarta.persistence.EntityManager entityManager;
 
     @BeforeEach void fixtures() {
         var now = Timestamp.from(Instant.now());
@@ -153,6 +154,44 @@ class AnonymousConcernIntegrationTest {
         mvc.perform(get("/api/posts/95001/comments")).andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.content[0].authorNickname").value("익명"))
                 .andExpect(jsonPath("$.data.content[0].operatorReply").value(true));
+    }
+
+    @Test void adminReviewCanReadHiddenContentButNeverMakesItPublicOrShowsDeletedPosts() throws Exception {
+        mvc.perform(get("/api/posts/95007").header("Authorization",token(93002,"ADMIN")))
+                .andExpect(status().isNotFound());
+        mvc.perform(get("/api/admin/posts/95007/review").header("Authorization",token(93002,"ADMIN")))
+                .andExpect(status().isOk()).andExpect(header().string("Cache-Control",org.hamcrest.Matchers.containsString("no-store")))
+                .andExpect(jsonPath("$.data.status").value("HIDDEN"))
+                .andExpect(jsonPath("$.data.title").value("title-7"))
+                .andExpect(jsonPath("$.data.content").value("body-7"))
+                .andExpect(jsonPath("$.data.authorNickname").doesNotExist());
+        mvc.perform(get("/api/admin/posts/95007/review")).andExpect(status().is4xxClientError());
+        mvc.perform(get("/api/admin/posts/95007/review").header("Authorization",token(93001,"USER")))
+                .andExpect(status().isForbidden());
+        mvc.perform(get("/api/admin/posts/95007/review").header("Authorization",token(93003,"DOCTOR")))
+                .andExpect(status().isForbidden());
+        mvc.perform(get("/api/posts/95007/share-preview")).andExpect(status().isNotFound());
+        db.update("UPDATE posts SET status='HIDDEN' WHERE id=95003");
+        mvc.perform(get("/api/admin/posts/95003/review").header("Authorization",token(93002,"ADMIN")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.content").value("body-3"));
+        mvc.perform(get("/api/admin/posts/95003/review").header("Authorization",token(93004,"USER")))
+                .andExpect(status().isForbidden());
+        mvc.perform(get("/api/posts/95003").header("Authorization",token(93004,"USER")))
+                .andExpect(status().isNotFound());
+        db.update("UPDATE posts SET status='HIDDEN' WHERE id=95004");
+        mvc.perform(get("/api/admin/posts/95004/review").header("Authorization",token(93002,"ADMIN")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.content").value("body-4"));
+        mvc.perform(get("/api/admin/posts/95004/review").header("Authorization",token(93004,"USER")))
+                .andExpect(status().isForbidden());
+        db.update("UPDATE posts SET status='DELETED' WHERE id=95007");
+        mvc.perform(get("/api/admin/posts/95007/review").header("Authorization",token(93002,"ADMIN")))
+                .andExpect(status().isNotFound());
+        assertThat(db.queryForObject("SELECT COUNT(*) FROM admin_audit_logs WHERE actor_user_id=93002 AND http_method='GET' AND request_path='/api/admin/posts/95007/review' AND response_status=200",Integer.class))
+                .isGreaterThanOrEqualTo(1);
+        db.update("UPDATE users SET role='USER' WHERE id=93002");
+        entityManager.clear();
+        mvc.perform(get("/api/admin/posts/95003/review").header("Authorization",token(93002,"ADMIN")))
+                .andExpect(status().isForbidden());
     }
 
     @Test void anOperatorsOwnReplyAndAnInactiveOperatorDoNotResolveTheQueue() throws Exception {
