@@ -68,10 +68,24 @@ else: sys.exit(3)
 ''')
         docker.chmod(0o755)
         curl = self.bin / 'curl'
-        curl.write_text('#!/bin/sh\n[ "${MOCK_HEALTH_FAILURE:-0}" = 0 ] || exit 1\nprintf \'{"status":"UP"}\\n\'\n')
+        curl.write_text('''#!/bin/sh
+[ "${MOCK_HEALTH_FAILURE:-0}" = 0 ] || exit 1
+if [ "${MOCK_HEALTH_FAIL_UNTIL:-0}" != 0 ]; then
+  count=0
+  [ ! -f "$MOCK_STATE/health-count" ] || count=$(cat "$MOCK_STATE/health-count")
+  count=$((count + 1))
+  printf '%s' "$count" > "$MOCK_STATE/health-count"
+  [ "$count" -gt "$MOCK_HEALTH_FAIL_UNTIL" ] || exit 1
+fi
+printf '{"status":"UP"}\\n'
+''')
         curl.chmod(0o755)
+        sleep = self.bin / 'sleep'
+        sleep.write_text('#!/bin/sh\nexit 0\n')
+        sleep.chmod(0o755)
         self.env = {**os.environ, 'PATH': str(self.bin) + os.pathsep + os.environ['PATH'],
-                    'HERFREE_APP_DIR': str(self.app), 'MOCK_STATE': str(self.mock), 'MOCK_IMAGE': str(self.image)}
+                    'HERFREE_APP_DIR': str(self.app), 'MOCK_STATE': str(self.mock), 'MOCK_IMAGE': str(self.image),
+                    'HERFREE_QA_HEALTH_ATTEMPTS': '1'}
 
     def run_script(self, mode, run='a1b2c3d4', env=None, candidate=None):
         args = ['bash', str(SCRIPT), mode, run]
@@ -97,6 +111,18 @@ else: sys.exit(3)
         self.assertEqual(self.run_script('restore-config').returncode, 0)
         self.image.write_text('existing-image')
         self.assertEqual(self.run_script('finalize').returncode, 0)
+
+    def test_prepare_waits_for_health_before_mutation(self):
+        env = {**self.env, 'HERFREE_QA_HEALTH_ATTEMPTS': '3', 'MOCK_HEALTH_FAIL_UNTIL': '2'}
+        self.assertEqual(self.run_script('prepare', env=env).returncode, 0)
+        self.assertEqual((self.mock / 'health-count').read_text(), '3')
+
+    def test_prepare_timeout_leaves_database_and_configuration_unchanged(self):
+        env = {**self.env, 'HERFREE_QA_HEALTH_ATTEMPTS': '2', 'MOCK_HEALTH_FAIL_UNTIL': '3'}
+        self.assertNotEqual(self.run_script('prepare', env=env).returncode, 0)
+        self.assertEqual(self.config.read_text(), self.original)
+        self.assertFalse((self.mock / 'database').exists())
+        self.assertFalse((self.app / '.deploy/isolated-a1b2c3d4').exists())
 
     def test_prepare_restore_and_cleanup_are_scoped(self):
         self.assertEqual(self.run_script('prepare').returncode, 0)

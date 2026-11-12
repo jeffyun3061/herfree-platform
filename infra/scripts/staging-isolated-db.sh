@@ -57,7 +57,20 @@ if [[ "${mode}" == prepare ]]; then
   [[ -n "${mysql_net}" ]] && printf '%s\n' "${api_net}" | grep -Fx "${mysql_net}" >/dev/null || { echo 'staging API and MySQL networks differ' >&2; exit 1; }
   [[ ! -e "${state}" && -s "${current_image}" ]] || { echo 'run exists or current staging image is missing' >&2; exit 1; }
   [[ "$(docker inspect --format '{{.Config.Image}}' "${api}")" == "$(tr -d '\r\n' < "${current_image}")" ]] || { echo 'running staging image differs from recorded image' >&2; exit 1; }
-  curl --fail --silent --max-time 3 http://127.0.0.1:8080/actuator/health | grep -q '"status":"UP"' || { echo 'staging service is not healthy before isolation' >&2; exit 1; }
+  # The small staging host can need several minutes after a cold boot.  Wait
+  # for the same strict health signal as the deploy script before making any
+  # database or configuration changes; a timeout still fails closed.
+  health_attempts="${HERFREE_QA_HEALTH_ATTEMPTS:-96}"
+  [[ "${health_attempts}" =~ ^[0-9]+$ ]] && (( health_attempts >= 1 && health_attempts <= 96 )) || { echo 'invalid health wait limit' >&2; exit 1; }
+  healthy=false
+  for ((attempt=1; attempt<=health_attempts; attempt++)); do
+    if curl --fail --silent --max-time 3 http://127.0.0.1:8080/actuator/health | grep -q '"status":"UP"'; then
+      healthy=true
+      break
+    fi
+    (( attempt == health_attempts )) || sleep 5
+  done
+  [[ "${healthy}" == true ]] || { echo 'staging service is not healthy before isolation' >&2; exit 1; }
   # Never reuse the staging application's account: its existing grants would
   # allow the QA application to access the original staging database.
   user="hfqa${run}"
