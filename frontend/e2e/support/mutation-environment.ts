@@ -65,4 +65,3 @@ export function mutationEnvironmentEnabled(baseURL: string): boolean {
 
   return true;
 }
-
