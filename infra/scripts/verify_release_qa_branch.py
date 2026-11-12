@@ -19,6 +19,14 @@ def require(condition: bool, message: str) -> None:
         raise VerificationError(message)
 
 
+def verify_branch_lock(protection: dict) -> None:
+    require(isinstance(protection, dict), 'PROTECTION_UNAVAILABLE')
+    for name, expected in (('lock_branch', True), ('enforce_admins', True),
+                           ('allow_force_pushes', False), ('allow_deletions', False)):
+        setting = protection.get(name)
+        require(isinstance(setting, dict) and setting.get('enabled') is expected, 'BRANCH_NOT_LOCKED')
+
+
 def verify_release_qa_branch(sha: str, branch: str, main_sha: str, branch_sha: str,
                              protection: dict, amplify: dict, latest_job: dict,
                              app_id: str, api_origin: str) -> str:
@@ -29,11 +37,7 @@ def verify_release_qa_branch(sha: str, branch: str, main_sha: str, branch_sha: s
     require(main_sha == sha and branch_sha == sha, 'REF_MISMATCH')
     require(app_id == 'd2bcg3vnlv5hkh' and api_origin == 'https://api-staging.herpfree.co.kr',
             'UNEXPECTED_STAGING_TARGET')
-    require(isinstance(protection, dict), 'PROTECTION_UNAVAILABLE')
-    for name, expected in (('lock_branch', True), ('enforce_admins', True),
-                           ('allow_force_pushes', False), ('allow_deletions', False)):
-        setting = protection.get(name)
-        require(isinstance(setting, dict) and setting.get('enabled') is expected, 'BRANCH_NOT_LOCKED')
+    verify_branch_lock(protection)
     origin = f'https://{branch}.{app_id}.amplifyapp.com'
     require(isinstance(amplify, dict) and amplify.get('branchName') == branch
             and amplify.get('enableBasicAuth') is True and amplify.get('enableAutoBuild') is False,

@@ -98,6 +98,37 @@ class BuildIsolatedFrontendTest(unittest.TestCase):
         with self.assertRaisesRegex(module.preflight.Refused, 'START_RESULT_UNKNOWN'):
             module.start(Path('.'), self.git, self.lookup, lambda: {'id':42})
 
+    def test_main_build_requires_locked_branch_and_checks_again_after_submit(self):
+        protection = {key: {'enabled': value} for key, value in {
+            'lock_branch': True, 'enforce_admins': True,
+            'allow_force_pushes': False, 'allow_deletions': False}.items()}
+        checks = []
+        def locked(branch):
+            checks.append(branch)
+            return protection
+        result = module.start(Path('.'), self.git, self.lookup, self.submit,
+                              module.BRANCH, module.SHA, None, locked)
+        self.assertTrue(result['buildStarted'])
+        self.assertEqual(checks, [module.BRANCH, module.BRANCH])
+        self.submitted = 0
+        protection['lock_branch']['enabled'] = False
+        with self.assertRaisesRegex(module.preflight.Refused, 'BRANCH_PROTECTION_REQUIRED'):
+            module.start(Path('.'), self.git, self.lookup, self.submit,
+                         module.BRANCH, module.SHA, None, locked)
+        self.assertEqual(self.submitted, 0)
+
+    def test_main_build_checks_protection_again_after_ambiguous_change(self):
+        protection = {key: {'enabled': value} for key, value in {
+            'lock_branch': True, 'enforce_admins': True,
+            'allow_force_pushes': False, 'allow_deletions': False}.items()}
+        def change_lock():
+            protection['lock_branch']['enabled'] = False
+            return self.submit()
+        with self.assertRaisesRegex(module.preflight.Refused, 'BRANCH_PROTECTION_REQUIRED'):
+            module.start(Path('.'), self.git, self.lookup, change_lock,
+                         module.BRANCH, module.SHA, None, lambda _: protection)
+        self.assertEqual(self.submitted, 1)
+
     def test_invalid_job_id_never_queries_aws(self):
         with self.assertRaisesRegex(module.preflight.Refused, 'INVALID_JOB_ID'):
             module.inspect('../other', Path('.'), self.git, lambda *args: self.fail('AWS was contacted'))

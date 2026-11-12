@@ -73,6 +73,39 @@ class CreateIsolatedFrontendTest(unittest.TestCase):
             self.invoke()
         self.assertEqual(len(self.calls), 1)
 
+    def test_current_main_requires_locked_branch_before_creation_and_after(self):
+        protection = {key: {'enabled': value} for key, value in {
+            'lock_branch': True, 'enforce_admins': True,
+            'allow_force_pushes': False, 'allow_deletions': False}.items()}
+        checks = []
+        def lookup(branch):
+            checks.append(branch)
+            return protection
+        result = self.invoke(pr=None, protection_lookup=lookup)
+        self.assertTrue(result['protectedBranchCreated'])
+        self.assertEqual(checks, [self.branch, self.branch])
+        self.calls.clear()
+        protection['lock_branch']['enabled'] = False
+        with self.assertRaisesRegex(module.preflight.Refused, 'BRANCH_PROTECTION_REQUIRED'):
+            self.invoke(pr=None, protection_lookup=lookup)
+        self.assertEqual(self.calls, [])
+
+    def test_current_main_rejects_unavailable_branch_protection(self):
+        with self.assertRaisesRegex(module.preflight.Refused, 'BRANCH_PROTECTION_REQUIRED'):
+            self.invoke(pr=None)
+        self.assertEqual(self.calls, [])
+
+    def test_current_main_change_after_creation_requires_review(self):
+        protection = {key: {'enabled': value} for key, value in {
+            'lock_branch': True, 'enforce_admins': True,
+            'allow_force_pushes': False, 'allow_deletions': False}.items()}
+        def create(request):
+            self.calls.append(request)
+            protection['lock_branch']['enabled'] = False
+        with self.assertRaisesRegex(module.preflight.Refused, 'CREATED_BRANCH_REQUIRES_MANUAL_REVIEW'):
+            self.invoke(pr=None, protection_lookup=lambda _: protection, create=create)
+        self.assertEqual(len(self.calls), 1)
+
     @unittest.skipIf(os.name != 'posix', 'requires POSIX file permissions')
     def test_request_file_is_private_and_removed_without_secret_arguments(self):
         seen = []

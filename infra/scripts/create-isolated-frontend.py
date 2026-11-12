@@ -16,16 +16,25 @@ import tempfile
 spec = importlib.util.spec_from_file_location('preflight', Path(__file__).with_name('verify-isolated-frontend.py'))
 preflight = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(preflight)
+lock_spec = importlib.util.spec_from_file_location('release_lock', Path(__file__).with_name('verify_release_qa_branch.py'))
+release_lock = importlib.util.module_from_spec(lock_spec)
+lock_spec.loader.exec_module(release_lock)
 
 
-def prepare(branch, sha, pr, username, password, root, run, lookup, create):
+def prepare(branch, sha, pr, username, password, root, run, lookup, create, protection_lookup=None):
     origin = preflight.validate_inputs('439777528445', 'd2bcg3vnlv5hkh', branch, sha,
                                        'https://api-staging.herpfree.co.kr')
-    preflight.require(re.fullmatch(r'[1-9][0-9]{0,8}', pr or '') is not None, 'INVALID_PR')
+    preflight.require(pr is None or re.fullmatch(r'[1-9][0-9]{0,8}', pr or '') is not None, 'INVALID_PR')
     preflight.require(re.fullmatch(r'[A-Za-z0-9_.-]{1,64}', username or '') is not None
                       and isinstance(password, str) and len(password) >= 16
                       and '\n' not in password and '\r' not in password, 'INVALID_BASIC_CREDENTIALS')
     preflight.check_remote(sha, branch, root, run, pr)
+    if pr is None:
+        preflight.require(protection_lookup is not None, 'BRANCH_PROTECTION_REQUIRED')
+        try:
+            release_lock.verify_branch_lock(protection_lookup(branch))
+        except release_lock.VerificationError:
+            raise preflight.Refused('BRANCH_PROTECTION_REQUIRED') from None
     preflight.require(lookup('sts', 'get-caller-identity', '--query', 'Account') == '439777528445',
                       'ACCOUNT_MISMATCH')
     encoded = base64.b64encode((username + ':' + password).encode()).decode()
@@ -41,6 +50,12 @@ def prepare(branch, sha, pr, username, password, root, run, lookup, create):
     preflight.require(info == {'name':branch, 'basic':True, 'auto':False,
                                'api':'https://api-staging.herpfree.co.kr', 'origin':origin},
                       'CREATED_BRANCH_REQUIRES_MANUAL_REVIEW')
+    if pr is None:
+        preflight.check_remote(sha, branch, root, run, None)
+        try:
+            release_lock.verify_branch_lock(protection_lookup(branch))
+        except release_lock.VerificationError:
+            raise preflight.Refused('CREATED_BRANCH_REQUIRES_MANUAL_REVIEW') from None
     return {'protectedBranchCreated':True, 'buildStarted':False, 'promotionAllowed':False}
 
 
@@ -60,14 +75,23 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--branch', required=True)
     parser.add_argument('--sha', required=True)
-    parser.add_argument('--candidate-pr', required=True)
+    source = parser.add_mutually_exclusive_group(required=True)
+    source.add_argument('--candidate-pr')
+    source.add_argument('--current-main', action='store_true')
     parser.add_argument('--repo', type=Path, default=Path.cwd())
     args = parser.parse_args()
     try:
+        def protection_lookup(branch):
+            try:
+                output = preflight.command(['gh', 'api', 'repos/jeffyun3061/herfree-platform/branches/' + branch + '/protection'], args.repo)
+                return json.loads(output)
+            except (preflight.Refused, ValueError):
+                raise preflight.Refused('BRANCH_PROTECTION_UNAVAILABLE') from None
         result = prepare(args.branch, args.sha, args.candidate_pr,
                          os.getenv('ISOLATED_QA_BASIC_USERNAME', ''),
                          os.getenv('ISOLATED_QA_BASIC_PASSWORD', ''), args.repo,
-                         preflight.command, lambda *items: preflight.aws_lookup(None, *items), create_branch)
+                         preflight.command, lambda *items: preflight.aws_lookup(None, *items), create_branch,
+                         protection_lookup if args.current_main else None)
         print(json.dumps(result))
         return 0
     except preflight.Refused as error:
