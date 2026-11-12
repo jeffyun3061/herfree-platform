@@ -30,11 +30,11 @@ class SessionTest(unittest.TestCase):
         self.assertFalse(result['promotionAllowed'])
 
     def test_failed_browser_restores_but_never_passes(self):
-        with self.assertRaises(module.Failed): self.run_session('browser')
+        with self.assertRaises(module.RestoredFailure): self.run_session('browser')
         self.assertEqual(self.calls, ['install', 'start', 'browser', 'cleanup', 'restore'])
 
     def test_terminal_start_failure_attempts_cleanup_and_restore(self):
-        with self.assertRaises(module.Failed): self.run_session('start')
+        with self.assertRaises(module.RestoredFailure): self.run_session('start')
         self.assertEqual(self.calls, ['install', 'start', 'cleanup', 'restore'])
 
     def test_unknown_start_never_sends_cleanup_or_retries(self):
@@ -42,7 +42,7 @@ class SessionTest(unittest.TestCase):
         self.assertEqual(self.calls, ['install', 'start'])
 
     def test_start_preflight_failure_only_restores_tools(self):
-        with self.assertRaises(module.Failed): self.run_session('start', module.NotStarted)
+        with self.assertRaises(module.RestoredFailure): self.run_session('start', module.NotStarted)
         self.assertEqual(self.calls, ['install', 'start', 'restore'])
 
     def test_failed_cleanup_never_restores_or_passes(self):

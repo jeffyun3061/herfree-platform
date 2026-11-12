@@ -32,6 +32,11 @@ class Failed(Exception):
     pass
 
 
+class RestoredFailure(Failed):
+    """Checks failed but the staging session was safely restored."""
+    pass
+
+
 class Unknown(Exception):
     pass
 
@@ -47,19 +52,19 @@ def orchestrate(install, start, browser, cleanup, restore):
         start()
     except NotStarted as error:
         restore()
-        raise Failed('isolated start did not run; tools restored') from error
+        raise RestoredFailure('isolated start did not run; tools restored') from error
     except Unknown:
         raise
     except Failed as error:
         cleanup()
         restore()
-        raise Failed('isolated start failed; staging restored') from error
+        raise RestoredFailure('isolated start failed; staging restored') from error
     try:
         browser()
     except Exception as error:
         cleanup()
         restore()
-        raise Failed('browser checks failed; staging restored') from error
+        raise RestoredFailure('browser checks failed; staging restored') from error
     cleanup()
     restore()
     return {'browserChecksPassed': True, 'cleanupVerified': True, 'toolsRestored': True,
@@ -135,14 +140,29 @@ def main():
             env = {**os.environ, 'RELEASE_SHA': args.sha, 'RELEASE_QA_BRANCH': args.branch,
                    'RELEASE_IMAGE': args.image, 'ISOLATED_QA_RUN': args.run,
                    'PLAYWRIGHT_BASE_URL': f'https://{args.branch}.d2bcg3vnlv5hkh.amplifyapp.com'}
+            # Test subprocesses must not be able to forge workflow step outputs.
+            env.pop('GITHUB_OUTPUT', None)
             subprocess.run(['bash', str(ROOT / 'run-verified-release-share-qa.sh')], cwd=args.repo,
                            env=env, check=True)
         result = orchestrate(lambda: tool_phase('install'), lambda: run_phase('start'), browser,
                              lambda: run_phase('cleanup'), lambda: tool_phase('restore'))
+        with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as output:
+            output.write('safe_to_stop=true\n')
         print(json.dumps(result))
         return 0
+    except RestoredFailure as error:
+        try:
+            with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as output:
+                output.write('safe_to_stop=true\n')
+        except (KeyError, OSError):
+            print(json.dumps({'sessionPassed': False, 'error': 'restored but stop signal unavailable',
+                              'manualInspectionMayBeRequired': True, 'promotionAllowed': False}), file=sys.stderr)
+            return 1
+        print(json.dumps({'sessionPassed': False, 'error': str(error), 'restored': True,
+                          'promotionAllowed': False}), file=sys.stderr)
+        return 1
     except (sender.route.Refused, sender.package.Refused, manager.route.Refused, live.VerificationError,
-            Failed, Unknown, OSError, subprocess.SubprocessError) as error:
+            Failed, Unknown, OSError, KeyError, subprocess.SubprocessError) as error:
         print(json.dumps({'sessionPassed': False, 'error': str(error), 'manualInspectionMayBeRequired': True,
                           'promotionAllowed': False}), file=sys.stderr)
         return 1

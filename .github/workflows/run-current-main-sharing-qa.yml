@@ -105,15 +105,16 @@ jobs:
           : "${QA_BRANCH:?A locked QA branch is required}"
           python3 infra/scripts/run-isolated-release-session.py \
             --sha "${GITHUB_SHA}" --branch "${QA_BRANCH}" --image "${QA_IMAGE}" --run "${QA_RUN}" --repo .
-      - name: Stop the staging instance after verified restoration
-        if: success() && steps.instance.outputs.started == 'true' && steps.session.outcome == 'success'
+      - id: stop
+        name: Stop the staging instance after verified restoration
+        if: always() && steps.instance.outputs.started == 'true' && steps.session.outputs.safe_to_stop == 'true'
         run: |
           set -euo pipefail
           test "$(aws sts get-caller-identity --query Account --output text)" = 439777528445
           aws ec2 stop-instances --instance-ids "${STAGING_INSTANCE}" --output json >/dev/null
           aws ec2 wait instance-stopped --instance-ids "${STAGING_INSTANCE}"
       - name: Flag staging for manual reconciliation after an unsuccessful run
-        if: failure() && steps.instance.outcome != 'skipped'
+        if: always() && steps.instance.outcome != 'skipped' && steps.stop.outcome != 'success'
         run: |
           echo 'The staging instance may still be running. Inspect the logged SSM command IDs and reconcile before stopping or retrying.' >&2
           exit 1
