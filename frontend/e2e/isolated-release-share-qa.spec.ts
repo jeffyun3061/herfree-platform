@@ -2,8 +2,8 @@ import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
 import { expect, request as playwrightRequest, test, type APIRequestContext } from '@playwright/test';
 
-// Release QA is separately guarded against main, the locked QA branch and the
-// immutable image on every write; a successful test never approves promotion.
+// Release QA checks main, the locked branch and the immutable image before
+// test writes and cleanup; a successful test never approves promotion.
 const enabled = process.env.ISOLATED_RELEASE_SHARE_QA === 'true';
 const branch = process.env.RELEASE_QA_BRANCH || '';
 const candidate = process.env.RELEASE_SHA || '';
