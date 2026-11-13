@@ -32,8 +32,20 @@ class CandidateEvidenceTests(unittest.TestCase):
         self.assertFalse(result["promotionPerformed"])
 
     def test_different_tree_is_rejected(self):
-        with self.assertRaisesRegex(ValueError, "TREE_MISMATCH"):
+        with self.assertRaisesRegex(ValueError, "MERGED_PR_TREE_MISMATCH"):
             self.check("d" * 40)
+
+    def test_updated_pr_requires_exact_merged_tree_and_tested_ancestor(self):
+        updated_head, merged_tree = "d" * 40, "e" * 40
+        self.pr["head"]["sha"] = updated_head
+        def check(tree=merged_tree, ancestor=True):
+            return promotion.verify(self.pr, self.run, self.jobs, self.candidate, self.main,
+                                    self.tree, merged_tree, True, updated_head, tree, ancestor)
+        self.assertTrue(check()["evidenceVerified"])
+        with self.assertRaisesRegex(ValueError, "MERGED_PR_TREE_MISMATCH"):
+            check("f" * 40)
+        with self.assertRaisesRegex(ValueError, "TESTED_COMMIT_NOT_ANCESTOR"):
+            check(ancestor=False)
 
     def test_bootstrap_only_inherits_audit_files_from_parent(self):
         gate = sorted(promotion.BOOTSTRAP_FILES)
@@ -127,6 +139,7 @@ class CandidateEvidenceTests(unittest.TestCase):
             git("git", "commit", "-qm", "audit gate")
             git("git", "merge", "--no-ff", "--no-edit", "candidate")
             main = git("git", "rev-parse", "HEAD")
+            git("git", "merge-base", "--is-ancestor", candidate, main)
             self.assertTrue(promotion.verify_bootstrap_changes(candidate, main, git))
             (root / "app.txt").write_text("different", encoding="utf-8")
             git("git", "add", ".")
