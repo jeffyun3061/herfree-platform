@@ -297,9 +297,13 @@ jobs:
       - name: Mark the exact image as staging-tested
         run: |
           set -euo pipefail
-          manifest="$(aws ecr batch-get-image --repository-name "${ECR_REPOSITORY}" --image-ids imageTag="${GITHUB_SHA}" --query 'images[0].imageManifest' --output text)"
-          test -n "${manifest}" && test "${manifest}" != "None"
-          aws ecr put-image --repository-name "${ECR_REPOSITORY}" --image-tag "staging-passed-${GITHUB_SHA}" --image-manifest "${manifest}"
+          result="$(aws ecr batch-get-image --repository-name "${ECR_REPOSITORY}" --image-ids imageTag="${GITHUB_SHA}" --output json)"
+          digest="$(jq -er 'select((.images | length) == 1 and (.failures | length) == 0) | .images[0].imageId.imageDigest' <<<"${result}")"
+          [[ "${digest}" =~ ^sha256:[a-f0-9]{64}$ ]]
+          manifest="$(mktemp)"
+          trap 'rm -f "$manifest"' EXIT
+          jq -erj '.images[0].imageManifest' <<<"${result}" > "${manifest}"
+          aws ecr put-image --repository-name "${ECR_REPOSITORY}" --image-tag "staging-passed-${GITHUB_SHA}" --image-digest "${digest}" --image-manifest "file://${manifest}"
 
   build-production:
     if: inputs.target == 'production'
