@@ -1,0 +1,40 @@
+name: Verify promotion evidence
+
+on:
+  workflow_dispatch:
+    inputs:
+      pull_request:
+        description: Merged pull request number
+        required: true
+        type: string
+      staging_run:
+        description: Successful staging workflow run ID
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+  pull-requests: read
+
+jobs:
+  verify:
+    if: github.repository == 'jeffyun3061/herfree-platform' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify candidate evidence without promotion
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ inputs.pull_request }}
+          RUN_ID: ${{ inputs.staging_run }}
+        run: |
+          set -euo pipefail
+          [[ "$PR_NUMBER" =~ ^[1-9][0-9]*$ && "$RUN_ID" =~ ^[1-9][0-9]*$ ]]
+          git fetch --no-tags origin main
+          git fetch --no-tags origin "refs/pull/${PR_NUMBER}/head"
+          python3 infra/scripts/verify-candidate-promotion.py --pr "$PR_NUMBER" --run "$RUN_ID"
