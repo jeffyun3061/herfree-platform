@@ -11,7 +11,7 @@ test "$candidate" = "$TESTED_DIGEST"
 result="$(aws ecr batch-get-image --repository-name herfree-api --image-ids imageDigest="$TESTED_DIGEST" --output json)"
 manifest="$(mktemp)"
 trap 'rm -f "$manifest"' EXIT
-jq -er --arg digest "$TESTED_DIGEST" 'select((.images|length)==1 and (.failures|length)==0 and .images[0].imageId.imageDigest==$digest) | .images[0].imageManifest' <<<"$result" > "$manifest"
+jq -erj --arg digest "$TESTED_DIGEST" 'select((.images|length)==1 and (.failures|length)==0 and .images[0].imageId.imageDigest==$digest) | .images[0].imageManifest' <<<"$result" > "$manifest"
 for tag in "$GITHUB_SHA" "staging-passed-$GITHUB_SHA"; do
   test "$GITHUB_SHA" = "$(git ls-remote origin refs/heads/main | cut -f1)"
   existing="$(aws ecr batch-get-image --repository-name herfree-api --image-ids imageTag="$tag" --output json)"
