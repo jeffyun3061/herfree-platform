@@ -1,0 +1,54 @@
+name: Promote previously tested PR 206 image
+
+on:
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+  pull-requests: read
+  id-token: write
+
+concurrency:
+  group: production-release-evidence
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    if: github.repository == 'jeffyun3061/herfree-platform' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 10
+    env:
+      AWS_REGION: ap-northeast-2
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Test the evidence verifier
+        run: |
+          python3 -m unittest discover -s infra/scripts -p test_candidate_promotion.py
+          bash infra/tests/test-promote-tested-pr206.sh
+      - name: Verify the fixed, successful staging run and merged code
+        id: evidence
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin main
+          git fetch --no-tags origin refs/pull/206/head
+          result="$(python3 infra/scripts/verify-candidate-promotion.py --pr 206 --run 43436245532)"
+          jq -e --arg sha "$GITHUB_SHA" \
+            '.evidenceVerified == true and .promotionPerformed == false and .main == $sha and .candidate == "108abbd0ad5515f4f190bfdadf86c980f132742e" and .runId == 43436245532' \
+            <<<"$result" >/dev/null
+          digest="$(jq -er '.testedImageDigest' <<<"$result")"
+          [[ "$digest" =~ ^sha256:[a-f0-9]{64}$ ]]
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Mark the tested immutable image for this main commit
+        env:
+          TESTED_DIGEST: ${{ steps.evidence.outputs.digest }}
+        run: bash infra/scripts/promote-tested-pr206.sh

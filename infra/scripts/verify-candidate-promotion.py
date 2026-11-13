@@ -23,8 +23,11 @@ REQUIRED_STEPS = (
 IMAGE_PREFIX = "439777528445.dkr.ecr.ap-northeast-2.amazonaws.com/herfree-api@"
 BOOTSTRAP_FILES = frozenset({
     ".github/workflows/verify-promotion-evidence.yml",
+    ".github/workflows/promote-tested-pr206.yml",
     "infra/scripts/verify-candidate-promotion.py",
     "infra/scripts/test_candidate_promotion.py",
+    "infra/scripts/promote-tested-pr206.sh",
+    "infra/tests/test-promote-tested-pr206.sh",
 })
 
 

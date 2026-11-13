@@ -1,6 +1,8 @@
 import copy
 import importlib.util
 from pathlib import Path
+import subprocess
+import tempfile
 import unittest
 
 spec = importlib.util.spec_from_file_location("promotion", Path(__file__).with_name("verify-candidate-promotion.py"))
@@ -99,6 +101,38 @@ class CandidateEvidenceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "IMAGE_EVIDENCE_MISMATCH"):
             promotion.extract_verified_digest(log + f"  QA_IMAGE: {promotion.IMAGE_PREFIX}sha256:{'f' * 64}\n",
                                                 self.candidate)
+
+    def test_real_git_history_only_allows_preexisting_audit_additions(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            def git(*args):
+                return subprocess.run(args, cwd=root, capture_output=True, text=True, check=True).stdout.strip()
+            git("git", "init", "-q")
+            git("git", "config", "user.email", "qa@example.invalid")
+            git("git", "config", "user.name", "QA")
+            (root / "app.txt").write_text("base", encoding="utf-8")
+            git("git", "add", ".")
+            git("git", "commit", "-qm", "base")
+            git("git", "checkout", "-qb", "candidate")
+            (root / "app.txt").write_text("tested", encoding="utf-8")
+            git("git", "add", ".")
+            git("git", "commit", "-qm", "candidate")
+            candidate = git("git", "rev-parse", "HEAD")
+            git("git", "checkout", "-q", "--detach", "HEAD^1")
+            for name in promotion.BOOTSTRAP_FILES:
+                path = root / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("trusted audit file", encoding="utf-8")
+            git("git", "add", ".")
+            git("git", "commit", "-qm", "audit gate")
+            git("git", "merge", "--no-ff", "--no-edit", "candidate")
+            main = git("git", "rev-parse", "HEAD")
+            self.assertTrue(promotion.verify_bootstrap_changes(candidate, main, git))
+            (root / "app.txt").write_text("different", encoding="utf-8")
+            git("git", "add", ".")
+            git("git", "commit", "-qm", "different app")
+            with self.assertRaisesRegex(ValueError, "TREE_MISMATCH"):
+                promotion.verify_bootstrap_changes(candidate, git("git", "rev-parse", "HEAD"), git)
 
 
 if __name__ == "__main__":
