@@ -103,13 +103,15 @@ def main():
     parser.add_argument('--image', required=True)
     parser.add_argument('--run', required=True)
     parser.add_argument('--repo', required=True, type=Path)
-    parser.add_argument('--candidate-pr', choices=('206',), help='Run PR-only QA without release promotion')
+    parser.add_argument('--candidate-pr', choices=('206', '213'), help='Run PR-only QA without release promotion')
     args = parser.parse_args()
     try:
         base_context = (os.getenv('GITHUB_ACTIONS') == 'true'
                         and os.getenv('GITHUB_REPOSITORY') == 'jeffyun3061/herfree-platform')
         if args.candidate_pr:
-            valid_context = (os.getenv('GITHUB_REF') == 'refs/heads/codex/verified-qa-staging'
+            expected_ref = {'206': 'refs/heads/codex/verified-qa-staging',
+                            '213': 'refs/heads/codex/reconcile-operations'}[args.candidate_pr]
+            valid_context = (os.getenv('GITHUB_REF') == expected_ref
                              and os.getenv('GITHUB_WORKFLOW') == 'Staging preflight'
                              and os.getenv('GITHUB_SHA') == args.sha)
         else:
@@ -128,7 +130,7 @@ def main():
                                       timeout=30, env={**os.environ, 'GIT_TERMINAL_PROMPT': '0'}).stdout
             except (OSError, subprocess.SubprocessError):
                 raise sender.package.Refused('GIT_COMMAND_FAILED') from None
-        bundle = sender.package.build(args.sha, git, 'pr206' if args.candidate_pr else 'main')
+        bundle = sender.package.build(args.sha, git, 'pr' + args.candidate_pr if args.candidate_pr else 'main')
         account = lambda: sender.route.lookup('sts', 'get-caller-identity', '--query', 'Account')
         def tool_phase(mode):
             check = (lambda: sender.route.verify(sender.route.lookup, sender.route.resolve, sender.route.health)) \

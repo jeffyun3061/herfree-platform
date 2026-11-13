@@ -22,6 +22,7 @@ export type AdminStatsOverview = {
 export type AdminPostUpdateInput = {
   title: string;
   content: string;
+  richContent?: string | null;
 };
 
 export type VideoCurationInput = {

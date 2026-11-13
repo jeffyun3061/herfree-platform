@@ -8,7 +8,7 @@ import java.util.Set;
 public final class StaffRolePolicy {
 
     private static final Set<UserRole> ASSIGNABLE_ROLES =
-            EnumSet.of(UserRole.USER, UserRole.MODERATOR, UserRole.ADMIN);
+            EnumSet.of(UserRole.USER, UserRole.MODERATOR, UserRole.ADMIN, UserRole.DEVELOPER);
 
     private StaffRolePolicy() {
     }
@@ -24,6 +24,7 @@ public final class StaffRolePolicy {
             case MODERATOR -> List.of("ROLE_MODERATOR", "ROLE_USER");
             case DOCTOR -> List.of("ROLE_DOCTOR", "ROLE_USER");
             case CREATOR -> List.of("ROLE_CREATOR", "ROLE_USER");
+            case DEVELOPER -> List.of("ROLE_DEVELOPER", "ROLE_USER");
             default -> List.of("ROLE_USER");
         };
     }

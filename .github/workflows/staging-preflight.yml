@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   candidate:
-    if: github.repository == 'jeffyun3061/herfree-platform' && github.ref == 'refs/heads/codex/verified-qa-staging'
+    if: github.repository == 'jeffyun3061/herfree-platform' && github.ref == 'refs/heads/codex/reconcile-operations'
     runs-on: ubuntu-latest
     environment: staging
     timeout-minutes: 120
@@ -54,14 +54,14 @@ jobs:
           : "${GH_TOKEN:?branch protection read token required}"
           [[ "$QA_BRANCH" =~ ^qa-[a-f0-9]{12}-[a-f0-9]{8}$ ]]
           test "${QA_BRANCH:3:12}" = "${GITHUB_SHA:0:12}"
-          test "$(gh api repos/jeffyun3061/herfree-platform/pulls/206 --jq .head.sha)" = "$GITHUB_SHA"
+          test "$(gh api repos/jeffyun3061/herfree-platform/pulls/213 --jq .head.sha)" = "$GITHUB_SHA"
           gh api "repos/jeffyun3061/herfree-platform/branches/${QA_BRANCH}/protection" | python3 -c 'import json,sys; sys.path.insert(0,"infra/scripts"); from verify_release_qa_branch import verify_branch_lock; verify_branch_lock(json.load(sys.stdin))'
           errors="$(mktemp)"
           trap 'rm -f "$errors"' EXIT
           if aws amplify get-branch --app-id d2bcg3vnlv5hkh --branch-name "$QA_BRANCH" --query 'branch.branchName' --output text >/dev/null 2>"$errors"; then
             echo 'QA branch already exists; the build verifier will check its configuration.'
           elif grep -q 'NotFoundException' "$errors"; then
-            python3 infra/scripts/create-isolated-frontend.py --repo . --candidate-pr 206 --sha "$GITHUB_SHA" --branch "$QA_BRANCH"
+            python3 infra/scripts/create-isolated-frontend.py --repo . --candidate-pr 213 --sha "$GITHUB_SHA" --branch "$QA_BRANCH"
           else
             echo 'Cannot determine QA branch state; inspect before retrying.' >&2
             exit 1
@@ -72,11 +72,11 @@ jobs:
           QA_BRANCH: ${{ inputs.qa_branch }}
         run: |
           set -euo pipefail
-          output="$(python3 infra/scripts/build-isolated-frontend.py start --repo . --candidate-pr 206 --sha "$GITHUB_SHA" --branch "$QA_BRANCH")"
+          output="$(python3 infra/scripts/build-isolated-frontend.py start --repo . --candidate-pr 213 --sha "$GITHUB_SHA" --branch "$QA_BRANCH")"
           job_id="$(jq -er '.jobId // .existingJobId' <<<"$output")"
           [[ "$job_id" =~ ^[0-9]+$ ]]
           for attempt in $(seq 1 120); do
-            result="$(python3 infra/scripts/build-isolated-frontend.py inspect --repo . --candidate-pr 206 --sha "$GITHUB_SHA" --branch "$QA_BRANCH" --job-id "$job_id")"
+            result="$(python3 infra/scripts/build-isolated-frontend.py inspect --repo . --candidate-pr 213 --sha "$GITHUB_SHA" --branch "$QA_BRANCH" --job-id "$job_id")"
             status="$(jq -er '.status' <<<"$result")"
             case "$status" in
               SUCCEED) jq -e '.buildVerified == true and .promotionAllowed == false' <<<"$result" >/dev/null; exit 0 ;;
@@ -97,7 +97,7 @@ jobs:
         run: |
           set -euo pipefail
           test "$(aws sts get-caller-identity --query Account --output text)" = 439777528445
-          test "$(gh api repos/jeffyun3061/herfree-platform/pulls/206 --jq .head.sha)" = "${GITHUB_SHA}"
+          test "$(gh api repos/jeffyun3061/herfree-platform/pulls/213 --jq .head.sha)" = "${GITHUB_SHA}"
           test "$(aws ecr describe-repositories --repository-names herfree-api --query 'repositories[0].imageTagMutability' --output text)" = IMMUTABLE
           image="${ECR_REGISTRY}/herfree-api:${GITHUB_SHA}"
           result="$(aws ecr batch-get-image --repository-name herfree-api --image-ids imageTag="${GITHUB_SHA}" --output json)"
@@ -142,7 +142,7 @@ jobs:
           digest="$(aws ecr describe-images --repository-name herfree-api --image-ids imageTag="${GITHUB_SHA}" --query 'imageDetails[0].imageDigest' --output text)"
           [[ "$digest" =~ ^sha256:[a-f0-9]{64}$ ]]
           image="439777528445.dkr.ecr.ap-northeast-2.amazonaws.com/herfree-api@${digest}"
-          python3 infra/scripts/verify-candidate-release-qa.py --pr 206 --sha "$GITHUB_SHA" --branch "$QA_BRANCH" --image "$image" >/dev/null
+          python3 infra/scripts/verify-candidate-release-qa.py --pr 213 --sha "$GITHUB_SHA" --branch "$QA_BRANCH" --image "$image" >/dev/null
           run="$(printf '%s:%s' "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" | sha256sum | cut -c1-8)"
           echo "image=${image}" >> "$GITHUB_OUTPUT"
           echo "run=${run}" >> "$GITHUB_OUTPUT"
@@ -171,7 +171,7 @@ jobs:
           QA_RUN: ${{ steps.target.outputs.run }}
           ISOLATED_QA_BASIC_USERNAME: ${{ secrets.E2E_HTTP_USERNAME }}
           ISOLATED_QA_BASIC_PASSWORD: ${{ secrets.E2E_HTTP_PASSWORD }}
-        run: python3 infra/scripts/run-isolated-release-session.py --candidate-pr 206 --sha "$GITHUB_SHA" --branch "$QA_BRANCH" --image "$QA_IMAGE" --run "$QA_RUN" --repo .
+        run: python3 infra/scripts/run-isolated-release-session.py --candidate-pr 213 --sha "$GITHUB_SHA" --branch "$QA_BRANCH" --image "$QA_IMAGE" --run "$QA_RUN" --repo .
       - name: Stop staging after verified restoration
         id: stop
         if: always() && steps.instance.outputs.started == 'true' && steps.session.outputs.safe_to_stop == 'true'

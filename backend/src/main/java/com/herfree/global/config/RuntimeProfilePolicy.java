@@ -1,7 +1,6 @@
 package com.herfree.global.config;
 
 import com.herfree.global.security.HealthDataEncryption;
-import com.herfree.global.util.ClientIpExtractor;
 import java.util.Arrays;
 import java.util.Set;
 import org.springframework.core.env.Environment;
@@ -9,7 +8,7 @@ import org.springframework.util.StringUtils;
 
 public final class RuntimeProfilePolicy {
 
-    private static final Set<String> ALLOWED_PROFILES = Set.of("local", "test", "staging", "prod");
+    private static final Set<String> ALLOWED_PROFILES = Set.of("local", "test", "staging", "prod", "restore-drill");
     private static final Set<String> PUBLIC_PROFILES = Set.of("staging", "prod");
 
     private RuntimeProfilePolicy() {
@@ -19,7 +18,7 @@ public final class RuntimeProfilePolicy {
         String[] activeProfiles = environment.getActiveProfiles();
         if (activeProfiles.length != 1 || !ALLOWED_PROFILES.contains(activeProfiles[0])) {
             throw new IllegalStateException(
-                    "Exactly one Spring profile must be active: local, test, staging, or prod. active="
+                    "Exactly one supported Spring profile must be active. active="
                             + Arrays.toString(activeProfiles));
         }
     }
@@ -65,13 +64,24 @@ public final class RuntimeProfilePolicy {
                 || StringUtils.hasText(environment.getProperty("app.s3.secret-key", ""))) {
             throw new IllegalStateException("Public profile must use the EC2 IAM role instead of static S3 keys");
         }
-        String adminAccessCidrs = environment.getProperty("app.admin.access-allowed-cidrs", "");
-        if (!ClientIpExtractor.isRestrictedCidrList(adminAccessCidrs)) {
-            throw new IllegalStateException("Public profile requires a restricted ADMIN_ACCESS_ALLOWED_CIDRS gate");
+        if (!environment.getProperty("app.admin.mfa.required", Boolean.class, true)) {
+            throw new IllegalStateException("Public profile cannot disable administrator MFA");
+        }
+        String mfaKey = environment.getProperty("app.admin.mfa.encryption-key", "");
+        try {
+            com.herfree.domain.auth.mfa.MfaCrypto.decodeKey(mfaKey);
+        } catch (IllegalArgumentException ex) {
+            throw new IllegalStateException("Public profile requires a valid ADMIN_MFA_ENCRYPTION_KEY", ex);
+        }
+        if (mfaKey.equals(environment.getProperty("app.health-data.encryption-key", "")) || mfaKey.equals(jwtSecret)) {
+            throw new IllegalStateException("Administrator MFA requires an independent encryption key");
         }
         String healthDataKey = environment.getProperty("app.health-data.encryption-key", "");
         try {
-            HealthDataEncryption.decodeKey(healthDataKey);
+            byte[] healthKey = HealthDataEncryption.decodeKey(healthDataKey);
+            if (java.security.MessageDigest.isEqual(healthKey, com.herfree.domain.auth.mfa.MfaCrypto.decodeKey(mfaKey))) {
+                throw new IllegalStateException("Administrator MFA requires an independent encryption key");
+            }
         } catch (IllegalArgumentException ex) {
             throw new IllegalStateException("Public profile requires a valid HEALTH_DATA_ENCRYPTION_KEY", ex);
         }

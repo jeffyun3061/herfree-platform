@@ -44,5 +44,7 @@ public interface ReportRepository extends JpaRepository<Report, Long> {
 
     long countByStatus(ReportStatus status);
 
+    long countByStatusAndCreatedAtBefore(ReportStatus status, Instant cutoff);
+
     long countByStatusAndCreatedAtAfter(ReportStatus status, Instant since);
 }

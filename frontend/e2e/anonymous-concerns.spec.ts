@@ -18,6 +18,7 @@ async function fixtures(page:Page,role?:'USER'|'ADMIN') {
     if(!role&&(path==='/api/posts/11'||path==='/api/posts/11/comments')){await route.fulfill({status:404,contentType:'application/json',body:JSON.stringify({success:false,message:'글을 찾을 수 없습니다.'})});return;}
     let data:unknown={};
     if(path==='/api/users/me')data={id:1,nickname:'실제 닉네임',email:'fixture@example.invalid',role,status:'ACTIVE'};
+    else if(path==='/api/auth/admin-mfa/status' && role==='ADMIN')data={enrolled:true,verified:true,expiresIn:900};
     else if(path==='/api/boards')data=boards;
     else if(path==='/api/posts'&&route.request().method()==='POST'){
       submitted=route.request().postDataJSON();

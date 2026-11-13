@@ -25,8 +25,8 @@ value_of() {
 required=(
   AWS_REGION CLOUDWATCH_LOG_GROUP
   SPRING_PROFILES_ACTIVE DB_RUNTIME SPRING_DATASOURCE_URL SPRING_DATASOURCE_USERNAME
-  SPRING_DATASOURCE_PASSWORD JWT_SECRET ANALYTICS_HASH_SALT HEALTH_DATA_ENCRYPTION_KEY CORS_ALLOWED_ORIGINS
-  TRUSTED_PROXY_CIDRS ADMIN_ACCESS_ALLOWED_CIDRS S3_BUCKET S3_REGION APP_MAIL_MODE APP_MAIL_FROM
+  SPRING_DATASOURCE_PASSWORD JWT_SECRET ANALYTICS_HASH_SALT HEALTH_DATA_ENCRYPTION_KEY ADMIN_MFA_ENCRYPTION_KEY CORS_ALLOWED_ORIGINS
+  TRUSTED_PROXY_CIDRS S3_BUCKET S3_REGION APP_MAIL_MODE APP_MAIL_FROM
   SPRING_MAIL_HOST SPRING_MAIL_USERNAME SPRING_MAIL_PASSWORD
   PASSWORD_RESET_FRONTEND_BASE_URL OAUTH_KAKAO_CLIENT_ID OAUTH_KAKAO_CLIENT_SECRET
   OAUTH_KAKAO_REDIRECT_URI OAUTH_GOOGLE_CLIENT_ID OAUTH_GOOGLE_CLIENT_SECRET
@@ -54,6 +54,12 @@ fi
 jwt_secret="$(value_of JWT_SECRET)"
 analytics_salt="$(value_of ANALYTICS_HASH_SALT)"
 health_data_key="$(value_of HEALTH_DATA_ENCRYPTION_KEY)"
+mfa_key="$(value_of ADMIN_MFA_ENCRYPTION_KEY)"
+if [[ "$(value_of ADMIN_MFA_REQUIRED)" != true || ! "${mfa_key}" =~ ^[A-Za-z0-9+/]{43}=$ \
+   || "${mfa_key}" == "${health_data_key}" || "${mfa_key}" == "${jwt_secret}" ]]; then
+  echo "Public deployments require MFA and an independent 32-byte base64 MFA encryption key"
+  exit 1
+fi
 if [[ ${#jwt_secret} -lt 32 || ${#analytics_salt} -lt 32 ]]; then
   echo "JWT_SECRET and ANALYTICS_HASH_SALT must be at least 32 characters"
   exit 1
@@ -68,12 +74,6 @@ if [[ "${jwt_secret}" == "${analytics_salt}" ]]; then
 fi
 if [[ "$(value_of TRUSTED_PROXY_CIDRS)" == *"0.0.0.0/0"* ]]; then
   echo "TRUSTED_PROXY_CIDRS must not trust the entire internet"
-  exit 1
-fi
-admin_access_cidrs="$(value_of ADMIN_ACCESS_ALLOWED_CIDRS)"
-if [[ "${admin_access_cidrs}" == *"0.0.0.0/0"* || "${admin_access_cidrs}" == *"::/0"* \
-   || "${admin_access_cidrs}" =~ (^|,)[[:space:]]*[^,]+/[[:space:]]*0+[[:space:]]*(,|$) ]]; then
-  echo "ADMIN_ACCESS_ALLOWED_CIDRS must be a restricted VPN/admin network"
   exit 1
 fi
 if [[ "$(value_of CORS_ALLOWED_ORIGINS)" != https://* ]]; then

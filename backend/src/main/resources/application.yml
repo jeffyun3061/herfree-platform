@@ -66,6 +66,9 @@ logging:
 
 # CORS — 로컬은 패턴(모바일/LAN/ngrok), 운영은 Vercel URL을 환경변수로 주입한다
 app:
+  operations:
+    environment: ${APP_OPERATIONS_ENVIRONMENT:unknown}
+    image: ${APP_OPERATIONS_IMAGE:unknown}
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:}
     allowed-origin-patterns: ${CORS_ALLOWED_ORIGIN_PATTERNS:}
@@ -76,7 +79,9 @@ app:
     nickname: ${ADMIN_NICKNAME:HerfreeOps}
     sync-existing: ${ADMIN_BOOTSTRAP_SYNC_EXISTING:false}
   admin:
-    access-allowed-cidrs: ${ADMIN_ACCESS_ALLOWED_CIDRS:}
+    mfa:
+      required: ${ADMIN_MFA_REQUIRED:true}
+      encryption-key: ${ADMIN_MFA_ENCRYPTION_KEY:}
   retention:
     event-days: ${APP_RETENTION_EVENT_DAYS:90}
     reset-token-grace-days: ${APP_RETENTION_RESET_TOKEN_GRACE_DAYS:7}

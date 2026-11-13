@@ -45,7 +45,7 @@ test('editor, preview and post preserve readable wrapping without the bottom men
   await expect(page.getByRole('navigation', { name: '하단 메뉴' })).toHaveCount(0);
   const editor = page.locator('#content'); await editor.fill(body);
   const editorLayout = await textLayout(editor);
-  await page.getByRole('button', { name: '미리보기', exact: true }).click();
+  await page.getByRole('button', { name: '본문 미리보기', exact: true }).click();
   const preview = page.getByTestId('community-post-preview').locator('.hf-readable-content--community');
   await expect(preview).toHaveText(body);
   const previewLayout = await textLayout(preview);

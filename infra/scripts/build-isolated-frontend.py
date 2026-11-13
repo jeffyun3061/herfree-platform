@@ -30,7 +30,7 @@ PR = '195'
 def check_branch(root, run, lookup, branch=BRANCH, sha=SHA, pr=PR, protection_lookup=None):
     origin = preflight.validate_inputs(ACCOUNT, APP, branch, sha, API)
     preflight.check_remote(sha, branch, root, run, pr)
-    if pr is None or pr == '206':
+    if pr is None or pr in ('206', '213'):
         preflight.require(protection_lookup is not None, 'BRANCH_PROTECTION_REQUIRED')
         try:
             release_lock.verify_branch_lock(protection_lookup(branch))
@@ -98,7 +98,7 @@ def main():
     parser.add_argument('--job-id')
     source = parser.add_mutually_exclusive_group()
     source.add_argument('--current-main', action='store_true')
-    source.add_argument('--candidate-pr', choices=('206',))
+    source.add_argument('--candidate-pr', choices=('206', '213'))
     parser.add_argument('--branch')
     parser.add_argument('--sha')
     args = parser.parse_args()
