@@ -20,10 +20,15 @@ case "$1:$2" in
       jq -n --arg d "$TESTED_DIGEST" '{images:[{imageId:{imageDigest:$d},imageManifest:"{}"}],failures:[]}'
     elif [[ "${FAKE_EXISTING:-missing}" == same ]]; then
       jq -n --arg d "$TESTED_DIGEST" '{images:[{imageId:{imageDigest:$d}}],failures:[]}'
+    elif [[ "${FAKE_EXISTING:-missing}" == other ]]; then
+      jq -n --arg d "sha256:$(printf 'f%.0s' {1..64})" '{images:[{imageId:{imageDigest:$d}}],failures:[]}'
     else
       echo '{"images":[],"failures":[{"failureCode":"ImageNotFound"}]}'
     fi ;;
-  ecr:put-image) echo put >> "$TEST_LOG" ;;
+  ecr:put-image)
+    [[ " $* " == *" --image-digest $TESTED_DIGEST "* ]] || exit 9
+    [[ " $* " == *" --image-tag $GITHUB_SHA "* || " $* " == *" --image-tag staging-passed-$GITHUB_SHA "* ]] || exit 9
+    echo put >> "$TEST_LOG" ;;
   *) echo 'unexpected AWS call' >&2; exit 9 ;;
 esac
 EOF
@@ -44,7 +49,7 @@ FAKE_EXISTING=same bash "$script" >/dev/null
 [[ ! -s "$TEST_LOG" ]]
 for setting in 'FAKE_ACCOUNT=000000000000' 'FAKE_MUTABILITY=MUTABLE' \
   "FAKE_DIGEST=sha256:$(printf 'c%.0s' {1..64})" "FAKE_MAIN=$(printf 'd%.0s' {1..40})" \
-  'GITHUB_REF=refs/heads/other'; do
+  'GITHUB_REF=refs/heads/other' 'FAKE_EXISTING=other'; do
   : > "$TEST_LOG"
   if env "$setting" bash "$script" >/dev/null 2>&1; then
     echo "unexpected success: $setting" >&2; exit 1
