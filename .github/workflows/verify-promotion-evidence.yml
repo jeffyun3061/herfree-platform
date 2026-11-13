@@ -27,6 +27,8 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+      - name: Test evidence verification
+        run: python3 -m unittest discover -s infra/scripts -p test_candidate_promotion.py
       - name: Verify candidate evidence without promotion
         env:
           GH_TOKEN: ${{ github.token }}
