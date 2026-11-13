@@ -24,7 +24,8 @@ public record PostDetailResponse(
         String imageUrl,
         boolean staffReplied,
         Instant createdAt,
-        Instant updatedAt
+        Instant updatedAt,
+        String richContent
 ) {
     public static PostDetailResponse of(Post post, String authorNickname, boolean isMyPost, String imageUrl) {
         return of(post, authorNickname, isMyPost, imageUrl, false, null, null);
@@ -74,7 +75,8 @@ public record PostDetailResponse(
                 mask ? null : imageUrl,
                 staffReplied,
                 post.getCreatedAt(),
-                post.getUpdatedAt()
+                post.getUpdatedAt(),
+                mask ? null : post.getRichContent()
         );
     }
 }

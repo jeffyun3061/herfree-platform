@@ -4,7 +4,7 @@
 
 ## 매일
 
-- CloudWatch 5xx, health, 디스크, RDS 연결 알람을 확인한다.
+- CloudWatch 5xx, health, 메모리·루트/DB 디스크, EC2 내부 MySQL 상태와 지표 수집 알람을 확인한다.
 - 문의·비밀상담·신고 대기열을 확인한다.
 - 로그인·비밀번호 재설정·이미지 업로드 실패 급증을 확인한다.
 
@@ -14,7 +14,7 @@
 - 퍼널에는 이메일, 닉네임, 게시글·상담·일지 본문을 넣지 않는다.
 - 관리자 계정과 권한 변경 이력을 검토한다.
 - Dependabot PR과 CodeQL 경고를 검토하고 staging에서 회귀 테스트한다.
-- 백업 성공 여부와 RDS 여유 공간을 확인한다.
+- 6시간 백업 완료·체크섬과 전용 DB EBS 여유 공간을 확인한다.
 
 ## 매월
 
@@ -26,7 +26,7 @@
 
 ## 배포 원칙
 
-`feature/fix/security 브랜치 → PR → CI → staging → E2E → production 승인` 순서를 지킨다. 운영 서버에서 코드를 직접 고치지 않는다. production은 staging을 통과한 동일 ECR 이미지 태그만 사용한다.
+`변경 브랜치 → PR → CI → staging → E2E → 배포 전 백업 → production` 순서를 지킨다. 운영 서버에서 코드를 직접 고치지 않는다. production은 staging에서 검증한 변경과 immutable ECR digest를 대조한 후 배포한다.
 
 긴급 수정도 `hotfix/*` 브랜치에서 테스트하고, 배포 후 main에 반드시 반영한다. DB migration은 이미 배포된 버전을 수정하지 않고 새 버전 파일을 추가한다.
 
@@ -38,6 +38,10 @@
 - 권한·회원 제재 감사: `role_audit_logs`
 
 운영 로그에 request/response body를 통째로 남기지 않는다. 고객 문의를 조사할 때도 `X-Request-ID`, 사용자 내부 ID, 발생 시각으로 좁혀 찾는다.
+
+사이트 운영자가 코드 없이 사용하는 화면과 개발자의 기술 운영 도구·추가 대시보드 계획은
+[`operator-developer-access.md`](./operator-developer-access.md)를 따른다. 현재 감사 이력의
+DB 기록과 아직 없는 조회 화면을 구분한다.
 
 ## 장애 대응
 

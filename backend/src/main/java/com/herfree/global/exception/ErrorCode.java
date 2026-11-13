@@ -114,6 +114,11 @@ public enum ErrorCode {
             "개인일지를 이용하려면 건강정보 처리 동의가 필요합니다."
     ),
 
+    ADMIN_MFA_REQUIRED(HttpStatus.FORBIDDEN, "관리자 추가 인증이 필요합니다."),
+    ADMIN_MFA_INVALID(HttpStatus.BAD_REQUEST, "인증번호가 올바르지 않거나 이미 사용되었습니다."),
+    ADMIN_MFA_LOCKED(HttpStatus.TOO_MANY_REQUESTS, "인증 시도 횟수를 초과했습니다. 15분 후 다시 시도해 주세요."),
+    ADMIN_MFA_APPROVAL_REQUIRED(HttpStatus.FORBIDDEN, "운영 책임자의 등록 승인이 필요합니다."),
+
     // 권한·역할
     ROLE_CHANGE_NOT_ALLOWED(HttpStatus.FORBIDDEN, "권한을 변경할 수 없습니다.");
 

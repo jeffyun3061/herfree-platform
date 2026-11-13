@@ -39,6 +39,7 @@ public class AuthController {
     private final AuthService authService;
     private final OAuthAuthService oauthAuthService;
     private final PasswordResetService passwordResetService;
+    private final com.herfree.domain.auth.mfa.AdminMfaService adminMfaService;
 
     // 회원가입 — 성공 시 201 Created를 반환한다.
     // 200 OK가 아닌 201을 쓰는 이유: HTTP 시맨틱에서 201은 "새 리소스가 생성됐음"을 명확히 표현한다.
@@ -78,7 +79,10 @@ public class AuthController {
     // 실제 토큰 무효화는 클라이언트가 저장된 토큰을 삭제하는 방식으로 처리한다.
     // 추후 Redis Blacklist 방식의 토큰 블랙리스트를 도입할 경우 이 엔드포인트에 로직을 추가한다.
     @PostMapping("/logout")
-    public ResponseEntity<ApiResponse<Void>> logout() {
+    public ResponseEntity<ApiResponse<Void>> logout(org.springframework.security.core.Authentication authentication) {
+        if (authentication != null && authentication.getPrincipal() instanceof Number id) {
+            adminMfaService.revoke(id.longValue());
+        }
         return ResponseEntity.ok(ApiResponse.success("로그아웃되었습니다.", null));
     }
 

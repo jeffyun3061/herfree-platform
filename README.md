@@ -53,7 +53,7 @@
 | 인증 | JWT Bearer |
 | 스토리지 | 게시글 이미지 AWS S3 (API 경유 업로드) |
 | CI | GitHub Actions — `./gradlew test`, `npm run lint && build` |
-| 배포(기준안) | Frontend Amplify/Next.js · API EC2 · private RDS MySQL · [production-architecture.md](docs/production-architecture.md) |
+| 배포(현재) | Frontend Amplify/Next.js · EC2 API + 내부 MySQL · 암호화 EBS/S3 백업 · [production-architecture.md](docs/production-architecture.md) |
 
 백엔드는 **도메인 단위 패키지**(`auth`, `user`, `post`, `journal`, `content`, `video` …) + `global`(보안·예외·공통). 프론트는 `domain/`(순수 타입·정책), `hooks/`, `components/` 분리.
 
@@ -132,7 +132,8 @@ Git·빌드·커밋은 **`C:\dev\herfree-platform`** 기준으로 합니다. One
 | [api-spec.md](docs/api-spec.md) | REST 엔드포인트 (커뮤니티·일지·admin) |
 | [erd.md](docs/erd.md) | 테이블·enum |
 | [convention.md](docs/convention.md) | 코딩·커밋 규칙 |
-| [deployment-aws.md](docs/deployment-aws.md) | AWS staging/production 배포 (RDS release 경로) |
+| [operations-improvements.md](docs/operations-improvements.md) | 관리자 MFA, 비용·알림, staging 격리 복구와 안전한 적용 순서 |
+| [deployment-aws.md](docs/deployment-aws.md) | 과거 RDS release 경로 참고 |
 | [oauth-setup.md](docs/oauth-setup.md) | 카카오·구글·네이버 Dev/Prod OAuth 설정 |
 | [decision-log.md](docs/decision-log.md) | ADR (JWT, MySQL, S3 프록시 등) |
 | [CONTRIBUTING.md](docs/CONTRIBUTING.md) | 브랜치·PR |
@@ -143,7 +144,7 @@ Git·빌드·커밋은 **`C:\dev\herfree-platform`** 기준으로 합니다. One
 | [production-service-operations.md](docs/production-service-operations.md) | 실서비스 하네스·배포·로그·장애 대응 가이드 |
 | [beta-release-control-plane.md](docs/beta-release-control-plane.md) | 소규모 베타의 구조·데이터 통제·배포 승인·운영 지점 |
 | [production-security-controls.md](docs/production-security-controls.md) | production 보안 불변조건과 코드 검증 위치 |
-| [rds-restore-drill.md](docs/rds-restore-drill.md) | 승인형 private RDS 복구훈련과 RPO/RTO 증적 절차 |
+| [rds-restore-drill.md](docs/rds-restore-drill.md) | 과거 RDS 스냅샷 복구 참고 |
 
 ### 실서비스 검증 하네스
 

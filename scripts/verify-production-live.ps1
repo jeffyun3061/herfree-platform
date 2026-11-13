@@ -1,6 +1,6 @@
 param(
     [string]$ApiBaseUrl = $(if ($env:PRODUCTION_API_URL) { $env:PRODUCTION_API_URL } else { "https://api.herpfree.co.kr" }),
-    [string]$FrontendUrl = $env:PRODUCTION_FRONTEND_URL,
+    [string]$FrontendUrl = $(if ($env:PRODUCTION_FRONTEND_URL) { $env:PRODUCTION_FRONTEND_URL } else { "https://www.herpfree.co.kr" }),
     [switch]$RequireFrontend,
     [string]$ReportPath = "artifacts/production-live/latest.md"
 )
@@ -64,13 +64,21 @@ Add-Check "health payload" ($null -ne $healthJson -and $healthJson.success -eq $
 $stats = Invoke-ReadOnlyGet "$ApiBaseUrl/api/journal/public/home-stats"
 $statsJson = Read-Json $stats "public home stats"
 $statsData = if ($null -ne $statsJson) { $statsJson.data } else { $null }
-$statsIsEmptyObject = $false
-if ($null -ne $statsData) {
-    $statsIsEmptyObject = ($statsData -is [pscustomobject] -and @($statsData.PSObject.Properties).Count -eq 0)
+$statsHasPublicCountersOnly = $false
+if ($statsData -is [pscustomobject]) {
+    $keys = @($statsData.PSObject.Properties.Name | Sort-Object)
+    $validCounters = $true
+    foreach ($name in @('activeMemberCount', 'postsToday')) {
+        $counter = $statsData.$name
+        if (($counter -isnot [int] -and $counter -isnot [long]) -or $counter -lt 0) {
+            $validCounters = $false
+        }
+    }
+    $statsHasPublicCountersOnly = $keys.Count -eq 2 -and ($keys -join ',') -eq 'activeMemberCount,postsToday' -and $validCounters
 }
 Add-Check "public stats status" ($stats.StatusCode -eq 200) "HTTP $($stats.StatusCode)"
 Add-Check "public stats cache policy" ($stats.Headers.ContainsKey('cache-control') -and $stats.Headers['cache-control'] -match '(?i)no-store') "Cache-Control includes no-store"
-Add-Check "public stats privacy contract" ($null -ne $statsJson -and $statsJson.success -eq $true -and $statsIsEmptyObject) "data is an empty object; no population counters"
+Add-Check "public stats privacy contract" ($null -ne $statsJson -and $statsJson.success -eq $true -and $statsHasPublicCountersOnly) "only non-negative integer activeMemberCount and postsToday; no health or personal record fields"
 
 $swagger = Invoke-ReadOnlyGet "$ApiBaseUrl/swagger-ui.html"
 Add-Check "Swagger disabled" ($swagger.StatusCode -eq 404) "HTTP $($swagger.StatusCode)"

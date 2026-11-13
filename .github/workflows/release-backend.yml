@@ -133,6 +133,7 @@ jobs:
             infra/nginx/herfree-staging.conf \
             infra/nginx/herfree-staging-bootstrap.conf \
             infra/scripts/backup-db.sh \
+            infra/scripts/approve-admin-mfa-enrollment.sh \
             infra/scripts/deploy-release.sh \
             infra/scripts/guard-staging-isolation.sh \
             infra/scripts/install-local-db-ops.sh \
@@ -390,6 +391,7 @@ jobs:
             infra/nginx/herfree-production.conf \
             infra/nginx/herfree-production-bootstrap.conf \
             infra/scripts/backup-db.sh \
+            infra/scripts/approve-admin-mfa-enrollment.sh \
             infra/scripts/deploy-release.sh \
             infra/scripts/guard-staging-isolation.sh \
             infra/scripts/install-local-db-ops.sh \

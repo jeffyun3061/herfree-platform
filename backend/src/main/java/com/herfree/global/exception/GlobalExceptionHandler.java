@@ -50,6 +50,12 @@ public class GlobalExceptionHandler {
         return jsonResponse(HttpStatus.BAD_REQUEST, ErrorResponse.of(ErrorCode.INVALID_INPUT.getMessage()));
     }
 
+    @ExceptionHandler(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleParameterTypeMismatch() {
+        // Do not echo an invalid query value; it may contain sensitive input.
+        return jsonResponse(HttpStatus.BAD_REQUEST, ErrorResponse.of(ErrorCode.INVALID_INPUT.getMessage()));
+    }
+
     @ExceptionHandler(SdkClientException.class)
     public ResponseEntity<ErrorResponse> handleSdkClient(SdkClientException ex) {
         log.error("S3 client error. failureType={}", ex.getClass().getSimpleName());

@@ -27,7 +27,8 @@ public class AdminAuditFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        return !request.getRequestURI().startsWith("/api/admin/")
+        return !(request.getRequestURI().startsWith("/api/admin/")
+                || (request.getRequestURI().startsWith("/api/auth/admin-mfa/") && "POST".equals(request.getMethod())))
                 || "OPTIONS".equalsIgnoreCase(request.getMethod());
     }
 

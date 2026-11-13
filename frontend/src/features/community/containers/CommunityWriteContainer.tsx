@@ -32,6 +32,7 @@ import { getErrorMessage } from '@/lib/api/client';
 import * as adminApi from '@/lib/api/admin';
 import { CommunityWriteGuidelines } from '@/components/community/CommunityWriteGuidelines';
 import { ReadableContent } from '@/components/content/ReadableContent';
+import { CommunityContentEditor } from '@/components/community/CommunityContentEditor';
 import type { PostVisibility } from '@/domain/post/types';
 
 const TITLE_UI_MAX = 30;
@@ -59,6 +60,8 @@ function WritePostForm() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [showContentPreview, setShowContentPreview] = useState(false);
+  const [richContent, setRichContent] = useState<string | null>(null);
+  const changeRichContent = (plain: string, document: string) => { setContent(plain); setRichContent(document); };
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [visibility, setVisibility] = useState<PostVisibility>('PUBLIC');
   const [publicDisclosureAccepted, setPublicDisclosureAccepted] = useState(false);
@@ -148,6 +151,7 @@ function WritePostForm() {
     setBoardId(existingPost.boardId);
     setTitle(existingPost.title);
     setContent(existingPost.content);
+    setRichContent(existingPost.richContent ?? null);
     setIsAnonymous(existingPost.isAnonymous);
     setVisibility(existingPost.visibility);
     setImageUrl(existingPost.imageUrl ?? null);
@@ -157,7 +161,7 @@ function WritePostForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting || isImageUploading) return;
-    const validation = validatePostInput({ title, content });
+    const validation = validatePostInput({ title, content, richContent });
     if (validation) {
       setValidationError(validation);
       return;
@@ -193,7 +197,8 @@ function WritePostForm() {
         try {
           await adminApi.updateAdminPost(editPostId, {
             title: title.trim(),
-            content: content.trim(),
+            content: richContent ? content : content.trim(),
+            richContent,
           });
           router.replace(`/community/posts/${editPostId}`);
         } catch (err) {
@@ -208,6 +213,7 @@ function WritePostForm() {
         title,
         content,
         isAnonymous: concern || isAnonymous,
+        richContent,
         imageUrl: imageUrl ?? '',
       });
       if (result) router.replace(`/community/posts/${result.id}`);
@@ -221,6 +227,7 @@ function WritePostForm() {
       isAnonymous: concern || isAnonymous,
       visibility: concern ? 'PUBLIC' : visibility,
       publicDisclosureAccepted: concern && publicDisclosureAccepted,
+      richContent,
       imageUrl: pickPostImageUrlForCreate(imageUrl),
     });
     if (result) {
@@ -505,20 +512,13 @@ function WritePostForm() {
             {showContentPreview ? (
               <div data-testid="community-post-preview" className="min-h-[240px] w-full border-b border-[#D9CDB8] py-3">
                 {content ? (
-                  <ReadableContent text={content} variant="community" />
+                  <ReadableContent text={content} richContent={richContent} variant="community" />
                 ) : (
                   <p className="hf-community-writing-content text-[#7C8279]">본문을 입력하면 게시될 모습이 여기에 보여요.</p>
                 )}
               </div>
             ) : (
-              <textarea
-                id="content"
-                required
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder={contentPlaceholder}
-                className="hf-community-writing-content min-h-[240px] w-full resize-y border-x-0 border-t-0 border-b border-[#D9CDB8] bg-transparent px-0 py-3 placeholder:text-[#8A9089] outline-none focus:border-[#0B3B36]"
-              />
+              <CommunityContentEditor value={content} onChange={setContent} richContent={richContent} onRichChange={changeRichContent} placeholder={contentPlaceholder} />
             )}
             <div className="mt-3">
               <CommunityPhotoAttach
@@ -535,17 +535,7 @@ function WritePostForm() {
 
         {isMaskedWrite && (
           <div className="flex-1 px-5 pt-3.5">
-            <label htmlFor="content" className="sr-only">
-              본문
-            </label>
-            <textarea
-              id="content"
-              required
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder={contentPlaceholder}
-              className="min-h-[200px] w-full resize-y rounded-[14px] border border-[#E2D5C2] bg-[#FFFCF7] p-[15px] text-[16px] leading-[1.7] text-[#1E2621] shadow-[0_10px_24px_-24px_rgba(7,37,31,.45)] placeholder:text-[#B4B2A6] outline-none focus:border-[#0B3B36]/35"
-            />
+            <CommunityContentEditor value={content} onChange={setContent} richContent={richContent} onRichChange={changeRichContent} placeholder={contentPlaceholder} />
           </div>
         )}
 
