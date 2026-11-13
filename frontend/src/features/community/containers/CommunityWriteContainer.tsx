@@ -503,22 +503,24 @@ function WritePostForm() {
               <button
                 type="button"
                 aria-pressed={showContentPreview}
+                aria-label={richContent ? (showContentPreview ? '본문 미리보기 닫기' : '본문 미리보기') : undefined}
                 onClick={() => setShowContentPreview((value) => !value)}
                 className="min-h-11 rounded-lg px-3 text-[13px] font-bold text-[#0B3B36] underline underline-offset-4"
               >
                 {showContentPreview ? '계속 쓰기' : '미리보기'}
               </button>
             </div>
-            {showContentPreview ? (
-              <div data-testid="community-post-preview" className="min-h-[240px] w-full border-b border-[#D9CDB8] py-3">
+            {(!showContentPreview || richContent) && (
+              <CommunityContentEditor value={content} onChange={setContent} richContent={richContent} onRichChange={changeRichContent} placeholder={contentPlaceholder} showPreview={false} />
+            )}
+            {showContentPreview && (
+              <section aria-label="게시글 본문 미리보기" data-testid="community-post-preview" className="min-h-[240px] w-full border-b border-[#D9CDB8] py-3">
                 {content ? (
                   <ReadableContent text={content} richContent={richContent} variant="community" />
                 ) : (
                   <p className="hf-community-writing-content text-[#7C8279]">본문을 입력하면 게시될 모습이 여기에 보여요.</p>
                 )}
-              </div>
-            ) : (
-              <CommunityContentEditor value={content} onChange={setContent} richContent={richContent} onRichChange={changeRichContent} placeholder={contentPlaceholder} showPreview={false} />
+              </section>
             )}
             <div className="mt-3">
               <CommunityPhotoAttach
