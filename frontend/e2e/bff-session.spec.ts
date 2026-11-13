@@ -1,4 +1,5 @@
 import { expect, request as playwrightRequest, test } from '@playwright/test';
+import { verifyIfIsolatedRelease } from './support/isolated-release-target';
 import {
   expectedMutationBackendEnvironment,
   mutationEnvironmentEnabled,
@@ -13,6 +14,11 @@ const basicAuthPassword = process.env.E2E_HTTP_PASSWORD?.trim();
 const httpCredentials = basicAuthUsername && basicAuthPassword
   ? { username: basicAuthUsername, password: basicAuthPassword }
   : undefined;
+
+test.beforeEach(() => {
+  if (process.env.ISOLATED_RELEASE_SHARE_QA === 'true') test.setTimeout(180_000);
+  verifyIfIsolatedRelease();
+});
 
 type Envelope<T> = { success: boolean; message: string; data: T };
 
@@ -171,6 +177,7 @@ test.describe('bff staging data flow', () => {
       expect(withdrawal.status(), await withdrawal.text()).toBe(204);
       accountDeleted = true;
     } finally {
+      verifyIfIsolatedRelease();
       if (journalId && csrfToken) {
         await api.delete(`/api/journal/records/${journalId}`, {
           headers: { 'X-Herfree-CSRF': csrfToken },

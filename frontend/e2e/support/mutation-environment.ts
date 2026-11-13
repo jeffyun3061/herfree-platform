@@ -1,3 +1,5 @@
+import { verifyIsolatedReleaseTarget } from './isolated-release-target';
+
 const APPROVED_STAGING_ORIGINS = new Set([
   'https://staging.herpfree.co.kr',
   'https://develop.d2bcg3vnlv5hkh.amplifyapp.com',
@@ -19,7 +21,11 @@ export function mutationEnvironmentEnabled(baseURL: string): boolean {
   const actualURL = new URL(baseURL);
   const actualOrigin = actualURL.origin;
   const actualHost = actualURL.hostname.toLowerCase();
-  if (isLocalHost(actualHost)) {
+  const isolatedRelease = process.env.ISOLATED_RELEASE_SHARE_QA === 'true';
+  if (isolatedRelease) {
+    // Verify before considering local exceptions or accepting a remote origin.
+    verifyIsolatedReleaseTarget();
+  } else if (isLocalHost(actualHost)) {
     const configuredApiTarget = process.env.API_REWRITE_TARGET?.trim();
     if (configuredApiTarget) {
       let apiHost: string;
@@ -35,7 +41,7 @@ export function mutationEnvironmentEnabled(baseURL: string): boolean {
     return true;
   }
 
-  if (!APPROVED_STAGING_ORIGINS.has(actualOrigin)) {
+  if (!isolatedRelease && !APPROVED_STAGING_ORIGINS.has(actualOrigin)) {
     throw new Error(`Mutation target ${actualOrigin} is not an approved staging origin.`);
   }
 
