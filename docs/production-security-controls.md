@@ -10,7 +10,7 @@
 | S3 credentials | staging/production은 static access key 금지, EC2 IAM role만 사용 | `RuntimeProfilePolicy`, `.env.*.example` |
 | BFF CSRF | production은 `NEXT_PUBLIC_OAUTH_REDIRECT_ORIGIN` allowlist와 exact Origin 비교 | `frontend/src/lib/bff/security.ts` |
 | 관리자 MFA | staging/prod `/api/admin/**`는 기존 역할 + 로그인에 연결된 15분 MFA 필수, 해제/키 누락 시 기동 거부 | `AdminAccessGateFilter`, `AdminMfaService`, `RuntimeProfilePolicy` |
-| MFA 등록·분실 복구 | 운영 책임자 본인 확인 후 15분 일회용 승인, 암호화 TOTP secret, 해시된 일회용 복구 코드, 5회 실패 시 15분 잠금·TOTP 재사용 차단 | `V43`, `approve-admin-mfa-enrollment.sh`, MFA 테스트 |
+| MFA 등록·분실 복구 | 운영 책임자 본인 확인 후 15분 일회용 승인, 암호화 TOTP secret, 해시된 일회용 복구 코드, 5회 실패 시 15분 잠금·TOTP 재사용 차단 | `V46`, `approve-admin-mfa-enrollment.sh`, MFA 테스트 |
 | 인증 rate limit | IP/email 공격자 입력 맵에 만료·상한·정리 적용 | `AuthRateLimitFilter`, `LoginLockoutService` |
 | forwarded IP | 신뢰된 proxy CIDR에서만 전달 헤더 사용, DNS hostname은 IP로 인정하지 않음 | `ClientIpExtractor` |
 | 배포 | 이번 보안 변경은 staging 검증 후 immutable ECR digest, 배포 전 S3 백업, rollback mode | `release-backend.yml`, `deploy-release.sh` |
