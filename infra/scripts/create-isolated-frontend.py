@@ -29,7 +29,7 @@ def prepare(branch, sha, pr, username, password, root, run, lookup, create, prot
                       and isinstance(password, str) and len(password) >= 16
                       and '\n' not in password and '\r' not in password, 'INVALID_BASIC_CREDENTIALS')
     preflight.check_remote(sha, branch, root, run, pr)
-    if pr is None or pr == '206':
+    if pr is None or pr in ('206', '213'):
         preflight.require(protection_lookup is not None, 'BRANCH_PROTECTION_REQUIRED')
         try:
             release_lock.verify_branch_lock(protection_lookup(branch))
@@ -50,7 +50,7 @@ def prepare(branch, sha, pr, username, password, root, run, lookup, create, prot
     preflight.require(info == {'name':branch, 'basic':True, 'auto':False,
                                'api':'https://api-staging.herpfree.co.kr', 'origin':origin},
                       'CREATED_BRANCH_REQUIRES_MANUAL_REVIEW')
-    if pr is None or pr == '206':
+    if pr is None or pr in ('206', '213'):
         preflight.check_remote(sha, branch, root, run, pr)
         try:
             release_lock.verify_branch_lock(protection_lookup(branch))
@@ -91,7 +91,7 @@ def main():
                          os.getenv('ISOLATED_QA_BASIC_USERNAME', ''),
                          os.getenv('ISOLATED_QA_BASIC_PASSWORD', ''), args.repo,
                          preflight.command, lambda *items: preflight.aws_lookup(None, *items), create_branch,
-                         protection_lookup if args.current_main or args.candidate_pr == '206' else None)
+                         protection_lookup if args.current_main or args.candidate_pr in ('206', '213') else None)
         print(json.dumps(result))
         return 0
     except preflight.Refused as error:

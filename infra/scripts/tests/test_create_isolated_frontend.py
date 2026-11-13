@@ -104,6 +104,15 @@ class CreateIsolatedFrontendTest(unittest.TestCase):
             'allow_force_pushes': False, 'allow_deletions': False}.items()}
         self.assertTrue(self.invoke(pr='206', protection_lookup=lambda _: locked)['protectedBranchCreated'])
 
+    def test_pr_213_requires_locked_branch_before_creation(self):
+        with self.assertRaisesRegex(module.preflight.Refused, 'BRANCH_PROTECTION_REQUIRED'):
+            self.invoke(pr='213')
+        self.assertEqual(self.calls, [])
+        locked = {key: {'enabled': value} for key, value in {
+            'lock_branch': True, 'enforce_admins': True,
+            'allow_force_pushes': False, 'allow_deletions': False}.items()}
+        self.assertTrue(self.invoke(pr='213', protection_lookup=lambda _: locked)['protectedBranchCreated'])
+
     def test_current_main_change_after_creation_requires_review(self):
         protection = {key: {'enabled': value} for key, value in {
             'lock_branch': True, 'enforce_admins': True,

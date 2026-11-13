@@ -33,14 +33,14 @@ def require(condition, code):
 
 def build(commit, git, source='candidate'):
     require(re.fullmatch(r'[a-f0-9]{40}', commit or '') is not None, 'INVALID_COMMIT')
-    require(source in ('candidate', 'main', 'pr206'), 'INVALID_SOURCE')
+    require(source in ('candidate', 'main', 'pr206', 'pr213'), 'INVALID_SOURCE')
     require(git('remote', 'get-url', 'origin').strip() in (
         b'https://github.com/jeffyun3061/herfree-platform.git',
         b'https://github.com/jeffyun3061/herfree-platform',
         b'git@github.com:jeffyun3061/herfree-platform.git'), 'REMOTE_REFUSED')
     require(git('rev-parse', 'HEAD').strip() == commit.encode(), 'LOCAL_COMMIT_MISMATCH')
     ref = {'candidate': b'refs/pull/196/head', 'main': b'refs/heads/main',
-           'pr206': b'refs/pull/206/head'}[source]
+           'pr206': b'refs/pull/206/head', 'pr213': b'refs/pull/213/head'}[source]
     require(git('ls-remote', '--exit-code', 'origin', ref.decode()).strip() == commit.encode() + b'\t' + ref,
             'REMOTE_COMMIT_MISMATCH')
     contents = {}
@@ -77,7 +77,7 @@ def main():
     parser.add_argument('--commit', required=True)
     parser.add_argument('--repo', required=True, type=Path)
     parser.add_argument('--output', required=True, type=Path)
-    parser.add_argument('--source', choices=('candidate', 'main', 'pr206'), default='candidate')
+    parser.add_argument('--source', choices=('candidate', 'main', 'pr206', 'pr213'), default='candidate')
     args = parser.parse_args()
     def git(*items):
         try:

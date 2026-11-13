@@ -15,7 +15,7 @@ export function verifyIsolatedReleaseTarget(): void {
       || process.env.ISOLATED_QA_IMAGE !== image || !/^[a-f0-9]{8}$/.test(run)
       || !/^[a-f0-9]{40}$/.test(sha) || !/^qa-[a-f0-9]{12}-[a-f0-9]{8}$/.test(branch)
       || branch.slice(3, 15) !== sha.slice(0, 12)
-      || (candidatePr !== '' && candidatePr !== '206')
+      || (candidatePr !== '' && candidatePr !== '206' && candidatePr !== '213')
       || !process.env.E2E_HTTP_USERNAME?.trim() || !process.env.E2E_HTTP_PASSWORD || !repo) {
     throw new Error('Isolated QA target or credentials are not the verified release.');
   }
