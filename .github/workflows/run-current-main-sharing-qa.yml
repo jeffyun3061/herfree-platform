@@ -156,5 +156,7 @@ jobs:
           fi
           jq -e '(.images | length) == 0 and (.failures | length) == 1 and .failures[0].failureCode == "ImageNotFound"' <<<"${existing}" >/dev/null || { echo 'Existing staging tag has an unexpected image.' >&2; exit 1; }
           result="$(aws ecr batch-get-image --repository-name herfree-api --image-ids imageDigest="${QA_DIGEST}" --output json)"
-          manifest="$(jq -er --arg digest "${QA_DIGEST}" 'select((.images | length) == 1 and (.failures | length) == 0 and .images[0].imageId.imageDigest == $digest) | .images[0].imageManifest' <<<"${result}")"
-          aws ecr put-image --repository-name herfree-api --image-tag "${tag}" --image-digest "${QA_DIGEST}" --image-manifest "${manifest}" >/dev/null
+          manifest="$(mktemp)"
+          trap 'rm -f "$manifest"' EXIT
+          jq -erj --arg digest "${QA_DIGEST}" 'select((.images | length) == 1 and (.failures | length) == 0 and .images[0].imageId.imageDigest == $digest) | .images[0].imageManifest' <<<"${result}" > "${manifest}"
+          aws ecr put-image --repository-name herfree-api --image-tag "${tag}" --image-digest "${QA_DIGEST}" --image-manifest "file://${manifest}" >/dev/null
