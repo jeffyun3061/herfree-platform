@@ -37,19 +37,23 @@ def require(condition, code):
 
 
 def verify(pr, run, jobs, candidate_sha, main_sha, candidate_tree, main_tree, bootstrap_verified=False,
-           pr_head_sha=None, pr_head_tree=None, ancestry_verified=False):
+           pr_head_sha=None, pr_head_tree=None, ancestry_verified=False, release_sha=None,
+           release_tree=None, postmerge_verified=False):
     pr_head_sha = pr_head_sha or candidate_sha
     pr_head_tree = pr_head_tree or candidate_tree
+    release_sha = release_sha or main_sha
+    release_tree = release_tree or main_tree
     require(all(SHA.fullmatch(s or "") for s in (candidate_sha, main_sha, candidate_tree, main_tree,
-                                                 pr_head_sha, pr_head_tree)), "INVALID_OBJECT_ID")
+                                                 pr_head_sha, pr_head_tree, release_sha, release_tree)), "INVALID_OBJECT_ID")
     require(pr.get("merged") is True and pr.get("state") == "closed", "PR_NOT_MERGED")
     require(pr.get("base", {}).get("ref") == "main" and pr.get("head", {}).get("sha") == pr_head_sha,
             "PR_MISMATCH")
     require(pr.get("head", {}).get("repo", {}).get("full_name") == REPO, "UNTRUSTED_PR_SOURCE")
-    require(pr.get("merge_commit_sha") == main_sha, "MAIN_NOT_PR_MERGE")
-    require(pr_head_tree == main_tree, "MERGED_PR_TREE_MISMATCH")
+    require(pr.get("merge_commit_sha") == release_sha, "MAIN_NOT_PR_MERGE")
+    require(release_sha == main_sha or postmerge_verified is True, "MAIN_CHANGED_AFTER_RELEASE")
+    require(pr_head_tree == release_tree, "MERGED_PR_TREE_MISMATCH")
     require(pr_head_sha == candidate_sha or ancestry_verified is True, "TESTED_COMMIT_NOT_ANCESTOR")
-    require(candidate_tree == main_tree or bootstrap_verified is True, "TREE_MISMATCH")
+    require(candidate_tree == release_tree or bootstrap_verified is True, "TREE_MISMATCH")
     require(run.get("status") == "completed" and run.get("conclusion") == "success", "RUN_NOT_SUCCESSFUL")
     require(run.get("event") == "workflow_dispatch" and run.get("path") == WORKFLOW,
             "UNTRUSTED_WORKFLOW")
@@ -67,7 +71,7 @@ def verify(pr, run, jobs, candidate_sha, main_sha, candidate_tree, main_tree, bo
         found = [step for step in steps if step.get("name") == name]
         require(len(found) == 1 and found[0].get("status") == "completed"
                 and found[0].get("conclusion") == "success", "REQUIRED_STEP_FAILED")
-    return {"candidate": candidate_sha, "main": main_sha, "tree": main_tree,
+    return {"candidate": candidate_sha, "main": main_sha, "releaseCommit": release_sha, "tree": main_tree,
             "runId": run.get("id"), "evidenceVerified": True, "promotionPerformed": False}
 
 
@@ -105,6 +109,17 @@ def verify_bootstrap_changes(candidate, main_sha, git=call):
     return True
 
 
+def verify_postmerge_changes(release_sha, main_sha, git=call):
+    """Only trusted audit-file modifications may follow the tested release."""
+    git("git", "merge-base", "--is-ancestor", release_sha, main_sha)
+    raw = git("git", "diff", "--name-status", "--no-renames", release_sha, main_sha, "--")
+    changes = [line.split("\t", 1) for line in raw.splitlines()]
+    require(len(changes) > 0 and all(len(row) == 2 and row[0] == "M" and row[1] in BOOTSTRAP_FILES
+                                      for row in changes), "MAIN_CHANGED_AFTER_RELEASE")
+    require(len({row[1] for row in changes}) == len(changes), "MAIN_CHANGED_AFTER_RELEASE")
+    return True
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--pr", type=int, required=True)
@@ -122,17 +137,20 @@ def main():
         require(jobs.get("total_count") == len(jobs.get("jobs", [])), "INCOMPLETE_JOBS")
         pr_head = pr.get("head", {}).get("sha", "")
         candidate = args.tested_sha or pr_head
+        release_sha = pr.get("merge_commit_sha", "")
         main_sha = call("git", "rev-parse", "refs/remotes/origin/main")
-        require(all(SHA.fullmatch(s or "") for s in (candidate, pr_head, main_sha)), "INVALID_COMMIT")
+        require(all(SHA.fullmatch(s or "") for s in (candidate, pr_head, release_sha, main_sha)), "INVALID_COMMIT")
         if pr_head != candidate:
             call("git", "merge-base", "--is-ancestor", candidate, pr_head)
         candidate_tree = call("git", "rev-parse", f"{candidate}^{{tree}}")
         pr_head_tree = call("git", "rev-parse", f"{pr_head}^{{tree}}")
+        release_tree = call("git", "rev-parse", f"{release_sha}^{{tree}}")
         main_tree = call("git", "rev-parse", f"{main_sha}^{{tree}}")
-        bootstrap_verified = (candidate_tree != main_tree
-                              and verify_bootstrap_changes(candidate, main_sha))
+        bootstrap_verified = (candidate_tree != release_tree
+                              and verify_bootstrap_changes(candidate, release_sha))
+        postmerge_verified = (release_sha != main_sha and verify_postmerge_changes(release_sha, main_sha))
         result = verify(pr, run, jobs["jobs"], candidate, main_sha, candidate_tree, main_tree, bootstrap_verified,
-                        pr_head, pr_head_tree, pr_head != candidate)
+                        pr_head, pr_head_tree, pr_head != candidate, release_sha, release_tree, postmerge_verified)
         result["inheritedAuditFilesOnly"] = bootstrap_verified
         log = call("gh", "run", "view", str(args.run), "--repo", REPO, "--attempt", str(attempt), "--log")
         result["testedImageDigest"] = extract_verified_digest(log, candidate)

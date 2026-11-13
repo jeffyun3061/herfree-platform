@@ -47,6 +47,28 @@ class CandidateEvidenceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "TESTED_COMMIT_NOT_ANCESTOR"):
             check(ancestor=False)
 
+    def test_only_audit_fixes_after_the_release_are_accepted(self):
+        new_main, new_tree = "d" * 40, "e" * 40
+        def check(postmerge):
+            return promotion.verify(self.pr, self.run, self.jobs, self.candidate, new_main,
+                                    self.tree, new_tree, False, self.candidate, self.tree, False,
+                                    self.main, self.tree, postmerge)
+        with self.assertRaisesRegex(ValueError, "MAIN_CHANGED_AFTER_RELEASE"):
+            check(False)
+        self.assertTrue(check(True)["evidenceVerified"])
+        name = "infra/scripts/promote-tested-pr206.sh"
+        def git(*args):
+            if args[1:3] == ("diff", "--name-status"):
+                return "M\t" + name
+            return ""
+        self.assertTrue(promotion.verify_postmerge_changes(self.main, new_main, git))
+        def changed_application(*args):
+            if args[1:3] == ("diff", "--name-status"):
+                return "M\tbackend/src/Main.java"
+            return ""
+        with self.assertRaisesRegex(ValueError, "MAIN_CHANGED_AFTER_RELEASE"):
+            promotion.verify_postmerge_changes(self.main, new_main, changed_application)
+
     def test_bootstrap_only_inherits_audit_files_from_parent(self):
         gate = sorted(promotion.BOOTSTRAP_FILES)
         blob = "e" * 40

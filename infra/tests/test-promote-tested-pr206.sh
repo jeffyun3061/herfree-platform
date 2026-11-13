@@ -5,7 +5,7 @@ root="$(cd "$(dirname "$0")/../.." && pwd)"
 tmp="$(mktemp -d)"
 trap 'rm -rf -- "$tmp"' EXIT
 mkdir -p "$tmp/bin"
-export TEST_LOG="$tmp/calls" TESTED_DIGEST="sha256:$(printf 'a%.0s' {1..64})"
+export TEST_LOG="$tmp/calls" TESTED_DIGEST="sha256:$(printf '{}' | sha256sum | cut -d ' ' -f1)"
 export GITHUB_SHA="$(printf 'b%.0s' {1..40})" GITHUB_REF=refs/heads/main
 export GITHUB_ACTIONS=true GITHUB_REPOSITORY=jeffyun3061/herfree-platform
 cat > "$tmp/bin/aws" <<'EOF'
@@ -28,6 +28,14 @@ case "$1:$2" in
   ecr:put-image)
     [[ " $* " == *" --image-digest $TESTED_DIGEST "* ]] || exit 9
     [[ " $* " == *" --image-tag $GITHUB_SHA "* || " $* " == *" --image-tag staging-passed-$GITHUB_SHA "* ]] || exit 9
+    previous=''
+    for arg in "$@"; do
+      if [[ "$previous" == --image-manifest ]]; then
+        [[ "$arg" == file://* ]] || exit 9
+        [[ "sha256:$(sha256sum "${arg#file://}" | cut -d ' ' -f1)" == "$TESTED_DIGEST" ]] || exit 9
+      fi
+      previous="$arg"
+    done
     echo put >> "$TEST_LOG" ;;
   *) echo 'unexpected AWS call' >&2; exit 9 ;;
 esac
