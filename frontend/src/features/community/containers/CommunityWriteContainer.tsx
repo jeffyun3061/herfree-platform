@@ -503,16 +503,14 @@ function WritePostForm() {
               <button
                 type="button"
                 aria-pressed={showContentPreview}
-                aria-label={richContent ? (showContentPreview ? '본문 미리보기 닫기' : '본문 미리보기') : undefined}
+                aria-label={showContentPreview ? '본문 미리보기 닫기' : '본문 미리보기'}
                 onClick={() => setShowContentPreview((value) => !value)}
                 className="min-h-11 rounded-lg px-3 text-[13px] font-bold text-[#0B3B36] underline underline-offset-4"
               >
                 {showContentPreview ? '계속 쓰기' : '미리보기'}
               </button>
             </div>
-            {(!showContentPreview || richContent) && (
-              <CommunityContentEditor value={content} onChange={setContent} richContent={richContent} onRichChange={changeRichContent} placeholder={contentPlaceholder} showPreview={false} />
-            )}
+            <CommunityContentEditor value={content} onChange={setContent} richContent={richContent} onRichChange={changeRichContent} placeholder={contentPlaceholder} showPreview={false} />
             {showContentPreview && (
               <section aria-label="게시글 본문 미리보기" data-testid="community-post-preview" className="min-h-[240px] w-full border-b border-[#D9CDB8] py-3">
                 {content ? (
