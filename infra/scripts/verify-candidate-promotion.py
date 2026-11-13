@@ -21,6 +21,11 @@ REQUIRED_STEPS = (
     "Test and restore isolated staging", "Stop staging after verified restoration",
 )
 IMAGE_PREFIX = "439777528445.dkr.ecr.ap-northeast-2.amazonaws.com/herfree-api@"
+BOOTSTRAP_FILES = frozenset({
+    ".github/workflows/verify-promotion-evidence.yml",
+    "infra/scripts/verify-candidate-promotion.py",
+    "infra/scripts/test_candidate_promotion.py",
+})
 
 
 def require(condition, code):
@@ -28,14 +33,14 @@ def require(condition, code):
         raise ValueError(code)
 
 
-def verify(pr, run, jobs, candidate_sha, main_sha, candidate_tree, main_tree):
+def verify(pr, run, jobs, candidate_sha, main_sha, candidate_tree, main_tree, bootstrap_verified=False):
     require(all(SHA.fullmatch(s or "") for s in (candidate_sha, main_sha, candidate_tree, main_tree)), "INVALID_OBJECT_ID")
     require(pr.get("merged") is True and pr.get("state") == "closed", "PR_NOT_MERGED")
     require(pr.get("base", {}).get("ref") == "main" and pr.get("head", {}).get("sha") == candidate_sha,
             "PR_MISMATCH")
     require(pr.get("head", {}).get("repo", {}).get("full_name") == REPO, "UNTRUSTED_PR_SOURCE")
     require(pr.get("merge_commit_sha") == main_sha, "MAIN_NOT_PR_MERGE")
-    require(candidate_tree == main_tree, "TREE_MISMATCH")
+    require(candidate_tree == main_tree or bootstrap_verified is True, "TREE_MISMATCH")
     require(run.get("status") == "completed" and run.get("conclusion") == "success", "RUN_NOT_SUCCESSFUL")
     require(run.get("event") == "workflow_dispatch" and run.get("path") == WORKFLOW,
             "UNTRUSTED_WORKFLOW")
@@ -75,6 +80,22 @@ def call(*args):
     return subprocess.run(args, check=True, text=True, encoding="utf-8", capture_output=True, timeout=30).stdout.strip()
 
 
+def verify_bootstrap_changes(candidate, main_sha, git=call):
+    """Accept only newly added audit files inherited unchanged from main's parent."""
+    raw = git("git", "diff", "--name-status", "--no-renames", candidate, main_sha, "--")
+    changes = [line.split("\t", 1) for line in raw.splitlines()]
+    require(len(changes) > 0 and all(len(row) == 2 and row[0] == "A" and row[1] in BOOTSTRAP_FILES
+                                      for row in changes), "TREE_MISMATCH")
+    require(len({row[1] for row in changes}) == len(changes), "TREE_MISMATCH")
+    parent = git("git", "rev-parse", f"{main_sha}^1")
+    require(SHA.fullmatch(parent or "") is not None, "INVALID_PARENT")
+    for _, path in changes:
+        inherited = git("git", "rev-parse", f"{parent}:{path}")
+        current = git("git", "rev-parse", f"{main_sha}:{path}")
+        require(SHA.fullmatch(inherited or "") is not None and inherited == current, "GATE_CHANGED_BY_PR")
+    return True
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--pr", type=int, required=True)
@@ -94,7 +115,10 @@ def main():
         require(SHA.fullmatch(candidate or "") is not None and SHA.fullmatch(main_sha or "") is not None, "INVALID_COMMIT")
         candidate_tree = call("git", "rev-parse", f"{candidate}^{{tree}}")
         main_tree = call("git", "rev-parse", f"{main_sha}^{{tree}}")
-        result = verify(pr, run, jobs["jobs"], candidate, main_sha, candidate_tree, main_tree)
+        bootstrap_verified = (candidate_tree != main_tree
+                              and verify_bootstrap_changes(candidate, main_sha))
+        result = verify(pr, run, jobs["jobs"], candidate, main_sha, candidate_tree, main_tree, bootstrap_verified)
+        result["inheritedAuditFilesOnly"] = bootstrap_verified
         log = call("gh", "run", "view", str(args.run), "--repo", REPO, "--attempt", str(attempt), "--log")
         result["testedImageDigest"] = extract_verified_digest(log, candidate)
         remote = call("git", "ls-remote", "origin", "refs/heads/main").split()

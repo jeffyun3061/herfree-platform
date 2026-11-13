@@ -33,6 +33,30 @@ class CandidateEvidenceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "TREE_MISMATCH"):
             self.check("d" * 40)
 
+    def test_bootstrap_only_inherits_audit_files_from_parent(self):
+        gate = sorted(promotion.BOOTSTRAP_FILES)
+        blob = "e" * 40
+        parent = "f" * 40
+        def git(*args):
+            if args[1:3] == ("diff", "--name-status"):
+                return "\n".join("A\t" + name for name in gate)
+            if args[-1] == f"{self.main}^1":
+                return parent
+            return blob
+        self.assertTrue(promotion.verify_bootstrap_changes(self.candidate, self.main, git))
+        def changed_code(*args):
+            if args[1:3] == ("diff", "--name-status"):
+                return "M\tbackend/src/Main.java"
+            return git(*args)
+        with self.assertRaisesRegex(ValueError, "TREE_MISMATCH"):
+            promotion.verify_bootstrap_changes(self.candidate, self.main, changed_code)
+        def changed_gate(*args):
+            if args[-1].startswith(self.main + ":"):
+                return "d" * 40
+            return git(*args)
+        with self.assertRaisesRegex(ValueError, "GATE_CHANGED_BY_PR"):
+            promotion.verify_bootstrap_changes(self.candidate, self.main, changed_gate)
+
     def test_unmerged_or_wrong_merge_rejected(self):
         self.pr["merged"] = False
         with self.assertRaisesRegex(ValueError, "PR_NOT_MERGED"):
