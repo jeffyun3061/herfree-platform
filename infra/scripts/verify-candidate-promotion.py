@@ -36,13 +36,19 @@ def require(condition, code):
         raise ValueError(code)
 
 
-def verify(pr, run, jobs, candidate_sha, main_sha, candidate_tree, main_tree, bootstrap_verified=False):
-    require(all(SHA.fullmatch(s or "") for s in (candidate_sha, main_sha, candidate_tree, main_tree)), "INVALID_OBJECT_ID")
+def verify(pr, run, jobs, candidate_sha, main_sha, candidate_tree, main_tree, bootstrap_verified=False,
+           pr_head_sha=None, pr_head_tree=None, ancestry_verified=False):
+    pr_head_sha = pr_head_sha or candidate_sha
+    pr_head_tree = pr_head_tree or candidate_tree
+    require(all(SHA.fullmatch(s or "") for s in (candidate_sha, main_sha, candidate_tree, main_tree,
+                                                 pr_head_sha, pr_head_tree)), "INVALID_OBJECT_ID")
     require(pr.get("merged") is True and pr.get("state") == "closed", "PR_NOT_MERGED")
-    require(pr.get("base", {}).get("ref") == "main" and pr.get("head", {}).get("sha") == candidate_sha,
+    require(pr.get("base", {}).get("ref") == "main" and pr.get("head", {}).get("sha") == pr_head_sha,
             "PR_MISMATCH")
     require(pr.get("head", {}).get("repo", {}).get("full_name") == REPO, "UNTRUSTED_PR_SOURCE")
     require(pr.get("merge_commit_sha") == main_sha, "MAIN_NOT_PR_MERGE")
+    require(pr_head_tree == main_tree, "MERGED_PR_TREE_MISMATCH")
+    require(pr_head_sha == candidate_sha or ancestry_verified is True, "TESTED_COMMIT_NOT_ANCESTOR")
     require(candidate_tree == main_tree or bootstrap_verified is True, "TREE_MISMATCH")
     require(run.get("status") == "completed" and run.get("conclusion") == "success", "RUN_NOT_SUCCESSFUL")
     require(run.get("event") == "workflow_dispatch" and run.get("path") == WORKFLOW,
@@ -103,6 +109,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--pr", type=int, required=True)
     parser.add_argument("--run", type=int, required=True)
+    parser.add_argument("--tested-sha", help="Previously tested ancestor, if the PR was updated from main")
     args = parser.parse_args()
     try:
         require(args.pr > 0 and args.run > 0, "INVALID_INPUT")
@@ -113,14 +120,19 @@ def main():
         require(isinstance(attempt, int) and attempt > 0, "INVALID_RUN_ATTEMPT")
         jobs = json.loads(call("gh", "api", f"repos/{REPO}/actions/runs/{args.run}/attempts/{attempt}/jobs?per_page=100"))
         require(jobs.get("total_count") == len(jobs.get("jobs", [])), "INCOMPLETE_JOBS")
-        candidate = pr.get("head", {}).get("sha", "")
+        pr_head = pr.get("head", {}).get("sha", "")
+        candidate = args.tested_sha or pr_head
         main_sha = call("git", "rev-parse", "refs/remotes/origin/main")
-        require(SHA.fullmatch(candidate or "") is not None and SHA.fullmatch(main_sha or "") is not None, "INVALID_COMMIT")
+        require(all(SHA.fullmatch(s or "") for s in (candidate, pr_head, main_sha)), "INVALID_COMMIT")
+        if pr_head != candidate:
+            call("git", "merge-base", "--is-ancestor", candidate, pr_head)
         candidate_tree = call("git", "rev-parse", f"{candidate}^{{tree}}")
+        pr_head_tree = call("git", "rev-parse", f"{pr_head}^{{tree}}")
         main_tree = call("git", "rev-parse", f"{main_sha}^{{tree}}")
         bootstrap_verified = (candidate_tree != main_tree
                               and verify_bootstrap_changes(candidate, main_sha))
-        result = verify(pr, run, jobs["jobs"], candidate, main_sha, candidate_tree, main_tree, bootstrap_verified)
+        result = verify(pr, run, jobs["jobs"], candidate, main_sha, candidate_tree, main_tree, bootstrap_verified,
+                        pr_head, pr_head_tree, pr_head != candidate)
         result["inheritedAuditFilesOnly"] = bootstrap_verified
         log = call("gh", "run", "view", str(args.run), "--repo", REPO, "--attempt", str(attempt), "--log")
         result["testedImageDigest"] = extract_verified_digest(log, candidate)

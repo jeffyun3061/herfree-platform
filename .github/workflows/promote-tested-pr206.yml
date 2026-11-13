@@ -2,6 +2,11 @@ name: Promote previously tested PR 206 image
 
 on:
   workflow_dispatch:
+    inputs:
+      pull_request:
+        description: Merged PR that includes the tested PR 206 commit
+        required: true
+        type: string
 
 permissions:
   actions: read
@@ -22,6 +27,7 @@ jobs:
     env:
       AWS_REGION: ap-northeast-2
       GH_TOKEN: ${{ github.token }}
+      PR_NUMBER: ${{ inputs.pull_request }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -35,9 +41,10 @@ jobs:
         id: evidence
         run: |
           set -euo pipefail
+          [[ "$PR_NUMBER" =~ ^[1-9][0-9]*$ ]]
           git fetch --no-tags origin main
-          git fetch --no-tags origin refs/pull/206/head
-          result="$(python3 infra/scripts/verify-candidate-promotion.py --pr 206 --run 43436245532)"
+          git fetch --no-tags origin "refs/pull/$PR_NUMBER/head"
+          result="$(python3 infra/scripts/verify-candidate-promotion.py --pr "$PR_NUMBER" --run 43436245532 --tested-sha 108abbd0ad5515f4f190bfdadf86c980f132742e)"
           jq -e --arg sha "$GITHUB_SHA" \
             '.evidenceVerified == true and .promotionPerformed == false and .main == $sha and .candidate == "108abbd0ad5515f4f190bfdadf86c980f132742e" and .runId == 43436245532' \
             <<<"$result" >/dev/null
