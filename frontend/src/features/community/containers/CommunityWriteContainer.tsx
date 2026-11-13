@@ -518,7 +518,7 @@ function WritePostForm() {
                 )}
               </div>
             ) : (
-              <CommunityContentEditor value={content} onChange={setContent} richContent={richContent} onRichChange={changeRichContent} placeholder={contentPlaceholder} />
+              <CommunityContentEditor value={content} onChange={setContent} richContent={richContent} onRichChange={changeRichContent} placeholder={contentPlaceholder} showPreview={false} />
             )}
             <div className="mt-3">
               <CommunityPhotoAttach

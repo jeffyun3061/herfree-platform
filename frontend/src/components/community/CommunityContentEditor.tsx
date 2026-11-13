@@ -12,10 +12,11 @@ type CommunityContentEditorProps = {
   label?: string;
   richContent?: string | null;
   onRichChange?: (plain: string, document: string) => void;
+  showPreview?: boolean;
 };
 
 export function CommunityContentEditor({
-  value, onChange, placeholder, label = '본문', richContent = null, onRichChange,
+  value, onChange, placeholder, label = '본문', richContent = null, onRichChange, showPreview = true,
 }: CommunityContentEditorProps) {
   const editor = useRef<HTMLTextAreaElement>(null);
   const previewId = useId();
@@ -56,11 +57,11 @@ export function CommunityContentEditor({
     <div>
       <div className="mb-2 flex items-center justify-between gap-3">
         <label htmlFor="content" className="text-[13px] font-semibold text-[#2C342E]">{label}</label>
-        <button type="button" aria-expanded={previewOpen} aria-controls={previewId}
+        {showPreview && <button type="button" aria-expanded={previewOpen} aria-controls={previewId}
           onClick={() => setPreviewOpen(!previewOpen)}
           className="min-h-10 px-2 text-[13px] font-semibold text-[#0B3B36]">
           {previewOpen ? '미리보기 닫기' : '본문 미리보기'}
-        </button>
+        </button>}
       </div>
       {onRichChange && !richContent && <button type="button" onClick={() => onRichChange(value, JSON.stringify(plainRichDocument(value)))} className="mb-3 min-h-11 rounded-xl bg-[#EEF4EF] px-3 text-sm font-bold text-[#0B3B36]">서식 편집 시작 · 굵게, 목록, 인용, 링크</button>}
       {onRichChange && richContent ? <CommunityRichEditor value={value} richContent={richContent} label={label} placeholder={placeholder} onChange={onRichChange} /> : <div className="-mx-3 rounded-[14px] bg-[#FFFCF7] px-3 py-3 ring-1 ring-[#E2D5C2] focus-within:ring-[#0B3B36]/50">
