@@ -1,6 +1,11 @@
 name: Verify promotion evidence
 
 on:
+  pull_request:
+    paths:
+      - '.github/workflows/verify-promotion-evidence.yml'
+      - 'infra/scripts/verify-candidate-promotion.py'
+      - 'infra/scripts/test_candidate_promotion.py'
   workflow_dispatch:
     inputs:
       pull_request:
@@ -18,8 +23,17 @@ permissions:
   pull-requests: read
 
 jobs:
+  tests:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: python3 -m unittest discover -s infra/scripts -p test_candidate_promotion.py
   verify:
-    if: github.repository == 'jeffyun3061/herfree-platform' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'workflow_dispatch' && github.repository == 'jeffyun3061/herfree-platform' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
