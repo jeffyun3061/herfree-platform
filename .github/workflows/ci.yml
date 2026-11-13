@@ -31,8 +31,9 @@ jobs:
           grep -q 'CONFIRM_RDS_TO_LOCAL_MIGRATION.*YES' infra/scripts/migrate-rds-to-local.sh
           grep -q 'row-count verification failed' infra/scripts/migrate-rds-to-local.sh
           grep -q -- '--sse AES256' infra/scripts/backup-db.sh
-          grep -q 'Backup checksum mismatch' infra/scripts/restore-local-db-drill.sh
-          grep -q 'Dedicated restore mount required' infra/scripts/restore-local-db-drill.sh
+          grep -q 'sha256sum -c' infra/scripts/restore-local-db-drill.sh
+          grep -q 'Backup checksum mismatch' infra/scripts/restore-staging-db-drill.sh
+          grep -q 'Dedicated restore mount required' infra/scripts/restore-staging-db-drill.sh
           python3 -m unittest discover -s infra/scripts/tests -v
           grep -q 'DatabaseBackupAgeHours' infra/scripts/monitor-local-db.sh
           grep -q 'sslMode=VERIFY_IDENTITY' .env.staging.example

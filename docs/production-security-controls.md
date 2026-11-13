@@ -15,7 +15,7 @@
 | forwarded IP | 신뢰된 proxy CIDR에서만 전달 헤더 사용, DNS hostname은 IP로 인정하지 않음 | `ClientIpExtractor` |
 | 배포 | 이번 보안 변경은 staging 검증 후 immutable ECR digest, 배포 전 S3 백업, rollback mode | `release-backend.yml`, `deploy-release.sh` |
 | TLS/로그 | 인증서 갱신 실패는 배포 실패, CloudWatch retention 30일 재적용 | `setup-*-tls.sh`, `setup-production-aws.ps1` |
-| 복구훈련 | 기존 stopped staging, 일시적 제한 IAM profile, 임시 암호화 EBS, 내부 Docker network, 실제 복호화·읽기/쓰기, 임시 자원 삭제·중지 | `run-staging-restore-drill.py`, `restore-local-db-drill.sh`, `RestoreDrillVerifier` |
+| 복구훈련 | 기존 stopped staging, 일시적 제한 IAM profile, 임시 암호화 EBS, 내부 Docker network, 실제 복호화·읽기/쓰기, 임시 자원 삭제·중지 | `run-staging-restore-drill.py`, `restore-staging-db-drill.sh`, `RestoreDrillVerifier` |
 | 추적성 | 응답과 콘솔 로그에 안전한 `X-Request-ID`만 연결하고 본문·건강정보는 기록하지 않음 | `RequestCorrelationFilter`, `application.yml`, `check-sensitive-logging.mjs` |
 
 운영 공개 판정은 코드 검증만으로 끝나지 않는다. 실제 AWS 비공개 DB/S3, 암호화 EBS,

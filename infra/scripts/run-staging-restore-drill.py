@@ -187,7 +187,7 @@ for container in $containers; do docker stop "$container" >/dev/null; done
         aws(args.region, "ec2", "wait", "volume-available", "--volume-ids", state["volume"])
         aws(args.region, "ec2", "attach-volume", "--instance-id", args.instance, "--volume-id", state["volume"], "--device", "/dev/sdg")
         aws(args.region, "ec2", "wait", "volume-in-use", "--volume-ids", state["volume"])
-        worker = base64.b64encode(Path(__file__).with_name("restore-local-db-drill.sh").read_bytes()).decode()
+        worker = base64.b64encode(Path(__file__).with_name("restore-staging-db-drill.sh").read_bytes()).decode()
         exports = {"CONFIRM_RESTORE_DRILL": "YES", "STAGING_INSTANCE_ID": args.instance,
                    "RESTORE_VOLUME_ID": state["volume"], "RESTORE_API_IMAGE": args.image,
                    "BACKUP_BUCKET": args.bucket, "AWS_REGION": args.region,
