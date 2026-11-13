@@ -1,0 +1,60 @@
+name: Verify promotion evidence
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/verify-promotion-evidence.yml'
+      - 'infra/scripts/verify-candidate-promotion.py'
+      - 'infra/scripts/test_candidate_promotion.py'
+      - 'infra/scripts/promote-tested-pr206.sh'
+      - 'infra/tests/test-promote-tested-pr206.sh'
+      - '.github/workflows/promote-tested-pr206.yml'
+  workflow_dispatch:
+    inputs:
+      pull_request:
+        description: Merged pull request number
+        required: true
+        type: string
+      staging_run:
+        description: Successful staging workflow run ID
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+  pull-requests: read
+
+jobs:
+  tests:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: python3 -m unittest discover -s infra/scripts -p test_candidate_promotion.py
+      - run: bash infra/tests/test-promote-tested-pr206.sh
+  verify:
+    if: github.event_name == 'workflow_dispatch' && github.repository == 'jeffyun3061/herfree-platform' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Test evidence verification
+        run: python3 -m unittest discover -s infra/scripts -p test_candidate_promotion.py
+      - name: Verify candidate evidence without promotion
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ inputs.pull_request }}
+          RUN_ID: ${{ inputs.staging_run }}
+        run: |
+          set -euo pipefail
+          [[ "$PR_NUMBER" =~ ^[1-9][0-9]*$ && "$RUN_ID" =~ ^[1-9][0-9]*$ ]]
+          git fetch --no-tags origin main
+          git fetch --no-tags origin "refs/pull/${PR_NUMBER}/head"
+          python3 infra/scripts/verify-candidate-promotion.py --pr "$PR_NUMBER" --run "$RUN_ID"
