@@ -1,0 +1,160 @@
+name: Run isolated current-main sharing QA
+
+on:
+  workflow_dispatch:
+    inputs:
+      qa_branch:
+        description: Locked QA frontend branch built from current main
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: backend-staging
+  cancel-in-progress: false
+
+jobs:
+  qa:
+    if: github.repository == 'jeffyun3061/herfree-platform' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: staging
+    # Leave time for dependency setup, a timed QA session and instance stop.
+    timeout-minutes: 120
+    env:
+      AWS_REGION: ap-northeast-2
+      STAGING_INSTANCE: i-02cf5b8f3a7aa32da
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install browser test dependencies
+        working-directory: frontend
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium webkit
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - id: target
+        name: Resolve the exact immutable QA image
+        run: |
+          set -euo pipefail
+          test "$(aws sts get-caller-identity --query Account --output text)" = 439777528445
+          test "${GITHUB_SHA}" = "$(git ls-remote origin refs/heads/main | cut -f1)"
+          test "$(aws ecr describe-repositories --repository-names herfree-api \
+            --query 'repositories[0].imageTagMutability' --output text)" = IMMUTABLE
+          digest="$(aws ecr describe-images --repository-name herfree-api --image-ids imageTag="${GITHUB_SHA}" \
+            --query 'imageDetails[0].imageDigest' --output text)"
+          [[ "${digest}" =~ ^sha256:[a-f0-9]{64}$ ]]
+          run_id="$(printf '%s:%s' "${GITHUB_RUN_ID}" "${GITHUB_RUN_ATTEMPT}" | sha256sum | cut -c1-8)"
+          echo "image=439777528445.dkr.ecr.ap-northeast-2.amazonaws.com/herfree-api@${digest}" >> "${GITHUB_OUTPUT}"
+          echo "digest=${digest}" >> "${GITHUB_OUTPUT}"
+          echo "run=${run_id}" >> "${GITHUB_OUTPUT}"
+      - name: Verify QA branch, image and credentials before starting staging
+        env:
+          GH_TOKEN: ${{ secrets.QA_PROTECTION_READ_TOKEN }}
+          QA_BRANCH: ${{ inputs.qa_branch }}
+          QA_IMAGE: ${{ steps.target.outputs.image }}
+          ISOLATED_QA_BASIC_USERNAME: ${{ secrets.E2E_HTTP_USERNAME }}
+          ISOLATED_QA_BASIC_PASSWORD: ${{ secrets.E2E_HTTP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          : "${GH_TOKEN:?A branch-protection read credential is required}"
+          : "${ISOLATED_QA_BASIC_USERNAME:?QA Basic username is required}"
+          : "${ISOLATED_QA_BASIC_PASSWORD:?QA Basic password is required}"
+          python3 infra/scripts/verify-live-release-qa.py \
+            --sha "${GITHUB_SHA}" --branch "${QA_BRANCH}" --image "${QA_IMAGE}" >/dev/null
+      - uses: aws-actions/amazon-ecr-login@v2
+      - name: Reject high and critical vulnerabilities in the exact QA image
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        env:
+          TRIVY_DB_REPOSITORY: ghcr.io/aquasecurity/trivy-db:2
+          TRIVY_JAVA_DB_REPOSITORY: ghcr.io/aquasecurity/trivy-java-db:1
+        with:
+          version: v0.72.0
+          image-ref: ${{ steps.target.outputs.image }}
+          format: table
+          exit-code: '1'
+          ignore-unfixed: true
+          severity: HIGH,CRITICAL
+      - id: instance
+        name: Start only a stopped staging instance
+        run: |
+          set -euo pipefail
+          state="$(aws ec2 describe-instances --instance-ids "${STAGING_INSTANCE}" \
+            --query 'Reservations[0].Instances[0].State.Name' --output text)"
+          test "${state}" = stopped || { echo 'Staging is not stopped; refusing to take ownership.' >&2; exit 1; }
+          aws ec2 start-instances --instance-ids "${STAGING_INSTANCE}" --output json >/dev/null
+          echo 'started=true' >> "${GITHUB_OUTPUT}"
+          aws ec2 wait instance-running --instance-ids "${STAGING_INSTANCE}"
+          for attempt in $(seq 1 60); do
+            status="$(aws ssm describe-instance-information --filters "Key=InstanceIds,Values=${STAGING_INSTANCE}" \
+              --query 'InstanceInformationList[0].PingStatus' --output text)"
+            if [[ "${status}" == Online ]] && python3 infra/scripts/verify_staging_route.py | jq -e '.stagingRouteVerified == true' >/dev/null; then
+              exit 0
+            fi
+            sleep 10
+          done
+          echo 'Staging SSM did not become ready; inspect the instance before stopping it.' >&2
+          exit 1
+      - id: session
+        name: Test and restore the isolated staging session
+        timeout-minutes: 65
+        env:
+          GH_TOKEN: ${{ secrets.QA_PROTECTION_READ_TOKEN }}
+          QA_BRANCH: ${{ inputs.qa_branch }}
+          QA_IMAGE: ${{ steps.target.outputs.image }}
+          QA_RUN: ${{ steps.target.outputs.run }}
+          ISOLATED_QA_BASIC_USERNAME: ${{ secrets.E2E_HTTP_USERNAME }}
+          ISOLATED_QA_BASIC_PASSWORD: ${{ secrets.E2E_HTTP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          : "${GH_TOKEN:?A branch-protection read credential is required}"
+          : "${QA_BRANCH:?A locked QA branch is required}"
+          python3 infra/scripts/run-isolated-release-session.py \
+            --sha "${GITHUB_SHA}" --branch "${QA_BRANCH}" --image "${QA_IMAGE}" --run "${QA_RUN}" --repo .
+      - id: stop
+        name: Stop the staging instance after verified restoration
+        if: always() && steps.instance.outputs.started == 'true' && steps.session.outputs.safe_to_stop == 'true'
+        run: |
+          set -euo pipefail
+          test "$(aws sts get-caller-identity --query Account --output text)" = 439777528445
+          aws ec2 stop-instances --instance-ids "${STAGING_INSTANCE}" --output json >/dev/null
+          aws ec2 wait instance-stopped --instance-ids "${STAGING_INSTANCE}"
+      - name: Flag staging for manual reconciliation after an unsuccessful run
+        if: always() && steps.instance.outcome != 'skipped' && steps.stop.outcome != 'success'
+        run: |
+          echo 'The staging instance may still be running. Inspect the logged SSM command IDs and reconcile before stopping or retrying.' >&2
+          exit 1
+      - name: Mark the exact fully tested image as staging-passed
+        if: success() && steps.session.outputs.qa_passed == 'true' && steps.stop.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ secrets.QA_PROTECTION_READ_TOKEN }}
+          QA_BRANCH: ${{ inputs.qa_branch }}
+          QA_IMAGE: ${{ steps.target.outputs.image }}
+          QA_DIGEST: ${{ steps.target.outputs.digest }}
+        run: |
+          set -euo pipefail
+          : "${GH_TOKEN:?A branch-protection read credential is required}"
+          python3 infra/scripts/verify-live-release-qa.py \
+            --sha "${GITHUB_SHA}" --branch "${QA_BRANCH}" --image "${QA_IMAGE}" >/dev/null
+          test "${GITHUB_SHA}" = "$(git ls-remote origin refs/heads/main | cut -f1)"
+          git diff --quiet HEAD --
+          [[ "${QA_DIGEST}" =~ ^sha256:[a-f0-9]{64}$ ]]
+          tag="staging-passed-${GITHUB_SHA}"
+          existing="$(aws ecr batch-get-image --repository-name herfree-api --image-ids imageTag="${tag}" --output json)"
+          if jq -e --arg digest "${QA_DIGEST}" '(.images | length) == 1 and (.failures | length) == 0 and .images[0].imageId.imageDigest == $digest' <<<"${existing}" >/dev/null; then
+            echo 'The exact image already has the staging-passed tag.'
+            exit 0
+          fi
+          jq -e '(.images | length) == 0 and (.failures | length) == 1 and .failures[0].failureCode == "ImageNotFound"' <<<"${existing}" >/dev/null || { echo 'Existing staging tag has an unexpected image.' >&2; exit 1; }
+          result="$(aws ecr batch-get-image --repository-name herfree-api --image-ids imageDigest="${QA_DIGEST}" --output json)"
+          manifest="$(jq -er --arg digest "${QA_DIGEST}" 'select((.images | length) == 1 and (.failures | length) == 0 and .images[0].imageId.imageDigest == $digest) | .images[0].imageManifest' <<<"${result}")"
+          aws ecr put-image --repository-name herfree-api --image-tag "${tag}" --image-digest "${QA_DIGEST}" --image-manifest "${manifest}" >/dev/null

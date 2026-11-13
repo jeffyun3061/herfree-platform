@@ -167,9 +167,7 @@ public class PostService {
             PostListPeriod period
     ) {
         // 비회원 통합·게시판 검색 차단 — 커뮤니티 목록 잠금과 동일 정책
-        boolean publicConcernSearch = boardId != null && boardRepository.findById(boardId)
-                .map(board -> AnonymousConcernPolicy.isConcernBoard(board.getBoardType())).orElse(false);
-        if (userId == null && StringUtils.hasText(keyword) && !publicConcernSearch) {
+        if (userId == null && StringUtils.hasText(keyword)) {
             return Page.empty(pageable);
         }
 

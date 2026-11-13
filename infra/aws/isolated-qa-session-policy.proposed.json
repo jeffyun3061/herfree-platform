@@ -1,0 +1,17 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ManageOnlyStagingInstanceLifecycle",
+      "Effect": "Allow",
+      "Action": ["ec2:StartInstances", "ec2:StopInstances"],
+      "Resource": "arn:aws:ec2:ap-northeast-2:439777528445:instance/i-02cf5b8f3a7aa32da"
+    },
+    {
+      "Sid": "InspectOnlyHerfreeImageRepository",
+      "Effect": "Allow",
+      "Action": "ecr:DescribeRepositories",
+      "Resource": "arn:aws:ecr:ap-northeast-2:439777528445:repository/herfree-api"
+    }
+  ]
+}

@@ -134,6 +134,7 @@ jobs:
             infra/nginx/herfree-staging-bootstrap.conf \
             infra/scripts/backup-db.sh \
             infra/scripts/deploy-release.sh \
+            infra/scripts/guard-staging-isolation.sh \
             infra/scripts/install-local-db-ops.sh \
             infra/scripts/migrate-rds-to-local.sh \
             infra/scripts/monitor-local-db.sh \
@@ -386,6 +387,7 @@ jobs:
             infra/nginx/herfree-production-bootstrap.conf \
             infra/scripts/backup-db.sh \
             infra/scripts/deploy-release.sh \
+            infra/scripts/guard-staging-isolation.sh \
             infra/scripts/install-local-db-ops.sh \
             infra/scripts/migrate-rds-to-local.sh \
             infra/scripts/monitor-local-db.sh \

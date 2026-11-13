@@ -1,0 +1,11 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "CreateAndVerifyThisQaBranchOnly",
+      "Effect": "Allow",
+      "Action": ["amplify:CreateBranch", "amplify:GetBranch"],
+      "Resource": "arn:aws:amplify:ap-northeast-2:439777528445:apps/d2bcg3vnlv5hkh/branches/qa-aaad889901ab-aaad8899"
+    }
+  ]
+}

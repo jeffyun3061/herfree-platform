@@ -7,6 +7,7 @@ import {
 } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { verifyIfIsolatedRelease } from './support/isolated-release-target';
 import {
   expectedMutationBackendEnvironment,
   mutationEnvironmentEnabled,
@@ -132,12 +133,18 @@ async function useAccountOnPage(page: Page, account: TestAccount): Promise<void>
 
 async function deleteAccount(account: TestAccount): Promise<void> {
   try {
+    verifyIfIsolatedRelease();
     const response = await account.api.delete('/api/users/me', { headers: csrf(account) });
     expect([204, 401, 404], await response.text()).toContain(response.status());
   } finally {
     await account.api.dispose();
   }
 }
+
+test.beforeEach(() => {
+  if (process.env.ISOLATED_RELEASE_SHARE_QA === 'true') test.setTimeout(180_000);
+  verifyIfIsolatedRelease();
+});
 
 test.describe('release smoke', () => {
   for (const path of [
@@ -239,24 +246,32 @@ test.describe('staging data flow', () => {
       expect(created.isAnonymous).toBe(true);
       expect(created.authorNickname).not.toBe(account.user.nickname);
       expect(created).not.toHaveProperty('authorIpMasked');
-      const guest = await data<{ authorNickname: string }>(await request.get(`/api/posts/${postId}`));
-      expect(guest.authorNickname).toBe('익명');
-      expect(guest).not.toHaveProperty('authorIpMasked');
+      expect((await request.get(`/api/posts/${postId}`)).status()).toBe(404);
+      const member = await data<{ authorNickname: string }>(await account.api.get(`/api/posts/${postId}`));
+      expect(member.authorNickname).toBe('익명(나)');
+      expect(member).not.toHaveProperty('authorIpMasked');
       const search = await data<{ content: Array<{ id: number }> }>(await request.get(`/api/posts?boardId=${board!.id}&keyword=${encodeURIComponent(title)}&page=0&size=20`));
-      expect(search.content.some(item => item.id === postId)).toBe(true);
+      expect(search.content.some(item => item.id === postId)).toBe(false);
       const preview = await data<Record<string, unknown>>(await request.get(`/api/posts/${postId}/share-preview`));
       expect(preview.title).toBe(title);
+      expect(preview.description).toBe('로그인 후 게시글을 확인해 주세요.');
       expect(Object.keys(preview).sort()).toEqual(['boardType', 'description', 'id', 'title']);
       await data(await account.api.post(`/api/posts/${postId}/comments`, { headers: csrf(account), data: { content: 'Temporary anonymous experience.', isAnonymous: false } }));
-      const comments = await data<{ content: Array<{ authorNickname: string; operatorReply: boolean }> }>(await request.get(`/api/posts/${postId}/comments`));
-      expect(comments.content).toEqual(expect.arrayContaining([expect.objectContaining({ authorNickname: '익명', operatorReply: false })]));
+      expect((await request.get(`/api/posts/${postId}/comments`)).status()).toBe(404);
+      const comments = await data<{ content: Array<{ authorNickname: string; operatorReply: boolean }> }>(await account.api.get(`/api/posts/${postId}/comments`));
+      expect(comments.content).toEqual(expect.arrayContaining([expect.objectContaining({ authorNickname: '익명(나)', operatorReply: false })]));
       await page.context().clearCookies();
       await page.goto(`/community/posts/${postId}`);
-      await expect(page.getByRole('heading', { name: title })).toBeVisible();
+      await expect(page.getByRole('link', { name: '로그인하고 보기' })).toBeVisible();
       await expect(page.getByText(account.user.nickname, { exact: true })).toHaveCount(0);
       const html = await request.get(`/community/posts/${postId}`, { headers: { 'User-Agent': 'kakaotalk-scrap/1.0' } });
-      expect((await html.text()).match(/<head>[\s\S]*?<\/head>/)?.[0]).toContain(`property="og:title" content="${title}"`);
+      const head = (await html.text()).match(/<head>[\s\S]*?<\/head>/)?.[0] || '';
+      const shareTitle = `${Array.from(title).slice(0, 17).join('')}…`;
+      expect(head).toContain(`property="og:title" content="${shareTitle}"`);
+      expect(head).toContain('property="og:description" content="로그인 후 게시글을 확인해 주세요."');
+      expect(head).not.toContain(payload.content);
     } finally {
+      verifyIfIsolatedRelease();
       if (postId) expect((await account.api.delete(`/api/posts/${postId}`, { headers: csrf(account) })).status()).toBe(204);
       await deleteAccount(account);
     }
@@ -372,6 +387,7 @@ test.describe('staging data flow', () => {
       await expect(page.getByRole('heading', { name: '스크랩한 글' })).toBeVisible();
       await expect(page.getByText(title)).toBeVisible();
     } finally {
+      verifyIfIsolatedRelease();
       if (reader && bookmarkAdded && postId) {
         await reader.api.delete(`/api/posts/${postId}/bookmark`, { headers: csrf(reader) });
       }
@@ -518,6 +534,7 @@ test.describe('staging data flow', () => {
       const normalUserAdmin = await first.api.get('/api/admin/reports');
       expect([401, 403]).toContain(normalUserAdmin.status());
     } finally {
+      verifyIfIsolatedRelease();
       if (first && journalId) {
         await first.api.delete(`/api/journal/records/${journalId}`, { headers: csrf(first) });
       }
