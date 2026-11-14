@@ -33,6 +33,8 @@ import { Modal } from '@/components/ui/Modal';
 import { ReadableContent } from '@/components/content/ReadableContent';
 import type { PostVisibility } from '@/domain/post/types';
 
+const NEW_POST_TITLE_MAX_LENGTH = 50;
+
 function WritePostForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -40,6 +42,7 @@ function WritePostForm() {
   const initialBoardId = Number(searchParams.get('boardId')) || 0;
   const isAdminEdit = searchParams.get('admin') === '1';
   const isEditMode = editPostId !== null;
+  const titleMaxLength = isEditMode ? POST_TITLE_MAX_LENGTH : NEW_POST_TITLE_MAX_LENGTH;
 
   const { user } = useAuth();
   const staffUser = isStaff(user?.role);
@@ -55,6 +58,7 @@ function WritePostForm() {
 
   const [boardId, setBoardId] = useState(0);
   const [title, setTitle] = useState('');
+  const titleOverLimit = title.length > titleMaxLength;
   const [content, setContent] = useState('');
   const [showContentPreview, setShowContentPreview] = useState(false);
   const [isAnonymous, setIsAnonymous] = useState(false);
@@ -125,7 +129,7 @@ function WritePostForm() {
         const draftBoard = writableBoards.find((board) => board.id === draft?.boardId);
         if (draftBoard && !isMaskedBoardType(draftBoard.boardType) && typeof draft.title === 'string' && typeof draft.content === 'string') {
           setBoardId(draftBoard.id);
-          setTitle(draft.title.slice(0, POST_TITLE_MAX_LENGTH));
+          setTitle(draft.title);
           setContent(draft.content);
           setVisibility(draft.visibility === 'MEMBERS_ONLY' ? 'MEMBERS_ONLY' : 'PUBLIC');
           setIsAnonymous(draft.isAnonymous === true);
@@ -151,6 +155,11 @@ function WritePostForm() {
 
   const submitPost = async (confirmed = false) => {
     if (submitting.current || isSubmitting || isAdminSubmitting || isImageUploading) return;
+    if (titleOverLimit) {
+      setValidationError(`제목을 ${titleMaxLength}자 이내로 줄여 주세요.`);
+      titleRef.current?.focus();
+      return;
+    }
     const validation = validatePostInput({ title, content });
     if (validation) {
       setValidationError(validation);
@@ -397,13 +406,17 @@ function WritePostForm() {
             ref={titleRef}
             required
             value={title}
-            maxLength={POST_TITLE_MAX_LENGTH}
+            maxLength={titleMaxLength}
             onChange={(event) => { setTitle(event.target.value); setDraftStatus(''); setValidationError(null); }}
             placeholder={titlePlaceholder}
             aria-describedby="community-title-count"
+            aria-invalid={titleOverLimit || undefined}
             className="w-full rounded-[10px] border border-[#CCC7BB] bg-white px-3 py-2.5 text-[16px] text-ink placeholder:text-[#737C73] focus-visible:outline-primary"
           />
-          <p id="community-title-count" className="mt-1 text-right text-xs text-muted">{title.length} / {POST_TITLE_MAX_LENGTH}</p>
+          <p id="community-title-count" className={`mt-1 text-right text-xs ${titleOverLimit ? 'text-red-700' : 'text-muted'}`}>
+            {titleOverLimit && `제목을 ${titleMaxLength}자 이내로 줄여 주세요. `}
+            {title.length} / {titleMaxLength}
+          </p>
 
           <div className="mt-3 flex items-center justify-between gap-2">
             <label htmlFor={showContentPreview ? undefined : 'content'} className="text-[15px] font-bold text-ink">본문 <span className="text-xs font-medium text-muted">필수</span></label>
