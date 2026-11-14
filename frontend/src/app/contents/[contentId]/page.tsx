@@ -7,6 +7,7 @@ import { useContentDetail, useContentList } from '@/hooks/useContents';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { MedicalDisclaimer } from '@/components/layout/MedicalDisclaimer';
+import { formatDate } from '@/domain/common/format';
 import { estimateReadMinutes, getContentPreview } from '@/domain/content/types';
 import { PUBLIC_IMAGES } from '@/domain/assets/static';
 import { getErrorMessage } from '@/lib/api/client';
@@ -19,7 +20,7 @@ export default function ContentDetailPage() {
   const router = useRouter();
   const contentId = Number(params.contentId);
   const { content, isLoading, error } = useContentDetail(contentId);
-  const { contentPage, isLoading: relatedLoading } = useContentList(content?.category, 6);
+  const { contentPage, isLoading: relatedLoading, error: relatedError } = useContentList(content?.category, 6);
   const relatedContents = useMemo(
     () => contentPage.content.filter((item) => item.id !== contentId).slice(0, 3),
     [contentPage.content, contentId],
@@ -71,76 +72,69 @@ export default function ContentDetailPage() {
           </div>
         </section>
 
-        <div className="flex items-center gap-2 px-6 pt-[14px] text-[12px] hf-text-muted">
-          <span>{new Date(content.createdAt).toLocaleDateString('ko-KR')}</span>
-          <span className="h-0.5 w-0.5 rounded-full bg-[#CBD0C7]" />
-          <span>{estimateReadMinutes(content.content)}분 읽기</span>
-        </div>
-
-        <div className="px-6 pt-[18px]">
-          <ReadableContent text={content.content} variant="article" />
-        </div>
-
-        <div className="px-5 pt-4">
-          <MedicalDisclaimer />
-        </div>
-
-        <Link
-          href="/consult"
-          className="mx-4 mt-3 flex items-center gap-3 rounded-[16px] bg-[#07251F] px-4 py-3.5"
-        >
-          <span className="min-w-0 flex-1">
-            <span className="block text-[13.5px] font-bold text-white">
-              더 깊은 이야기가 필요하다면
-            </span>
-            <span className="mt-[3px] block text-[12px] text-white/72">
-              상담문의로 서비스 이용 관련 내용을 남겨보세요
-            </span>
-          </span>
-          <span className="text-[20px] text-[#F0C778]">›</span>
-        </Link>
-
-        <section className="px-5 pt-7">
-          <div className="mb-3 flex items-end justify-between gap-3">
-            <div>
-              <p className="text-[12px] font-extrabold uppercase tracking-[0.14em] text-[#9B8B70]">
-                Related
-              </p>
-              <h2 className="mt-1 text-[15px] font-extrabold text-[#15201D]">이어 읽기</h2>
+        <div className="space-y-4 px-4 pt-4">
+          <div className="rounded-2xl border border-[#E6DFD2] bg-[#FFFEFA] p-4">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 border-b border-[#E6DFD2] pb-3 text-[12.5px] text-muted">
+              <time dateTime={content.createdAt}>{formatDate(content.createdAt)}</time>
+              <span aria-hidden>·</span>
+              <span>약 {estimateReadMinutes(content.content)}분 읽기</span>
             </div>
-            <Link href="/contents" className="text-[12px] font-bold text-[#15695E]">
-              전체 칼럼
-            </Link>
+            <ReadableContent text={content.content} variant="article" className="column-detail-copy mt-4" />
           </div>
 
-          {relatedLoading ? (
-            <div className="rounded-[16px] border border-[#E7DFD2] bg-white px-4 py-6">
-              <LoadingSpinner label="관련 칼럼 확인 중..." />
+          <MedicalDisclaimer className="!border-[#E6DFD2] !bg-[#F4EFE4]" />
+
+          <section aria-labelledby="related-columns-heading">
+            <div className="mb-1 flex items-center justify-between gap-3">
+              <h2 id="related-columns-heading" className="text-[16px] font-bold text-ink">이어 읽기</h2>
+              <Link href="/contents" className="inline-flex min-h-11 items-center rounded-lg px-2 text-[13px] font-bold text-primary hover:bg-primary/5">
+                전체 칼럼 <span className="ml-1" aria-hidden>›</span>
+              </Link>
             </div>
-          ) : relatedContents.length > 0 ? (
-            <div className="overflow-hidden rounded-[16px] bg-white shadow-[0_1px_2px_rgba(20,30,25,.04),0_14px_30px_-24px_rgba(20,30,25,.22)]">
-              {relatedContents.map((item) => (
-                <Link
-                  key={item.id}
-                  href={`/contents/${item.id}`}
-                  className="block border-t border-[#F2ECE1] px-4 py-3.5 first:border-t-0"
-                >
-                  <p className="text-[12px] font-extrabold text-[#15695E]">{item.category}</p>
-                  <h3 className="mt-1 truncate text-[13.5px] font-bold leading-[1.45] text-[#15201D]" title={item.title}>
-                    {item.title}
-                  </h3>
-                  <p className="mt-1 line-clamp-1 text-[12px] text-[#7A847C]">
-                    {getContentPreview(item.content, 70)}
-                  </p>
-                </Link>
-              ))}
+
+            <div className="overflow-hidden rounded-2xl border border-[#E6DFD2] bg-[#FFFEFA]">
+              {relatedLoading ? (
+                <div className="p-4"><LoadingSpinner label="관련 칼럼을 불러오는 중…" /></div>
+              ) : relatedContents.length > 0 ? (
+                <ul className="divide-y divide-[#E6DFD2]">
+                  {relatedContents.map((item) => (
+                    <li key={item.id}>
+                      <Link
+                        href={`/contents/${item.id}`}
+                        className="flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-[#F0F5EF] focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            {item.category && <span className="rounded-md bg-[#EDF4F0] px-2 py-0.5 text-xs font-semibold text-primary">{item.category}</span>}
+                            <span className="text-xs text-muted">약 {estimateReadMinutes(item.content)}분 읽기</span>
+                          </div>
+                          <h3 className="mt-1.5 break-words text-[15px] font-semibold leading-snug text-ink">{item.title}</h3>
+                          <p className="mt-1 line-clamp-2 break-words text-[13px] leading-relaxed text-muted">{getContentPreview(item.content, 100)}</p>
+                        </div>
+                        <span aria-hidden className="shrink-0 text-xl text-primary">›</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="p-4 text-[13px] text-muted">
+                  {relatedError ? '관련 칼럼을 불러오지 못했어요. 전체 칼럼에서 다른 글을 찾아보세요.' : '같은 주제의 다른 칼럼이 아직 없어요.'}
+                </p>
+              )}
             </div>
-          ) : (
-            <div className="rounded-[16px] border border-[#E7DFD2] bg-[#FBF6EA] px-4 py-4 text-[12.5px] leading-[1.6] text-[#65706B]">
-              관련 칼럼이 준비되면 이곳에 이어서 보여드릴게요.
-            </div>
-          )}
-        </section>
+          </section>
+
+          <Link
+            href="/consult"
+            className="flex min-h-11 items-center justify-between gap-3 rounded-2xl border border-[#E6DFD2] bg-[#FFFEFA] px-4 py-3 text-primary hover:bg-[#F0F5EF]"
+          >
+            <span>
+              <strong className="block text-sm">서비스 이용 문의</strong>
+              <span className="block text-[13px] text-muted">헤르프리 이용 중 궁금한 점을 남겨보세요.</span>
+            </span>
+            <span className="shrink-0 text-xl" aria-hidden>›</span>
+          </Link>
+        </div>
       </article>
     </>
   );

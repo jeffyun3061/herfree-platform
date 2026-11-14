@@ -52,7 +52,7 @@ export function PostDetailView({
   const isContentMasked = post.readable === false;
 
   return (
-    <section className="px-5 pt-1.5">
+    <section className="mx-4 rounded-2xl border border-[#E6DFD2] bg-[#FFFEFA] p-4">
       <div className="flex flex-wrap items-center gap-2">
         <span className={cn('rounded-[7px] px-[9px] py-[3px] text-[10.5px] font-bold', boardTagClass)}>
           {boardTagLabel}
@@ -101,7 +101,7 @@ export function PostDetailView({
       )}
       <div
         className={cn(
-          'pb-1 pt-[18px]',
+          'px-[13px] pb-1 pt-[18px]',
           isContentMasked && 'rounded-[18px] bg-[#F8F4EC] px-4 py-4 text-center',
         )}
       >

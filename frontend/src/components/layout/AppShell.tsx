@@ -21,18 +21,21 @@ export function AppShell({ children }: AppShellProps) {
   useBackNavigationGuard();
   const isAdminPage = pathname.startsWith('/admin');
   const isCommunityReader = pathname === '/community/write' || pathname.startsWith('/community/write/') || pathname.startsWith('/community/posts/');
+  const isCommunityPage = pathname === '/community' || pathname.startsWith('/community/');
+  const usesReadingPalette = isCommunityPage || pathname.startsWith('/contents/');
   const showNav = shouldShowBottomNav(pathname);
   const showHeader = shouldShowShellHeader(pathname) && (pathname !== '/' || isLoggedIn);
 
   return (
     <PageHeaderProvider>
-      <div className="app-canvas">
+      <div className={cn('app-canvas', usesReadingPalette && 'reading-canvas')}>
         <AppHeader visible={showHeader} desktopOnly />
         <div className={cn('app-phone-shell', isAdminPage && 'admin-shell', isCommunityReader && 'community-reader-shell')}>
           <AppHeader visible={showHeader} mobileOnly />
           <main
             className={cn(
-              'min-h-[100dvh] bg-[#F3EDE3]',
+              'min-h-[100dvh]',
+              usesReadingPalette ? 'bg-[#F8F5EF]' : 'bg-[#F3EDE3]',
               !isCommunityReader && 'lg:min-h-[min(844px,calc(100vh-4rem))]',
               showNav && 'hf-main-with-bottom-nav',
             )}

@@ -8,7 +8,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { useBoards } from '@/hooks/useBoards';
 import { usePostList } from '@/hooks/usePosts';
 import { BoardTabBar } from '@/components/community/BoardTabBar';
-import { CommunityFab } from '@/components/community/CommunityFab';
 import { CommunityPageSizeSelect, type CommunityPageSize } from '@/components/community/CommunityPageSizeSelect';
 import { CommunitySortTabs, CommunityPeriodToggle, postSortToQuery, type PostListPeriod, type PostSortOption } from '@/components/community/CommunitySortTabs';
 import { needsPostListPeriod, postListPeriodHint, postListPeriodQuery } from '@/domain/post/sort';
@@ -16,7 +15,7 @@ import { PostCard, PostCardSkeleton } from '@/components/community/PostCard';
 import { Pagination } from '@/components/common/Pagination';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
-import { Button } from '@/components/ui/Button';
+import { Button, ButtonLink } from '@/components/ui/Button';
 import { AdminPublishFab, AdminPublishLink } from '@/components/admin/AdminPublishLink';
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { getWritableBoards, isStaffOnlyBoardType } from '@/domain/board/types';
@@ -120,8 +119,8 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
   const { boards, isLoading: boardsLoading, error: boardsError } = useBoards();
   const [selectedBoardId, setSelectedBoardId] = useState<number | null>(initialBoardId);
   const [keyword, setKeyword] = useState('');
-  const [concernSearch, setConcernSearch] = useState('');
-  const [concernSearchError, setConcernSearchError] = useState<string | null>(null);
+  const [searchInput, setSearchInput] = useState('');
+  const [searchError, setSearchError] = useState<string | null>(null);
   const [sort, setSort] = useState<PostSortOption>('latest');
   const [period, setPeriod] = useState<PostListPeriod>('week');
   const [pageSize, setPageSize] = useState<CommunityPageSize>(20);
@@ -158,8 +157,11 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
 
   useEffect(() => {
     const q = searchParams.get('q')?.trim() ?? '';
+    setSearchInput(q);
+    setSearchError(null);
     if (!q) {
       setKeyword('');
+      setPage(0);
       return;
     }
     const hint = validatePostSearchKeyword(q);
@@ -174,7 +176,18 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
   const handleBoardSelect = (boardId: number | null) => {
     setSelectedBoardId(boardId);
     setPage(0);
-    router.push(boardId === null ? '/community' : `/community/${boardId}`);
+    router.push(boardId === null ? '/community' : `/community/${boardId}`, { scroll: false });
+  };
+
+  const submitSearch = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!isLoggedIn) return;
+    const q = searchInput.trim();
+    const validation = q ? validatePostSearchKeyword(q) : null;
+    setSearchError(validation);
+    if (validation) return;
+    const path = selectedBoardId === null ? '/community' : `/community/${selectedBoardId}`;
+    router.push(q ? `${path}?q=${encodeURIComponent(q)}` : path, { scroll: false });
   };
 
   const handleSortChange = (value: PostSortOption) => {
@@ -252,20 +265,58 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
         <CommunityLockedPreview />
       ) : (
         <div className="hf-page-x">
-          {isPublicConcernFeed && <div className="mt-4 rounded-[16px] bg-[#EDF4F0] p-4 text-[12px] leading-[1.7] text-[#263B32]"><h2 className="text-[15px] font-bold">익명 고민</h2><p className="mt-1">고민을 익명으로 나누세요. 회원 누구나 익명 또는 닉네임을 공개하고 답변할 수 있어요. 글과 답변은 비회원도 읽을 수 있습니다.</p><Link href={isLoggedIn ? `/community/write?boardId=${selectedBoardId}` : `/login?from=${encodeURIComponent(`/community/write?boardId=${selectedBoardId}`)}`} className="mt-3 inline-block font-bold text-[#0B3B36] underline">고민 남기기</Link></div>}
-          {isPublicConcernFeed && <form className="mt-3" onSubmit={event => {event.preventDefault();const q=concernSearch.trim();const hint=q ? validatePostSearchKeyword(q) : null;setConcernSearchError(hint);if(!hint) router.push(`/community/${selectedBoardId}${q ? `?q=${encodeURIComponent(q)}` : ''}`);}}><div className="flex gap-2"><input type="search" aria-label="고민 검색" value={concernSearch} onChange={event => setConcernSearch(event.target.value)} placeholder="비슷한 고민을 찾아보세요" maxLength={100} className="min-h-11 min-w-0 flex-1 rounded-xl border border-border bg-white px-3 py-2.5 text-[16px]" /><Button type="submit" size="sm" className="min-h-11">검색</Button></div>{concernSearchError && <p className="mt-2 text-xs text-red-600" role="alert">{concernSearchError}</p>}</form>}
+          <div className="mb-3 mt-3 flex min-h-11 items-center justify-between gap-2">
+            <h3 className="text-[15px] font-bold text-ink">{selectedBoard?.name ?? '전체 게시글'}</h3>
+            {isNoticeBoard ? (
+              <AdminPublishLink tab="notices" label="공지 올리기" />
+            ) : canCommunityWrite ? (
+              <ButtonLink href={writeHref} size="sm" className="min-h-11 shrink-0">글쓰기</ButtonLink>
+            ) : isPublicConcernFeed ? (
+              <AuthEntryLink href={`/login?from=${encodeURIComponent(`/community/write?boardId=${selectedBoardId}`)}`} className="rounded-xl bg-primary px-3 py-2.5 text-sm font-semibold text-white">
+                고민 남기기
+              </AuthEntryLink>
+            ) : null}
+          </div>
+          {isPublicConcernFeed && (
+            <p className="mb-3 rounded-[14px] bg-[#EDF4F0] p-3 text-[13px] leading-relaxed text-[#263B32]">
+              고민은 익명으로 올라가고 제목은 비회원에게도 보일 수 있어요. 본문과 답변은 로그인 후 볼 수 있어요.
+            </p>
+          )}
+          <form role="search" className="mb-1" onSubmit={submitSearch}>
+            <div className="flex gap-2">
+              <input
+                type="search"
+                aria-label={isPublicConcernFeed ? '고민 검색' : '게시글 검색'}
+                aria-invalid={Boolean(searchError)}
+                aria-describedby={searchError ? 'community-search-error' : undefined}
+                value={searchInput}
+                onChange={event => { setSearchInput(event.target.value); setSearchError(null); }}
+                placeholder={!isLoggedIn ? '로그인 후 검색할 수 있어요' : isPublicConcernFeed ? '비슷한 고민을 찾아보세요' : '제목 또는 본문 검색'}
+                disabled={!isLoggedIn}
+                maxLength={100}
+                className="min-h-11 min-w-0 flex-1 rounded-xl border border-[#D2CBBD] bg-white px-3 text-[16px] focus-visible:outline-primary"
+              />
+              <Button type="submit" variant="secondary" size="sm" className="min-h-11" disabled={!isLoggedIn}>검색</Button>
+            </div>
+            {searchError && <p id="community-search-error" className="mt-2 text-xs text-red-700" role="alert">{searchError}</p>}
+          </form>
           {isSecretStoryBoard && <SecretStoryBoardBanner className="mt-4" />}
 
           {!isLoadingAll && !listError && (
-            <div className="pt-2">
+            <div className="flex min-h-8 items-center justify-between gap-2">
               <p className="text-[12px] text-[#65736B]">
                 총 {postPage.totalElements.toLocaleString('ko-KR')}개의 이야기
               </p>
+              {isLoggedIn && (
+                <Link href="/mypage/bookmarks" className="rounded-md px-1 py-2 text-[13px] font-semibold text-primary underline-offset-4 hover:underline">
+                  스크랩한 글
+                </Link>
+              )}
             </div>
           )}
 
-          {!isNoticeBoard && (
-            <div className="mt-3 hidden flex-wrap items-center justify-between gap-2 lg:flex">
+          {!isNoticeBoard && (postPage.totalElements > 0 || sort !== 'latest') && (
+            <div className="mb-3 mt-1 flex flex-wrap items-center justify-between gap-2">
               <CommunitySortTabs value={sort} onChange={handleSortChange} />
               {needsPostListPeriod(sort) && (
                 <CommunityPeriodToggle value={period} onChange={handlePeriodChange} />
@@ -278,15 +329,6 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
             </div>
           )}
 
-          <div className="mb-4 hidden items-center justify-end gap-2 lg:flex">
-            {isNoticeBoard ? (
-              <AdminPublishLink tab="notices" label="공지 올리기" />
-            ) : canCommunityWrite ? (
-              <Link href={writeHref}>
-                <Button size="sm">글쓰기</Button>
-              </Link>
-            ) : null}
-          </div>
 
           {isLoadingAll && (
             <div className="mt-3 space-y-0">
@@ -328,7 +370,7 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
           )}
 
           {!isLoadingAll && !listError && postPage.content.length > 0 && (
-            <div className="community-feed-list pt-1">
+            <div className="community-feed-list rounded-[16px] border border-[#E6DFD2] bg-[#FFFEFA]">
               {postPage.content.map((post) => (
                 <PostCard key={post.id} post={post} boardName={post.boardName} />
               ))}
@@ -347,7 +389,6 @@ export function CommunityFeed({ initialBoardId = null }: CommunityFeedProps) {
             </div>
           )}
 
-          {canCommunityWrite && <CommunityFab href={writeHref} ariaLabel="커뮤니티 글쓰기" />}
           {isNoticeBoard && <AdminPublishFab tab="notices" label="공지 올리기" />}
         </div>
       )}

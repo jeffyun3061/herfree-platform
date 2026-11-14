@@ -39,7 +39,7 @@ export function CommentComposer({
   onSubmit,
 }: CommentComposerProps) {
   return (
-    <div className="mt-[18px]">
+    <div className="mt-4 rounded-xl border border-[#E6DFD2] bg-[#FFFEFA] p-3">
       {replyTarget && (
         <div
           role="status"
@@ -61,8 +61,12 @@ export function CommentComposer({
           </button>
         </div>
       )}
-      <div className="flex items-end gap-2 lg:gap-3">
+      <label htmlFor="community-comment" className="mb-2 block text-sm font-bold text-ink">
+        {replyTarget ? '답글 쓰기' : isMaskedPost || isConcernPost ? '답변 쓰기' : '댓글 쓰기'}
+      </label>
+      <div className="flex flex-col items-end gap-2">
         <Textarea
+          id="community-comment"
           ref={inputRef}
           placeholder={
             replyTarget
@@ -76,19 +80,20 @@ export function CommentComposer({
           value={value}
           onChange={(event) => onChange(event.target.value)}
           maxLength={COMMENT_MAX_LENGTH}
-          containerClassName="min-w-0 flex-1"
+          containerClassName="w-full min-w-0"
           className={cn(
-            'mt-0 min-h-[46px] rounded-[12px] bg-[#F8F4EC] px-3.5 py-3 text-[16px] placeholder:text-[#B4B2A6] lg:min-h-[52px] lg:px-4',
+            'mt-0 min-h-[72px] rounded-[12px] bg-white px-3.5 py-3 text-[16px] placeholder:text-[#737C73] lg:px-4',
             replyTarget ? 'border-[#AFC8BB] focus:border-[#709582]' : 'border-[#ECE5D8]',
           )}
         />
         <Button
-          disabled={isSubmitting}
+          type="button"
+          disabled={isSubmitting || !value.trim()}
           onClick={onSubmit}
-          className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-[12px] px-0 lg:h-[52px] lg:w-[52px]"
-          aria-label={replyTarget ? '답글 등록' : isMaskedPost || isConcernPost ? '답변 등록' : '댓글 등록'}
+          className="min-h-11 shrink-0 gap-2"
         >
           <CommentSendIcon />
+          {replyTarget ? '답글 등록' : isMaskedPost || isConcernPost ? '답변 등록' : '댓글 등록'}
         </Button>
       </div>
     </div>
