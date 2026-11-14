@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { RequireAuth } from '@/components/auth/RequireAuth';
 import { useBoards } from '@/hooks/useBoards';
@@ -9,8 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import Link from 'next/link';
 import { SymptomBoardRedirectBanner } from '@/components/community/SymptomBoardRedirectBanner';
 import { SecretStoryBoardBanner } from '@/components/community/SecretStoryBoardBanner';
-import { getCommunityBoardTabLabel } from '@/domain/board/privateBoard';
-import { cn } from '@/lib/cn';
+import { BoardTabBar } from '@/components/community/BoardTabBar';
 import { CommunityPhotoAttach } from '@/components/community/CommunityPhotoAttach';
 import { CommunityWriteTipsSheet } from '@/components/community/CommunityWriteTipsSheet';
 import { Button } from '@/components/ui/Button';
@@ -30,11 +29,9 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { isStaff } from '@/domain/user/types';
 import { getErrorMessage } from '@/lib/api/client';
 import * as adminApi from '@/lib/api/admin';
-import { CommunityWriteGuidelines } from '@/components/community/CommunityWriteGuidelines';
+import { Modal } from '@/components/ui/Modal';
 import { ReadableContent } from '@/components/content/ReadableContent';
 import type { PostVisibility } from '@/domain/post/types';
-
-const TITLE_UI_MAX = 30;
 
 function WritePostForm() {
   const router = useRouter();
@@ -49,8 +46,9 @@ function WritePostForm() {
   const isStaffAdminEdit = isEditMode && isAdminEdit && staffUser;
 
   const { boards, isLoading: boardsLoading, error: boardsError } = useBoards();
-  const writableBoards = getWritableBoards(boards).filter(
-    (board) => !(staffUser && isMaskedBoardType(board.boardType)),
+  const writableBoards = useMemo(
+    () => getWritableBoards(boards).filter((board) => !(staffUser && isMaskedBoardType(board.boardType))),
+    [boards, staffUser],
   );
   const { post: existingPost, isLoading: postLoading } = usePostDetail(editPostId ?? 0);
   const { createPost, updatePost, isSubmitting, error } = usePostMutation();
@@ -67,26 +65,16 @@ function WritePostForm() {
   const [validationError, setValidationError] = useState<string | null>(null);
   const [initialized, setInitialized] = useState(false);
   const [tipsOpen, setTipsOpen] = useState(false);
-  const [titleFocused, setTitleFocused] = useState(false);
   const [adminSubmitError, setAdminSubmitError] = useState<string | null>(null);
   const [isAdminSubmitting, setIsAdminSubmitting] = useState(false);
-  const boardScrollerRef = useRef<HTMLDivElement>(null);
-  const [canScrollBoardsLeft, setCanScrollBoardsLeft] = useState(false);
-  const [canScrollBoardsRight, setCanScrollBoardsRight] = useState(false);
-
-  const updateBoardScrollState = () => {
-    const scroller = boardScrollerRef.current;
-    if (!scroller) return;
-    setCanScrollBoardsLeft(scroller.scrollLeft > 2);
-    setCanScrollBoardsRight(scroller.scrollLeft + scroller.clientWidth < scroller.scrollWidth - 2);
-  };
-
-  const scrollBoards = (direction: 'left' | 'right') => {
-    boardScrollerRef.current?.scrollBy({
-      left: direction === 'left' ? -180 : 180,
-      behavior: 'smooth',
-    });
-  };
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [draftStatus, setDraftStatus] = useState('');
+  const submitting = useRef(false);
+  const titleRef = useRef<HTMLInputElement>(null);
+  const contentRef = useRef<HTMLTextAreaElement>(null);
+  const disclosureRef = useRef<HTMLInputElement>(null);
+  const draftKey = user && !isEditMode ? `herfree:community-draft:${user.userId}:${initialBoardId}` : null;
+  const closeConfirmation = useCallback(() => setConfirmOpen(false), []);
 
   const privateWriteRedirect = useMemo(
     () => resolvePrivateBoardWritePath(boards, initialBoardId),
@@ -97,15 +85,6 @@ function WritePostForm() {
     if (!privateWriteRedirect) return;
     router.replace(privateWriteRedirect);
   }, [privateWriteRedirect, router]);
-
-  useEffect(() => {
-    const frame = window.requestAnimationFrame(updateBoardScrollState);
-    window.addEventListener('resize', updateBoardScrollState);
-    return () => {
-      window.cancelAnimationFrame(frame);
-      window.removeEventListener('resize', updateBoardScrollState);
-    };
-  }, [writableBoards.length]);
 
   useEffect(() => {
     if (boardsLoading || boards.length === 0) return;
@@ -140,8 +119,24 @@ function WritePostForm() {
       ? initialBoardId
       : writableBoards[0].id;
     setBoardId(defaultBoardId);
+    if (draftKey) {
+      try {
+        const draft = JSON.parse(sessionStorage.getItem(draftKey) ?? 'null');
+        const draftBoard = writableBoards.find((board) => board.id === draft?.boardId);
+        if (draftBoard && !isMaskedBoardType(draftBoard.boardType) && typeof draft.title === 'string' && typeof draft.content === 'string') {
+          setBoardId(draftBoard.id);
+          setTitle(draft.title.slice(0, POST_TITLE_MAX_LENGTH));
+          setContent(draft.content);
+          setVisibility(draft.visibility === 'MEMBERS_ONLY' ? 'MEMBERS_ONLY' : 'PUBLIC');
+          setIsAnonymous(draft.isAnonymous === true);
+          setDraftStatus('임시저장한 글을 불러왔어요.');
+        }
+      } catch {
+        // Storage may be unavailable in some browser sessions.
+      }
+    }
     setInitialized(true);
-  }, [isEditMode, privateWriteRedirect, writableBoards, initialBoardId, initialized]);
+  }, [isEditMode, privateWriteRedirect, writableBoards, initialBoardId, initialized, draftKey]);
 
   useEffect(() => {
     if (!isEditMode || !existingPost || initialized) return;
@@ -154,16 +149,16 @@ function WritePostForm() {
     setInitialized(true);
   }, [isEditMode, existingPost, initialized]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (isSubmitting || isImageUploading) return;
+  const submitPost = async (confirmed = false) => {
+    if (submitting.current || isSubmitting || isAdminSubmitting || isImageUploading) return;
     const validation = validatePostInput({ title, content });
     if (validation) {
       setValidationError(validation);
-      return;
-    }
-    if (title.length > POST_TITLE_MAX_LENGTH) {
-      setValidationError(`제목은 ${POST_TITLE_MAX_LENGTH}자 이하로 입력해 주세요.`);
+      if (!title.trim()) titleRef.current?.focus();
+      else if (!content.trim()) {
+        setShowContentPreview(false);
+        requestAnimationFrame(() => contentRef.current?.focus());
+      }
       return;
     }
     if (!boardId) {
@@ -173,7 +168,8 @@ function WritePostForm() {
     const selected = boards.find((board) => board.id === boardId);
     const concern = isAnonymousConcernBoard(selected?.boardType);
     if (concern && !isEditMode && !publicDisclosureAccepted) {
-      setValidationError('본문이 공개되는 것을 확인해 주세요.');
+      setValidationError('제목 공개 및 회원 본문 열람 범위를 확인해 주세요.');
+      disclosureRef.current?.focus();
       return;
     }
     if (selected && isStaffOnlyBoardType(selected.boardType)) {
@@ -185,54 +181,67 @@ function WritePostForm() {
       return;
     }
     setValidationError(null);
-
-    if (isEditMode && editPostId) {
-      if (isStaffAdminEdit) {
-        setIsAdminSubmitting(true);
-        setAdminSubmitError(null);
-        try {
-          await adminApi.updateAdminPost(editPostId, {
-            title: title.trim(),
-            content: content.trim(),
-          });
-          router.replace(`/community/posts/${editPostId}`);
-        } catch (err) {
-          setAdminSubmitError(getErrorMessage(err));
-        } finally {
-          setIsAdminSubmitting(false);
-        }
-        return;
-      }
-
-      const result = await updatePost(editPostId, {
-        title,
-        content,
-        isAnonymous: concern || isAnonymous,
-        imageUrl: imageUrl ?? '',
-      });
-      if (result) router.replace(`/community/posts/${result.id}`);
+    if (!confirmed && !isEditMode && selected && !isMaskedBoardType(selected.boardType)) {
+      setConfirmOpen(true);
       return;
     }
 
-    const result = await createPost({
-      boardId,
-      title,
-      content,
-      isAnonymous: concern || isAnonymous,
-      visibility: concern ? 'PUBLIC' : visibility,
-      publicDisclosureAccepted: concern && publicDisclosureAccepted,
-      imageUrl: pickPostImageUrlForCreate(imageUrl),
-    });
-    if (result) {
-      const createdBoard = boards.find((item) => item.id === boardId);
-      const privateMeta = createdBoard ? getPrivateBoardMetaByType(createdBoard.boardType) : null;
-      if (privateMeta) {
-        router.replace(privateMeta.path);
-      } else if (createdBoard && isSecretStoryBoardType(createdBoard.boardType)) {
-        router.replace(`/community/${boardId}`);
-      } else {
-        router.replace(`/community/posts/${result.id}`);
+    submitting.current = true;
+    setConfirmOpen(false);
+    try {
+      if (isEditMode && editPostId) {
+        if (isStaffAdminEdit) {
+          setIsAdminSubmitting(true);
+          setAdminSubmitError(null);
+          try {
+            await adminApi.updateAdminPost(editPostId, {
+              title: title.trim(),
+              content: content.trim(),
+            });
+            router.replace(`/community/posts/${editPostId}`);
+          } catch (err) {
+            setAdminSubmitError(getErrorMessage(err));
+          } finally {
+            setIsAdminSubmitting(false);
+          }
+          return;
+        }
+
+        const result = await updatePost(editPostId, {
+          title,
+          content,
+          isAnonymous: concern || isAnonymous,
+          imageUrl: imageUrl ?? '',
+        });
+        if (result) router.replace(`/community/posts/${result.id}`);
+        return;
       }
+
+      const result = await createPost({
+        boardId,
+        title,
+        content,
+        isAnonymous: concern || isAnonymous,
+        visibility: concern ? 'PUBLIC' : visibility,
+        publicDisclosureAccepted: concern && publicDisclosureAccepted,
+        imageUrl: pickPostImageUrlForCreate(imageUrl),
+      });
+      if (result) {
+        if (draftKey) {
+          try { sessionStorage.removeItem(draftKey); } catch {}
+        }
+        const createdBoard = boards.find((item) => item.id === boardId);
+        const privateMeta = createdBoard ? getPrivateBoardMetaByType(createdBoard.boardType) : null;
+        if (privateMeta) {
+          router.replace(privateMeta.path);
+        } else if (createdBoard && isSecretStoryBoardType(createdBoard.boardType)) {
+          router.replace(`/community/${boardId}`);
+        } else {
+          router.replace(`/community/posts/${result.id}`);
+        }
+      }
+    } finally {
+      submitting.current = false;
     }
   };
 
@@ -274,7 +283,6 @@ function WritePostForm() {
     !isEditMode &&
     initialBoardId > 0 &&
     writableBoards.some((board) => board.id === initialBoardId && isOffCommunityPrivateBoardType(board.boardType));
-  const titleCounterMax = Math.min(TITLE_UI_MAX, POST_TITLE_MAX_LENGTH);
   const writeTitle = isStaffAdminEdit
     ? '운영자 글 수정'
     : isEditMode
@@ -304,13 +312,6 @@ function WritePostForm() {
         : '같은 경험을 가진 사람들에게 하고 싶은 이야기를 편하게 적어주세요. 담담하게, 솔직하게.';
 
   const backHref = boardId > 0 ? `/community/${boardId}` : '/community';
-  const submitLabel = isImageUploading
-    ? '업로드 중…'
-    : isStaffAdminEdit
-      ? '저장'
-      : isEditMode
-        ? '수정'
-        : '등록';
   const bottomSubmitLabel = isImageUploading
     ? '사진 업로드 중…'
     : isSubmitting || isAdminSubmitting
@@ -321,277 +322,237 @@ function WritePostForm() {
           ? '수정하기'
           : '등록하기';
   const boardPickerDisabled = isEditMode || lockedPrivateBoard;
+  const saving = isSubmitting || isAdminSubmitting || isImageUploading;
+  const scopeDescription = isConcernWrite
+    ? '목록과 공유 미리보기에 제목이 표시될 수 있어요. 본문과 댓글은 로그인 후 볼 수 있어요.'
+    : visibility === 'PUBLIC'
+      ? '비회원에게 제목이 표시될 수 있어요. 본문을 보려면 로그인해야 해요.'
+      : '목록은 회원에게 표시돼요. 링크를 공유하면 비회원에게도 제목이 표시될 수 있어요.';
+  const authorDescription = isConcernWrite || isAnonymous ? '익명' : '내 닉네임';
+  const saveDraft = () => {
+    if (!draftKey || isMaskedWrite) return;
+    if (!title.trim() && !content.trim()) {
+      setDraftStatus('제목이나 본문을 작성해 주세요.');
+      return;
+    }
+    try {
+      sessionStorage.setItem(draftKey, JSON.stringify({ boardId, title, content, visibility, isAnonymous }));
+      setDraftStatus('이 탭에 임시저장했어요. 사진은 저장되지 않아요.');
+    } catch {
+      setDraftStatus('이 브라우저에서는 임시저장할 수 없어요.');
+    }
+  };
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-[720px] flex-col bg-[#F3EDE3] pb-10 hf-subpage-top">
-      <header className="flex items-center justify-between border-b border-[#E4D8C7] bg-[#F3EDE3]/95 px-[18px] pb-3.5 pt-0.5">
-        <Link
-          href={backHref}
-          aria-label="뒤로 가기"
-          className="shrink-0 text-[22px] leading-none text-[#6E7671]"
-        >
+    <div className="mx-auto flex min-h-screen w-full max-w-[720px] flex-col pb-6 hf-subpage-top">
+      <header className="mx-4 mb-4 grid grid-cols-[1fr_auto_1fr] items-center border-b border-[#E6DFD2] pb-2">
+        <Link href={backHref} aria-label="뒤로 가기" className="flex h-11 w-11 items-center justify-center rounded-lg text-[24px] text-primary hover:bg-primary/5">
           ‹
         </Link>
-        <h1 className="min-w-0 flex-1 truncate px-3 text-center text-[15px] font-bold text-[#15201D]">
-          {writeTitle}
-        </h1>
-        <button
-          type="submit"
-          form="community-write-form"
-          disabled={isSubmitting || isAdminSubmitting || isImageUploading || boardId <= 0}
-          className="min-h-11 shrink-0 text-[13.5px] font-bold text-[#0B3B36] disabled:opacity-40"
-        >
-          {submitLabel}
-        </button>
+        <h1 className="text-[17px] font-bold text-ink">{writeTitle}</h1>
       </header>
 
       <form
         id="community-write-form"
-        onSubmit={(e) => void handleSubmit(e)}
-        className="flex flex-1 flex-col"
+        noValidate
+        onSubmit={(event) => {
+          event.preventDefault();
+          void submitPost();
+        }}
+        className="flex flex-1 flex-col gap-3 px-4"
       >
-        {isSymptomBoard && !isEditMode && (
-          <div className="px-5 pt-4">
-            <SymptomBoardRedirectBanner />
-          </div>
-        )}
+        {isSymptomBoard && !isEditMode && <SymptomBoardRedirectBanner />}
+        <section aria-labelledby="write-board-heading" className="rounded-2xl border border-[#E6DFD2] bg-[#FFFEFA] p-4">
+          <h2 id="write-board-heading" className="mb-2 text-[15px] font-bold text-ink">게시판 선택</h2>
+          <BoardTabBar
+            boards={writableBoards}
+            selectedBoardId={boardId}
+            onSelect={(next) => {
+              if (next === null) return;
+              setBoardId(next);
+              setPublicDisclosureAccepted(false);
+              setDraftStatus('');
+              setValidationError(null);
+            }}
+            disabled={boardPickerDisabled || saving}
+          />
+          {isConcernWrite && (
+            <p className="mt-2 rounded-lg bg-[#EDF4F0] px-3 py-2 text-[13px] text-[#263B32]">
+              닉네임을 숨겨 고민을 나눌 수 있어요. 제목은 비회원에게도 보일 수 있어요.
+            </p>
+          )}
+        </section>
 
-        <div className="px-5 pt-[18px]">
-          <p className="mb-2.5 text-[12px] font-semibold text-[#9A9F94]">게시판 선택</p>
-          <div className="-mx-2 flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => scrollBoards('left')}
-              disabled={!canScrollBoardsLeft}
-              aria-label="이전 게시판 보기"
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#E9DFCE] bg-white text-[20px] text-[#496158] shadow-sm disabled:invisible"
-            >
-              ‹
+        {isSecretStoryWrite && <SecretStoryBoardBanner />}
+
+        <section aria-label="제목과 본문 입력" className="rounded-2xl border border-[#E6DFD2] bg-[#FFFEFA] p-4">
+          <div className="flex items-center justify-between gap-2">
+            <label htmlFor="title" className="text-[15px] font-bold text-ink">제목 <span className="text-xs font-medium text-muted">필수</span></label>
+            <button type="button" onClick={() => setTipsOpen(true)} className="min-h-10 rounded-lg px-2 text-[13px] font-semibold text-primary hover:bg-primary/5">
+              글쓰기 예시
             </button>
-            <div
-              ref={boardScrollerRef}
-              onScroll={updateBoardScrollState}
-              className="min-w-0 flex-1 overflow-x-auto py-0.5 scrollbar-hide"
-            >
-              <div className="flex w-max gap-2 px-0.5">
-              {writableBoards.map((board) => {
-                const active = board.id === boardId;
-                const configuredLabel = getCommunityBoardTabLabel(board.boardType);
-                const label = configuredLabel || board.name.replace(/게시판|방/g, '').trim() || board.name;
+          </div>
+          <input
+            id="title"
+            ref={titleRef}
+            required
+            value={title}
+            maxLength={POST_TITLE_MAX_LENGTH}
+            onChange={(event) => { setTitle(event.target.value); setDraftStatus(''); setValidationError(null); }}
+            placeholder={titlePlaceholder}
+            aria-describedby="community-title-count"
+            className="w-full rounded-[10px] border border-[#CCC7BB] bg-white px-3 py-2.5 text-[16px] text-ink placeholder:text-[#737C73] focus-visible:outline-primary"
+          />
+          <p id="community-title-count" className="mt-1 text-right text-xs text-muted">{title.length} / {POST_TITLE_MAX_LENGTH}</p>
 
-                return (
-                  <button
-                    key={board.id}
-                    type="button"
-                    disabled={boardPickerDisabled}
-                    onClick={() => setBoardId(board.id)}
-                    className={cn(
-                      'shrink-0 whitespace-nowrap rounded-full border-[0.5px] px-[15px] py-2 text-[12.5px] font-medium transition-colors disabled:opacity-60',
-                      active
-                        ? 'border-[#0B3B36] bg-[#0B3B36] text-white'
-                        : 'border-[#ECE5D8] bg-white text-[#5C645A]',
-                    )}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
-              </div>
+          <div className="mt-3 flex items-center justify-between gap-2">
+            <label htmlFor={showContentPreview ? undefined : 'content'} className="text-[15px] font-bold text-ink">본문 <span className="text-xs font-medium text-muted">필수</span></label>
+            {showContentPreview && <span className="text-xs font-semibold text-primary">미리보기</span>}
+          </div>
+          {showContentPreview ? (
+            <div data-testid="community-post-preview" className="mt-2 min-h-[150px] rounded-[10px] border border-[#CCC7BB] bg-[#F8F5EF] p-3">
+              {content.trim() ? <ReadableContent text={content} variant="community" /> : (
+                <p className="hf-community-writing-content text-muted">본문을 입력하면 여기에 표시돼요.</p>
+              )}
             </div>
-            <button
-              type="button"
-              onClick={() => scrollBoards('right')}
-              disabled={!canScrollBoardsRight}
-              aria-label="다음 게시판 보기"
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#E9DFCE] bg-white text-[20px] text-[#496158] shadow-sm disabled:invisible"
-            >
-              ›
-            </button>
-          </div>
-        </div>
-
-        {isSecretStoryWrite && (
-          <div className="px-5 pt-4">
-            <SecretStoryBoardBanner />
-          </div>
-        )}
-
-        <div className="px-5 pt-[18px]">
-          <div
-            className={cn(
-              'flex items-center gap-1.5 border-b-2 transition-colors',
-              titleFocused ? 'border-[#0B3B36]' : 'border-[#D9CDB8]',
-            )}
-          >
-            <input
-              id="title"
-              value={title}
-              maxLength={POST_TITLE_MAX_LENGTH}
-              onChange={(e) => setTitle(e.target.value)}
-              onFocus={() => setTitleFocused(true)}
-              onBlur={() => setTitleFocused(false)}
-              placeholder={titlePlaceholder}
-              className="w-full border-0 bg-transparent px-0.5 py-2 text-[16px] font-semibold text-[#1E2621] outline-none"
+          ) : (
+            <textarea
+              id="content"
+              ref={contentRef}
+              required
+              value={content}
+              onChange={(event) => { setContent(event.target.value); setDraftStatus(''); setValidationError(null); }}
+              placeholder={contentPlaceholder}
+              className="hf-community-writing-content mt-2 min-h-[150px] w-full resize-y rounded-[10px] border border-[#CCC7BB] bg-white p-3 placeholder:text-[#737C73] focus-visible:outline-primary"
             />
-            <button
-              type="button"
-              onClick={() => setTipsOpen(true)}
-              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[#9A9F94] hover:text-[#0B3B36]"
-              aria-label="글쓰기 예시 보기"
-            >
-              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="9" />
-                <path d="M12 10v4M12 7h.01" strokeLinecap="round" />
-              </svg>
-            </button>
-          </div>
-          <p className="mt-1 text-right text-[11px] text-[#9A9F94]">
-            {title.length}/{titleCounterMax}
-          </p>
-        </div>
+          )}
 
-        {!isMaskedWrite && (
-          <div className="flex-1 px-5 pt-3.5">
-            {!isEditMode && <CommunityWriteGuidelines />}
-            {!isEditMode && !isConcernWrite && (
-              <fieldset className="mt-3 rounded-[14px] border border-[#ECE5D8] bg-white p-3">
-                <legend className="px-1 text-[12px] font-semibold text-[#5C645A]">공개 범위</legend>
-                <div className="mt-1.5 grid grid-cols-2 gap-3">
-                  <label className="flex cursor-pointer items-start gap-2 text-[12px] leading-relaxed text-[#1E2621]">
-                    <input
-                      type="radio"
-                      name="post-visibility"
-                      value="PUBLIC"
-                      checked={visibility === 'PUBLIC'}
-                      onChange={() => setVisibility('PUBLIC')}
-                      className="mt-0.5 h-4 w-4 shrink-0 accent-[#0B3B36]"
-                    />
-                    <span className="min-w-0 break-keep"><span className="font-semibold">전체 공개</span><br /><span className="text-[#7A8178]">제목은 공개되며 본문은 로그인 후 볼 수 있어요.</span></span>
-                  </label>
-                  <label className="flex cursor-pointer items-start gap-2 text-[12px] leading-relaxed text-[#1E2621]">
-                    <input
-                      type="radio"
-                      name="post-visibility"
-                      value="MEMBERS_ONLY"
-                      checked={visibility === 'MEMBERS_ONLY'}
-                      onChange={() => setVisibility('MEMBERS_ONLY')}
-                      className="mt-0.5 h-4 w-4 shrink-0 accent-[#0B3B36]"
-                    />
-                    <span className="min-w-0 break-keep"><span className="font-semibold">회원 공개</span><br /><span className="text-[#7A8178]">회원만 볼 수 있어요.</span></span>
-                  </label>
-                </div>
-                <p className="mt-3 break-keep border-t border-[#EEE5D7] pt-2.5 text-[11px] leading-[1.7] text-[#7A8178]">건강정보·실명·연락처처럼 민감한 내용은 공개 게시판 대신 개인일지에 기록해 주세요.</p>
-              </fieldset>
-            )}
-            <p className="mt-3 text-[12px] leading-relaxed text-[#5C645A]">제목은 링크를 공유하면 누구에게나 보입니다. 제목에 건강정보나 실명 등 민감한 내용을 넣지 마세요.</p>
-            {isConcernWrite && (
-              <div className="mt-3 rounded-[14px] bg-[#EDF4F0] p-4 text-[12px] leading-[1.7] text-[#263B32]">
-                <p className="font-bold">닉네임은 항상 비공개예요</p>
-                <p>본문과 댓글은 로그인한 회원이 읽을 수 있고, 제목은 링크 공유 시 누구나 볼 수 있어요. 본문·사진에 실명이나 연락처를 넣지 마세요.</p>
-                {!isEditMode && <label className="mt-3 flex items-start gap-2"><input type="checkbox" checked={publicDisclosureAccepted} onChange={(event) => setPublicDisclosureAccepted(event.target.checked)} className="mt-1 accent-[#0B3B36]" /><span>본문이 공개되는 것을 확인했습니다.</span></label>}
-              </div>
-            )}
-            <div className="mt-4 flex items-center justify-between gap-3">
-              <label htmlFor="content" className="text-[13px] font-bold text-[#36453B]">본문</label>
-              <button
-                type="button"
-                aria-pressed={showContentPreview}
-                onClick={() => setShowContentPreview((value) => !value)}
-                className="min-h-11 rounded-lg px-3 text-[13px] font-bold text-[#0B3B36] underline underline-offset-4"
-              >
-                {showContentPreview ? '계속 쓰기' : '미리보기'}
-              </button>
-            </div>
-            {showContentPreview ? (
-              <div data-testid="community-post-preview" className="min-h-[240px] w-full border-b border-[#D9CDB8] py-3">
-                {content ? (
-                  <ReadableContent text={content} variant="community" />
-                ) : (
-                  <p className="hf-community-writing-content text-[#7C8279]">본문을 입력하면 게시될 모습이 여기에 보여요.</p>
-                )}
-              </div>
-            ) : (
-              <textarea
-                id="content"
-                required
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder={contentPlaceholder}
-                className="hf-community-writing-content min-h-[240px] w-full resize-y border-x-0 border-t-0 border-b border-[#D9CDB8] bg-transparent px-0 py-3 placeholder:text-[#8A9089] outline-none focus:border-[#0B3B36]"
-              />
-            )}
+          {!isMaskedWrite && (
             <div className="mt-3">
               <CommunityPhotoAttach
                 imageUrl={imageUrl}
                 onChange={setImageUrl}
                 onUploadingChange={setIsImageUploading}
-                disabled={isSubmitting}
+                disabled={saving}
                 variant="compact"
                 emptyText="사진 추가"
               />
             </div>
-          </div>
-        )}
-
-        {isMaskedWrite && (
-          <div className="flex-1 px-5 pt-3.5">
-            <label htmlFor="content" className="sr-only">
-              본문
-            </label>
-            <textarea
-              id="content"
-              required
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder={contentPlaceholder}
-              className="min-h-[200px] w-full resize-y rounded-[14px] border border-[#E2D5C2] bg-[#FFFCF7] p-[15px] text-[16px] leading-[1.7] text-[#1E2621] shadow-[0_10px_24px_-24px_rgba(7,37,31,.45)] placeholder:text-[#B4B2A6] outline-none focus:border-[#0B3B36]/35"
-            />
-          </div>
-        )}
-
-        <div className="mt-auto flex items-center gap-2.5 px-5 pt-3">
-          {isConcernWrite && <p className="text-[12px] font-semibold text-[#0B3B36]">닉네임 비공개로 작성됩니다.</p>}
-          {!isMaskedWrite && !isConcernWrite && (
-            <label className="flex cursor-pointer items-center gap-1.5 text-[12px] text-[#6E766F]">
-              <input
-                type="checkbox"
-                checked={isAnonymous}
-                onChange={(e) => setIsAnonymous(e.target.checked)}
-                className="sr-only"
-              />
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke={isAnonymous ? '#0B3B36' : '#9FB6AC'}
-                strokeWidth="2"
-                aria-hidden
-              >
-                <rect x="5" y="11" width="14" height="9" rx="2" />
-                <path d="M8 11V7a4 4 0 0 1 8 0v4" />
-              </svg>
-              비밀글로 작성
-            </label>
           )}
-          <Button
-            type="submit"
-            disabled={isSubmitting || isAdminSubmitting || isImageUploading || boardId <= 0}
-            className="ml-auto rounded-xl px-[22px] py-[11px] text-[13.5px] font-bold shadow-none"
-          >
-            {bottomSubmitLabel}
-          </Button>
-        </div>
+        </section>
 
-        <div className="space-y-3 px-5 pt-4">
-          {validationError && <ErrorMessage message={validationError} />}
-          {adminSubmitError && <ErrorMessage message={adminSubmitError} />}
-          {error && <ErrorMessage message={error} />}
-        </div>
+        {!isMaskedWrite && (
+          <section aria-label="공개 및 작성자 설정" className="rounded-2xl border border-[#E6DFD2] bg-[#FFFEFA] p-4">
+            {isConcernWrite ? (
+              <>
+                <h2 className="text-[15px] font-bold text-ink">공개 범위 · 익명 고민</h2>
+                <div className="mt-2 rounded-xl bg-[#EDF4F0] p-3 text-[13px] leading-relaxed text-[#263B32]">
+                  <p className="font-bold">닉네임 비공개로 작성됩니다.</p>
+                  <p>{scopeDescription}</p>
+                  {!isEditMode && (
+                    <label className="mt-2 flex min-h-11 cursor-pointer items-center gap-2">
+                      <input ref={disclosureRef} type="checkbox" checked={publicDisclosureAccepted} onChange={(event) => { setPublicDisclosureAccepted(event.target.checked); setValidationError(null); }} className="h-4 w-4 shrink-0 accent-primary" />
+                      제목 공개 및 회원 본문 열람 범위를 확인했습니다.
+                    </label>
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                {!isEditMode && (
+                  <fieldset>
+                    <legend className="text-[15px] font-bold text-ink">공개 범위</legend>
+                    <div className="mt-2 grid grid-cols-2 gap-2">
+                      {([
+                        ['PUBLIC', '전체 공개', '제목은 공개될 수 있고 본문은 로그인 후'],
+                        ['MEMBERS_ONLY', '회원 공개', '목록은 회원에게만 표시'],
+                      ] as const).map(([value, label, hint]) => (
+                        <label key={value} className="flex min-w-0 cursor-pointer items-start gap-2 rounded-xl border border-[#CCC7BB] bg-white p-3 has-[:checked]:border-primary has-[:checked]:bg-[#EDF4F0]">
+                          <input
+                            type="radio"
+                            name="post-visibility"
+                            value={value}
+                            checked={visibility === value}
+                            onChange={() => { setVisibility(value); setDraftStatus(''); }}
+                            className="mt-1 h-4 w-4 shrink-0 accent-primary"
+                          />
+                          <span className="min-w-0">
+                            <strong className="block text-[14px] text-ink">{label}</strong>
+                            <span className="mt-1 block break-keep text-xs leading-relaxed text-muted">{hint}</span>
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </fieldset>
+                )}
+                <label className="flex min-h-14 cursor-pointer items-center justify-between gap-3 py-2">
+                  <span><strong className="block text-[14px] text-ink">익명으로 작성</strong><span className="text-xs text-muted">닉네임을 숨겨요</span></span>
+                  <span className="relative shrink-0">
+                    <input
+                      type="checkbox"
+                      role="switch"
+                      checked={isAnonymous}
+                      onChange={(event) => { setIsAnonymous(event.target.checked); setDraftStatus(''); }}
+                      className="peer sr-only"
+                    />
+                    <span aria-hidden className="block h-6 w-11 rounded-full bg-[#CCD3CA] after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow-sm after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-5 peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-primary" />
+                  </span>
+                </label>
+                <p className="rounded-xl bg-[#EDF4F0] px-3 py-2.5 text-[13px] leading-relaxed text-[#263B32]" aria-live="polite">
+                  {scopeDescription} {isAnonymous ? '작성자는 익명으로 표시돼요.' : '내 닉네임이 표시돼요.'}
+                </p>
+              </>
+            )}
+          </section>
+        )}
 
+        {!isMaskedWrite && !isEditMode && (
+          <details className="px-1 text-[13px] text-muted">
+            <summary className="cursor-pointer rounded-lg py-2 font-semibold text-primary">글쓰기 안내</summary>
+            <p className="pb-2 leading-relaxed">제목, 본문, 사진에 실명이나 연락처 등 개인정보를 넣지 마세요. 나만 볼 건강 기록은 개인일지에 남길 수 있어요.</p>
+          </details>
+        )}
+
+        {(validationError || adminSubmitError || error) && (
+          <div className="space-y-2" role="alert">
+            {validationError && <ErrorMessage message={validationError} />}
+            {adminSubmitError && <ErrorMessage message={adminSubmitError} />}
+            {error && <ErrorMessage message={error} />}
+          </div>
+        )}
+        {draftStatus && <p role="status" className="text-[13px] text-muted">{draftStatus}</p>}
+
+        <div className="sticky bottom-0 z-10 mt-auto flex flex-wrap items-center justify-end gap-2 border-t border-[#E6DFD2] bg-[#F8F5EF] pt-2 pb-[max(.5rem,env(safe-area-inset-bottom))]">
+          {draftKey && !isMaskedWrite && <Button type="button" variant="ghost" size="sm" className="mr-auto min-h-11 px-1.5" onClick={saveDraft} disabled={saving}>임시저장</Button>}
+          {!isMaskedWrite && (
+            <Button type="button" variant="secondary" size="sm" aria-pressed={showContentPreview} onClick={() => {
+              setShowContentPreview(!showContentPreview);
+              requestAnimationFrame(() => {
+                const target = showContentPreview ? contentRef.current : document.querySelector('[data-testid="community-post-preview"]');
+                target?.scrollIntoView({ block: 'center' });
+              });
+            }} className="min-h-11">
+              {showContentPreview ? '계속 쓰기' : '미리보기'}
+            </Button>
+          )}
+          <Button type="submit" disabled={saving || boardId <= 0} className="min-h-11">{bottomSubmitLabel}</Button>
+        </div>
       </form>
 
       <CommunityWriteTipsSheet open={tipsOpen} onClose={() => setTipsOpen(false)} />
+      <Modal open={confirmOpen} title="이 설정으로 등록할까요?" onClose={closeConfirmation}>
+        <p className="break-words text-[15px] font-bold text-ink">{title.trim()}</p>
+        <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-3 gap-y-2 rounded-xl bg-[#EDF4F0] p-3 text-[13px] text-ink">
+          <dt className="text-muted">게시판</dt><dd className="font-semibold">{selectedBoard?.name}</dd>
+          <dt className="text-muted">공개 범위</dt><dd>{scopeDescription}</dd>
+          <dt className="text-muted">작성자 표시</dt><dd>{authorDescription}</dd>
+        </dl>
+        <p className="mt-3 text-[13px] leading-relaxed text-muted">제목, 본문, 사진에 개인정보가 없는지 확인해 주세요.</p>
+        <div className="mt-4 flex flex-wrap justify-end gap-2">
+          <Button type="button" variant="secondary" onClick={closeConfirmation}>계속 수정</Button>
+          <Button type="button" disabled={saving} onClick={() => void submitPost(true)}>글 등록</Button>
+        </div>
+      </Modal>
     </div>
   );
 }

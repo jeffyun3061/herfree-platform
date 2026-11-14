@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { Board } from '@/domain/board/types';
 import { COMMUNITY_ALL_TAB_LABEL, getCommunityBoardTabLabel } from '@/domain/board/privateBoard';
 import { cn } from '@/lib/cn';
@@ -10,14 +10,16 @@ type BoardTabBarProps = {
   selectedBoardId: number | null;
   onSelect: (boardId: number | null) => void;
   showAllTab?: boolean;
+  disabled?: boolean;
 };
 
 function normalizeBoardLabel(board: Board) {
   return getCommunityBoardTabLabel(board.boardType) ?? board.name.replace(/게시판|방/g, '').trim();
 }
 
-export function BoardTabBar({ boards, selectedBoardId, onSelect, showAllTab = false }: BoardTabBarProps) {
+export function BoardTabBar({ boards, selectedBoardId, onSelect, showAllTab = false, disabled = false }: BoardTabBarProps) {
   const scrollerRef = useRef<HTMLDivElement>(null);
+  const scrollerId = useId();
   const selectedTabRef = useRef<HTMLButtonElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
@@ -39,6 +41,7 @@ export function BoardTabBar({ boards, selectedBoardId, onSelect, showAllTab = fa
     updateScrollButtons();
     const observer = new ResizeObserver(updateScrollButtons);
     observer.observe(scroller);
+    Array.from(scroller.children).forEach(tab => observer.observe(tab));
     return () => observer.disconnect();
   }, [tabs, updateScrollButtons]);
 
@@ -66,13 +69,27 @@ export function BoardTabBar({ boards, selectedBoardId, onSelect, showAllTab = fa
     });
   };
 
+  const renderArrow = (direction: -1 | 1, available: boolean) => (
+    <button
+      type="button"
+      aria-controls={scrollerId}
+      aria-label={direction < 0 ? '이전 게시판 보기' : '다음 게시판 보기'}
+      disabled={!available}
+      onClick={() => scrollTabs(direction)}
+      className="flex h-10 w-9 items-center justify-center self-center rounded-full border border-[#DEDCD5] bg-white text-[#0B3B36] shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0B3B36] disabled:invisible"
+    >
+      <span aria-hidden="true" className="text-xl leading-none">{direction < 0 ? '‹' : '›'}</span>
+    </button>
+  );
+
   return (
-    <div className="community-tabs -mx-4 min-w-0">
+    <div className="-mx-2 grid min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] gap-1">
+      {renderArrow(-1, canScrollLeft)}
       <div
-        id="community-board-tabs"
+        id={scrollerId}
         ref={scrollerRef}
         onScroll={updateScrollButtons}
-        className="community-tabs-scroll mx-11 flex gap-2 overflow-x-auto pb-1"
+        className="community-tabs-scroll flex min-w-0 gap-1.5 overflow-x-auto px-0.5 py-1"
         role="tablist"
         aria-label="게시판 카테고리"
       >
@@ -85,9 +102,10 @@ export function BoardTabBar({ boards, selectedBoardId, onSelect, showAllTab = fa
               type="button"
               role="tab"
               aria-selected={active}
+              disabled={disabled}
               onClick={() => onSelect(tab.boardId)}
               className={cn(
-                'min-h-11 shrink-0 whitespace-nowrap rounded-full border px-4 py-2 text-[12px] font-semibold leading-none transition-colors',
+                'min-h-11 shrink-0 whitespace-nowrap rounded-full border px-3 py-2 text-[12px] font-semibold leading-none transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary disabled:cursor-default',
                 active
                   ? 'border-[#0B3B36] bg-[#0B3B36] text-white'
                   : 'border-[#DEDCD5] bg-white text-[#44534B] hover:border-[#A3B7AA]',
@@ -98,28 +116,7 @@ export function BoardTabBar({ boards, selectedBoardId, onSelect, showAllTab = fa
           );
         })}
       </div>
-      {canScrollLeft && (
-        <button
-          type="button"
-          aria-label="이전 게시판 보기"
-          aria-controls="community-board-tabs"
-          onClick={() => scrollTabs(-1)}
-          className="absolute left-1 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-[#DEDCD5] bg-white text-[#0B3B36] shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0B3B36]"
-        >
-          <span aria-hidden="true" className="text-xl leading-none">‹</span>
-        </button>
-      )}
-      {canScrollRight && (
-        <button
-          type="button"
-          aria-label="다음 게시판 보기"
-          aria-controls="community-board-tabs"
-          onClick={() => scrollTabs(1)}
-          className="absolute right-1 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-[#DEDCD5] bg-white text-[#0B3B36] shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0B3B36]"
-        >
-          <span aria-hidden="true" className="text-xl leading-none">›</span>
-        </button>
-      )}
+      {renderArrow(1, canScrollRight)}
     </div>
   );
 }

@@ -297,6 +297,14 @@ body {
   }
 
   /* Community reading and writing use the browser viewport on large screens. */
+  .community-canvas {
+    background: radial-gradient(130% 90% at 50% -10%, #f7f3ea 0%, #eee8da 72%, #e8dfcf 100%);
+  }
+
+  .community-canvas .app-phone-shell {
+    background-color: #f8f5ef;
+  }
+
   .app-phone-shell.community-reader-shell {
     @apply lg:my-0 lg:min-h-[100dvh] lg:max-w-none lg:overflow-visible lg:rounded-none lg:shadow-none;
   }
@@ -582,10 +590,6 @@ body {
     @apply bg-white text-[#5B6864] hover:bg-[#F4F6F5];
   }
 
-  .community-tabs {
-    @apply relative min-w-0;
-  }
-
   .community-tabs-scroll {
     scrollbar-width: none;
     scroll-padding-inline: var(--hf-page-px);
@@ -600,7 +604,7 @@ body {
   }
 
   .community-feed-list {
-    @apply flex flex-col px-0;
+    @apply flex flex-col px-3;
   }
 
   .community-feed-row {

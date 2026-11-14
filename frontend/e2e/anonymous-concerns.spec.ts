@@ -40,7 +40,7 @@ test('guest sees a title and login guidance without the concern body',async({pag
   await fixtures(page);
   await page.goto('/community/23');
   await expect(page.getByRole('heading',{name:'익명 고민'})).toBeVisible();
-  await expect(page.getByLabel('고민 검색')).toBeVisible();
+  await expect(page.getByLabel('고민 검색')).toBeDisabled();
   await expect(page.locator('.community-feed-row__title')).toHaveText('같은 고민을 나눠요');
   await page.getByRole('link',{name:/같은 고민을 나눠요/}).click();
   await expect(page.getByRole('link',{name:'로그인하고 보기'})).toBeVisible();
@@ -64,7 +64,8 @@ test('writing preview keeps exact line breaks and wrapping on the published post
   await page.locator('#content').fill(content);
   const metrics=async(selector:string)=>page.locator(selector).evaluate(element=>{
     const style=getComputedStyle(element);
-    return {width:element.clientWidth,fontFamily:style.fontFamily,fontSize:style.fontSize,lineHeight:style.lineHeight,letterSpacing:style.letterSpacing};
+    const width=element.clientWidth-parseFloat(style.paddingLeft)-parseFloat(style.paddingRight);
+    return {width,fontFamily:style.fontFamily,fontSize:style.fontSize,lineHeight:style.lineHeight,letterSpacing:style.letterSpacing};
   });
   const editorMetrics=await metrics('#content');
   expect(editorMetrics.fontSize).toBe('17px');
@@ -72,8 +73,9 @@ test('writing preview keeps exact line breaks and wrapping on the published post
   const preview=page.locator('[data-testid="community-post-preview"] .hf-readable-content--community');
   await expect(preview).toHaveText(content);
   expect(await metrics('[data-testid="community-post-preview"] .hf-readable-content--community')).toEqual(editorMetrics);
-  await page.getByLabel('본문이 공개되는 것을 확인했습니다.').check();
+  await page.getByLabel('제목 공개 및 회원 본문 열람 범위를 확인했습니다.').check();
   await page.locator('button[type=submit]').last().click();
+  await page.getByRole('button',{name:'글 등록',exact:true}).click();
   await expect(page).toHaveURL(/\/community\/posts\/11$/);
   const published=page.locator('.hf-readable-content--community');
   await expect(published).toHaveText(content);
@@ -131,10 +133,10 @@ test('mixed-board mobile feed remains readable with several posts',async({page})
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
   await page.evaluate(()=>window.scrollTo(0,document.documentElement.scrollHeight));
   const lastRow=await page.locator('.community-feed-row').last().boundingBox();
-  const fab=await page.getByRole('link',{name:'커뮤니티 글쓰기'}).boundingBox();
+  const bottomMenu=await page.getByRole('navigation',{name:'하단 메뉴'}).boundingBox();
   expect(lastRow).not.toBeNull();
-  expect(fab).not.toBeNull();
-  expect(lastRow!.y+lastRow!.height).toBeLessThanOrEqual(fab!.y);
+  expect(bottomMenu).not.toBeNull();
+  expect(lastRow!.y+lastRow!.height).toBeLessThanOrEqual(bottomMenu!.y);
   if(process.env.UI_CAPTURE) await page.screenshot({path:'test-results/community-feed-390.png',fullPage:true});
 });
 
@@ -168,6 +170,7 @@ test('later board tabs scroll into view when selected on a phone',async({page})=
   await page.setViewportSize({width:320,height:700});
   await page.goto('/community/23');
   const lastTab=page.getByRole('tab',{name:'검사대기'});
+  await page.getByRole('button',{name:'다음 게시판 보기'}).click();
   await lastTab.click();
   await expect(lastTab).toHaveAttribute('aria-selected','true');
   expect(await lastTab.evaluate(element=>{
@@ -184,11 +187,13 @@ test('concern writing acknowledges public content and forces hidden nicknames',a
   await page.locator('#title').fill('나누고 싶은 고민');
   await page.locator('#content').fill('경험을 나누고 싶습니다.');
   await page.locator('button[type=submit]').last().click();
-  await expect(page.getByText('본문이 공개되는 것을 확인해 주세요.')).toBeVisible();
+  await expect(page.getByText('제목 공개 및 회원 본문 열람 범위를 확인해 주세요.')).toBeVisible();
   expect(submitted()).toBeNull();
   await expect(page.getByText('닉네임 비공개로 작성됩니다.')).toBeVisible();
-  await page.getByLabel('본문이 공개되는 것을 확인했습니다.').check();
+  await page.getByLabel('제목 공개 및 회원 본문 열람 범위를 확인했습니다.').check();
   await page.locator('button[type=submit]').last().click();
+  expect(submitted()).toBeNull();
+  await page.getByRole('button',{name:'글 등록',exact:true}).click();
   await expect.poll(submitted).toMatchObject({isAnonymous:true,visibility:'PUBLIC',publicDisclosureAccepted:true});
 });
 
