@@ -232,6 +232,13 @@ body {
     line-height: 1.78;
   }
 
+  .hf-readable-content--article.column-detail-copy,
+  .hf-readable-content--article.column-detail-copy > p:first-child {
+    font-size: 16px;
+    line-height: 1.8;
+    word-break: keep-all;
+  }
+
   .hf-readable-content--community,
   .hf-community-writing-content {
     color: #2c342e;
@@ -297,11 +304,11 @@ body {
   }
 
   /* Community reading and writing use the browser viewport on large screens. */
-  .community-canvas {
+  .reading-canvas {
     background: radial-gradient(130% 90% at 50% -10%, #f7f3ea 0%, #eee8da 72%, #e8dfcf 100%);
   }
 
-  .community-canvas .app-phone-shell {
+  .reading-canvas .app-phone-shell {
     background-color: #f8f5ef;
   }
 

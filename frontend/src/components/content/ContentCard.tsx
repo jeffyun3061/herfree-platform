@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import type { Content } from '@/domain/content/types';
-import { CONTENT_THUMB_GRADIENTS, estimateReadMinutes, getContentPreview } from '@/domain/content/types';
+import { CONTENT_THUMB_GRADIENTS, estimateReadMinutes } from '@/domain/content/types';
 import { formatDate } from '@/domain/common/format';
 import { PUBLIC_IMAGES } from '@/domain/assets/static';
 import { cn } from '@/lib/cn';
@@ -46,7 +46,6 @@ export function ContentCard({ content, featured }: ContentCardProps) {
           <h2 className="column-feed-card__title" title={content.title}>
             {content.title}
           </h2>
-          <p className="line-clamp-2 break-words text-[13px] leading-relaxed text-muted">{getContentPreview(content.content, 110)}</p>
           <div className="column-feed-card__meta">
             <span>{formatDate(content.createdAt)}</span>
             <MetaDot />
