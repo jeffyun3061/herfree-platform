@@ -297,7 +297,7 @@ export default function PostDetailContainer() {
             {canWriteComments ? (
               <>
                 {isConcernPost && post.isMyPost && (
-                  <p className="mt-4 text-[12px] text-muted">글쓴이의 답변과 대댓글은 닉네임 비공개로 표시됩니다. 내용은 모두에게 공개됩니다.</p>
+                  <p className="mt-4 text-[12px] text-muted">글쓴이의 답변과 대댓글은 닉네임 비공개로 표시됩니다. 본문을 볼 수 있는 회원만 답변을 읽을 수 있어요.</p>
                 )}
                 {isConcernPost && !post.isMyPost && (
                   <fieldset className="mt-4">
@@ -319,7 +319,7 @@ export default function PostDetailContainer() {
                         </label>
                       ))}
                     </div>
-                    <p className="mt-2 text-[12px] text-muted">답변 내용은 모두에게 공개됩니다.</p>
+                    <p className="mt-2 text-[12px] text-muted">본문을 볼 수 있는 회원만 답변을 읽을 수 있어요.</p>
                   </fieldset>
                 )}
                 <CommentComposer

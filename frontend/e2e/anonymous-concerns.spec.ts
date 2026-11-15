@@ -237,6 +237,67 @@ test('question author cannot reveal their nickname in comments or nested replies
   await expect(page.getByRole('radio',{name:'닉네임 공개'})).toHaveCount(0);
 });
 
+test('deep replies keep their width and link to the exact parent on mobile', async ({ page }) => {
+  await fixtures(page, 'ADMIN');
+  await page.setViewportSize({ width: 320, height: 720 });
+  const longReply = '가나다라마바사'.repeat(30);
+  const thread = [
+    { id: 20, parentId: null, content: '처음 남긴 답변' },
+    { id: 21, parentId: 20, content: '첫 번째 답글' },
+    { id: 22, parentId: 21, content: '두 번째 답글' },
+    { id: 23, parentId: 22, content: longReply },
+    { id: 24, parentId: 20, content: '같은 댓글에 남긴 별도 답글' },
+    { id: 25, parentId: 99, content: '원댓글이 현재 페이지에 없는 답글' },
+    { id: 26, parentId: null, content: '내가 작성한 댓글', isMyComment: true },
+  ].map((comment) => ({
+    postId: 11,
+    authorNickname: '익명',
+    isAnonymous: true,
+    isMyComment: false,
+    createdAt: detail.createdAt,
+    ...comment,
+  }));
+  let submittedReply: { parentId: number } | undefined;
+  await page.route('**/api/posts/11/comments**', async (route) => {
+    if (route.request().method() === 'POST') {
+      const reply = route.request().postDataJSON();
+      submittedReply = reply;
+      return route.fulfill({ status: 201, json: { success: true, data: { ...thread[0], ...reply, id: 27 } } });
+    }
+    return route.fulfill({ json: { success: true, data: paged(thread) } });
+  });
+  await page.goto('/community/posts/11');
+  const firstReply = page.locator('#comment-21');
+  const deepReply = page.locator('#comment-23');
+  const siblingReply = page.locator('#comment-24');
+  await expect(deepReply.getByText(longReply, { exact: true })).toBeVisible();
+  const firstBody = await firstReply.getByText('첫 번째 답글', { exact: true }).boundingBox();
+  const deepBody = await deepReply.getByText(longReply, { exact: true }).boundingBox();
+  expect(deepBody).toMatchObject({ x: firstBody?.x, width: firstBody?.width });
+  expect(deepBody?.width ?? 0).toBeGreaterThan(210);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+  await siblingReply.getByRole('button', { name: '익명님에게 답글' }).click();
+  await expect(page.locator('#comment-20')).toBeFocused();
+  await deepReply.getByRole('button', { name: '익명님에게 답글' }).click();
+  await expect(page.locator('#comment-22')).toBeFocused();
+  await expect(page).toHaveURL(/\/community\/posts\/11$/);
+  await expect(page.locator('#comment-25')).toContainText('원댓글은 이 페이지에서 볼 수 없어요');
+  for (const [comment, action, dialogTitle] of [
+    ['#comment-26', '삭제', '댓글 삭제'],
+    ['#comment-23', '신고', '신고하기'],
+    ['#comment-23', '숨김', '댓글 숨김 처리'],
+  ]) {
+    await page.locator(comment).getByRole('button', { name: action, exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: dialogTitle });
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole('button', { name: '닫기', exact: true }).click();
+  }
+  await deepReply.getByRole('button', { name: '답글', exact: true }).click();
+  await page.getByPlaceholder(/답글을 남겨 주세요/).fill('이전 답글에 이어서 남깁니다.');
+  await page.getByRole('button', { name: '답글 등록' }).click();
+  await expect.poll(() => submittedReply?.parentId).toBe(23);
+});
+
 test('operators have a concern queue and can open the public reply thread',async({page})=>{
   await fixtures(page,'ADMIN');
   await page.goto('/admin?tab=concerns');

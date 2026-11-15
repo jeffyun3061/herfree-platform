@@ -1,0 +1,58 @@
+.thread {
+  --thread-line: #9bad9e;
+  --thread-axis: 13px;
+  --reply-offset: 25px;
+  --reply-center: 22px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.thread + .thread {
+  margin-block-start: 4px;
+  border-block-start: 1px solid #e6dfd2;
+  padding-block-start: 6px;
+}
+
+.root,
+.reply {
+  position: relative;
+}
+
+.reply {
+  padding-inline-start: var(--reply-offset);
+}
+
+/* Use one rail per conversation so deeper replies keep the same reading width. */
+.root:not(:only-child)::before,
+.reply::before,
+.reply:not(:last-child)::after {
+  position: absolute;
+  inset-inline-start: var(--thread-axis);
+  pointer-events: none;
+  content: '';
+}
+
+.root:not(:only-child)::before,
+.reply::before {
+  inset-block: 0;
+  border-inline-start: 1px solid var(--thread-line);
+}
+
+.root:not(:only-child)::before {
+  inset-block-start: 38px;
+}
+
+.reply:not(:last-child)::after {
+  inset-block-start: var(--reply-center);
+  inline-size: calc(var(--reply-offset) - var(--thread-axis));
+  border-block-start: 1px solid var(--thread-line);
+}
+
+.reply:last-child::before {
+  inset-block-end: auto;
+  block-size: calc(var(--reply-center) + 1px);
+  inline-size: calc(var(--reply-offset) - var(--thread-axis));
+  border-block-end: 1px solid var(--thread-line);
+  border-end-start-radius: 8px;
+}
