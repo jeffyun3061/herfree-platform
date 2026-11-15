@@ -1,12 +1,12 @@
-import type { CommentTreeNode } from '@/domain/comment/types';
+import type { Comment } from '@/domain/comment/types';
 import { displayAuthorNickname } from '@/domain/comment/types';
 import { formatRelativeTime } from '@/domain/common/format';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/cn';
 
 type CommentItemProps = {
-  comment: CommentTreeNode;
-  depth?: number;
+  comment: Comment;
+  parent?: Comment;
   isLoggedIn?: boolean;
   isStaff?: boolean;
   onDelete?: (commentId: number) => void;
@@ -18,7 +18,7 @@ type CommentItemProps = {
 
 export function CommentItem({
   comment,
-  depth = 0,
+  parent,
   isLoggedIn = false,
   isStaff = false,
   onDelete,
@@ -35,89 +35,85 @@ export function CommentItem({
 
   return (
     <article
+      id={`comment-${comment.id}`}
+      tabIndex={-1}
       className={cn(
-        'flex gap-2.5 border-t border-[#F2ECE1] py-3 transition-colors first:border-t-0',
-        depth > 0 && 'rounded-[14px] bg-[#F8F4EC] px-3 py-3',
-        depth === 1 && 'ml-3',
-        isReplyTarget && 'rounded-[14px] bg-[#EDF4F0] px-3 ring-1 ring-inset ring-[#BFD2C8]',
+        'flex min-w-0 scroll-mt-20 gap-2 rounded-xl py-2.5 transition-colors focus:bg-[#EDF4F0]',
+        isReplyTarget && 'bg-[#EDF4F0] ring-1 ring-inset ring-[#BFD2C8]',
       )}
     >
       <span
-        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#EDF2EC] text-[13px]"
+        className={cn(
+          'flex shrink-0 items-center justify-center rounded-full bg-[#EDF2EC] text-[13px]',
+          parent ? 'h-6 w-6' : 'h-7 w-7',
+        )}
         aria-hidden
       >
         🌙
       </span>
       <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-start justify-between gap-2">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-[7px]">
-              <span className="text-[12px] font-semibold text-[#2C342E]">
-                {displayAuthorNickname(comment.authorNickname)}
-              </span>
-              {comment.operatorReply && (
-                <span className="rounded-full bg-[#E1F5EE] px-2 py-0.5 text-[10px] font-bold text-[#0B3B36]">운영자 답변</span>
-              )}
-              <span className="text-[12px] text-[#B4B2A6]">
-                {formatRelativeTime(comment.createdAt)}
-              </span>
-            </div>
-            <p className="mt-[3px] whitespace-pre-wrap break-words text-[14.5px] leading-[1.7] text-[#3E4A42]">
-              {comment.content}
-            </p>
-          </div>
-          {hasActions && (
-            <div className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-0.5">
-              {isLoggedIn && onReply && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  aria-pressed={isReplyTarget}
-                  className={cn(isReplyTarget && 'bg-[#DCEAE3] text-[#0B3B36]')}
-                  onClick={() => onReply(comment.id)}
-                >
-                  {isReplyTarget ? '선택됨' : '답글'}
-                </Button>
-              )}
-              {canReport && onReport && (
-                <Button variant="ghost" size="sm" onClick={() => onReport(comment.id)}>
-                  신고
-                </Button>
-              )}
-              {canHide && (
-                <Button variant="ghost" size="sm" onClick={() => onHide(comment.id)}>
-                  숨김
-                </Button>
-              )}
-              {canDelete && onDelete && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-red-600"
-                  onClick={() => onDelete(comment.id)}
-                >
-                  삭제
-                </Button>
-              )}
-            </div>
+        <div className="flex flex-wrap items-center gap-[7px]">
+          <span className="min-w-0 break-words text-[13px] font-semibold text-[#2C342E]">
+            {displayAuthorNickname(comment.authorNickname)}
+          </span>
+          {comment.operatorReply && (
+            <span className="rounded-full bg-[#E1F5EE] px-2 py-0.5 text-[10px] font-bold text-[#0B3B36]">운영자 답변</span>
           )}
+          <time dateTime={comment.createdAt} className="text-[12px] text-[#627169]">
+            {formatRelativeTime(comment.createdAt)}
+          </time>
         </div>
-        {comment.replies.length > 0 && (
-          <div className="mt-1">
-            {comment.replies.map((reply) => (
-              <CommentItem
-                key={reply.id}
-                comment={reply}
-                depth={depth + 1}
-                isLoggedIn={isLoggedIn}
-                isStaff={isStaff}
-                onDelete={onDelete}
-                onHide={onHide}
-                onReport={onReport}
-                onReply={onReply}
-                activeReplyId={activeReplyId}
-              />
-            ))}
+        {parent ? (
+          <button
+            type="button"
+            className="min-h-9 max-w-full break-words rounded-sm text-left text-xs font-semibold text-primary underline decoration-[#A3B7AA] underline-offset-2"
+            onClick={() => {
+              const target = document.getElementById(`comment-${parent.id}`);
+              target?.focus({ preventScroll: true });
+              target?.scrollIntoView({ block: 'start' });
+            }}
+          >
+            {displayAuthorNickname(parent.authorNickname)}님에게 답글
+          </button>
+        ) : comment.parentId !== null && (
+          <p className="mt-0.5 text-xs text-[#627169]">답글 · 원댓글은 이 페이지에서 볼 수 없어요</p>
+        )}
+        <p className="mt-1 whitespace-pre-wrap text-[14.5px] leading-[1.7] text-[#3E4A42] [overflow-wrap:anywhere]">
+          {comment.content}
+        </p>
+        {hasActions && (
+          <div className="-ml-2 mt-0.5 flex flex-wrap items-center gap-0.5">
+            {isLoggedIn && onReply && (
+              <Button
+                variant="ghost"
+                size="sm"
+                aria-pressed={isReplyTarget}
+                className={cn('min-h-11', isReplyTarget && 'bg-[#DCEAE3] text-[#0B3B36]')}
+                onClick={() => onReply(comment.id)}
+              >
+                {isReplyTarget ? '선택됨' : '답글'}
+              </Button>
+            )}
+            {canReport && onReport && (
+              <Button variant="ghost" size="sm" className="min-h-11" onClick={() => onReport(comment.id)}>
+                신고
+              </Button>
+            )}
+            {canHide && (
+              <Button variant="ghost" size="sm" className="min-h-11" onClick={() => onHide(comment.id)}>
+                숨김
+              </Button>
+            )}
+            {canDelete && onDelete && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="min-h-11 text-red-700"
+                onClick={() => onDelete(comment.id)}
+              >
+                삭제
+              </Button>
+            )}
           </div>
         )}
       </div>

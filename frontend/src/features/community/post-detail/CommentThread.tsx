@@ -3,8 +3,9 @@
 import { CommentItem } from '@/components/community/CommentItem';
 import { Pagination } from '@/components/common/Pagination';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { buildCommentTree, type Comment } from '@/domain/comment/types';
+import { buildCommentTree, type Comment, type CommentTreeNode } from '@/domain/comment/types';
 import type { PendingPostDetailConfirmation } from '@/features/community/post-detail/types';
+import styles from './CommentThread.module.css';
 
 type CommentThreadProps = {
   comments: Comment[];
@@ -26,6 +27,20 @@ type CommentThreadProps = {
   onReply: (commentId: number) => void;
 };
 
+function getThreadRows(root: CommentTreeNode) {
+  const rows: { comment: Comment; parent?: Comment }[] = [];
+
+  function append(comment: CommentTreeNode, parent?: Comment) {
+    rows.push({ comment, parent });
+    for (const reply of comment.replies) {
+      append(reply, comment);
+    }
+  }
+
+  append(root);
+  return rows;
+}
+
 export function CommentThread({
   comments,
   page,
@@ -46,6 +61,15 @@ export function CommentThread({
   onReply,
 }: CommentThreadProps) {
   const commentTree = buildCommentTree(comments);
+  const commentActions = {
+    isLoggedIn,
+    isStaff: isStaffUser && (!isStaffOnlyPost || isMaskedPost),
+    onDelete: (commentId: number) => onRequestConfirmation({ type: 'delete-comment', commentId }),
+    onHide: (commentId: number) => onRequestConfirmation({ type: 'hide-comment', commentId }),
+    onReport,
+    onReply: canWriteComments ? onReply : undefined,
+    activeReplyId,
+  };
 
   return (
     <>
@@ -69,18 +93,14 @@ export function CommentThread({
         <LoadingSpinner label="댓글 불러오는 중…" />
       ) : commentTree.length > 0 ? (
         <>
-          {commentTree.map((comment) => (
-            <CommentItem
-              key={comment.id}
-              comment={comment}
-              isLoggedIn={isLoggedIn}
-              isStaff={isStaffUser && (!isStaffOnlyPost || isMaskedPost)}
-              onDelete={(commentId) => onRequestConfirmation({ type: 'delete-comment', commentId })}
-              onHide={(commentId) => onRequestConfirmation({ type: 'hide-comment', commentId })}
-              onReport={onReport}
-              onReply={canWriteComments ? onReply : undefined}
-              activeReplyId={activeReplyId}
-            />
+          {commentTree.map((root) => (
+            <ul key={root.id} role="list" className={styles.thread}>
+              {getThreadRows(root).map(({ comment, parent }) => (
+                <li key={comment.id} className={parent ? styles.reply : styles.root}>
+                  <CommentItem comment={comment} parent={parent} {...commentActions} />
+                </li>
+              ))}
+            </ul>
           ))}
           <Pagination page={page} totalPages={totalPages} onPageChange={onPageChange} />
         </>
