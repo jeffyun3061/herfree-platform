@@ -18,6 +18,8 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.ColumnDefault;
+import java.util.Objects;
 
 // 게시글 엔티티 — 상태 변경은 반드시 도메인 메서드를 통해야 한다.
 // setter를 열어두면 어디서든 상태를 직접 바꿀 수 있어 비즈니스 규칙이 흩어진다.
@@ -79,6 +81,11 @@ public class Post extends BaseTimeEntity {
     @Column(nullable = false)
     private boolean isPinned;
 
+    // Keep the opt-in consistent if the rollback version edits a shared title.
+    @Column(name = "share_title_publicly", nullable = false)
+    @ColumnDefault("false")
+    private boolean shareTitlePublicly;
+
     @Builder
     private Post(Board board, User user, String title, String content,
                  PostVisibility visibility, boolean isAnonymous, String authorIpMasked) {
@@ -100,6 +107,9 @@ public class Post extends BaseTimeEntity {
 
     // 게시글 내용 수정 — setter 대신 명시적인 도메인 메서드를 써서 "수정"이라는 행위를 표현한다
     public void update(String title, String content, boolean isAnonymous) {
+        if (!Objects.equals(this.title, title)) {
+            this.shareTitlePublicly = false;
+        }
         this.title = title;
         this.content = content;
         this.isAnonymous = isAnonymous;
